@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROI Calculator — TableStandards</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green:  #1c3d2e;
+    --green2: #2a5940;
+    --green3: #3d7a59;
+    --gold:   #c8a84b;
+    --cream:  #f5f0e8;
+    --cream2: #ede8dc;
+    --warm:   #d4c9b0;
+    --text:   #1a2418;
+    --mid:    #4a6355;
+    --light:  #8aab98;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--green);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  header {
+    padding: 20px 48px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .logo { font-family: 'DM Serif Display', serif; font-size: 18px; color: #fff; }
+  .logo span { color: var(--gold); }
+  .header-tag { font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--light); }
+
+  .hero { text-align: center; padding: 52px 48px 36px; position: relative; }
+  .hero::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(61,122,89,0.3) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: rgba(200,168,75,0.12); border: 1px solid rgba(200,168,75,0.25);
+    border-radius: 2px; padding: 6px 16px; margin-bottom: 20px;
+  }
+  .hero-eyebrow span { font-size: 10px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); }
+  .hero h1 { font-family: 'DM Serif Display', serif; font-size: clamp(32px, 4vw, 50px); color: #fff; line-height: 1.1; margin-bottom: 14px; }
+  .hero h1 em { color: var(--gold); font-style: italic; }
+  .hero p { font-size: 15px; line-height: 1.7; color: rgba(255,255,255,0.5); max-width: 520px; margin: 0 auto; font-weight: 300; }
+
+  /* Three column layout */
+  .main-wrap {
+    max-width: 1280px; margin: 0 auto;
+    padding: 0 32px 80px;
+    display: grid;
+    grid-template-columns: 320px 1fr 1fr;
+    gap: 20px; align-items: start;
+  }
+
+  /* Panel base */
+  .panel {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px; overflow: hidden;
+  }
+  .panel-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .panel-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); }
+  .panel-header h3 { font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.5); }
+  .panel-body { padding: 24px; }
+
+  /* Location toggle */
+  .location-toggle { display: flex; gap: 6px; margin-bottom: 28px; }
+  .loc-btn {
+    flex: 1; padding: 9px 4px; border-radius: 3px; border: 1.5px solid rgba(255,255,255,0.12);
+    background: transparent; color: rgba(255,255,255,0.4);
+    font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+  }
+  .loc-btn.active { background: var(--gold); border-color: var(--gold); color: var(--green); }
+  .loc-btn:hover:not(.active) { border-color: rgba(200,168,75,0.4); color: rgba(255,255,255,0.7); }
+
+  /* Sliders */
+  .input-group { margin-bottom: 20px; }
+  .input-label { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .input-label label { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.75); }
+  .input-label .hint { font-size: 10px; color: var(--light); }
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 3px; border-radius: 2px;
+    background: rgba(255,255,255,0.1); outline: none; cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+    background: var(--gold); border: 3px solid var(--green);
+    box-shadow: 0 0 0 2px rgba(200,168,75,0.3); cursor: pointer; transition: box-shadow 0.2s;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover { box-shadow: 0 0 0 5px rgba(200,168,75,0.2); }
+  .slider-value {
+    display: inline-block; margin-top: 6px;
+    background: rgba(200,168,75,0.12); border: 1px solid rgba(200,168,75,0.2);
+    border-radius: 3px; padding: 3px 10px;
+    font-size: 14px; font-weight: 600; color: var(--gold); font-family: 'DM Serif Display', serif;
+  }
+  .slider-range { display: flex; justify-content: space-between; margin-top: 4px; font-size: 9px; color: rgba(255,255,255,0.2); }
+  .divider { height: 1px; background: rgba(255,255,255,0.07); margin: 20px 0; }
+
+  /* Results column */
+  .results-col { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 20px; }
+  .result-main {
+    background: var(--gold); border-radius: 8px; padding: 28px 28px;
+    position: relative; overflow: hidden;
+  }
+  .result-main::before {
+    content: ''; position: absolute; top: -30px; right: -30px;
+    width: 130px; height: 130px; border-radius: 50%; background: rgba(255,255,255,0.08);
+  }
+  .result-label { font-size: 9px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--green); opacity: 0.65; margin-bottom: 6px; position: relative; z-index: 1; }
+  .result-amount { font-family: 'DM Serif Display', serif; font-size: 52px; color: var(--green); line-height: 1; position: relative; z-index: 1; transition: all 0.3s ease; }
+  .result-sub { font-size: 12px; color: var(--green); opacity: 0.6; margin-top: 6px; position: relative; z-index: 1; font-weight: 500; }
+
+  .result-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .result-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09); border-radius: 6px; padding: 16px; }
+  .result-card-label { font-size: 9px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--light); margin-bottom: 5px; }
+  .result-card-value { font-family: 'DM Serif Display', serif; font-size: 24px; color: #fff; line-height: 1; transition: all 0.3s ease; }
+  .result-card-note { font-size: 10px; color: rgba(255,255,255,0.3); margin-top: 3px; }
+
+  .calc-cta { background: var(--green2); border: 1px solid rgba(200,168,75,0.2); border-radius: 6px; padding: 20px; text-align: center; }
+  .calc-cta p { font-size: 12px; line-height: 1.6; color: rgba(255,255,255,0.55); margin-bottom: 14px; }
+  .calc-cta p strong { color: var(--gold); }
+  .cta-btn {
+    display: block; width: 100%; background: var(--gold); color: var(--green);
+    padding: 13px 20px; border-radius: 4px; font-size: 13px; font-weight: 700;
+    text-decoration: none; text-align: center; transition: opacity 0.2s, transform 0.2s;
+  }
+  .cta-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  .cta-sub { font-size: 10px; color: rgba(255,255,255,0.25); margin-top: 8px; display: block; }
+
+  /* ── CODE PANEL ── */
+  .code-col { position: sticky; top: 20px; }
+  .code-panel {
+    background: #0a1a10;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px; overflow: hidden;
+    font-family: 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  }
+  .code-header {
+    padding: 12px 18px;
+    background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .code-dots { display: flex; gap: 6px; }
+  .code-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .code-dot-r { background: #e85d5d; }
+  .code-dot-y { background: #e8b84b; }
+  .code-dot-g { background: #4be87a; }
+  .code-filename { font-size: 11px; color: rgba(255,255,255,0.25); letter-spacing: 0.05em; }
+  .code-live-badge {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.15em;
+    text-transform: uppercase; color: #4be87a;
+  }
+  .code-live-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: #4be87a;
+    animation: blink 1.5s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .code-body { padding: 20px 24px; overflow-x: auto; }
+  .code-body pre { font-size: 11px; line-height: 1.9; white-space: pre; }
+
+  /* Syntax highlighting */
+  .k  { color: #c586c0; }            /* keyword */
+  .fn { color: #dcdcaa; }            /* function */
+  .v  { color: #9cdcfe; }            /* variable */
+  .n  { color: #b5cea8; }            /* number literal */
+  .cm { color: #3d6b4a; font-style: italic; } /* comment */
+  .op { color: rgba(255,255,255,0.35); } /* operator */
+  .s  { color: #ce9178; }            /* string */
+  .live { color: var(--gold); font-weight: 700; transition: all 0.25s ease; } /* live value */
+  .res  { color: #4ec994; font-weight: 700; transition: all 0.25s ease; }     /* result */
+
+  .code-section-break {
+    display: block; margin: 6px 0; padding: 4px 0;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    font-size: 9px; color: rgba(255,255,255,0.2); letter-spacing: 0.15em; text-transform: uppercase;
+    font-family: 'DM Sans', sans-serif; font-weight: 600;
+  }
+
+  @keyframes pulse { from{opacity:0.5;transform:scale(0.97)} to{opacity:1;transform:scale(1)} }
+  .animating { animation: pulse 0.25s ease; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Table<span>Standards</span></div>
+  <div class="header-tag">Operational ROI Calculator</div>
+</header>
+
+<div class="hero">
+  <div class="hero-eyebrow"><span>Multi-Location Operators</span></div>
+  <h1>How much is operational variance<br><em>actually</em> costing you?</h1>
+  <p>Plug in your numbers. Watch the calculations update live. See exactly what the data shows.</p>
+</div>
+
+<div class="main-wrap">
+
+  <!-- COL 1: INPUTS -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-dot"></div>
+      <h3>Your Operation</h3>
+    </div>
+    <div class="panel-body">
+      <div style="margin-bottom:24px;">
+        <div class="input-label"><label>Number of Locations</label></div>
+        <div class="location-toggle">
+          <button class="loc-btn" onclick="setLocations(1,this)">1</button>
+          <button class="loc-btn" onclick="setLocations(2,this)">2–3</button>
+          <button class="loc-btn active" onclick="setLocations(5,this)">4–6</button>
+          <button class="loc-btn" onclick="setLocations(9,this)">7–12</button>
+          <button class="loc-btn" onclick="setLocations(15,this)">12+</button>
+        </div>
+      </div>
+      <div class="input-group">
+        <div class="input-label"><label>Weekly Covers</label><span class="hint">per location</span></div>
+        <input type="range" id="covers" min="200" max="5000" step="50" value="1200" oninput="update()">
+        <div><span class="slider-value" id="covers-val">1,200</span></div>
+        <div class="slider-range"><span>200</span><span>5,000</span></div>
+      </div>
+      <div class="input-group">
+        <div class="input-label"><label>Average Check Size</label><span class="hint">per guest</span></div>
+        <input type="range" id="check" min="10" max="120" step="5" value="38" oninput="update()">
+        <div><span class="slider-value" id="check-val">$38</span></div>
+        <div class="slider-range"><span>$10</span><span>$120</span></div>
+      </div>
+      <div class="divider"></div>
+      <div class="input-group">
+        <div class="input-label"><label>Current Food Cost %</label><span class="hint">avg 28–32%</span></div>
+        <input type="range" id="foodcost" min="20" max="45" step="0.5" value="34" oninput="update()">
+        <div><span class="slider-value" id="foodcost-val">34%</span></div>
+        <div class="slider-range"><span>20%</span><span>45%</span></div>
+      </div>
+      <div class="input-group">
+        <div class="input-label"><label>Target Food Cost %</label><span class="hint">with data</span></div>
+        <input type="range" id="target" min="20" max="40" step="0.5" value="29" oninput="update()">
+        <div><span class="slider-value" id="target-val">29%</span></div>
+        <div class="slider-range"><span>20%</span><span>40%</span></div>
+      </div>
+      <div class="divider"></div>
+      <div class="input-group">
+        <div class="input-label"><label>Current Labor Cost %</label><span class="hint">of revenue</span></div>
+        <input type="range" id="labor" min="20" max="45" step="0.5" value="35" oninput="update()">
+        <div><span class="slider-value" id="labor-val">35%</span></div>
+        <div class="slider-range"><span>20%</span><span>45%</span></div>
+      </div>
+      <div class="input-group">
+        <div class="input-label"><label>Target Labor Cost %</label><span class="hint">optimized</span></div>
+        <input type="range" id="labortarget" min="20" max="40" step="0.5" value="31" oninput="update()">
+        <div><span class="slider-value" id="labortarget-val">31%</span></div>
+        <div class="slider-range"><span>20%</span><span>40%</span></div>
+      </div>
+      <div class="divider"></div>
+      <div class="input-group">
+        <div class="input-label"><label>Incidents / Year</label><span class="hint">per location</span></div>
+        <input type="range" id="incidents" min="0" max="40" step="1" value="8" oninput="update()">
+        <div><span class="slider-value" id="incidents-val">8</span></div>
+        <div class="slider-range"><span>0</span><span>40</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COL 2: RESULTS -->
+  <div class="results-col">
+    <div class="result-main">
+      <div class="result-label">Total Annual Cost of Variance</div>
+      <div class="result-amount" id="total-cost">$287K</div>
+      <div class="result-sub" id="total-sub">across 5 locations, annualized</div>
+    </div>
+    <div class="result-cards">
+      <div class="result-card">
+        <div class="result-card-label">Food Cost Leak</div>
+        <div class="result-card-value" id="food-saving">$0</div>
+        <div class="result-card-note">annual / all locations</div>
+      </div>
+      <div class="result-card">
+        <div class="result-card-label">Labor Inefficiency</div>
+        <div class="result-card-value" id="labor-saving">$0</div>
+        <div class="result-card-note">annual / all locations</div>
+      </div>
+      <div class="result-card">
+        <div class="result-card-label">Incident Exposure</div>
+        <div class="result-card-value" id="incident-cost">$0</div>
+        <div class="result-card-note">annual / all locations</div>
+      </div>
+      <div class="result-card">
+        <div class="result-card-label">Recoverable</div>
+        <div class="result-card-value" id="recoverable" style="color:#4ec994;">$0</div>
+        <div class="result-card-note">with TableStandards</div>
+      </div>
+    </div>
+    <div class="calc-cta">
+      <p>Your operation is leaving <strong id="cta-amount">significant revenue</strong> on the table annually. We'll show you exactly where — <strong>at no cost.</strong></p>
+      <a href="mailto:hello@tablestandards.com" class="cta-btn">Get My Free Analysis →</a>
+      <span class="cta-sub">No commitment. Results within 48 hours.</span>
+    </div>
+  </div>
+
+  <!-- COL 3: CODE -->
+  <div class="code-col">
+    <div class="code-panel">
+      <div class="code-header">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="code-dots">
+            <div class="code-dot code-dot-r"></div>
+            <div class="code-dot code-dot-y"></div>
+            <div class="code-dot code-dot-g"></div>
+          </div>
+          <span class="code-filename">roi_calculations.js</span>
+        </div>
+        <div class="code-live-badge">
+          <div class="code-live-dot"></div>
+          Live
+        </div>
+      </div>
+      <div class="code-body">
+<pre><span class="cm">// ── INPUTS ───────────────────────────</span>
+<span class="k">const</span> <span class="v">locations</span>  <span class="op">=</span> <span class="live" id="c-loc">5</span><span class="op">;</span>
+<span class="k">const</span> <span class="v">covers</span>     <span class="op">=</span> <span class="live" id="c-cov">1200</span><span class="op">;</span>   <span class="cm">// per location/wk</span>
+<span class="k">const</span> <span class="v">checkSize</span>  <span class="op">=</span> <span class="live" id="c-chk">38</span><span class="op">;</span>     <span class="cm">// avg $ per guest</span>
+<span class="k">const</span> <span class="v">foodPct</span>    <span class="op">=</span> <span class="live" id="c-fp">0.34</span><span class="op">;</span>   <span class="cm">// current food cost</span>
+<span class="k">const</span> <span class="v">foodTarget</span> <span class="op">=</span> <span class="live" id="c-ft">0.29</span><span class="op">;</span>   <span class="cm">// target food cost</span>
+<span class="k">const</span> <span class="v">laborPct</span>   <span class="op">=</span> <span class="live" id="c-lp">0.35</span><span class="op">;</span>   <span class="cm">// current labor %</span>
+<span class="k">const</span> <span class="v">laborTarget</span><span class="op">=</span> <span class="live" id="c-lt">0.31</span><span class="op">;</span>   <span class="cm">// target labor %</span>
+<span class="k">const</span> <span class="v">incidents</span>  <span class="op">=</span> <span class="live" id="c-inc">8</span><span class="op">;</span>     <span class="cm">// per location/yr</span>
+
+<span class="code-section-break">── REVENUE ──────────────────────────</span>
+<span class="cm">// Weekly → Annual across all locations</span>
+<span class="k">const</span> <span class="v">weeklyRev</span> <span class="op">=</span>
+  <span class="v">covers</span> <span class="op">*</span> <span class="v">checkSize</span><span class="op">;</span>
+<span class="cm">// = <span class="live" id="c-wrev">1,200</span> × $<span class="live" id="c-wchk">38</span></span>
+<span class="cm">// = $<span class="res" id="c-wrev-r">45,600</span>/wk per location</span>
+
+<span class="k">const</span> <span class="v">annualRev</span> <span class="op">=</span>
+  <span class="v">weeklyRev</span> <span class="op">*</span> <span class="n">52</span> <span class="op">*</span> <span class="v">locations</span><span class="op">;</span>
+<span class="cm">// = $<span class="res" id="c-arev">11.8M</span>/yr total</span>
+
+<span class="code-section-break">── FOOD COST ─────────────────────────</span>
+<span class="cm">// Gap between current and target %</span>
+<span class="k">const</span> <span class="v">foodGap</span> <span class="op">=</span>
+  <span class="v">foodPct</span> <span class="op">-</span> <span class="v">foodTarget</span><span class="op">;</span>
+<span class="cm">// = <span class="live" id="c-fg">5.0</span>% gap</span>
+
+<span class="k">const</span> <span class="v">foodLeak</span> <span class="op">=</span>
+  <span class="v">annualRev</span> <span class="op">*</span> <span class="v">foodGap</span><span class="op">;</span>
+<span class="cm">// = $<span class="res" id="c-fl">590K</span>/yr leaking</span>
+
+<span class="code-section-break">── LABOR COST ────────────────────────</span>
+<span class="cm">// 80% of gap is recoverable</span>
+<span class="k">const</span> <span class="v">laborGap</span> <span class="op">=</span>
+  <span class="v">laborPct</span> <span class="op">-</span> <span class="v">laborTarget</span><span class="op">;</span>
+<span class="cm">// = <span class="live" id="c-lg">4.0</span>% gap</span>
+
+<span class="k">const</span> <span class="v">laborLeak</span> <span class="op">=</span>
+  <span class="v">annualRev</span> <span class="op">*</span> <span class="v">laborGap</span> <span class="op">*</span> <span class="n">0.80</span><span class="op">;</span>
+<span class="cm">// = $<span class="res" id="c-ll">378K</span>/yr inefficiency</span>
+
+<span class="code-section-break">── INCIDENT EXPOSURE ─────────────────</span>
+<span class="cm">// $4,200 avg undocumented claim cost</span>
+<span class="k">const</span> <span class="v">incidentCost</span> <span class="op">=</span>
+  <span class="v">incidents</span> <span class="op">*</span> <span class="v">locations</span> <span class="op">*</span> <span class="n">4200</span><span class="op">;</span>
+<span class="cm">// = $<span class="res" id="c-ic">168K</span>/yr exposure</span>
+
+<span class="code-section-break">── TOTALS ────────────────────────────</span>
+<span class="k">const</span> <span class="v">totalVariance</span> <span class="op">=</span>
+  <span class="v">foodLeak</span> <span class="op">+</span> <span class="v">laborLeak</span> <span class="op">+</span> <span class="v">incidentCost</span><span class="op">;</span>
+<span class="cm">// = $<span class="res" id="c-total">1.1M</span> total annual variance</span>
+
+<span class="k">const</span> <span class="v">recoverable</span> <span class="op">=</span>
+  <span class="v">foodLeak</span>     <span class="op">*</span> <span class="n">0.75</span>
+  <span class="op">+</span> <span class="v">laborLeak</span>   <span class="op">*</span> <span class="n">0.85</span>
+  <span class="op">+</span> <span class="v">incidentCost</span><span class="op">*</span> <span class="n">0.60</span><span class="op">;</span>
+<span class="cm">// = $<span class="res" id="c-rec">867K</span> recoverable</span>
+</pre>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let locationCount = 5;
+
+  function setLocations(count, btn) {
+    locationCount = count;
+    document.querySelectorAll('.loc-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    update();
+  }
+
+  function fmt(n, prefix='$') {
+    if (n >= 1000000) return prefix + (n/1000000).toFixed(1) + 'M';
+    if (n >= 1000)    return prefix + Math.round(n/1000) + 'K';
+    return prefix + Math.round(n).toLocaleString();
+  }
+
+  function setLive(id, val) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = val;
+    el.classList.remove('animating');
+    void el.offsetWidth;
+    el.classList.add('animating');
+  }
+
+  function update() {
+    const covers      = +document.getElementById('covers').value;
+    const check       = +document.getElementById('check').value;
+    const foodcost    = +document.getElementById('foodcost').value / 100;
+    const target      = +document.getElementById('target').value / 100;
+    const labor       = +document.getElementById('labor').value / 100;
+    const labortarget = +document.getElementById('labortarget').value / 100;
+    const incidents   = +document.getElementById('incidents').value;
+
+    // Slider labels
+    document.getElementById('covers-val').textContent      = covers.toLocaleString();
+    document.getElementById('check-val').textContent       = '$' + check;
+    document.getElementById('foodcost-val').textContent    = (foodcost*100).toFixed(1) + '%';
+    document.getElementById('target-val').textContent      = (target*100).toFixed(1) + '%';
+    document.getElementById('labor-val').textContent       = (labor*100).toFixed(1) + '%';
+    document.getElementById('labortarget-val').textContent = (labortarget*100).toFixed(1) + '%';
+    document.getElementById('incidents-val').textContent   = incidents;
+
+    // Calculations
+    const weeklyRev    = covers * check;
+    const annualRev    = weeklyRev * 52 * locationCount;
+    const foodGap      = Math.max(0, foodcost - target);
+    const foodLeak     = annualRev * foodGap;
+    const laborGap     = Math.max(0, labor - labortarget);
+    const laborLeak    = annualRev * laborGap * 0.80;
+    const incidentCost = incidents * locationCount * 4200;
+    const totalVariance= foodLeak + laborLeak + incidentCost;
+    const rec          = foodLeak * 0.75 + laborLeak * 0.85 + incidentCost * 0.60;
+
+    // Result cards
+    document.getElementById('total-cost').textContent   = fmt(totalVariance);
+    document.getElementById('total-sub').textContent    = `across ${locationCount} location${locationCount>1?'s':''}, annualized`;
+    document.getElementById('food-saving').textContent  = fmt(foodLeak);
+    document.getElementById('labor-saving').textContent = fmt(laborLeak);
+    document.getElementById('incident-cost').textContent= fmt(incidentCost);
+    document.getElementById('recoverable').textContent  = fmt(rec);
+    document.getElementById('cta-amount').textContent   = fmt(totalVariance);
+
+    // ── CODE panel live values ──
+    const locLabel = locationCount === 1 ? '1' : locationCount === 2 ? '2' : locationCount === 5 ? '5' : locationCount === 9 ? '9' : '15';
+    setLive('c-loc',  locLabel);
+    setLive('c-cov',  covers.toLocaleString());
+    setLive('c-chk',  check);
+    setLive('c-fp',   foodcost.toFixed(2));
+    setLive('c-ft',   target.toFixed(2));
+    setLive('c-lp',   labor.toFixed(2));
+    setLive('c-lt',   labortarget.toFixed(2));
+    setLive('c-inc',  incidents);
+
+    setLive('c-wrev', covers.toLocaleString());
+    setLive('c-wchk', check);
+    setLive('c-wrev-r', '$' + weeklyRev.toLocaleString());
+    setLive('c-arev', fmt(annualRev));
+
+    setLive('c-fg', (foodGap * 100).toFixed(1) + '%');
+    setLive('c-fl', fmt(foodLeak));
+
+    setLive('c-lg', (laborGap * 100).toFixed(1) + '%');
+    setLive('c-ll', fmt(laborLeak));
+
+    setLive('c-ic',    fmt(incidentCost));
+    setLive('c-total', fmt(totalVariance));
+    setLive('c-rec',   fmt(rec));
+  }
+
+  update();
+</script>
+</body>
+</html>
