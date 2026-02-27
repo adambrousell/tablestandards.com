@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Food Waste Log — TableStandards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green:   #1c3d2e;
+    --green2:  #2a5940;
+    --green3:  #3d7a59;
+    --gold:    #c8a84b;
+    --gold-glow: rgba(200, 168, 75, 0.15);
+    --gold-soft: rgba(200, 168, 75, 0.08);
+    --cream:   #f5f0e8;
+    --cream2:  #ede8dc;
+    --warm:    #d4c9b0;
+    --text:    #1a2418;
+    --mid:     #4a6355;
+    --light:   #8aab98;
+    --surface: #ffffff;
+    --surface-raised: #faf8f4;
+    --surface-hover: #f0ece3;
+    --border:  #ddd6c8;
+    --border-focus: #c8a84b;
+    --success: #2a5940;
+    --success-bg: rgba(42, 89, 64, 0.08);
+    --warning: #b8922e;
+    --warning-bg: rgba(200, 168, 75, 0.1);
+    --danger:  #c44b4b;
+    --danger-bg: rgba(196, 75, 75, 0.08);
+    --orange:  #c47a2e;
+    --radius: 6px;
+    --radius-sm: 4px;
+    --shadow: 0 2px 12px rgba(28,61,46,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: rgba(28, 61, 46, 0.97);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(200, 168, 75, 0.2);
+    padding: 14px 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-inner {
+    max-width: 540px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-mark {
+    width: 38px;
+    height: 38px;
+    background: var(--gold);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Serif Display', serif;
+    font-weight: 400;
+    font-size: 15px;
+    color: var(--green);
+    letter-spacing: -0.5px;
+    flex-shrink: 0;
+  }
+
+  .header-text h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 17px;
+    font-weight: 400;
+    color: #fff;
+    letter-spacing: 0.01em;
+    line-height: 1.2;
+  }
+
+  .header-text h1 span { color: var(--gold); }
+
+  .header-text .header-sub {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  /* ── Navigation Tabs ── */
+  .nav-tabs {
+    max-width: 540px;
+    margin: 0 auto;
+    display: flex;
+    padding: 12px 20px 0;
+    gap: 4px;
+    background: var(--cream);
+  }
+
+  .nav-tab {
+    flex: 1;
+    padding: 10px 8px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    color: var(--mid);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+
+  .nav-tab:hover { color: var(--green); background: var(--surface); }
+
+  .nav-tab.active {
+    background: var(--surface);
+    color: var(--green);
+    border-color: var(--border);
+    font-weight: 600;
+  }
+
+  .tab-divider {
+    max-width: 540px;
+    margin: 0 auto;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── Main Content ── */
+  .main {
+    max-width: 540px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── Form Styles ── */
+  .form-section { margin-bottom: 20px; }
+
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    margin-bottom: 10px;
+  }
+
+  .section-label-line {
+    width: 20px;
+    height: 1.5px;
+    background: var(--gold);
+  }
+
+  .field-group { margin-bottom: 16px; }
+
+  .field-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--mid);
+    margin-bottom: 6px;
+  }
+
+  .field-group label .req { color: var(--danger); margin-left: 2px; }
+
+  .pill-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .pill {
+    padding: 9px 16px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 3px;
+    color: var(--mid);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .pill:hover { border-color: var(--warm); color: var(--text); }
+
+  .pill.selected {
+    background: var(--gold-glow);
+    border-color: var(--gold);
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  .pill .pill-icon { margin-right: 5px; font-size: 14px; }
+
+  input[type="text"],
+  input[type="number"],
+  textarea,
+  select {
+    width: 100%;
+    padding: 11px 14px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 15px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px var(--gold-glow);
+  }
+
+  textarea { resize: vertical; min-height: 72px; }
+  input::placeholder, textarea::placeholder { color: var(--light); }
+
+  .qty-row { display: flex; gap: 10px; }
+  .qty-row .qty-input { flex: 1; }
+  .qty-row .qty-unit { width: 110px; }
+
+  select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%234a6355' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+
+  select option { background: var(--surface); color: var(--text); }
+
+  .btn-submit {
+    width: 100%;
+    padding: 14px;
+    background: var(--gold);
+    border: none;
+    border-radius: 3px;
+    color: var(--green);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+    margin-top: 8px;
+  }
+
+  .btn-submit:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-submit:active { transform: translateY(0); }
+  .btn-submit:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .facility-bar {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .facility-bar .fac-icon { font-size: 18px; opacity: 0.6; }
+
+  .facility-bar input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 500;
+    outline: none;
+    padding: 0;
+  }
+
+  .facility-bar input::placeholder { color: var(--light); }
+
+  .success-state {
+    display: none;
+    text-align: center;
+    padding: 50px 20px;
+    animation: fadeUp 0.4s ease;
+  }
+
+  .success-state.visible { display: block; }
+
+  .success-check {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: var(--success-bg);
+    border: 2px solid var(--green2);
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-bottom: 20px;
+  }
+
+  .success-check svg {
+    width: 32px; height: 32px;
+    stroke: var(--green2); fill: none;
+    stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;
+  }
+
+  .success-state h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px; font-weight: 400; color: var(--green); margin-bottom: 8px;
+  }
+
+  .success-state p { color: var(--mid); font-size: 14px; margin-bottom: 28px; }
+
+  .btn-another {
+    padding: 12px 28px;
+    background: var(--green); border: none; border-radius: 3px;
+    color: #fff; font-family: inherit; font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s;
+  }
+
+  .btn-another:hover { opacity: 0.9; }
+
+  .log-entry {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    transition: border-color 0.2s;
+  }
+
+  .log-entry:hover { border-color: var(--warm); }
+
+  .log-top {
+    display: flex; justify-content: space-between;
+    align-items: flex-start; margin-bottom: 6px;
+  }
+
+  .log-item-name { font-size: 15px; font-weight: 600; color: var(--green); flex: 1; }
+
+  .log-qty {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px; color: var(--gold); font-weight: 500;
+    white-space: nowrap; margin-left: 12px;
+  }
+
+  .log-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+  .log-tag {
+    font-size: 11px; padding: 3px 8px; border-radius: 2px;
+    font-weight: 500; letter-spacing: 0.02em;
+  }
+
+  .tag-station { background: rgba(42, 89, 64, 0.1); color: var(--green2); }
+  .tag-waste-trim { background: rgba(138, 171, 152, 0.15); color: var(--mid); }
+  .tag-waste-spoilage { background: var(--danger-bg); color: var(--danger); }
+  .tag-waste-overproduction { background: var(--warning-bg); color: var(--warning); }
+  .tag-waste-burnt { background: rgba(196, 122, 46, 0.1); color: var(--orange); }
+
+  .log-time { font-size: 11px; color: var(--light); margin-left: auto; }
+
+  .log-notes {
+    margin-top: 8px; font-size: 12.5px; color: var(--mid);
+    font-style: italic; padding-left: 10px; border-left: 2px solid var(--gold);
+  }
+
+  .log-empty { text-align: center; padding: 48px 20px; color: var(--light); }
+  .log-empty .empty-icon { font-size: 32px; margin-bottom: 12px; opacity: 0.4; }
+  .log-empty p { font-size: 14px; }
+
+  .log-filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+
+  .filter-chip {
+    padding: 7px 14px; background: var(--surface);
+    border: 1.5px solid var(--border); border-radius: 3px;
+    color: var(--mid); font-family: inherit; font-size: 12px;
+    font-weight: 500; cursor: pointer; transition: all 0.15s;
+  }
+
+  .filter-chip:hover { border-color: var(--warm); color: var(--text); }
+  .filter-chip.active { background: var(--gold-glow); border-color: var(--gold); color: var(--green); font-weight: 600; }
+
+  .stat-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+
+  .summary-stat-card {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: var(--radius); padding: 16px;
+    position: relative; overflow: hidden;
+  }
+
+  .summary-stat-card::before {
+    content: ''; position: absolute; top: 0; left: 0;
+    width: 3px; height: 100%; background: var(--gold);
+  }
+
+  .stat-label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--light); font-weight: 600; margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px; font-weight: 400; color: var(--green);
+  }
+
+  .stat-value .stat-unit {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; color: var(--mid); font-weight: 400; margin-left: 2px;
+  }
+
+  .stat-bar-section { margin-top: 20px; }
+
+  .stat-bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+
+  .stat-bar-label { font-size: 12px; color: var(--mid); min-width: 100px; text-align: right; }
+
+  .stat-bar-track {
+    flex: 1; height: 8px; background: var(--cream2);
+    border-radius: 4px; overflow: hidden;
+  }
+
+  .stat-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+
+  .stat-bar-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; color: var(--mid); min-width: 55px;
+  }
+
+  .qr-section { text-align: center; padding: 20px 0; }
+
+  .qr-section h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px; font-weight: 400; color: var(--green); margin-bottom: 8px;
+  }
+
+  .qr-section p { font-size: 13.5px; color: var(--mid); margin-bottom: 24px; line-height: 1.5; }
+
+  .qr-box {
+    background: #fff; border-radius: 8px; border: 1.5px solid var(--border);
+    padding: 24px; display: inline-block; margin-bottom: 20px; box-shadow: var(--shadow);
+  }
+
+  .qr-box canvas { display: block; }
+
+  .qr-url {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--mid);
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 16px;
+    display: inline-block; word-break: break-all; max-width: 100%;
+  }
+
+  .qr-instructions { margin-top: 28px; text-align: left; }
+
+  .qr-instructions h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 16px; font-weight: 400; color: var(--green); margin-bottom: 16px;
+  }
+
+  .qr-step { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 14px; }
+
+  .qr-step-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--green); color: var(--gold);
+    font-family: 'DM Serif Display', serif;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; flex-shrink: 0;
+  }
+
+  .qr-step-text { font-size: 13.5px; color: var(--mid); line-height: 1.5; padding-top: 3px; }
+
+  .btn-delete {
+    background: none; border: none; color: var(--light);
+    cursor: pointer; padding: 4px; font-size: 14px;
+    transition: color 0.2s; margin-left: 8px; flex-shrink: 0;
+  }
+  .btn-delete:hover { color: var(--danger); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .form-section { animation: fadeUp 0.3s ease both; }
+  .form-section:nth-child(2) { animation-delay: 0.05s; }
+  .form-section:nth-child(3) { animation-delay: 0.1s; }
+
+  @media (max-width: 380px) {
+    .pill { padding: 8px 12px; font-size: 12px; }
+    .stat-cards { grid-template-columns: 1fr; }
+  }
+
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(28,61,46,0.5); z-index: 200;
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.visible { display: flex; }
+
+  .modal-box {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 8px; padding: 28px; max-width: 340px; width: 100%;
+    text-align: center; animation: fadeUp 0.25s ease;
+    box-shadow: 0 8px 32px rgba(28,61,46,0.15);
+  }
+
+  .modal-box h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px; font-weight: 400; color: var(--green); margin-bottom: 8px;
+  }
+
+  .modal-box p { font-size: 13px; color: var(--mid); margin-bottom: 20px; line-height: 1.5; }
+
+  .modal-actions { display: flex; gap: 10px; }
+
+  .modal-actions button {
+    flex: 1; padding: 10px; border-radius: 3px;
+    font-family: inherit; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; border: 1.5px solid var(--border);
+  }
+
+  .btn-modal-cancel { background: var(--surface); color: var(--text); }
+  .btn-modal-cancel:hover { background: var(--cream2); }
+  .btn-modal-delete { background: var(--danger); border-color: var(--danger); color: #fff; }
+  .btn-modal-delete:hover { opacity: 0.9; }
+
+  .btn-export {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 20px; background: var(--green); border: none;
+    border-radius: 3px; color: #fff; font-family: inherit;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s; letter-spacing: 0.03em; margin-top: 20px;
+  }
+  .btn-export:hover { opacity: 0.9; }
+  .btn-export svg { width: 14px; height: 14px; }
+
+  .problem-items { margin-top: 20px; }
+
+  .problem-item-row {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: var(--radius); padding: 12px 16px;
+    margin-bottom: 8px; display: flex; justify-content: space-between;
+    align-items: center; gap: 12px;
+  }
+
+  .problem-item-name { font-size: 14px; font-weight: 600; color: var(--green); flex: 1; }
+
+  .problem-item-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px; color: var(--gold); font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .problem-item-detail {
+    font-size: 11px; color: var(--mid); margin-top: 3px;
+  }
+
+  .summary-volume-row {
+    display: flex; gap: 10px; margin-top: 10px;
+  }
+
+  .summary-volume-card {
+    flex: 1; background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: var(--radius); padding: 10px 14px; text-align: center;
+  }
+
+  .summary-volume-card .svl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--light); font-weight: 600; }
+  .summary-volume-card .svv { font-family: 'DM Serif Display', serif; font-size: 18px; color: var(--green); }
+  .summary-volume-card .svv span { font-family: 'DM Sans'; font-size: 11px; color: var(--mid); }
+
+  .footer {
+    max-width: 540px; margin: 32px auto 0; padding: 20px;
+    text-align: center; border-top: 1px solid var(--border);
+  }
+  .footer-brand { font-family: 'DM Serif Display', serif; font-size: 14px; color: var(--green); }
+  .footer-brand span { color: var(--gold); }
+  .footer p { font-size: 11px; color: var(--light); margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="logo-mark">TS</div>
+    <div class="header-text">
+      <h1>Food Waste <span>Tracker</span></h1>
+      <div class="header-sub">TableStandards</div>
+    </div>
+  </div>
+</div>
+
+<div class="nav-tabs" role="tablist">
+  <button class="nav-tab active" data-tab="log" role="tab">Log Entry</button>
+  <button class="nav-tab" data-tab="history" role="tab">History</button>
+  <button class="nav-tab" data-tab="summary" role="tab">Summary</button>
+  <button class="nav-tab" data-tab="qr" role="tab">QR Setup</button>
+</div>
+<div class="tab-divider"></div>
+
+<div class="main">
+
+  <div class="tab-content active" id="tab-log">
+    <div id="form-view">
+      <div class="facility-bar">
+        <span class="fac-icon">🏢</span>
+        <input type="text" id="facility-name" placeholder="Facility / Location Name" />
+      </div>
+
+      <div class="form-section">
+        <div class="section-label"><div class="section-label-line"></div>Station</div>
+        <div class="pill-grid" id="station-pills">
+          <button class="pill" data-value="pasta"><span class="pill-icon">🍝</span>Pasta</button>
+          <button class="pill" data-value="grill"><span class="pill-icon">🔥</span>Grill</button>
+          <button class="pill" data-value="middle"><span class="pill-icon">🍽️</span>Middle</button>
+          <button class="pill" data-value="salumi"><span class="pill-icon">🥩</span>Salumi</button>
+          <button class="pill" data-value="pasta_prep"><span class="pill-icon">🫕</span>Pasta Prep</button>
+          <button class="pill" data-value="other_prep"><span class="pill-icon">🔪</span>Other Prep</button>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="section-label"><div class="section-label-line"></div>Waste Type</div>
+        <div class="pill-grid" id="waste-pills">
+          <button class="pill" data-value="trim">Trim</button>
+          <button class="pill" data-value="spoilage">Spoilage</button>
+          <button class="pill" data-value="overproduction">Overproduction</button>
+          <button class="pill" data-value="burnt/overcooked">Burnt / Overcooked</button>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <div class="section-label"><div class="section-label-line"></div>Item Details</div>
+        <div class="field-group">
+          <label>Item Name / Description <span class="req">*</span></label>
+          <input type="text" id="item-name" placeholder="e.g. chicken breast, house sauce…" />
+        </div>
+        <div class="field-group">
+          <label>Quantity <span class="req">*</span></label>
+          <div class="qty-row">
+            <input type="number" id="qty-value" class="qty-input" placeholder="0" min="0" step="0.1" inputmode="decimal" />
+            <select id="qty-unit" class="qty-unit">
+              <option value="lbs">lbs</option>
+              <option value="oz">oz</option>
+              <option value="po">portions</option>
+              <option value="qt">quarts</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Notes <span style="color: var(--light); font-weight:400;">(optional)</span></label>
+          <textarea id="notes" placeholder="Additional context…"></textarea>
+        </div>
+      </div>
+
+      <button class="btn-submit" id="btn-submit" onclick="submitEntry()">Submit Waste Entry</button>
+    </div>
+
+    <div class="success-state" id="success-view">
+      <div class="success-check">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+      <h2>Entry Logged</h2>
+      <p id="success-msg">Your waste entry has been recorded.</p>
+      <button class="btn-another" onclick="resetForm()">Log Another Entry</button>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-history">
+    <div class="log-filter-bar" id="history-filters">
+      <button class="filter-chip active" data-filter="all">All</button>
+      <button class="filter-chip" data-filter="spoilage">Spoilage</button>
+      <button class="filter-chip" data-filter="overproduction">Overprod.</button>
+      <button class="filter-chip" data-filter="burnt/overcooked">Burnt</button>
+      <button class="filter-chip" data-filter="trim">Trim</button>
+    </div>
+    <div id="history-list"></div>
+  </div>
+
+  <div class="tab-content" id="tab-summary">
+    <div id="summary-content"></div>
+  </div>
+
+  <div class="tab-content" id="tab-qr">
+    <div class="qr-section">
+      <h2>Mobile Access</h2>
+      <p>Print or display this QR code in the kitchen so any team member can log waste from their phone.</p>
+      <div class="qr-box">
+        <canvas id="qr-canvas" width="200" height="200"></canvas>
+      </div>
+      <div class="qr-url" id="qr-url-display"></div>
+      <div class="qr-instructions">
+        <h3>How It Works</h3>
+        <div class="qr-step">
+          <div class="qr-step-num">1</div>
+          <div class="qr-step-text">Print this page or save the QR code image. Post it near the kitchen waste station.</div>
+        </div>
+        <div class="qr-step">
+          <div class="qr-step-num">2</div>
+          <div class="qr-step-text">Team members scan the code with their phone camera — no app install needed.</div>
+        </div>
+        <div class="qr-step">
+          <div class="qr-step-num">3</div>
+          <div class="qr-step-text">Fill out the form right on their phone. Entries save to the browser's local log automatically.</div>
+        </div>
+        <div class="qr-step">
+          <div class="qr-step-num">4</div>
+          <div class="qr-step-text">Review history and summary from any device. Export data for deeper analysis.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <div class="footer-brand">Table<span>Standards</span></div>
+  <p>Data-Driven Restaurant Operations</p>
+</div>
+
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal-box">
+    <h3>Delete Entry?</h3>
+    <p id="delete-modal-msg">This action cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn-modal-delete" id="btn-confirm-delete">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'ts_waste_entries';
+const FAC_KEY = 'ts_waste_facility';
+
+let selectedStation = null;
+let selectedWasteType = null;
+let currentFilter = 'all';
+
+function getEntries() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch { return []; }
+}
+
+function saveEntries(entries) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+}
+
+document.querySelectorAll('.nav-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+    if (tab.dataset.tab === 'history') renderHistory();
+    if (tab.dataset.tab === 'summary') renderSummary();
+    if (tab.dataset.tab === 'qr') generateQR();
+  });
+});
+
+document.querySelectorAll('#station-pills .pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    document.querySelectorAll('#station-pills .pill').forEach(p => p.classList.remove('selected'));
+    pill.classList.add('selected');
+    selectedStation = pill.dataset.value;
+  });
+});
+
+document.querySelectorAll('#waste-pills .pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    document.querySelectorAll('#waste-pills .pill').forEach(p => p.classList.remove('selected'));
+    pill.classList.add('selected');
+    selectedWasteType = pill.dataset.value;
+  });
+});
+
+function submitEntry() {
+  const itemName = document.getElementById('item-name').value.trim();
+  const qtyVal = parseFloat(document.getElementById('qty-value').value);
+  let qtyUnit = document.getElementById('qty-unit').value;
+  const notes = document.getElementById('notes').value.trim();
+  const facility = document.getElementById('facility-name').value.trim();
+
+  if (!selectedStation) { shake('station-pills'); return alert('Please select a station.'); }
+  if (!selectedWasteType) { shake('waste-pills'); return alert('Please select a waste type.'); }
+  if (!itemName) { return alert('Please enter an item name.'); }
+  if (!qtyVal || qtyVal <= 0) { return alert('Please enter a valid quantity.'); }
+
+  let finalQty = qtyVal;
+  if (qtyUnit === 'oz') { finalQty = qtyVal / 16; qtyUnit = 'lbs'; }
+
+  const entry = {
+    id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2),
+    timestamp: new Date().toISOString(),
+    facility, station: selectedStation, waste_type: selectedWasteType,
+    item_name: itemName, quantity_type: qtyUnit,
+    quantity_value: Math.round(finalQty * 100) / 100, notes
+  };
+
+  const entries = getEntries();
+  entries.unshift(entry);
+  saveEntries(entries);
+  if (facility) localStorage.setItem(FAC_KEY, facility);
+
+  document.getElementById('form-view').style.display = 'none';
+  document.getElementById('success-view').classList.add('visible');
+  document.getElementById('success-msg').textContent =
+    `${entry.item_name} — ${entry.quantity_value} ${entry.quantity_type} logged at ${entry.station}.`;
+}
+
+function shake(id) {
+  const el = document.getElementById(id);
+  el.style.animation = 'none'; el.offsetHeight;
+  el.style.animation = 'shake 0.4s ease';
+}
+
+function resetForm() {
+  document.getElementById('form-view').style.display = 'block';
+  document.getElementById('success-view').classList.remove('visible');
+  document.getElementById('item-name').value = '';
+  document.getElementById('qty-value').value = '';
+  document.getElementById('notes').value = '';
+  selectedStation = null; selectedWasteType = null;
+  document.querySelectorAll('.pill').forEach(p => p.classList.remove('selected'));
+  const fac = localStorage.getItem(FAC_KEY);
+  if (fac) document.getElementById('facility-name').value = fac;
+}
+
+document.querySelectorAll('#history-filters .filter-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#history-filters .filter-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    currentFilter = chip.dataset.filter;
+    renderHistory();
+  });
+});
+
+function renderHistory() {
+  const container = document.getElementById('history-list');
+  let entries = getEntries();
+  if (currentFilter !== 'all') entries = entries.filter(e => e.waste_type === currentFilter);
+
+  if (!entries.length) {
+    container.innerHTML = `<div class="log-empty"><div class="empty-icon">📋</div>
+      <p>${currentFilter === 'all' ? 'No entries yet. Log your first waste entry!' : 'No entries for this filter.'}</p></div>`;
+    return;
+  }
+
+  container.innerHTML = entries.map(e => {
+    const d = new Date(e.timestamp);
+    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    const wasteClass = e.waste_type === 'trim' ? 'tag-waste-trim' :
+                       e.waste_type === 'spoilage' ? 'tag-waste-spoilage' :
+                       e.waste_type === 'overproduction' ? 'tag-waste-overproduction' : 'tag-waste-burnt';
+    return `<div class="log-entry">
+        <div class="log-top">
+          <span class="log-item-name">${esc(e.item_name)}</span>
+          <span class="log-qty">${e.quantity_value} ${e.quantity_type}</span>
+          <button class="btn-delete" onclick="confirmDelete('${e.id}')" title="Delete entry">✕</button>
+        </div>
+        <div class="log-meta">
+          <span class="log-tag tag-station">${e.station}</span>
+          <span class="log-tag ${wasteClass}">${e.waste_type}</span>
+          <span class="log-time">${dateStr} · ${timeStr}</span>
+        </div>
+        ${e.notes ? `<div class="log-notes">${esc(e.notes)}</div>` : ''}
+      </div>`;
+  }).join('');
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+let pendingDeleteId = null;
+
+function confirmDelete(id) {
+  const entries = getEntries();
+  const entry = entries.find(e => e.id === id);
+  if (!entry) return;
+  pendingDeleteId = id;
+  document.getElementById('delete-modal-msg').textContent =
+    `Delete "${entry.item_name}" (${entry.quantity_value} ${entry.quantity_type})?`;
+  document.getElementById('delete-modal').classList.add('visible');
+}
+
+function closeDeleteModal() {
+  pendingDeleteId = null;
+  document.getElementById('delete-modal').classList.remove('visible');
+}
+
+document.getElementById('btn-confirm-delete').addEventListener('click', () => {
+  if (!pendingDeleteId) return;
+  let entries = getEntries();
+  entries = entries.filter(e => e.id !== pendingDeleteId);
+  saveEntries(entries);
+  closeDeleteModal();
+  renderHistory();
+});
+
+function renderSummary() {
+  const entries = getEntries();
+  const container = document.getElementById('summary-content');
+
+  if (!entries.length) {
+    container.innerHTML = `<div class="log-empty"><div class="empty-icon">📊</div><p>No data to summarize yet.</p></div>`;
+    return;
+  }
+
+  // ── Aggregate exactly like Python's generate_summary ──
+  let totalLbs = 0, totalPo = 0, totalQt = 0;
+  let problemLbs = 0, problemPo = 0, problemQt = 0;
+  const byStation = {};   // station -> {weight, portions, volume}
+  const byWasteType = {}; // waste_type -> {weight, portions, volume}
+  const itemFreq = {};    // item_name -> count (all entries)
+  const problemTypes = ['spoilage', 'overproduction', 'burnt/overcooked'];
+
+  // Problem item detail: item -> waste_type -> {count, lbs, po, qt}
+  const problemItemDetail = {};
+  const problemItemFreq = {};
+
+  entries.forEach(e => {
+    // Totals by unit
+    if (e.quantity_type === 'lbs') totalLbs += e.quantity_value;
+    else if (e.quantity_type === 'po') totalPo += e.quantity_value;
+    else if (e.quantity_type === 'qt') totalQt += e.quantity_value;
+
+    // By station
+    if (!byStation[e.station]) byStation[e.station] = {weight:0, portions:0, volume:0};
+    if (e.quantity_type === 'lbs') byStation[e.station].weight += e.quantity_value;
+    else if (e.quantity_type === 'po') byStation[e.station].portions += e.quantity_value;
+    else if (e.quantity_type === 'qt') byStation[e.station].volume += e.quantity_value;
+
+    // By waste type
+    if (!byWasteType[e.waste_type]) byWasteType[e.waste_type] = {weight:0, portions:0, volume:0};
+    if (e.quantity_type === 'lbs') byWasteType[e.waste_type].weight += e.quantity_value;
+    else if (e.quantity_type === 'po') byWasteType[e.waste_type].portions += e.quantity_value;
+    else if (e.quantity_type === 'qt') byWasteType[e.waste_type].volume += e.quantity_value;
+
+    // Item frequency (all)
+    itemFreq[e.item_name] = (itemFreq[e.item_name] || 0) + 1;
+
+    // Problem waste aggregation
+    if (problemTypes.includes(e.waste_type)) {
+      if (e.quantity_type === 'lbs') problemLbs += e.quantity_value;
+      else if (e.quantity_type === 'po') problemPo += e.quantity_value;
+      else if (e.quantity_type === 'qt') problemQt += e.quantity_value;
+
+      // Problem item frequency + detail
+      problemItemFreq[e.item_name] = (problemItemFreq[e.item_name] || 0) + 1;
+      if (!problemItemDetail[e.item_name]) problemItemDetail[e.item_name] = {};
+      if (!problemItemDetail[e.item_name][e.waste_type])
+        problemItemDetail[e.item_name][e.waste_type] = {count:0, lbs:0, po:0, qt:0};
+      const d = problemItemDetail[e.item_name][e.waste_type];
+      d.count++;
+      if (e.quantity_type === 'lbs') d.lbs += e.quantity_value;
+      else if (e.quantity_type === 'po') d.po += e.quantity_value;
+      else if (e.quantity_type === 'qt') d.qt += e.quantity_value;
+    }
+  });
+
+  // ── Build HTML ──
+
+  // Stat cards
+  let html = `<div class="stat-cards">
+      <div class="summary-stat-card"><div class="stat-label">Total Entries</div><div class="stat-value">${entries.length}</div></div>
+      <div class="summary-stat-card"><div class="stat-label">Weight</div><div class="stat-value">${totalLbs.toFixed(1)}<span class="stat-unit">lbs</span></div></div>
+      <div class="summary-stat-card"><div class="stat-label">Problem Waste</div><div class="stat-value" style="color:var(--warning)">${problemLbs.toFixed(1)}<span class="stat-unit">lbs</span></div></div>
+      <div class="summary-stat-card"><div class="stat-label">Portions Wasted</div><div class="stat-value">${totalPo.toFixed(0)}<span class="stat-unit">po</span></div></div>
+    </div>`;
+
+  // Additional volume/portion detail if present
+  if (totalQt > 0 || problemPo > 0 || problemQt > 0) {
+    html += `<div class="summary-volume-row">`;
+    if (totalQt > 0) html += `<div class="summary-volume-card"><div class="svl">Volume</div><div class="svv">${totalQt.toFixed(1)}<span> qt</span></div></div>`;
+    if (problemPo > 0) html += `<div class="summary-volume-card"><div class="svl">Problem Portions</div><div class="svv">${problemPo.toFixed(0)}<span> po</span></div></div>`;
+    if (problemQt > 0) html += `<div class="summary-volume-card"><div class="svl">Problem Volume</div><div class="svv">${problemQt.toFixed(1)}<span> qt</span></div></div>`;
+    html += `</div>`;
+  }
+
+  // Waste by Station (lbs) - bar chart
+  const stationLbs = Object.entries(byStation).map(([s,d]) => [s, d.weight]).filter(([,v]) => v > 0);
+  if (stationLbs.length) {
+    const maxS = Math.max(...stationLbs.map(([,v]) => v), 1);
+    const stationColors = {
+      pasta: '#2a5940', grill: '#c44b4b', middle: '#c8a84b',
+      salumi: '#c47a2e', pasta_prep: '#3d7a59', other_prep: '#4a6355'
+    };
+    html += `<div class="section-label" style="margin-top:20px;margin-bottom:14px"><div class="section-label-line"></div>Waste by Station (lbs)</div><div class="stat-bar-section">`;
+    stationLbs.sort((a,b) => b[1]-a[1]).forEach(([station, val]) => {
+      const pct = Math.max((val / maxS) * 100, 2);
+      html += `<div class="stat-bar-row"><div class="stat-bar-label">${station}</div>
+        <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%;background:${stationColors[station] || '#3d7a59'}"></div></div>
+        <div class="stat-bar-val">${val.toFixed(1)} lbs</div></div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Waste by Type (lbs) - bar chart
+  const wasteLbs = Object.entries(byWasteType).map(([w,d]) => [w, d.weight]).filter(([,v]) => v > 0);
+  if (wasteLbs.length) {
+    const maxW = Math.max(...wasteLbs.map(([,v]) => v), 1);
+    const wasteColors = { trim: '#8aab98', spoilage: '#c44b4b', overproduction: '#c8a84b', 'burnt/overcooked': '#c47a2e' };
+    html += `<div class="section-label" style="margin-top:24px;margin-bottom:14px"><div class="section-label-line"></div>Waste by Type (lbs)</div><div class="stat-bar-section">`;
+    wasteLbs.sort((a,b) => b[1]-a[1]).forEach(([wt, val]) => {
+      const pct = Math.max((val / maxW) * 100, 2);
+      html += `<div class="stat-bar-row"><div class="stat-bar-label">${wt}</div>
+        <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%;background:${wasteColors[wt] || '#3d7a59'}"></div></div>
+        <div class="stat-bar-val">${val.toFixed(1)} lbs</div></div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Problem waste by station (matching Python's "Problem waste by station" section)
+  const problemStationData = {};
+  entries.filter(e => problemTypes.includes(e.waste_type)).forEach(e => {
+    if (!problemStationData[e.station]) problemStationData[e.station] = {lbs:0, po:0, qt:0};
+    if (e.quantity_type === 'lbs') problemStationData[e.station].lbs += e.quantity_value;
+    else if (e.quantity_type === 'po') problemStationData[e.station].po += e.quantity_value;
+    else if (e.quantity_type === 'qt') problemStationData[e.station].qt += e.quantity_value;
+  });
+
+  const problemStations = Object.entries(problemStationData).filter(([,d]) => d.lbs > 0 || d.po > 0 || d.qt > 0);
+  if (problemStations.length) {
+    const maxPS = Math.max(...problemStations.map(([,d]) => d.lbs), 1);
+    const stationColors2 = {
+      pasta: '#2a5940', grill: '#c44b4b', middle: '#c8a84b',
+      salumi: '#c47a2e', pasta_prep: '#3d7a59', other_prep: '#4a6355'
+    };
+    html += `<div class="section-label" style="margin-top:24px;margin-bottom:14px"><div class="section-label-line"></div>Problem Waste by Station</div><div class="stat-bar-section">`;
+    problemStations.sort((a,b) => b[1].lbs - a[1].lbs).forEach(([station, d]) => {
+      const pct = maxPS > 0 ? Math.max((d.lbs / maxPS) * 100, 2) : 2;
+      const parts = [];
+      if (d.lbs > 0) parts.push(`${d.lbs.toFixed(1)} lbs`);
+      if (d.po > 0) parts.push(`${d.po.toFixed(0)} po`);
+      if (d.qt > 0) parts.push(`${d.qt.toFixed(1)} qt`);
+      html += `<div class="stat-bar-row"><div class="stat-bar-label">${station}</div>
+        <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%;background:${stationColors2[station] || '#3d7a59'}"></div></div>
+        <div class="stat-bar-val">${parts.join(', ')}</div></div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Top problem items by frequency (matching Python's top 5)
+  const sortedProblemItems = Object.entries(problemItemFreq).sort((a,b) => b[1]-a[1]).slice(0, 5);
+  if (sortedProblemItems.length) {
+    html += `<div class="section-label" style="margin-top:24px;margin-bottom:14px"><div class="section-label-line"></div>Top Problem Items</div><div class="problem-items">`;
+    sortedProblemItems.forEach(([item, count]) => {
+      const details = [];
+      problemTypes.forEach(wt => {
+        const d = (problemItemDetail[item] || {})[wt];
+        if (d && d.count > 0) {
+          const qp = [];
+          if (d.lbs > 0) qp.push(`${d.lbs.toFixed(1)} lbs`);
+          if (d.po > 0) qp.push(`${d.po.toFixed(0)} po`);
+          if (d.qt > 0) qp.push(`${d.qt.toFixed(1)} qt`);
+          details.push(`${qp.join(', ')} ${wt}`);
+        }
+      });
+      html += `<div class="problem-item-row"><div>
+          <div class="problem-item-name">${esc(item)}</div>
+          ${details.length ? `<div class="problem-item-detail">${details.join(' · ')}</div>` : ''}
+        </div><div class="problem-item-count">${count}×</div></div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Export button
+  html += `<button class="btn-export" onclick="exportCSV()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Export to CSV
+  </button>`;
+
+  container.innerHTML = html;
+}
+
+// ── CSV Export (matching Python's export_data_to_csv) ──
+function exportCSV() {
+  const entries = getEntries();
+  if (!entries.length) { alert('No entries to export.'); return; }
+
+  const fields = ['id','timestamp','facility','station','waste_type','item_name','quantity_type','quantity_value','notes'];
+  const csvRows = [fields.join(',')];
+
+  entries.forEach(e => {
+    const row = fields.map(f => {
+      let val = e[f] !== undefined ? String(e[f]) : '';
+      // Escape CSV values
+      if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+        val = '"' + val.replace(/"/g, '""') + '"';
+      }
+      return val;
+    });
+    csvRows.push(row.join(','));
+  });
+
+  const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `waste_log_export_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function generateQR() {
+  const url = window.location.href;
+  document.getElementById('qr-url-display').textContent = url;
+  const canvas = document.getElementById('qr-canvas');
+  const ctx = canvas.getContext('2d');
+  const size = 200;
+  canvas.width = size; canvas.height = size;
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, size, size);
+
+  const cellSize = 8, gridSize = Math.floor(size / cellSize), margin = 2;
+  let seed = 0;
+  for (let i = 0; i < url.length; i++) seed = ((seed << 5) - seed + url.charCodeAt(i)) | 0;
+
+  function pseudoRandom() { seed = (seed * 16807 + 0) % 2147483647; return (seed & 1) === 0; }
+
+  ctx.fillStyle = '#1c3d2e';
+
+  function drawMarker(x, y) {
+    const s = cellSize;
+    ctx.fillRect(x * s, y * s, 7 * s, 7 * s);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect((x + 1) * s, (y + 1) * s, 5 * s, 5 * s);
+    ctx.fillStyle = '#1c3d2e';
+    ctx.fillRect((x + 2) * s, (y + 2) * s, 3 * s, 3 * s);
+  }
+
+  drawMarker(margin, margin);
+  drawMarker(gridSize - 9, margin);
+  drawMarker(margin, gridSize - 9);
+
+  for (let y = margin; y < gridSize - margin; y++) {
+    for (let x = margin; x < gridSize - margin; x++) {
+      const inMarker = (x < margin + 8 && y < margin + 8) ||
+                       (x > gridSize - 10 && y < margin + 8) ||
+                       (x < margin + 8 && y > gridSize - 10);
+      if (inMarker) continue;
+      if (pseudoRandom()) { ctx.fillStyle = '#1c3d2e'; ctx.fillRect(x * cellSize, y * cellSize, cellSize - 1, cellSize - 1); }
+    }
+  }
+
+  const cx = size / 2, cy = size / 2, lr = 22;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.roundRect(cx - lr, cy - lr, lr * 2, lr * 2, 6); ctx.fill();
+  ctx.fillStyle = '#c8a84b';
+  ctx.beginPath(); ctx.roundRect(cx - lr + 6, cy - lr + 6, lr * 2 - 12, lr * 2 - 12, 4); ctx.fill();
+  ctx.fillStyle = '#1c3d2e';
+  ctx.font = 'bold 16px DM Sans, sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('TS', cx, cy + 1);
+}
+
+(function init() {
+  const fac = localStorage.getItem(FAC_KEY);
+  if (fac) document.getElementById('facility-name').value = fac;
+})();
+</script>
+
+</body>
+</html>
