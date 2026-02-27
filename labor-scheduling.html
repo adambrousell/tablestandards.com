@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Labor &amp; Scheduling Optimization — TableStandards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green:   #1c3d2e;
+  --green2:  #2a5940;
+  --green3:  #3d7a59;
+  --green4:  #1a3328;
+  --gold:    #c8a84b;
+  --gold-glow: rgba(200, 168, 75, 0.15);
+  --gold-soft: rgba(200, 168, 75, 0.08);
+  --cream:   #f5f0e8;
+  --cream2:  #ede8dc;
+  --warm:    #d4c9b0;
+  --text:    #1a2418;
+  --mid:     #4a6355;
+  --light:   #8aab98;
+  --surface: #ffffff;
+  --surface-raised: #faf8f4;
+  --border:  #ddd6c8;
+  --danger:  #c44b4b;
+  --orange:  #c47a2e;
+  --radius: 6px;
+  --shadow: 0 2px 12px rgba(28,61,46,0.08);
+  --shadow-lg: 0 8px 32px rgba(28,61,46,0.12);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--cream);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Header ── */
+.header {
+  background: rgba(28, 61, 46, 0.97);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(200, 168, 75, 0.2);
+  padding: 14px 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.logo-mark {
+  width: 38px; height: 38px;
+  background: var(--gold);
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Serif Display', serif;
+  font-size: 15px; color: var(--green);
+  letter-spacing: -0.5px; flex-shrink: 0;
+}
+
+.header-text h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 17px; font-weight: 400; color: #fff;
+  letter-spacing: 0.01em; line-height: 1.2;
+}
+.header-text h1 span { color: var(--gold); }
+.header-text .header-sub {
+  font-size: 11px; color: rgba(255,255,255,0.5);
+  font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase;
+}
+
+.header-nav {
+  margin-left: auto;
+  display: flex; gap: 6px;
+}
+.header-nav a {
+  color: rgba(255,255,255,0.6); font-size: 12px; font-weight: 500;
+  text-decoration: none; padding: 6px 12px; border-radius: 3px;
+  transition: all 0.2s; letter-spacing: 0.02em;
+}
+.header-nav a:hover { color: #fff; background: rgba(255,255,255,0.08); }
+.header-nav a.active { color: var(--gold); background: rgba(200,168,75,0.1); }
+
+/* ── Hero ── */
+.hero {
+  background: var(--green);
+  position: relative;
+  overflow: hidden;
+  padding: 80px 20px 70px;
+}
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 70% 40%, rgba(200,168,75,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 80% at 20% 80%, rgba(61,122,89,0.15) 0%, transparent 60%);
+}
+.hero::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(200,168,75,0.3), transparent);
+}
+.hero-inner {
+  max-width: 960px; margin: 0 auto;
+  position: relative; z-index: 1;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(200,168,75,0.1); border: 1px solid rgba(200,168,75,0.2);
+  border-radius: 3px; padding: 6px 14px; margin-bottom: 20px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--gold);
+}
+.hero-badge-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--gold);
+  animation: pulse 2s ease infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.hero h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 40px; font-weight: 400; color: #fff;
+  line-height: 1.15; margin-bottom: 18px;
+}
+.hero h2 em {
+  font-style: italic; color: var(--gold);
+}
+.hero-desc {
+  font-size: 16px; color: rgba(255,255,255,0.65);
+  line-height: 1.65; margin-bottom: 32px; max-width: 440px;
+}
+.hero-cta {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: var(--gold); color: var(--green);
+  padding: 14px 28px; border-radius: 3px;
+  font-family: inherit; font-size: 14px; font-weight: 600;
+  text-decoration: none; letter-spacing: 0.03em;
+  transition: all 0.2s; border: none; cursor: pointer;
+}
+.hero-cta:hover { opacity: 0.9; transform: translateY(-1px); }
+.hero-cta svg { width: 16px; height: 16px; }
+
+/* Hero R Studio Preview */
+.hero-terminal {
+  background: #0d1b14;
+  border: 1px solid rgba(200,168,75,0.15);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.terminal-bar {
+  background: #142a1e;
+  padding: 10px 16px;
+  display: flex; align-items: center; gap: 8px;
+  border-bottom: 1px solid rgba(200,168,75,0.1);
+}
+.terminal-dot { width: 8px; height: 8px; border-radius: 50%; }
+.terminal-dot:nth-child(1) { background: #c44b4b; }
+.terminal-dot:nth-child(2) { background: #c8a84b; }
+.terminal-dot:nth-child(3) { background: #3d7a59; }
+.terminal-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: rgba(255,255,255,0.35);
+  margin-left: 8px;
+}
+.terminal-body {
+  padding: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; line-height: 1.8;
+  color: rgba(255,255,255,0.7);
+  overflow: hidden;
+}
+.r-comment { color: rgba(138,171,152,0.5); }
+.r-fn { color: var(--gold); }
+.r-str { color: #7ec699; }
+.r-op { color: rgba(255,255,255,0.4); }
+.r-num { color: #f0a968; }
+.r-pipe { color: var(--gold); opacity: 0.7; }
+.r-prompt { color: rgba(200,168,75,0.5); user-select: none; }
+
+/* ── Section Styling ── */
+.section {
+  max-width: 960px; margin: 0 auto;
+  padding: 60px 20px;
+}
+
+.section-eyebrow {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.15em; color: var(--gold); margin-bottom: 12px;
+}
+.section-eyebrow-line { width: 24px; height: 1.5px; background: var(--gold); }
+
+.section-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 30px; font-weight: 400; color: var(--green);
+  line-height: 1.2; margin-bottom: 12px;
+}
+
+.section-desc {
+  font-size: 15px; color: var(--mid); line-height: 1.65;
+  max-width: 600px; margin-bottom: 40px;
+}
+
+/* ── Workflow Steps ── */
+.workflow-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+}
+
+.workflow-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  position: relative;
+  transition: all 0.25s;
+}
+.workflow-card:hover {
+  border-color: var(--gold);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+.workflow-card::before {
+  content: ''; position: absolute; top: 0; left: 0;
+  width: 100%; height: 3px; background: var(--gold);
+  border-radius: var(--radius) var(--radius) 0 0;
+  opacity: 0; transition: opacity 0.25s;
+}
+.workflow-card:hover::before { opacity: 1; }
+
+.wf-num {
+  font-family: 'DM Serif Display', serif;
+  font-size: 32px; color: var(--gold); opacity: 0.3;
+  line-height: 1; margin-bottom: 16px;
+}
+.wf-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 18px; font-weight: 400; color: var(--green);
+  margin-bottom: 10px;
+}
+.wf-text {
+  font-size: 13.5px; color: var(--mid); line-height: 1.6;
+}
+
+/* ── Capabilities Grid ── */
+.cap-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+}
+
+.cap-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  display: flex; gap: 16px;
+  transition: all 0.2s;
+}
+.cap-card:hover { border-color: var(--warm); }
+
+.cap-icon {
+  width: 44px; height: 44px; flex-shrink: 0;
+  background: var(--gold-glow);
+  border: 1px solid rgba(200,168,75,0.2);
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+}
+.cap-title {
+  font-size: 14px; font-weight: 600; color: var(--green);
+  margin-bottom: 4px;
+}
+.cap-text {
+  font-size: 12.5px; color: var(--mid); line-height: 1.55;
+}
+
+/* ── R Output Demo Section ── */
+.demo-section {
+  background: var(--green);
+  padding: 60px 20px;
+  position: relative;
+}
+.demo-section::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse 60% 80% at 50% 0%, rgba(200,168,75,0.04) 0%, transparent 70%);
+}
+.demo-inner {
+  max-width: 960px; margin: 0 auto; position: relative; z-index: 1;
+}
+
+.demo-header {
+  text-align: center; margin-bottom: 40px;
+}
+.demo-header .section-eyebrow { justify-content: center; }
+.demo-header .section-title { color: #fff; }
+.demo-header .section-desc { color: rgba(255,255,255,0.55); margin: 12px auto 0; }
+
+.demo-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+}
+
+.demo-card {
+  background: #0d1b14;
+  border: 1px solid rgba(200,168,75,0.12);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.demo-card-bar {
+  padding: 10px 16px;
+  background: #142a1e;
+  border-bottom: 1px solid rgba(200,168,75,0.08);
+  display: flex; align-items: center; gap: 8px;
+}
+.demo-card-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: rgba(255,255,255,0.4);
+}
+.demo-card-body {
+  padding: 20px;
+}
+
+/* Chart Simulations */
+.bar-chart { display: flex; flex-direction: column; gap: 10px; }
+.bar-row { display: flex; align-items: center; gap: 10px; }
+.bar-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: rgba(255,255,255,0.45);
+  min-width: 60px; text-align: right;
+}
+.bar-track { flex: 1; height: 20px; background: rgba(255,255,255,0.04); border-radius: 2px; overflow: hidden; position: relative; }
+.bar-fill { height: 100%; border-radius: 2px; transition: width 1s ease; }
+.bar-fill-actual { background: var(--gold); }
+.bar-fill-optimal { background: var(--green3); }
+.bar-fill-over { background: var(--danger); opacity: 0.7; }
+.bar-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: rgba(255,255,255,0.5);
+  min-width: 36px;
+}
+
+.bar-legend {
+  display: flex; gap: 16px; margin-top: 14px; padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+.legend-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; color: rgba(255,255,255,0.35);
+}
+
+/* Heatmap */
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: 50px repeat(7, 1fr);
+  gap: 3px;
+}
+.heatmap-header {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; color: rgba(255,255,255,0.35);
+  text-align: center; padding: 4px 0;
+}
+.heatmap-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; color: rgba(255,255,255,0.35);
+  text-align: right; padding: 6px 6px 6px 0;
+  display: flex; align-items: center; justify-content: flex-end;
+}
+.heatmap-cell {
+  aspect-ratio: 1.4;
+  border-radius: 2px;
+  transition: all 0.3s;
+  cursor: default;
+  position: relative;
+}
+.heatmap-cell:hover { transform: scale(1.1); z-index: 1; }
+
+.heat-0 { background: rgba(42,89,64,0.15); }
+.heat-1 { background: rgba(42,89,64,0.35); }
+.heat-2 { background: rgba(61,122,89,0.5); }
+.heat-3 { background: rgba(200,168,75,0.4); }
+.heat-4 { background: rgba(200,168,75,0.6); }
+.heat-5 { background: rgba(196,75,75,0.5); }
+.heat-6 { background: rgba(196,75,75,0.7); }
+
+.heatmap-scale {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 12px; justify-content: center;
+}
+.heatmap-scale span {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; color: rgba(255,255,255,0.3);
+}
+.scale-block { width: 14px; height: 10px; border-radius: 1px; }
+
+/* KPI Readout */
+.kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.kpi-item {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 4px; padding: 14px;
+}
+.kpi-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; color: rgba(255,255,255,0.35);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+.kpi-val {
+  font-family: 'DM Serif Display', serif;
+  font-size: 24px; color: var(--gold);
+}
+.kpi-val .kpi-unit {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px; color: rgba(255,255,255,0.35);
+}
+.kpi-delta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; margin-top: 4px;
+}
+.kpi-delta.positive { color: var(--green3); }
+.kpi-delta.negative { color: var(--danger); }
+
+/* Console output */
+.console-output {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px; line-height: 1.9;
+  color: rgba(255,255,255,0.6);
+}
+.console-output .r-prompt { color: rgba(200,168,75,0.5); }
+
+/* ── ROI Section ── */
+.roi-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+}
+
+.roi-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px 20px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s;
+}
+.roi-card:hover {
+  border-color: var(--gold);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+.roi-card::before {
+  content: ''; position: absolute; top: 0; left: 0;
+  width: 100%; height: 3px; background: var(--gold);
+}
+.roi-value {
+  font-family: 'DM Serif Display', serif;
+  font-size: 34px; color: var(--green);
+  margin-bottom: 4px;
+}
+.roi-value span { color: var(--gold); }
+.roi-label {
+  font-size: 12px; color: var(--mid); font-weight: 500;
+  line-height: 1.4;
+}
+
+/* ── CTA Section ── */
+.cta-section {
+  background: var(--green);
+  padding: 60px 20px;
+  text-align: center;
+  position: relative;
+}
+.cta-section::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(200,168,75,0.3), transparent);
+}
+.cta-inner { max-width: 540px; margin: 0 auto; position: relative; z-index: 1; }
+.cta-inner h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 28px; font-weight: 400; color: #fff;
+  margin-bottom: 12px;
+}
+.cta-inner h2 em { font-style: italic; color: var(--gold); }
+.cta-inner p {
+  font-size: 15px; color: rgba(255,255,255,0.55);
+  line-height: 1.6; margin-bottom: 32px;
+}
+.cta-btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: var(--gold); color: var(--green);
+  padding: 15px 32px; border-radius: 3px;
+  font-family: inherit; font-size: 15px; font-weight: 600;
+  text-decoration: none; letter-spacing: 0.03em;
+  transition: all 0.2s; border: none; cursor: pointer;
+}
+.cta-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+/* ── Footer ── */
+.footer {
+  max-width: 960px; margin: 0 auto; padding: 28px 20px;
+  text-align: center; border-top: 1px solid var(--border);
+}
+.footer-brand {
+  font-family: 'DM Serif Display', serif;
+  font-size: 14px; color: var(--green);
+}
+.footer-brand span { color: var(--gold); }
+.footer p { font-size: 11px; color: var(--light); margin-top: 4px; }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .hero-inner { grid-template-columns: 1fr; gap: 40px; }
+  .hero h2 { font-size: 30px; }
+  .hero-terminal { max-width: 100%; }
+  .workflow-grid { grid-template-columns: 1fr; }
+  .cap-grid { grid-template-columns: 1fr; }
+  .demo-grid { grid-template-columns: 1fr; }
+  .roi-grid { grid-template-columns: 1fr 1fr; }
+  .header-nav { display: none; }
+  .section-title { font-size: 24px; }
+}
+
+@media (max-width: 480px) {
+  .roi-grid { grid-template-columns: 1fr; }
+  .hero { padding: 50px 20px 40px; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in { animation: fadeUp 0.6s ease both; }
+.fade-in-d1 { animation-delay: 0.1s; }
+.fade-in-d2 { animation-delay: 0.2s; }
+.fade-in-d3 { animation-delay: 0.3s; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-inner">
+    <div class="logo-mark">TS</div>
+    <div class="header-text">
+      <h1>Table<span>Standards</span></h1>
+      <div class="header-sub">Data-Driven Restaurant Operations</div>
+    </div>
+    <nav class="header-nav">
+      <a href="#">Food Waste</a>
+      <a href="#" class="active">Labor</a>
+      <a href="#">Menu Analytics</a>
+      <a href="#">Contact</a>
+    </nav>
+  </div>
+</div>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="fade-in">
+      <div class="hero-badge">
+        <div class="hero-badge-dot"></div>
+        R Studio Analytics
+      </div>
+      <h2>Labor &amp; Scheduling <em>Optimization</em></h2>
+      <p class="hero-desc">Statistical modeling and predictive analytics powered by R — turning your POS data, covers, and labor hours into precise staffing recommendations that cut costs without sacrificing service.</p>
+      <a href="#demo" class="hero-cta">
+        See the Analysis
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+    </div>
+    <div class="hero-terminal fade-in fade-in-d2">
+      <div class="terminal-bar">
+        <div class="terminal-dot"></div>
+        <div class="terminal-dot"></div>
+        <div class="terminal-dot"></div>
+        <span class="terminal-title">labor_optimization.R — RStudio</span>
+      </div>
+      <div class="terminal-body">
+        <div><span class="r-comment"># ── TableStandards Labor Model ──</span></div>
+        <div><span class="r-prompt">&gt; </span><span class="r-fn">library</span>(tidyverse)</div>
+        <div><span class="r-prompt">&gt; </span><span class="r-fn">library</span>(forecast)</div>
+        <div><span class="r-prompt">&gt; </span><span class="r-fn">library</span>(lubridate)</div>
+        <div>&nbsp;</div>
+        <div><span class="r-prompt">&gt; </span>covers <span class="r-op">&lt;-</span> pos_data <span class="r-pipe">%&gt;%</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="r-fn">group_by</span>(day_of_week, hour) <span class="r-pipe">%&gt;%</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="r-fn">summarise</span>(</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;avg_covers <span class="r-op">=</span> <span class="r-fn">mean</span>(covers),</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;p90_covers <span class="r-op">=</span> <span class="r-fn">quantile</span>(covers, <span class="r-num">0.9</span>)</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;)</div>
+        <div>&nbsp;</div>
+        <div><span class="r-prompt">&gt; </span>optimal_staff <span class="r-op">&lt;-</span> <span class="r-fn">predict_staffing</span>(</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;covers, labor_model,</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;target_cplh <span class="r-op">=</span> <span class="r-num">22</span>,</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;service_level <span class="r-op">=</span> <span class="r-str">"full"</span></div>
+        <div>&nbsp;&nbsp;)</div>
+        <div>&nbsp;</div>
+        <div><span class="r-comment"># Projected weekly savings: $1,840</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- How It Works -->
+<div class="section">
+  <div class="section-eyebrow"><div class="section-eyebrow-line"></div>How It Works</div>
+  <div class="section-title">From Raw Data to Optimized Schedules</div>
+  <div class="section-desc">We connect directly to your POS and scheduling systems, run the numbers in R Studio, and deliver actionable staffing models — not just reports.</div>
+
+  <div class="workflow-grid">
+    <div class="workflow-card fade-in">
+      <div class="wf-num">01</div>
+      <div class="wf-title">Data Ingestion</div>
+      <div class="wf-text">We pull historical POS data, labor schedules, covers, revenue by daypart, and event calendars. All data is cleaned and normalized in R for statistical consistency.</div>
+    </div>
+    <div class="workflow-card fade-in fade-in-d1">
+      <div class="wf-num">02</div>
+      <div class="wf-title">Statistical Modeling</div>
+      <div class="wf-text">R Studio forecasts demand by hour and station using time-series analysis, seasonal decomposition, and regression models tuned to your specific operation.</div>
+    </div>
+    <div class="workflow-card fade-in fade-in-d2">
+      <div class="wf-num">03</div>
+      <div class="wf-title">Schedule Output</div>
+      <div class="wf-text">The model generates optimal staffing grids with labor cost projections, identifies overstaffed dayparts, and flags scheduling gaps before they impact service.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Capabilities -->
+<div class="section" style="padding-top: 0;">
+  <div class="section-eyebrow"><div class="section-eyebrow-line"></div>Capabilities</div>
+  <div class="section-title">What the Model Delivers</div>
+  <div class="section-desc">Every output is built in R and reproducible — no black boxes, no guesswork.</div>
+
+  <div class="cap-grid">
+    <div class="cap-card">
+      <div class="cap-icon">📈</div>
+      <div>
+        <div class="cap-title">Demand Forecasting</div>
+        <div class="cap-text">Predict covers per hour by day of week using ARIMA and STL decomposition, accounting for holidays, events, and seasonal trends.</div>
+      </div>
+    </div>
+    <div class="cap-card">
+      <div class="cap-icon">⏱️</div>
+      <div>
+        <div class="cap-title">Covers-per-Labor-Hour</div>
+        <div class="cap-text">Calculate and benchmark CPLH by station and daypart. Identify where labor dollars are being wasted versus where you're understaffed.</div>
+      </div>
+    </div>
+    <div class="cap-card">
+      <div class="cap-icon">🔥</div>
+      <div>
+        <div class="cap-title">Staffing Heatmaps</div>
+        <div class="cap-text">Visual labor demand heatmaps generated in ggplot2 — showing exactly when you need bodies and when you're burning payroll.</div>
+      </div>
+    </div>
+    <div class="cap-card">
+      <div class="cap-icon">💰</div>
+      <div>
+        <div class="cap-title">Cost Scenario Modeling</div>
+        <div class="cap-text">Run what-if scenarios: wage increases, reduced hours, cross-training impacts. See projected P&L effects before making changes.</div>
+      </div>
+    </div>
+    <div class="cap-card">
+      <div class="cap-icon">🎯</div>
+      <div>
+        <div class="cap-title">Overtime & Compliance</div>
+        <div class="cap-text">Flag schedules that trigger overtime thresholds or violate local labor regulations before they hit payroll.</div>
+      </div>
+    </div>
+    <div class="cap-card">
+      <div class="cap-icon">📊</div>
+      <div>
+        <div class="cap-title">Weekly Variance Reports</div>
+        <div class="cap-text">Automated R Markdown reports comparing scheduled vs. actual labor, with variance analysis and rolling trend lines.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Demo Outputs -->
+<div class="demo-section" id="demo">
+  <div class="demo-inner">
+    <div class="demo-header">
+      <div class="section-eyebrow"><div class="section-eyebrow-line"></div>Sample Outputs</div>
+      <div class="section-title">What Your Dashboard Looks Like</div>
+      <div class="section-desc">Real R Studio output formats — these are generated from your data weekly and delivered as interactive HTML reports.</div>
+    </div>
+
+    <div class="demo-grid">
+      <!-- Staffing Heatmap -->
+      <div class="demo-card">
+        <div class="demo-card-bar">
+          <div class="terminal-dot" style="background:#3d7a59"></div>
+          <span class="demo-card-title">staffing_heatmap.R — Labor Demand</span>
+        </div>
+        <div class="demo-card-body">
+          <div class="heatmap-grid" id="heatmap"></div>
+          <div class="heatmap-scale">
+            <span>Low</span>
+            <div class="scale-block heat-0"></div>
+            <div class="scale-block heat-1"></div>
+            <div class="scale-block heat-2"></div>
+            <div class="scale-block heat-3"></div>
+            <div class="scale-block heat-4"></div>
+            <div class="scale-block heat-5"></div>
+            <div class="scale-block heat-6"></div>
+            <span>High</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bar Chart: Actual vs Optimal -->
+      <div class="demo-card">
+        <div class="demo-card-bar">
+          <div class="terminal-dot" style="background:#c8a84b"></div>
+          <span class="demo-card-title">labor_variance.R — Fri Staffing</span>
+        </div>
+        <div class="demo-card-body">
+          <div class="bar-chart">
+            <div class="bar-row">
+              <div class="bar-label">11 AM</div>
+              <div class="bar-track"><div class="bar-fill bar-fill-optimal" style="width:35%"></div></div>
+              <div class="bar-val">4</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">12 PM</div>
+              <div class="bar-track">
+                <div class="bar-fill bar-fill-actual" style="width:72%"></div>
+              </div>
+              <div class="bar-val">8</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">5 PM</div>
+              <div class="bar-track"><div class="bar-fill bar-fill-actual" style="width:55%"></div></div>
+              <div class="bar-val">6</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">7 PM</div>
+              <div class="bar-track"><div class="bar-fill bar-fill-over" style="width:90%"></div></div>
+              <div class="bar-val">10</div>
+            </div>
+            <div class="bar-row">
+              <div class="bar-label">9 PM</div>
+              <div class="bar-track"><div class="bar-fill bar-fill-optimal" style="width:50%"></div></div>
+              <div class="bar-val">5</div>
+            </div>
+          </div>
+          <div class="bar-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--green3)"></div><span class="legend-text">Optimal</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--gold)"></div><span class="legend-text">Actual</span></div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--danger);opacity:0.7"></div><span class="legend-text">Overstaffed</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="demo-card">
+        <div class="demo-card-bar">
+          <div class="terminal-dot" style="background:#c8a84b"></div>
+          <span class="demo-card-title">weekly_kpis.R — Performance</span>
+        </div>
+        <div class="demo-card-body">
+          <div class="kpi-grid">
+            <div class="kpi-item">
+              <div class="kpi-label">CPLH (BOH)</div>
+              <div class="kpi-val">18.4</div>
+              <div class="kpi-delta positive">▲ 2.1 vs last wk</div>
+            </div>
+            <div class="kpi-item">
+              <div class="kpi-label">CPLH (FOH)</div>
+              <div class="kpi-val">24.6</div>
+              <div class="kpi-delta positive">▲ 1.3 vs last wk</div>
+            </div>
+            <div class="kpi-item">
+              <div class="kpi-label">Labor %</div>
+              <div class="kpi-val">28.2<span class="kpi-unit">%</span></div>
+              <div class="kpi-delta positive">▼ 1.8pp</div>
+            </div>
+            <div class="kpi-item">
+              <div class="kpi-label">OT Hours</div>
+              <div class="kpi-val">6.5<span class="kpi-unit">hrs</span></div>
+              <div class="kpi-delta positive">▼ 4.2 hrs</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Console Output -->
+      <div class="demo-card">
+        <div class="demo-card-bar">
+          <div class="terminal-dot" style="background:#3d7a59"></div>
+          <span class="demo-card-title">Console — Model Summary</span>
+        </div>
+        <div class="demo-card-body">
+          <div class="console-output">
+            <div><span class="r-prompt">&gt; </span><span class="r-fn">summary</span>(labor_model)</div>
+            <div>&nbsp;</div>
+            <div><span class="r-comment"># Weekly Labor Optimization Report</span></div>
+            <div><span class="r-comment"># Period: Jan 20 – Jan 26, 2026</span></div>
+            <div>&nbsp;</div>
+            <div>Scheduled Hours:&nbsp; <span class="r-num">412.5</span></div>
+            <div>Optimal Hours:&nbsp;&nbsp;&nbsp; <span class="r-num">378.0</span></div>
+            <div>Variance:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <span style="color:var(--danger)">+34.5 hrs</span></div>
+            <div>Est. Savings:&nbsp;&nbsp;&nbsp;&nbsp; <span style="color:var(--gold)">$1,242/wk</span></div>
+            <div>&nbsp;</div>
+            <div><span class="r-comment"># Top overstaffed dayparts:</span></div>
+            <div>&nbsp; Tue 2-4PM&nbsp; <span style="color:var(--danger)">+2.0 staff</span></div>
+            <div>&nbsp; Wed 3-5PM&nbsp; <span style="color:var(--danger)">+1.5 staff</span></div>
+            <div>&nbsp; Sun 11-1PM <span style="color:var(--danger)">+1.0 staff</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROI Section -->
+<div class="section">
+  <div class="section-eyebrow"><div class="section-eyebrow-line"></div>Typical Results</div>
+  <div class="section-title">What Operators See in 90 Days</div>
+  <div class="section-desc">Based on engagements with full-service restaurants running 150–400 covers per day.</div>
+
+  <div class="roi-grid">
+    <div class="roi-card">
+      <div class="roi-value"><span>8</span>–12%</div>
+      <div class="roi-label">Reduction in labor cost as % of revenue</div>
+    </div>
+    <div class="roi-card">
+      <div class="roi-value"><span>30</span>+hrs</div>
+      <div class="roi-label">Weekly hours eliminated from overstaffing</div>
+    </div>
+    <div class="roi-card">
+      <div class="roi-value"><span>60</span>%</div>
+      <div class="roi-label">Reduction in overtime hours</div>
+    </div>
+    <div class="roi-card">
+      <div class="roi-value"><span>3</span>wks</div>
+      <div class="roi-label">Time to first actionable staffing model</div>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="cta-section">
+  <div class="cta-inner">
+    <h2>Stop Guessing, <em>Start Modeling</em></h2>
+    <p>Send us four weeks of POS data and your current schedule. We'll run the analysis and show you exactly where you're leaving money on the table — no commitment required.</p>
+    <a href="mailto:hello@tablestandards.com?subject=Labor%20Optimization%20Inquiry" class="cta-btn">
+      Request a Free Analysis
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </a>
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <div class="footer-brand">Table<span>Standards</span></div>
+  <p>Data-Driven Restaurant Operations</p>
+</div>
+
+<script>
+// Generate heatmap
+(function buildHeatmap() {
+  const grid = document.getElementById('heatmap');
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const hours = ['11a','12p','1p','2p','3p','5p','6p','7p','8p','9p'];
+
+  // Simulated demand data (0-6 intensity)
+  const data = [
+    [1,2,2,1,0,2,3,4,3,1], // Mon
+    [1,2,2,1,0,2,3,3,3,1], // Tue
+    [1,3,2,1,0,2,3,4,3,1], // Wed
+    [2,3,3,1,0,3,4,5,4,2], // Thu
+    [2,4,3,2,1,4,5,6,5,3], // Fri
+    [3,4,4,2,1,5,6,6,5,3], // Sat
+    [3,4,3,2,1,3,4,4,3,1], // Sun
+  ];
+
+  // Header row
+  grid.innerHTML = '<div></div>';
+  hours.forEach(h => {
+    grid.innerHTML += `<div class="heatmap-header">${h}</div>`;
+  });
+
+  // Data rows
+  days.forEach((day, di) => {
+    grid.innerHTML += `<div class="heatmap-label">${day}</div>`;
+    data[di].forEach(val => {
+      grid.innerHTML += `<div class="heatmap-cell heat-${val}"></div>`;
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
