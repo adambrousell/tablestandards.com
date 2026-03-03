@@ -367,7 +367,7 @@ body {
 /* Heatmap */
 .heatmap-grid {
   display: grid;
-  grid-template-columns: 50px repeat(7, 1fr);
+  grid-template-columns: 50px repeat(10, 1fr);
   gap: 3px;
 }
 .heatmap-header {
@@ -877,13 +877,13 @@ body {
 </div>
 
 <script>
-// Generate heatmap
+// Generate heatmap — days on the left (rows), hours across the top (columns)
 (function buildHeatmap() {
   const grid = document.getElementById('heatmap');
   const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   const hours = ['11a','12p','1p','2p','3p','5p','6p','7p','8p','9p'];
 
-  // Simulated demand data (0-6 intensity)
+  // Demand data: each row = one day, each column = one hour slot
   const data = [
     [1,2,2,1,0,2,3,4,3,1], // Mon
     [1,2,2,1,0,2,3,3,3,1], // Tue
@@ -894,19 +894,21 @@ body {
     [3,4,3,2,1,3,4,4,3,1], // Sun
   ];
 
-  // Header row
-  grid.innerHTML = '<div></div>';
+  // Build header row: empty corner cell + hour labels
+  let html = '<div></div>';
   hours.forEach(h => {
-    grid.innerHTML += `<div class="heatmap-header">${h}</div>`;
+    html += '<div class="heatmap-header">' + h + '</div>';
   });
 
-  // Data rows
+  // Build data rows: day label + heat cells
   days.forEach((day, di) => {
-    grid.innerHTML += `<div class="heatmap-label">${day}</div>`;
+    html += '<div class="heatmap-label">' + day + '</div>';
     data[di].forEach(val => {
-      grid.innerHTML += `<div class="heatmap-cell heat-${val}"></div>`;
+      html += '<div class="heatmap-cell heat-' + val + '"></div>';
     });
   });
+
+  grid.innerHTML = html;
 })();
 </script>
 
