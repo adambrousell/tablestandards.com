@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Employee Scheduling Optimization | Adam Brousell</title>
+<meta property="og:title" content="Employee Scheduling Optimization Case Study" />
+<meta property="og:locale" content="en_US" />
+<link rel="canonical" href="https://adamb.info/scheduling-optimization-case-study.html" />
+    <link rel="stylesheet" href="/assets/css/style.css?v=1dce484c314800e017298530e475b18e77ddd5a7">
+    <style>
+      .container-lg.px-3.my-5.markdown-body { max-width: 100% !important; padding: 0 !important; margin: 0 !important; background: #000 !important; }
+      .container-lg.px-3.my-5.markdown-body > h1:first-child { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <div class="container-lg px-3 my-5 markdown-body">
+      <h1><a href="https://adamb.info/">adambrousell</a></h1>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Employee Scheduling Optimization &mdash; Case Study</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.7; color: #e0e0e0; background: #000; overflow-x: hidden; }
+.mesh-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(at 20% 30%, rgba(59,130,246,0.12) 0px, transparent 50%), radial-gradient(at 80% 0%, rgba(96,165,250,0.08) 0px, transparent 50%), radial-gradient(at 0% 60%, rgba(37,99,235,0.1) 0px, transparent 50%); z-index: 0; }
+.grid-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px); background-size: 50px 50px; z-index: 1; pointer-events: none; }
+.page { position: relative; z-index: 10; max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem; }
+.back-nav { position: fixed; top: 2rem; left: 50%; transform: translateX(-50%); background: rgba(17,24,39,0.8); backdrop-filter: blur(20px); padding: .5rem 1.5rem; border-radius: 50px; border: 1px solid rgba(255,255,255,0.1); z-index: 1000; box-shadow: 0 10px 40px rgba(0,0,0,0.3); display: flex; gap: 2rem; align-items: center; }
+.back-nav a { color: #9ca3af; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: color 0.3s; }
+.back-nav a:hover { color: #fff; }
+.case-hero { padding: 8rem 0 3rem; text-align: center; }
+.case-badge { display: inline-block; padding: 0.25rem 0.75rem; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3); border-radius: 50px; color: #93c5fd; font-size: 0.8rem; font-weight: 600; letter-spacing: 1px; margin-bottom: 1.5rem; }
+.case-hero h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 900; margin-bottom: 1rem; background: linear-gradient(135deg, #ffffff 0%, #93c5fd 50%, #60a5fa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.1; letter-spacing: -1px; }
+.case-hero p { font-size: 1.15rem; color: #9ca3af; max-width: 700px; margin: 0 auto; }
+.case-section { margin-bottom: 3rem; }
+.case-section h2 { font-size: 1.75rem; font-weight: 800; margin-bottom: 1rem; background: linear-gradient(135deg, #ffffff 0%, #93c5fd 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.case-section h3 { font-size: 1.25rem; font-weight: 700; color: #93c5fd; margin: 1.5rem 0 0.75rem; }
+.case-section p { color: #9ca3af; margin-bottom: 1rem; }
+.case-section a { color: #60a5fa; text-decoration: none; font-weight: 600; }
+.case-section a:hover { color: #93c5fd; }
+.metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.metric-card { background: rgba(17,24,39,0.5); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 1.25rem; text-align: center; transition: all 0.3s; }
+.metric-card:hover { transform: translateY(-4px); border-color: rgba(59,130,246,0.3); box-shadow: 0 12px 40px rgba(59,130,246,0.15); }
+.metric-value { font-size: 2rem; font-weight: 900; background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.metric-label { color: #9ca3af; font-size: 0.85rem; margin-top: 0.25rem; }
+.finding-card { background: rgba(17,24,39,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 1.5rem; margin: 1rem 0; transition: all 0.3s; }
+.finding-card:hover { border-color: rgba(59,130,246,0.3); box-shadow: 0 12px 40px rgba(59,130,246,0.1); }
+.finding-card h4 { color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+.finding-card p { color: #9ca3af; }
+.data-table { width: 100%; border-collapse: collapse; margin: 1rem 0; background: rgba(17,24,39,0.5); border-radius: 12px; overflow: hidden; }
+.data-table th { background: rgba(59,130,246,0.12); color: #93c5fd; padding: 0.75rem 1rem; text-align: left; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; border-bottom: 1px solid rgba(59,130,246,0.2); }
+.data-table td { padding: 0.65rem 1rem; color: #c0c8d4; font-size: 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.data-table tr:hover td { background: rgba(59,130,246,0.05); }
+.rec-box { background: linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(30,64,175,0.12) 100%); border: 1px solid rgba(59,130,246,0.25); border-radius: 16px; padding: 1.75rem; margin: 1.5rem 0; }
+.rec-box h4 { color: #60a5fa; font-weight: 700; margin-bottom: 0.75rem; font-size: 1.1rem; }
+.rec-box ul { list-style: none; padding: 0; }
+.rec-box li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; color: #9ca3af; }
+.rec-box li::before { content: '\2192'; position: absolute; left: 0; color: #3b82f6; font-weight: bold; }
+.tool-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.5rem 0; }
+.tool-tag { padding: 0.25rem 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #9ca3af; font-size: 0.8rem; font-weight: 500; }
+.phase-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin: 1.5rem 0; }
+.phase-card { background: rgba(17,24,39,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 1.5rem; transition: all 0.3s; }
+.phase-card:hover { border-color: rgba(59,130,246,0.3); box-shadow: 0 12px 40px rgba(59,130,246,0.1); }
+.phase-num { font-size: 2.5rem; font-weight: 900; line-height: 1; background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.5rem; }
+.phase-card h4 { color: #fff; font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
+.phase-card p { color: #9ca3af; font-size: 0.9rem; }
+.phase-weeks { color: #60a5fa; font-size: 0.75rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 0.5rem; }
+
+/* Code block */
+.code-block { background: rgba(10,18,30,0.9); border: 1px solid rgba(59,130,246,0.15); border-radius: 12px; padding: 1.25rem; margin: 1.5rem 0; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 0.8rem; line-height: 1.8; overflow-x: auto; }
+.code-comment { color: #4a6fa5; }
+.code-func { color: #60a5fa; }
+.code-string { color: #66bb6a; }
+.code-num { color: #f59e0b; }
+.code-op { color: #9ca3af; }
+
+/* Heatmap visual */
+.heatmap-grid { display: grid; grid-template-columns: 60px repeat(7, 1fr); gap: 2px; margin: 1.5rem 0; }
+.hm-label { display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; color: #9ca3af; font-size: 0.7rem; font-weight: 600; }
+.hm-header { text-align: center; color: #93c5fd; font-size: 0.7rem; font-weight: 700; padding: 4px 0; }
+.hm-cell { border-radius: 4px; height: 28px; transition: all 0.2s; }
+.hm-cell:hover { transform: scale(1.1); z-index: 1; }
+
+.case-footer { padding: 2rem 0; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 4rem; }
+.case-footer p { color: #6b7280; font-size: 0.85rem; }
+.case-footer a { color: #60a5fa; text-decoration: none; }
+.case-footer a:hover { color: #93c5fd; }
+
+@media (max-width: 768px) { .page { padding: 1rem; } .metric-grid { grid-template-columns: repeat(2, 1fr); } .heatmap-grid { font-size: 0.6rem; } }
+</style>
+</head>
+<body>
+<div class="mesh-bg"></div>
+<div class="grid-bg"></div>
+
+<div class="back-nav">
+    <a href="https://adamb.info/">&larr; Portfolio</a>
+    <a href="https://adamb.info/#projects">Projects</a>
+    <a href="https://adamb.info/#contact">Contact</a>
+</div>
+
+<div class="page">
+    <div class="case-hero">
+        <div class="case-badge">CASE STUDY &middot; LABOR OPTIMIZATION</div>
+        <h1>Employee Scheduling Optimization</h1>
+        <p>Using statistical modeling in R to build demand-driven staffing grids from historical POS data &mdash; eliminating gut-feel scheduling, cutting overstaffed hours by 30+/week, and reducing labor cost as a percentage of revenue by 8&ndash;12%.</p>
+        <div class="tool-tags" style="justify-content: center; margin-top: 1.5rem;">
+            <span class="tool-tag">R Studio</span>
+            <span class="tool-tag">tidyverse</span>
+            <span class="tool-tag">forecast (ARIMA)</span>
+            <span class="tool-tag">ggplot2</span>
+            <span class="tool-tag">Excel</span>
+            <span class="tool-tag">POS Integration</span>
+        </div>
+    </div>
+
+    <!-- Introduction -->
+    <div class="case-section">
+        <h2>Introduction</h2>
+        <p>Most restaurant schedules are built the same way they were built ten years ago: the manager opens last week&rsquo;s schedule, makes a few tweaks, and posts it. The result is a staffing plan that reflects habit, not demand. Slow Tuesday dinners get the same headcount as peak Friday nights. Overtime accumulates because no one modeled the threshold. And the P&amp;L tells you what went wrong a month after it happened.</p>
+        <p>This project applies time-series forecasting and regression modeling in R Studio to build staffing grids that match labor to actual demand by hour and station. The model ingests POS transaction data, historical covers, and existing schedules, then outputs an optimized staffing plan with projected cost savings &mdash; before the week starts.</p>
+        <p>The methodology is now deployed as the <a href="https://tablestandards.com/labor-scheduling.html" target="_blank">TableStandards Labor &amp; Scheduling Optimization</a> service for independent restaurant operators.</p>
+    </div>
+
+    <!-- Problems -->
+    <div class="case-section">
+        <h2>Problems Identified</h2>
+        <div class="finding-card">
+            <h4>1. Flat Scheduling on Uneven Demand</h4>
+            <p>A full-service restaurant running 150&ndash;400 covers per day had the same base staffing template across all weekdays. POS data showed Tuesday dinner averaged 165 covers while Friday hit 380 &mdash; yet both had 8 FOH staff scheduled. The model quantified 34.5 excess hours per week from this mismatch alone.</p>
+        </div>
+        <div class="finding-card">
+            <h4>2. No Covers-per-Labor-Hour Benchmark</h4>
+            <p>The operation had no metric for labor efficiency by station or daypart. &ldquo;Was lunch profitable?&rdquo; was answered with a feeling, not a number. Without CPLH benchmarking, there was no way to identify which shifts were burning payroll and which were understaffed enough to hurt service.</p>
+        </div>
+        <div class="finding-card">
+            <h4>3. Reactive Overtime Management</h4>
+            <p>Overtime was discovered on payday, not during scheduling. No one was modeling hours against OT thresholds before the schedule was posted. The result: 10+ overtime hours per week that could have been redistributed with a single schedule adjustment.</p>
+        </div>
+    </div>
+
+    <!-- Methodology -->
+    <div class="case-section">
+        <h2>Methodology</h2>
+        <div class="phase-grid">
+            <div class="phase-card">
+                <div class="phase-num">01</div>
+                <div class="phase-weeks">Data Ingestion</div>
+                <h4>Pull &amp; Clean</h4>
+                <p>Ingest 4&ndash;6 weeks of POS transactions, labor schedules, covers by hour, and revenue by daypart. Clean and normalize in R. Join event calendars and holiday flags for seasonal adjustment.</p>
+            </div>
+            <div class="phase-card">
+                <div class="phase-num">02</div>
+                <div class="phase-weeks">Statistical Modeling</div>
+                <h4>Forecast &amp; Benchmark</h4>
+                <p>Forecast covers per hour using ARIMA and STL seasonal decomposition. Calculate CPLH by station and daypart. Run regression models tuned to the operation&rsquo;s specific demand patterns.</p>
+            </div>
+            <div class="phase-card">
+                <div class="phase-num">03</div>
+                <div class="phase-weeks">Schedule Output</div>
+                <h4>Optimize &amp; Monitor</h4>
+                <p>Generate optimal staffing grids with labor cost projections. Flag OT threshold risks. Deliver weekly variance reports comparing scheduled vs. actual via automated R Markdown.</p>
+            </div>
+        </div>
+
+        <h3>The R Model</h3>
+        <div class="code-block">
+            <span class="code-comment"># &mdash;&mdash; TableStandards Labor Model &mdash;&mdash;</span><br>
+            <span class="code-op">&gt;</span> <span class="code-func">library</span>(tidyverse)<br>
+            <span class="code-op">&gt;</span> <span class="code-func">library</span>(forecast)<br>
+            <span class="code-op">&gt;</span> <span class="code-func">library</span>(lubridate)<br><br>
+            <span class="code-op">&gt;</span> covers <span class="code-op">&lt;-</span> pos_data <span class="code-op">%&gt;%</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-func">group_by</span>(day_of_week, hour) <span class="code-op">%&gt;%</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="code-func">summarise</span>(<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;avg_covers <span class="code-op">=</span> <span class="code-func">mean</span>(covers),<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;p90_covers <span class="code-op">=</span> <span class="code-func">quantile</span>(covers, <span class="code-num">0.9</span>)<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;)<br><br>
+            <span class="code-op">&gt;</span> optimal_staff <span class="code-op">&lt;-</span> <span class="code-func">predict_staffing</span>(<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;covers, labor_model,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;target_cplh <span class="code-op">=</span> <span class="code-num">22</span>,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;service_level <span class="code-op">=</span> <span class="code-string">"full"</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;)<br><br>
+            <span class="code-comment"># Projected weekly savings: $1,840</span>
+        </div>
+    </div>
+
+    <!-- Analysis -->
+    <div class="case-section">
+        <h2>Analysis: What the Model Found</h2>
+
+        <h3>Staffing Heatmap &mdash; Overstaffed Dayparts</h3>
+        <p>The model&rsquo;s ggplot2 heatmap immediately surfaced the problem zones. Dark cells = high labor demand justified by covers. Light cells = staff on the clock with insufficient demand to justify. The Tuesday&ndash;Wednesday 2&ndash;5 PM block was the single largest source of wasted labor dollars.</p>
+
+        <!-- SVG heatmap visualization -->
+        <div class="heatmap-grid">
+            <div class="hm-label"></div>
+            <div class="hm-header">Mon</div><div class="hm-header">Tue</div><div class="hm-header">Wed</div><div class="hm-header">Thu</div><div class="hm-header">Fri</div><div class="hm-header">Sat</div><div class="hm-header">Sun</div>
+
+            <div class="hm-label">11 AM</div>
+            <div class="hm-cell" style="background:rgba(59,130,246,0.25);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.2);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.22);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.35);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.5);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.55);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.4);"></div>
+
+            <div class="hm-label">12 PM</div>
+            <div class="hm-cell" style="background:rgba(59,130,246,0.45);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.4);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.42);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.55);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.75);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.8);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.6);"></div>
+
+            <div class="hm-label">2 PM</div>
+            <div class="hm-cell" style="background:rgba(255,152,0,0.2);"></div><div class="hm-cell" style="background:rgba(255,87,34,0.35);border:1px solid rgba(255,87,34,0.5);"></div><div class="hm-cell" style="background:rgba(255,87,34,0.3);border:1px solid rgba(255,87,34,0.4);"></div><div class="hm-cell" style="background:rgba(255,152,0,0.15);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.2);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.35);"></div><div class="hm-cell" style="background:rgba(255,152,0,0.2);"></div>
+
+            <div class="hm-label">4 PM</div>
+            <div class="hm-cell" style="background:rgba(255,152,0,0.15);"></div><div class="hm-cell" style="background:rgba(255,87,34,0.25);border:1px solid rgba(255,87,34,0.35);"></div><div class="hm-cell" style="background:rgba(255,87,34,0.28);border:1px solid rgba(255,87,34,0.4);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.2);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.3);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.4);"></div><div class="hm-cell" style="background:rgba(255,152,0,0.15);"></div>
+
+            <div class="hm-label">6 PM</div>
+            <div class="hm-cell" style="background:rgba(59,130,246,0.5);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.4);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.45);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.6);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.8);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.85);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.55);"></div>
+
+            <div class="hm-label">8 PM</div>
+            <div class="hm-cell" style="background:rgba(59,130,246,0.4);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.35);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.38);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.55);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.75);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.7);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.45);"></div>
+
+            <div class="hm-label">10 PM</div>
+            <div class="hm-cell" style="background:rgba(59,130,246,0.15);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.12);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.15);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.25);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.4);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.35);"></div><div class="hm-cell" style="background:rgba(59,130,246,0.2);"></div>
+        </div>
+        <p style="font-size:0.8rem;color:#6b7280;text-align:center;">Blue = demand-justified staffing &nbsp;&middot;&nbsp; Orange/red = overstaffed (labor exceeds demand)</p>
+
+        <h3>Model Output &mdash; Weekly Variance</h3>
+        <div class="code-block">
+            <span class="code-comment"># Weekly Labor Optimization Report</span><br>
+            <span class="code-comment"># Period: Jan 20 &ndash; Jan 26, 2026</span><br><br>
+            Scheduled Hours: &nbsp;<span class="code-num">412.5</span><br>
+            Optimal Hours: &nbsp;&nbsp;&nbsp;<span class="code-num">378.0</span><br>
+            Variance: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-string">+34.5 hrs</span><br>
+            Est. Savings: &nbsp;&nbsp;&nbsp;<span class="code-string">$1,242/wk</span><br><br>
+            <span class="code-comment"># Top overstaffed dayparts:</span><br>
+            Tue 2&ndash;4 PM &nbsp;<span class="code-string">+2.0 staff</span><br>
+            Wed 3&ndash;5 PM &nbsp;<span class="code-string">+1.5 staff</span><br>
+            Sun 11&ndash;1 PM <span class="code-string">+1.0 staff</span>
+        </div>
+
+        <h3>CPLH Benchmarking</h3>
+        <table class="data-table">
+            <thead><tr><th>Station</th><th>Before CPLH</th><th>After CPLH</th><th>Change</th><th>Industry Target</th></tr></thead>
+            <tbody>
+                <tr><td>FOH</td><td>20.1</td><td>24.6</td><td style="color:#66bb6a;">+22%</td><td>22&ndash;26</td></tr>
+                <tr><td>BOH</td><td>15.8</td><td>18.4</td><td style="color:#66bb6a;">+16%</td><td>16&ndash;20</td></tr>
+                <tr><td>Bar</td><td>18.5</td><td>22.1</td><td style="color:#66bb6a;">+19%</td><td>20&ndash;25</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Results -->
+    <div class="case-section">
+        <h2>Results</h2>
+        <div class="metric-grid">
+            <div class="metric-card"><div class="metric-value">8&ndash;12%</div><div class="metric-label">Labor Cost Reduction (% of Rev)</div></div>
+            <div class="metric-card"><div class="metric-value">30+</div><div class="metric-label">Weekly Overstaffed Hours Cut</div></div>
+            <div class="metric-card"><div class="metric-value">60%</div><div class="metric-label">Overtime Hours Reduced</div></div>
+            <div class="metric-card"><div class="metric-value">18%</div><div class="metric-label">Labor Efficiency Improvement</div></div>
+        </div>
+    </div>
+
+    <!-- Conclusion -->
+    <div class="case-section">
+        <h2>Conclusion</h2>
+        <div class="finding-card">
+            <h4>Schedule to the forecast, not to last week</h4>
+            <p>The single highest-value output of the model isn&rsquo;t the heatmap or the CPLH benchmark &mdash; it&rsquo;s the weekly staffing grid generated before the schedule is posted. Shifting from reactive (&ldquo;what happened&rdquo;) to predictive (&ldquo;what will happen&rdquo;) scheduling is the behavioral change that delivers the savings.</p>
+        </div>
+        <div class="finding-card">
+            <h4>CPLH is the metric that matters</h4>
+            <p>Labor cost as a percentage of revenue is a lagging indicator. Covers-per-labor-hour is a leading one. When managers can see CPLH by station in real time, they make different cut decisions, different call-in decisions, and different scheduling decisions. The model makes CPLH visible at the daypart level.</p>
+        </div>
+        <div class="finding-card">
+            <h4>Overtime is a scheduling problem, not a payroll problem</h4>
+            <p>Every dollar of overtime was foreseeable at the time the schedule was written. The model flags OT threshold risks before the schedule posts, allowing redistribution across staff before it becomes a payroll surprise.</p>
+        </div>
+    </div>
+
+    <!-- Next Steps -->
+    <div class="case-section">
+        <h2>Next Steps</h2>
+        <div class="rec-box">
+            <h4>This model is available as a service</h4>
+            <ul>
+                <li>The <a href="https://tablestandards.com/labor-scheduling.html" target="_blank">TableStandards Labor &amp; Scheduling Optimization</a> packages this analysis for independent operators</li>
+                <li>Send 4 weeks of POS data and your current schedule &mdash; first actionable model delivered within 3 weeks</li>
+                <li>All models built in R Studio and delivered as reproducible R Markdown reports</li>
+                <li>Weekly automated variance reports comparing scheduled vs. actual labor</li>
+                <li>Cost scenario modeling: wage increases, cross-training impacts, reduced hours &mdash; see P&amp;L effects before making changes</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="case-footer">
+        <p>&larr; <a href="https://adamb.info/#projects">Back to Portfolio</a> &middot; <a href="https://tablestandards.com/labor-scheduling.html" target="_blank">TableStandards Labor Optimization</a> &middot; <a href="mailto:adam.brousell@gmail.com">adam.brousell@gmail.com</a> &middot; &copy; 2026 Adam Brousell</p>
+    </div>
+</div>
+</body>
+</html>
+
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.0/anchor.min.js" integrity="sha256-lZaRhKri35AyJSypXXs4o6OPFTbTmUoltBbDCbdzegg=" crossorigin="anonymous"></script>
+    <script>anchors.add();</script>
+  </body>
+</html>
