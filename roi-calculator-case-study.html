@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Operational ROI Calculator | Adam Brousell</title>
+<meta property="og:title" content="Operational ROI Calculator Case Study" />
+<meta property="og:locale" content="en_US" />
+<link rel="canonical" href="https://adamb.info/roi-calculator-case-study.html" />
+    <link rel="stylesheet" href="/assets/css/style.css?v=1dce484c314800e017298530e475b18e77ddd5a7">
+    <style>
+      .container-lg.px-3.my-5.markdown-body { max-width: 100% !important; padding: 0 !important; margin: 0 !important; background: #000 !important; }
+      .container-lg.px-3.my-5.markdown-body > h1:first-child { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <div class="container-lg px-3 my-5 markdown-body">
+      <h1><a href="https://adamb.info/">adambrousell</a></h1>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Operational ROI Calculator &mdash; Case Study</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.7; color: #e0e0e0; background: #000; overflow-x: hidden; }
+.mesh-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(at 20% 30%, rgba(59,130,246,0.12) 0px, transparent 50%), radial-gradient(at 80% 0%, rgba(96,165,250,0.08) 0px, transparent 50%), radial-gradient(at 0% 60%, rgba(37,99,235,0.1) 0px, transparent 50%); z-index: 0; }
+.grid-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px); background-size: 50px 50px; z-index: 1; pointer-events: none; }
+.page { position: relative; z-index: 10; max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem; }
+.back-nav { position: fixed; top: 2rem; left: 50%; transform: translateX(-50%); background: rgba(17,24,39,0.8); backdrop-filter: blur(20px); padding: .5rem 1.5rem; border-radius: 50px; border: 1px solid rgba(255,255,255,0.1); z-index: 1000; box-shadow: 0 10px 40px rgba(0,0,0,0.3); display: flex; gap: 2rem; align-items: center; }
+.back-nav a { color: #9ca3af; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: color 0.3s; }
+.back-nav a:hover { color: #fff; }
+.case-hero { padding: 8rem 0 3rem; text-align: center; }
+.case-badge { display: inline-block; padding: 0.25rem 0.75rem; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3); border-radius: 50px; color: #93c5fd; font-size: 0.8rem; font-weight: 600; letter-spacing: 1px; margin-bottom: 1.5rem; }
+.case-hero h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 900; margin-bottom: 1rem; background: linear-gradient(135deg, #ffffff 0%, #93c5fd 50%, #60a5fa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.1; letter-spacing: -1px; }
+.case-hero p { font-size: 1.15rem; color: #9ca3af; max-width: 700px; margin: 0 auto; }
+.case-section { margin-bottom: 3rem; }
+.case-section h2 { font-size: 1.75rem; font-weight: 800; margin-bottom: 1rem; background: linear-gradient(135deg, #ffffff 0%, #93c5fd 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.case-section h3 { font-size: 1.25rem; font-weight: 700; color: #93c5fd; margin: 1.5rem 0 0.75rem; }
+.case-section p { color: #9ca3af; margin-bottom: 1rem; }
+.case-section a { color: #60a5fa; text-decoration: none; font-weight: 600; }
+.case-section a:hover { color: #93c5fd; }
+.metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.metric-card { background: rgba(17,24,39,0.5); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 1.25rem; text-align: center; transition: all 0.3s; }
+.metric-card:hover { transform: translateY(-4px); border-color: rgba(59,130,246,0.3); box-shadow: 0 12px 40px rgba(59,130,246,0.15); }
+.metric-value { font-size: 2rem; font-weight: 900; background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.metric-label { color: #9ca3af; font-size: 0.85rem; margin-top: 0.25rem; }
+.finding-card { background: rgba(17,24,39,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 1.5rem; margin: 1rem 0; transition: all 0.3s; }
+.finding-card:hover { border-color: rgba(59,130,246,0.3); box-shadow: 0 12px 40px rgba(59,130,246,0.1); }
+.finding-card h4 { color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+.finding-card p { color: #9ca3af; }
+.rec-box { background: linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(30,64,175,0.12) 100%); border: 1px solid rgba(59,130,246,0.25); border-radius: 16px; padding: 1.75rem; margin: 1.5rem 0; }
+.rec-box h4 { color: #60a5fa; font-weight: 700; margin-bottom: 0.75rem; font-size: 1.1rem; }
+.rec-box ul { list-style: none; padding: 0; }
+.rec-box li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; color: #9ca3af; }
+.rec-box li::before { content: '\2192'; position: absolute; left: 0; color: #3b82f6; font-weight: bold; }
+.tool-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.5rem 0; }
+.tool-tag { padding: 0.25rem 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #9ca3af; font-size: 0.8rem; font-weight: 500; }
+
+/* Code block */
+.code-block { background: rgba(10,18,30,0.9); border: 1px solid rgba(59,130,246,0.15); border-radius: 12px; padding: 1.25rem; margin: 1.5rem 0; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 0.78rem; line-height: 1.8; overflow-x: auto; }
+.code-comment { color: #4a6fa5; }
+.code-func { color: #60a5fa; }
+.code-string { color: #66bb6a; }
+.code-num { color: #f59e0b; }
+.code-op { color: #9ca3af; }
+.code-key { color: #ce93d8; }
+
+/* Formula table */
+.formula-table { width: 100%; border-collapse: collapse; margin: 1rem 0; background: rgba(17,24,39,0.5); border-radius: 12px; overflow: hidden; }
+.formula-table th { background: rgba(59,130,246,0.12); color: #93c5fd; padding: 0.75rem 1rem; text-align: left; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; border-bottom: 1px solid rgba(59,130,246,0.2); }
+.formula-table td { padding: 0.65rem 1rem; color: #c0c8d4; font-size: 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.formula-table tr:hover td { background: rgba(59,130,246,0.05); }
+.formula-table code { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #f59e0b; background: rgba(245,158,11,0.08); padding: 0.15rem 0.4rem; border-radius: 4px; }
+
+/* Variance bar */
+.var-bar-wrap { margin: 1.5rem 0; }
+.var-bar-label { display: flex; justify-content: space-between; margin-bottom: 0.3rem; }
+.var-bar-name { color: #9ca3af; font-size: 0.85rem; font-weight: 600; }
+.var-bar-val { color: #ef4444; font-size: 0.85rem; font-weight: 700; }
+.var-bar-val-green { color: #66bb6a; }
+.var-bar-track { height: 10px; background: rgba(255,255,255,0.06); border-radius: 5px; overflow: hidden; }
+.var-bar-fill { height: 100%; border-radius: 5px; transition: width 1s ease; }
+
+.case-footer { padding: 2rem 0; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 4rem; }
+.case-footer p { color: #6b7280; font-size: 0.85rem; }
+.case-footer a { color: #60a5fa; text-decoration: none; }
+.case-footer a:hover { color: #93c5fd; }
+@media (max-width: 768px) { .page { padding: 1rem; } .metric-grid { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+<div class="mesh-bg"></div>
+<div class="grid-bg"></div>
+
+<div class="back-nav">
+    <a href="https://adamb.info/">&larr; Portfolio</a>
+    <a href="https://adamb.info/#projects">Projects</a>
+    <a href="https://adamb.info/#contact">Contact</a>
+</div>
+
+<div class="page">
+    <div class="case-hero">
+        <div class="case-badge">CASE STUDY &middot; ROI CALCULATOR &middot; WEB APP</div>
+        <h1>Operational ROI Calculator</h1>
+        <p>An interactive web tool that quantifies the annual cost of operational variance across food cost, labor inefficiency, and incident exposure &mdash; showing multi-location restaurant operators exactly where they&rsquo;re leaving money on the table.</p>
+        <div class="tool-tags" style="justify-content: center; margin-top: 1.5rem;">
+            <span class="tool-tag">JavaScript</span>
+            <span class="tool-tag">HTML / CSS</span>
+            <span class="tool-tag">Real-Time Calculation</span>
+            <span class="tool-tag">Financial Modeling</span>
+            <span class="tool-tag">TableStandards</span>
+        </div>
+    </div>
+
+    <!-- Introduction -->
+    <div class="case-section">
+        <h2>Introduction</h2>
+        <p>Restaurant operators know their food cost is &ldquo;a little high&rdquo; and their labor is &ldquo;probably not optimized.&rdquo; But they can&rsquo;t put a dollar figure on the gap. Without a specific number, there&rsquo;s no urgency to fix it and no way to evaluate whether a solution is worth the investment.</p>
+        <p>The <a href="https://tablestandards.com/roi.html" target="_blank">Operational ROI Calculator</a> translates vague operational intuition into precise annual variance figures. Operators input their actual numbers &mdash; covers, check size, food cost %, labor cost %, incidents &mdash; and the calculator shows the total cost of variance across three dimensions, plus how much is recoverable with data-driven optimization.</p>
+        <p>This tool serves dual purposes: it&rsquo;s a self-service diagnostic for operators and a sales qualification tool for TableStandards engagements. If the numbers don&rsquo;t show clear ROI, we tell them &mdash; and that honesty builds trust for when they do.</p>
+    </div>
+
+    <!-- The Problem -->
+    <div class="case-section">
+        <h2>Problems Identified</h2>
+        <div class="finding-card">
+            <h4>1. Operators Can&rsquo;t Quantify Their Own Variance</h4>
+            <p>A 5-location operator running 34% food cost instead of 29% knows it&rsquo;s &ldquo;too high&rdquo; but doesn&rsquo;t know that gap equals $590,000 per year in leaked revenue. Without annualization and multi-location math, the problem feels manageable when it&rsquo;s actually existential.</p>
+        </div>
+        <div class="finding-card">
+            <h4>2. Three Variance Categories Are Treated as One</h4>
+            <p>Food cost variance, labor inefficiency, and incident exposure are three different problems requiring three different solutions. Operators lump them all into &ldquo;costs are high&rdquo; and apply generic fixes. The calculator separates each bucket so targeted action can follow.</p>
+        </div>
+        <div class="finding-card">
+            <h4>3. No Bridge Between Diagnosis and Engagement</h4>
+            <p>Operators who know they have a problem still need to see whether paying for analytics generates positive ROI. The calculator provides the &ldquo;recoverable&rdquo; figure &mdash; the portion of variance that data-driven optimization can capture &mdash; making the cost-benefit decision concrete.</p>
+        </div>
+    </div>
+
+    <!-- The Model -->
+    <div class="case-section">
+        <h2>The Calculation Model</h2>
+        <p>Every number updates in real time as the operator adjusts sliders. The math is transparent &mdash; no black boxes.</p>
+
+        <h3>Revenue Foundation</h3>
+        <table class="formula-table">
+            <thead><tr><th>Variable</th><th>Formula</th><th>Example (5 locations)</th></tr></thead>
+            <tbody>
+                <tr><td>Weekly Revenue / Location</td><td><code>covers &times; check_size</code></td><td>1,200 &times; $38 = $45,600</td></tr>
+                <tr><td>Annual Revenue (total)</td><td><code>weekly_rev &times; 52 &times; locations</code></td><td>$45,600 &times; 52 &times; 5 = $11.86M</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Three Variance Buckets</h3>
+        <table class="formula-table">
+            <thead><tr><th>Bucket</th><th>Formula</th><th>Example</th><th>Recovery Rate</th></tr></thead>
+            <tbody>
+                <tr><td>Food Cost Leak</td><td><code>annual_rev &times; (current_food% &minus; target_food%)</code></td><td>$11.86M &times; 5.0% = <strong style="color:#ef4444;">$593K</strong></td><td>75%</td></tr>
+                <tr><td>Labor Inefficiency</td><td><code>annual_rev &times; (current_labor% &minus; target_labor%) &times; 0.80</code></td><td>$11.86M &times; 4.0% &times; 0.80 = <strong style="color:#ef4444;">$379K</strong></td><td>85%</td></tr>
+                <tr><td>Incident Exposure</td><td><code>incidents &times; locations &times; $4,200</code></td><td>8 &times; 5 &times; $4,200 = <strong style="color:#ef4444;">$168K</strong></td><td>60%</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Example Output &mdash; 5 Locations</h3>
+        <div class="var-bar-wrap">
+            <div class="var-bar-label"><span class="var-bar-name">Food Cost Leak</span><span class="var-bar-val">$593K/yr</span></div>
+            <div class="var-bar-track"><div class="var-bar-fill" style="width:52%;background:linear-gradient(90deg,#ef4444,#f59e0b);"></div></div>
+        </div>
+        <div class="var-bar-wrap">
+            <div class="var-bar-label"><span class="var-bar-name">Labor Inefficiency</span><span class="var-bar-val">$379K/yr</span></div>
+            <div class="var-bar-track"><div class="var-bar-fill" style="width:33%;background:linear-gradient(90deg,#ef4444,#f59e0b);"></div></div>
+        </div>
+        <div class="var-bar-wrap">
+            <div class="var-bar-label"><span class="var-bar-name">Incident Exposure</span><span class="var-bar-val">$168K/yr</span></div>
+            <div class="var-bar-track"><div class="var-bar-fill" style="width:15%;background:linear-gradient(90deg,#ef4444,#f59e0b);"></div></div>
+        </div>
+        <div style="margin-top:1.5rem;">
+            <div class="metric-grid">
+                <div class="metric-card"><div class="metric-value" style="background:linear-gradient(135deg,#ef4444,#f59e0b);-webkit-background-clip:text;">$1.14M</div><div class="metric-label">Total Annual Variance</div></div>
+                <div class="metric-card"><div class="metric-value">$867K</div><div class="metric-label">Recoverable with Data</div></div>
+            </div>
+        </div>
+
+        <h3>The JavaScript Engine</h3>
+        <div class="code-block">
+            <span class="code-comment">// &mdash;&mdash; REVENUE &mdash;&mdash;</span><br>
+            <span class="code-key">const</span> weeklyRev <span class="code-op">=</span> covers <span class="code-op">*</span> checkSize;<br>
+            <span class="code-key">const</span> annualRev <span class="code-op">=</span> weeklyRev <span class="code-op">*</span> <span class="code-num">52</span> <span class="code-op">*</span> locations;<br><br>
+            <span class="code-comment">// &mdash;&mdash; FOOD COST LEAK &mdash;&mdash;</span><br>
+            <span class="code-key">const</span> foodGap <span class="code-op">=</span> foodPct <span class="code-op">-</span> foodTarget;<br>
+            <span class="code-key">const</span> foodLeak <span class="code-op">=</span> annualRev <span class="code-op">*</span> foodGap;<br><br>
+            <span class="code-comment">// &mdash;&mdash; LABOR (80% of gap recoverable) &mdash;&mdash;</span><br>
+            <span class="code-key">const</span> laborGap <span class="code-op">=</span> laborPct <span class="code-op">-</span> laborTarget;<br>
+            <span class="code-key">const</span> laborLeak <span class="code-op">=</span> annualRev <span class="code-op">*</span> laborGap <span class="code-op">*</span> <span class="code-num">0.80</span>;<br><br>
+            <span class="code-comment">// &mdash;&mdash; INCIDENTS ($4,200 avg claim) &mdash;&mdash;</span><br>
+            <span class="code-key">const</span> incidentCost <span class="code-op">=</span> incidents <span class="code-op">*</span> locations <span class="code-op">*</span> <span class="code-num">4200</span>;<br><br>
+            <span class="code-comment">// &mdash;&mdash; RECOVERABLE &mdash;&mdash;</span><br>
+            <span class="code-key">const</span> recoverable <span class="code-op">=</span><br>
+            &nbsp;&nbsp;foodLeak <span class="code-op">*</span> <span class="code-num">0.75</span><br>
+            &nbsp;&nbsp;<span class="code-op">+</span> laborLeak <span class="code-op">*</span> <span class="code-num">0.85</span><br>
+            &nbsp;&nbsp;<span class="code-op">+</span> incidentCost <span class="code-op">*</span> <span class="code-num">0.60</span>;
+        </div>
+    </div>
+
+    <!-- Design Decisions -->
+    <div class="case-section">
+        <h2>Design Decisions</h2>
+        <div class="finding-card">
+            <h4>Real-time sliders, not a form submission</h4>
+            <p>Every input updates calculations instantly. The operator sees their total variance change as they adjust a single slider. This creates an &ldquo;aha moment&rdquo; &mdash; dragging food cost from 34% to 32% and watching $237K disappear from the variance figure is more persuasive than any sales pitch.</p>
+        </div>
+        <div class="finding-card">
+            <h4>Transparent math builds trust</h4>
+            <p>The calculation logic is displayed as readable code alongside the results. Operators can verify every number. This is the opposite of a black-box ROI calculator that spits out an impressive number with no visible methodology. The transparency is the credibility.</p>
+        </div>
+        <div class="finding-card">
+            <h4>Recovery rates are conservative</h4>
+            <p>Food cost recovery at 75%, labor at 85%, incidents at 60%. These aren&rsquo;t aspirational &mdash; they&rsquo;re based on what data-driven optimization typically captures in 90-day pilot engagements. Under-promising and over-delivering starts in the calculator itself.</p>
+        </div>
+        <div class="finding-card">
+            <h4>Multi-location math multiplies urgency</h4>
+            <p>A single location running 5% over on food cost leaks $114K. Five locations leak $593K. The location selector is the most powerful persuasion element in the tool &mdash; watching the number multiply by switching from &ldquo;1&rdquo; to &ldquo;4&ndash;6&rdquo; creates immediate visceral impact.</p>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div class="case-section">
+        <h2>Results</h2>
+        <div class="metric-grid">
+            <div class="metric-card"><div class="metric-value">100%</div><div class="metric-label">Client-Side (No Backend)</div></div>
+            <div class="metric-card"><div class="metric-value">Real-Time</div><div class="metric-label">All Calculations Live</div></div>
+            <div class="metric-card"><div class="metric-value">3</div><div class="metric-label">Variance Buckets Separated</div></div>
+            <div class="metric-card"><div class="metric-value">48 hrs</div><div class="metric-label">Free Analysis Turnaround</div></div>
+        </div>
+    </div>
+
+    <!-- Conclusion -->
+    <div class="case-section">
+        <h2>Conclusion</h2>
+        <div class="finding-card">
+            <h4>The best sales tool is honesty in a calculator</h4>
+            <p>When the numbers show clear ROI, the engagement sells itself. When they don&rsquo;t, we say so. The calculator qualifies leads in both directions &mdash; it starts conversations with operators who have a real problem and avoids wasting time on those who don&rsquo;t. That honesty is the brand.</p>
+        </div>
+        <div class="finding-card">
+            <h4>Annualization changes the conversation</h4>
+            <p>Operators think in weekly terms: &ldquo;We&rsquo;re a few points over on food cost.&rdquo; The calculator converts that to an annual figure across all locations. &ldquo;A few points over&rdquo; becomes &ldquo;$593K per year.&rdquo; The math was always there; the tool just makes it impossible to ignore.</p>
+        </div>
+        <div class="finding-card">
+            <h4>Separation creates action</h4>
+            <p>A $1.14M total variance is paralyzing. Breaking it into food ($593K), labor ($379K), and incidents ($168K) makes each bucket attackable. Operators can now prioritize: fix food cost first because it&rsquo;s the largest bucket, then labor, then incidents. Sequencing replaces overwhelm.</p>
+        </div>
+    </div>
+
+    <!-- Next Steps -->
+    <div class="case-section">
+        <h2>Next Steps</h2>
+        <div class="rec-box">
+            <h4>Try the calculator and get a free analysis</h4>
+            <ul>
+                <li><a href="https://tablestandards.com/roi.html" target="_blank">Use the ROI Calculator</a> &mdash; plug in your numbers and see the variance live</li>
+                <li>Results feed directly into the <a href="https://tablestandards.com/gelato-pilot.html" target="_blank">TableStandards 90-Day Pilot</a> scoping process</li>
+                <li>Free 48-hour analysis available &mdash; send your numbers and we&rsquo;ll show you exactly where you&rsquo;re leaving money</li>
+                <li>The calculator connects to the full TableStandards suite: labor scheduling, food waste tracking, and menu analytics</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="case-footer">
+        <p>&larr; <a href="https://adamb.info/#projects">Back to Portfolio</a> &middot; <a href="https://tablestandards.com/roi.html" target="_blank">Try the Calculator</a> &middot; <a href="mailto:adam.brousell@gmail.com">adam.brousell@gmail.com</a> &middot; &copy; 2026 Adam Brousell</p>
+    </div>
+</div>
+</body>
+</html>
+
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.0/anchor.min.js" integrity="sha256-lZaRhKri35AyJSypXXs4o6OPFTbTmUoltBbDCbdzegg=" crossorigin="anonymous"></script>
+    <script>anchors.add();</script>
+  </body>
+</html>
