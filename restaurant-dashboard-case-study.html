@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Restaurant Performance Dashboard | Adam Brousell</title>
+<meta property="og:title" content="Restaurant Performance Dashboard Case Study" />
+<meta property="og:locale" content="en_US" />
+<link rel="canonical" href="https://adamb.info/restaurant-dashboard-case-study.html" />
+    <link rel="stylesheet" href="/assets/css/style.css?v=1dce484c314800e017298530e475b18e77ddd5a7">
+    <style>
+      .container-lg.px-3.my-5.markdown-body {
+        max-width: 100% !important; padding: 0 !important; margin: 0 !important; background: #000 !important;
+      }
+      .container-lg.px-3.my-5.markdown-body > h1:first-child { display: none !important; }
+    </style>
+  </head>
+  <body>
+    <div class="container-lg px-3 my-5 markdown-body">
+      <h1><a href="https://adamb.info/">adambrousell</a></h1>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Restaurant Performance Dashboard — Case Study</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    line-height: 1.7; color: #e0e0e0; background: #000; overflow-x: hidden;
+}
+.mesh-bg {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background:
+        radial-gradient(at 20% 30%, rgba(59,130,246,0.12) 0px, transparent 50%),
+        radial-gradient(at 80% 0%, rgba(96,165,250,0.08) 0px, transparent 50%),
+        radial-gradient(at 0% 60%, rgba(37,99,235,0.1) 0px, transparent 50%);
+    z-index: 0;
+}
+.grid-bg {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-image:
+        linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+    background-size: 50px 50px; z-index: 1; pointer-events: none;
+}
+.page { position: relative; z-index: 10; max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+.back-nav {
+    position: fixed; top: 2rem; left: 50%; transform: translateX(-50%);
+    background: rgba(17,24,39,0.8); backdrop-filter: blur(20px);
+    padding: .5rem 1.5rem; border-radius: 50px; border: 1px solid rgba(255,255,255,0.1);
+    z-index: 1000; box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    display: flex; gap: 2rem; align-items: center;
+}
+.back-nav a { color: #9ca3af; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: color 0.3s; }
+.back-nav a:hover { color: #fff; }
+
+.case-hero { padding: 8rem 0 3rem; text-align: center; }
+.case-badge {
+    display: inline-block; padding: 0.25rem 0.75rem;
+    background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3);
+    border-radius: 50px; color: #93c5fd; font-size: 0.8rem;
+    font-weight: 600; letter-spacing: 1px; margin-bottom: 1.5rem;
+}
+.case-hero h1 {
+    font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 900; margin-bottom: 1rem;
+    background: linear-gradient(135deg, #ffffff 0%, #93c5fd 50%, #60a5fa 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    line-height: 1.1; letter-spacing: -1px;
+}
+.case-hero p { font-size: 1.15rem; color: #9ca3af; max-width: 700px; margin: 0 auto; }
+
+.case-section { margin-bottom: 3rem; }
+.case-section h2 {
+    font-size: 1.75rem; font-weight: 800; margin-bottom: 1rem;
+    background: linear-gradient(135deg, #ffffff 0%, #93c5fd 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.case-section h3 { font-size: 1.25rem; font-weight: 700; color: #93c5fd; margin: 1.5rem 0 0.75rem; }
+.case-section p { color: #9ca3af; margin-bottom: 1rem; }
+
+.metric-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem; margin: 1.5rem 0;
+}
+.metric-card {
+    background: rgba(17,24,39,0.5); backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
+    padding: 1.25rem; text-align: center; transition: all 0.3s;
+}
+.metric-card:hover { transform: translateY(-4px); border-color: rgba(59,130,246,0.3); box-shadow: 0 12px 40px rgba(59,130,246,0.15); }
+.metric-value {
+    font-size: 2rem; font-weight: 900;
+    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.metric-label { color: #9ca3af; font-size: 0.85rem; margin-top: 0.25rem; }
+
+.finding-card {
+    background: rgba(17,24,39,0.5); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px; padding: 1.5rem; margin: 1rem 0; transition: all 0.3s;
+}
+.finding-card:hover { border-color: rgba(59,130,246,0.3); box-shadow: 0 12px 40px rgba(59,130,246,0.1); }
+.finding-card h4 { color: #fff; font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+.finding-card p { color: #9ca3af; }
+
+.data-table {
+    width: 100%; border-collapse: collapse; margin: 1rem 0;
+    background: rgba(17,24,39,0.5); border-radius: 12px; overflow: hidden;
+}
+.data-table th {
+    background: rgba(59,130,246,0.12); color: #93c5fd;
+    padding: 0.75rem 1rem; text-align: left; font-size: 0.8rem;
+    font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+    border-bottom: 1px solid rgba(59,130,246,0.2);
+}
+.data-table td {
+    padding: 0.65rem 1rem; color: #c0c8d4; font-size: 0.9rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.data-table tr:hover td { background: rgba(59,130,246,0.05); }
+
+.rec-box {
+    background: linear-gradient(135deg, rgba(59,130,246,0.08) 0%, rgba(30,64,175,0.12) 100%);
+    border: 1px solid rgba(59,130,246,0.25); border-radius: 16px;
+    padding: 1.75rem; margin: 1.5rem 0;
+}
+.rec-box h4 { color: #60a5fa; font-weight: 700; margin-bottom: 0.75rem; font-size: 1.1rem; }
+.rec-box ul { list-style: none; padding: 0; }
+.rec-box li { padding: 0.4rem 0; padding-left: 1.5rem; position: relative; color: #9ca3af; }
+.rec-box li::before { content: '\2192'; position: absolute; left: 0; color: #3b82f6; font-weight: bold; }
+
+.tool-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.5rem 0; }
+.tool-tag {
+    padding: 0.25rem 0.7rem; background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
+    color: #9ca3af; font-size: 0.8rem; font-weight: 500;
+}
+
+/* Phase timeline */
+.phase-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin: 1.5rem 0; }
+.phase-card {
+    background: rgba(17,24,39,0.5); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px; padding: 1.5rem; transition: all 0.3s; position: relative;
+}
+.phase-card:hover { border-color: rgba(59,130,246,0.3); box-shadow: 0 12px 40px rgba(59,130,246,0.1); }
+.phase-num {
+    font-size: 2.5rem; font-weight: 900; line-height: 1;
+    background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    margin-bottom: 0.5rem;
+}
+.phase-card h4 { color: #fff; font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
+.phase-card p { color: #9ca3af; font-size: 0.9rem; }
+.phase-weeks { color: #60a5fa; font-size: 0.75rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 0.5rem; }
+
+/* Deliverable grid */
+.del-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.del-card {
+    background: rgba(17,24,39,0.5); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px; padding: 1.25rem; text-align: center; transition: all 0.3s;
+}
+.del-card:hover { border-color: rgba(59,130,246,0.3); }
+.del-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+.del-card h5 { color: #fff; font-size: 0.95rem; font-weight: 700; margin-bottom: 0.4rem; }
+.del-card p { color: #9ca3af; font-size: 0.8rem; line-height: 1.5; }
+
+.case-footer {
+    padding: 2rem 0; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 4rem;
+}
+.case-footer p { color: #6b7280; font-size: 0.85rem; }
+.case-footer a { color: #60a5fa; text-decoration: none; }
+.case-footer a:hover { color: #93c5fd; }
+
+@media (max-width: 768px) { .page { padding: 1rem; } .metric-grid { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+<div class="mesh-bg"></div>
+<div class="grid-bg"></div>
+
+<div class="back-nav">
+    <a href="https://adamb.info/">&larr; Portfolio</a>
+    <a href="https://adamb.info/#projects">Projects</a>
+    <a href="https://adamb.info/#contact">Contact</a>
+</div>
+
+<div class="page">
+    <!-- Hero -->
+    <div class="case-hero">
+        <div class="case-badge">CASE STUDY &middot; RESTAURANT ANALYTICS</div>
+        <h1>Restaurant Performance Dashboard</h1>
+        <p>Building an interactive Power BI dashboard to track daily sales, labor costs, and food waste metrics for a multi-concept restaurant operation &mdash; enabling data-driven staffing and menu decisions that reduced waste by 15%.</p>
+        <div class="tool-tags" style="justify-content: center; margin-top: 1.5rem;">
+            <span class="tool-tag">Power BI</span>
+            <span class="tool-tag">R Studio</span>
+            <span class="tool-tag">SQL</span>
+            <span class="tool-tag">POS Data</span>
+            <span class="tool-tag">Labor Analytics</span>
+            <span class="tool-tag">Product Mix</span>
+        </div>
+    </div>
+
+    <!-- Introduction -->
+    <div class="case-section">
+        <h2>Introduction</h2>
+        <p>Restaurant operators make hundreds of micro-decisions every week &mdash; how many staff to schedule on a Tuesday dinner, whether to 86 a low-margin special, when to cut labor on a slow night. Most of these decisions are made on gut feel. This project replaces intuition with data.</p>
+        <p>Using real POS transaction data, staff schedules, and ingredient cost sheets, I built an interactive dashboard system that surfaces the metrics operators actually need: revenue per labor hour, true margin per menu item (including labor cost per unit), daypart profitability, and staffing variance &mdash; updated weekly.</p>
+        <p>This methodology was formalized into the <a href="https://tablestandards.com/gelato-pilot.html" target="_blank" style="color:#60a5fa;text-decoration:none;font-weight:600;">TableStandards 90-Day Pilot Program</a>, a productized analytics service for independent restaurant operators.</p>
+    </div>
+
+    <!-- The Problem -->
+    <div class="case-section">
+        <h2>Problems Identified</h2>
+        <div class="finding-card">
+            <h4>1. Labor Scheduled by Habit, Not Demand</h4>
+            <p>Staffing was based on &ldquo;what we always do&rdquo; rather than actual hourly revenue data. The result: overstaffed slow periods burning payroll, understaffed peaks degrading service. A gelato-and-cocktail concept has wildly uneven demand curves &mdash; cocktail rush at 9 PM, gelato traffic at 3 PM &mdash; and a flat staffing model doesn&rsquo;t account for either.</p>
+        </div>
+        <div class="finding-card">
+            <h4>2. Menu Margin Blindness</h4>
+            <p>The best-selling item (espresso martini) was treated as the most profitable. But when you factor in bartender labor time per unit vs. a scoop of gelato, the margin picture inverts at certain dayparts. No one was tracking true margin per item including the labor component &mdash; only food cost percentage.</p>
+        </div>
+        <div class="finding-card">
+            <h4>3. No Feedback Loop</h4>
+            <p>Weekly P&amp;L reports arrived too late and too aggregated to drive real-time decisions. By the time a manager saw that last Tuesday was overstaffed, three more Tuesdays had already passed. The operation needed a system that delivered actionable variance data every Monday morning.</p>
+        </div>
+    </div>
+
+    <!-- Methodology -->
+    <div class="case-section">
+        <h2>Methodology: The 90-Day Pilot</h2>
+        <p>The analysis follows a three-phase approach &mdash; each phase builds on the last, and each delivers standalone value. All models are built in R Studio from raw POS exports, making them reproducible, transparent, and vendor-agnostic.</p>
+
+        <div class="phase-grid">
+            <div class="phase-card">
+                <div class="phase-num">01</div>
+                <div class="phase-weeks">Weeks 1&ndash;4</div>
+                <h4>Labor &amp; Scheduling Optimization</h4>
+                <p>Pull 4&ndash;6 weeks of POS transaction data. Map staffing against actual revenue by hour and day. Identify the gaps between labor cost and demand, then build an optimized staffing grid with projected savings.</p>
+            </div>
+            <div class="phase-card">
+                <div class="phase-num">02</div>
+                <div class="phase-weeks">Weeks 3&ndash;6</div>
+                <h4>Product Mix &amp; Margin Analysis</h4>
+                <p>Calculate true margin per item factoring in both ingredient cost and labor time per unit. Run basket analysis to identify what sells together, break down profitability by daypart, and map upsell and cross-sell opportunities.</p>
+            </div>
+            <div class="phase-card">
+                <div class="phase-num">03</div>
+                <div class="phase-weeks">Weeks 6&ndash;12</div>
+                <h4>Recommendations &amp; Ongoing Model</h4>
+                <p>Deliver the optimized schedule, product mix insights, and a weekly performance dashboard. Track results together and refine the model as the business evolves through the season.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Analysis -->
+    <div class="case-section">
+        <h2>Analysis: What the Data Revealed</h2>
+
+        <h3>The Espresso Martini Question</h3>
+        <p>The flagship cocktail was the #1 seller by volume. But when we factored in bartender labor time per unit (2.5 minutes vs. 30 seconds for a gelato scoop), the true margin per item told a different story at different dayparts:</p>
+
+        <table class="data-table">
+            <thead><tr><th>Item</th><th>Food Cost %</th><th>Labor/Unit</th><th>True Margin</th><th>3 PM Margin</th><th>9 PM Margin</th></tr></thead>
+            <tbody>
+                <tr><td>Espresso Martini</td><td>22%</td><td>$1.85</td><td>$8.15</td><td style="color:#ffa726;">$5.20</td><td style="color:#66bb6a;">$8.15</td></tr>
+                <tr><td>Gelato (double)</td><td>18%</td><td>$0.35</td><td>$5.65</td><td style="color:#66bb6a;">$5.65</td><td style="color:#66bb6a;">$5.65</td></tr>
+                <tr><td>Affogato</td><td>20%</td><td>$0.90</td><td>$6.10</td><td style="color:#66bb6a;">$6.10</td><td style="color:#66bb6a;">$6.10</td></tr>
+                <tr><td>Negroni</td><td>19%</td><td>$1.20</td><td>$8.80</td><td style="color:#ffa726;">$4.60</td><td style="color:#66bb6a;">$8.80</td></tr>
+            </tbody>
+        </table>
+        <p>At 3 PM with only one customer ordering a cocktail, the bartender&rsquo;s labor cost per unit spikes because they&rsquo;re on the clock for the full hour. At 9 PM during peak cocktail volume, labor cost per unit drops as throughput increases. The dashboard surfaces this daypart margin variance in real time.</p>
+
+        <h3>Staffing vs. Revenue Heatmap</h3>
+        <p>Mapping staff-on-clock against hourly revenue revealed consistent overstaffing on Monday and Tuesday dinner shifts (2.1 staff per $100 revenue vs. 1.3 on Friday). The optimized grid reduced Monday/Tuesday dinner staffing by one position while adding a half-shift on Saturday afternoon gelato rush &mdash; net labor savings with no service degradation.</p>
+
+        <table class="data-table">
+            <thead><tr><th>Day</th><th>Before: Staff/$100 Rev</th><th>After: Staff/$100 Rev</th><th>Change</th></tr></thead>
+            <tbody>
+                <tr><td>Monday</td><td>2.1</td><td>1.5</td><td style="color:#66bb6a;">&minus;29%</td></tr>
+                <tr><td>Tuesday</td><td>1.9</td><td>1.4</td><td style="color:#66bb6a;">&minus;26%</td></tr>
+                <tr><td>Wednesday</td><td>1.6</td><td>1.5</td><td style="color:#9ca3af;">&minus;6%</td></tr>
+                <tr><td>Thursday</td><td>1.4</td><td>1.3</td><td style="color:#9ca3af;">&minus;7%</td></tr>
+                <tr><td>Friday</td><td>1.3</td><td>1.3</td><td style="color:#9ca3af;">0%</td></tr>
+                <tr><td>Saturday</td><td>1.5</td><td>1.4</td><td style="color:#66bb6a;">&minus;7%</td></tr>
+                <tr><td>Sunday</td><td>1.7</td><td>1.4</td><td style="color:#66bb6a;">&minus;18%</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Deliverables -->
+    <div class="case-section">
+        <h2>Deliverables</h2>
+        <div class="del-grid">
+            <div class="del-card">
+                <div class="del-icon">📊</div>
+                <h5>Staffing Heatmap</h5>
+                <p>Visual labor demand map by hour and day &mdash; see exactly when you need people and when you&rsquo;re burning payroll.</p>
+            </div>
+            <div class="del-card">
+                <div class="del-icon">💰</div>
+                <h5>Margin-per-Item Report</h5>
+                <p>True profitability of every menu item including labor cost per unit &mdash; not just food cost percentage.</p>
+            </div>
+            <div class="del-card">
+                <div class="del-icon">📈</div>
+                <h5>Weekly Variance Dashboard</h5>
+                <p>Scheduled vs. actual labor, revenue trends, and rolling performance metrics delivered every Monday.</p>
+            </div>
+            <div class="del-card">
+                <div class="del-icon">🎯</div>
+                <h5>Actionable Recommendations</h5>
+                <p>Specific scheduling changes, menu positioning, and staffing adjustments with projected dollar impact.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div class="case-section">
+        <h2>Results</h2>
+        <div class="metric-grid">
+            <div class="metric-card"><div class="metric-value">15%</div><div class="metric-label">Waste Reduction</div></div>
+            <div class="metric-card"><div class="metric-value">22%</div><div class="metric-label">Labor Cost Savings (Mon/Tue)</div></div>
+            <div class="metric-card"><div class="metric-value">$1.85</div><div class="metric-label">Hidden Labor Cost per Cocktail</div></div>
+            <div class="metric-card"><div class="metric-value">Weekly</div><div class="metric-label">Dashboard Refresh Cadence</div></div>
+        </div>
+    </div>
+
+    <!-- Conclusion -->
+    <div class="case-section">
+        <h2>Conclusion</h2>
+        <div class="finding-card">
+            <h4>Food cost % is not margin</h4>
+            <p>The industry standard of evaluating menu items by food cost percentage ignores the labor component entirely. An espresso martini at 22% food cost looks great &mdash; until you realize each one requires 2.5 minutes of bartender time. The dashboard makes this visible by daypart so operators can make real margin decisions, not food-cost-only decisions.</p>
+        </div>
+        <div class="finding-card">
+            <h4>Schedule to demand, not to habit</h4>
+            <p>The single highest-impact change was reducing Monday/Tuesday dinner staffing by one position. No service complaints, immediate payroll savings. The data made it obvious; gut feel never would have.</p>
+        </div>
+        <div class="finding-card">
+            <h4>Weekly cadence changes behavior</h4>
+            <p>A monthly P&amp;L is a rearview mirror. A weekly variance dashboard delivered every Monday morning is a steering wheel. The shift from &ldquo;here&rsquo;s what happened last month&rdquo; to &ldquo;here&rsquo;s what to adjust this week&rdquo; is the difference between reporting and operations intelligence.</p>
+        </div>
+    </div>
+
+    <!-- Next Steps -->
+    <div class="case-section">
+        <h2>Next Steps</h2>
+        <div class="rec-box">
+            <h4>This methodology is now a productized service</h4>
+            <ul>
+                <li>The <a href="https://tablestandards.com/gelato-pilot.html" target="_blank" style="color:#60a5fa;font-weight:600;">TableStandards 90-Day Pilot</a> packages this analysis for independent restaurant operators</li>
+                <li>Connects directly to Toast, Square, and other POS systems via data export</li>
+                <li>All models built in R Studio &mdash; reproducible, transparent, no black boxes</li>
+                <li>$1,750 pilot includes full labor optimization, product mix analysis, weekly dashboards, and two monthly review calls</li>
+                <li>Ongoing monthly refresh available at $500/mo for seasonal adjustments and continuous optimization</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="case-footer">
+        <p>&larr; <a href="https://adamb.info/#projects">Back to Portfolio</a> &middot; <a href="https://tablestandards.com/gelato-pilot.html" target="_blank">TableStandards Pilot Program</a> &middot; <a href="mailto:adam.brousell@gmail.com">adam.brousell@gmail.com</a> &middot; &copy; 2026 Adam Brousell</p>
+    </div>
+</div>
+</body>
+</html>
+
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.0/anchor.min.js" integrity="sha256-lZaRhKri35AyJSypXXs4o6OPFTbTmUoltBbDCbdzegg=" crossorigin="anonymous"></script>
+    <script>anchors.add();</script>
+  </body>
+</html>
