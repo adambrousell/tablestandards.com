@@ -161,6 +161,14 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
   .cal-grid{grid-template-columns:repeat(3,1fr)}
   .filter-bar{flex-direction:column}
 }
+body.light-mode{
+  --bg:#F6F8FA;--surface:#FFFFFF;--surface2:#F0F2F5;--border:#D0D7DE;
+  --accent:#2563EB;--accent-l:rgba(37,99,235,.08);--accent-b:rgba(37,99,235,.2);
+  --text:#1F2328;--text2:#57606A;--text3:#8B949E;
+  --good:#1A7F37;--good-bg:rgba(26,127,55,.06);--good-b:rgba(26,127,55,.2);
+  --warn:#9A6700;--warn-bg:rgba(154,103,0,.06);--warn-b:rgba(154,103,0,.2);
+  --red:#CF222E;--red-bg:rgba(207,34,46,.06);--red-b:rgba(207,34,46,.2);
+}
 </style>
 </head>
 <body>
@@ -182,8 +190,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
     <div class="tab" onclick="showView(&#39;facilities&#39;)">Facilities</div>
     <div class="tab" onclick="showView(&#39;checklists&#39;)">Checklists</div>
     <div class="tab" onclick="showView(&#39;inspectors&#39;)">Inspectors</div>
-    <div class="tab" onclick="showView(&#39;access&#39;)">Access</div>
-    <div class="tab" onclick="showView(&#39;reports&#39;)">Reports</div>
+    <div class="tab" onclick="showView(&#39;settings&#39;)">Settings</div>
   </div>
 </div>
 
@@ -440,25 +447,26 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
   </div>
 
   <!-- ACCESS (permissions matrix, promoted from Reports per FIX 6) -->
-  <div class="panel" id="view-access" style="display:none;">
-    <div class="ttl">Access Control</div>
-    <div class="card" style="border-top:3px solid var(--accent);margin-top:16px">
-      <div class="card-label">Routing &amp; Permissions Matrix</div>
-      <div class="card-title">Status → Recipient · Action → User</div>
-      <div class="card-body" style="margin-bottom:8px">Status rows configure email routing. Action rows (bottom) configure workflow permissions.</div>
-      <div id="routing-matrix-container" style="overflow-x:auto"></div>
+  <div class="panel" id="view-settings" style="display:none;">
+    <div class="ttl">Settings</div>
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-label">Preferences</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text)">Appearance</div>
+          <div style="font-size:11px;color:var(--text3)">Switch between dark and light mode</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span id="theme-label" style="font-family:var(--mono);font-size:10px;color:var(--text3)">Dark</span>
+          <label class="toggle"><input type="checkbox" id="theme-toggle" onchange="toggleTheme(this.checked)"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
     </div>
-  </div>
-
-  <!-- REPORTS -->
-  <div class="panel" id="view-reports" style="display:none;">
-    <div class="ttl">Reports &amp; Notifications</div>
     <div class="g2" style="margin-top:16px;margin-bottom:20px">
       <div class="card" style="border-top:3px solid var(--accent)">
         <div class="card-label">Severity Codes</div>
         <div class="card-title">Severity Scale (1 = most critical)</div>
-        <div class="card-body" style="margin-bottom:10px">Standard severity codes used across all inspections.</div>
-        <div style="display:flex;flex-direction:column;gap:4px">
+        <div style="display:flex;flex-direction:column;gap:4px;margin-top:10px">
           <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--surface2);border-radius:4px"><span class="badge badge-red">SEV 1</span><span style="font-size:11px;color:var(--text)">Locked out, cannot be used</span></div>
           <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--surface2);border-radius:4px"><span class="badge badge-red">SEV 2</span><span style="font-size:11px;color:var(--text)">Carrier notification required</span></div>
           <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--surface2);border-radius:4px"><span class="badge badge-warn">SEV 3</span><span style="font-size:11px;color:var(--text)">Correct within 30 days before next setup or use</span></div>
@@ -472,6 +480,14 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
       <thead><tr><th>Report ID</th><th>Facility</th><th>Type</th><th>Generated</th><th>Status</th><th></th></tr></thead>
       <tbody id="reportTable"></tbody>
     </table>
+    <div style="margin-top:24px">
+      <div class="card" style="border-top:3px solid var(--accent)">
+        <div class="card-label">Routing &amp; Permissions Matrix</div>
+        <div class="card-title">Status → Recipient · Action → User</div>
+        <div class="card-body" style="margin-bottom:8px">Status rows configure email routing. Action rows (bottom) configure workflow permissions.</div>
+        <div id="routing-matrix-container" style="overflow-x:auto"></div>
+      </div>
+    </div>
   </div>
 
   <!-- MAIL-BACK: relocated into #view-inspectors as #insp-subtab-mailback -->
@@ -587,6 +603,33 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 <div id="printArea" style="display:none"></div>
 
 <script>
+// ═══════════════════════════════════════
+//  THEME / PREFERENCES
+// ═══════════════════════════════════════
+function toggleTheme(isLight){
+  if(isLight){
+    document.body.classList.add('light-mode');
+    try{localStorage.setItem('lc_theme','light');}catch(e){}
+  }else{
+    document.body.classList.remove('light-mode');
+    try{localStorage.setItem('lc_theme','dark');}catch(e){}
+  }
+  var label=document.getElementById('theme-label');
+  if(label)label.textContent=isLight?'Light':'Dark';
+}
+function loadTheme(){
+  try{
+    var saved=localStorage.getItem('lc_theme');
+    if(saved==='light'){
+      document.body.classList.add('light-mode');
+      var tog=document.getElementById('theme-toggle');
+      if(tog)tog.checked=true;
+      var label=document.getElementById('theme-label');
+      if(label)label.textContent='Light';
+    }
+  }catch(e){}
+}
+
 // ═══════════════════════════════════════
 //  DATA LAYER
 // ═══════════════════════════════════════
@@ -812,13 +855,14 @@ function showView(viewId){
   if(viewId==='facility-builder'){viewId='facilities';subAction='builder';}
   else if(viewId==='schedule'){viewId='inspections';subAction='calendar';}
   else if(viewId==='mailback'){viewId='inspectors';subAction='mailback';}
+  else if(viewId==='access'||viewId==='reports'){viewId='settings';}
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
   document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');p.style.display='none'});
   var panel=document.getElementById('view-'+viewId);
   if(panel){panel.classList.add('active');panel.style.display='block';panel.scrollTop=0}
   var tabs=document.querySelectorAll('.tab');
   // FIX 6 — New 7-tab layout: Inspections | CARs | Facilities | Checklists | Inspectors | Access | Reports
-  var tabMap={inspections:0,cars:1,facilities:2,'facility-builder':2,checklists:3,inspectors:4,access:5,reports:6,schedule:0,mailback:4};
+  var tabMap={inspections:0,cars:1,facilities:2,'facility-builder':2,checklists:3,inspectors:4,settings:5,access:5,reports:5,schedule:0,mailback:4};
   if(viewId==='facilities'){
     renderFacilitiesList();
     var lv=document.getElementById('facilities-list-view');
@@ -845,8 +889,7 @@ function showView(viewId){
     renderInspectors();renderVendors();
     if(subAction==='mailback')switchInspSubtab('mailback');
   }
-  if(viewId==='access')renderRoutingMatrix();
-  if(viewId==='reports')renderReports();
+  if(viewId==='settings'||viewId==='access'||viewId==='reports'){renderRoutingMatrix();renderReports();}
   if(tabMap[originalId]!==undefined&&tabs[tabMap[originalId]]){tabs[tabMap[originalId]].classList.add('active')}
 }
 function openModal(id){var el=document.getElementById(id);if(el)el.classList.add('open');}
@@ -2465,7 +2508,7 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'){var el=docu
 // ═══════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════
-document.addEventListener('DOMContentLoaded',function(){renderInspections();clRenderTable();retryPendingSync();});
+document.addEventListener('DOMContentLoaded',function(){loadTheme();renderInspections();clRenderTable();retryPendingSync();});
 </script>
 
 
