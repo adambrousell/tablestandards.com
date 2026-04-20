@@ -96,12 +96,9 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 .modal-field label{font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);display:block;margin-bottom:4px}
 .modal-field input,.modal-field select,.modal-field textarea{width:100%;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-family:var(--sans);font-size:13px;color:var(--text);outline:none}
 .modal-field textarea{resize:vertical;min-height:60px}
-.modal-field.error input,.modal-field.error select,.modal-field.error textarea,.modal-field.error .dispatch-checks{border-color:var(--red);border:1px solid var(--red);border-radius:6px}
+.modal-field.error input,.modal-field.error select,.modal-field.error textarea{border-color:var(--red)}
 .modal-field .field-error{font-family:var(--mono);font-size:9px;color:var(--red);margin-top:3px;display:none}
 .modal-field.error .field-error{display:block}
-.dispatch-checks{display:flex;flex-direction:column;gap:6px;max-height:140px;overflow-y:auto;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px}
-.dispatch-checks label{display:flex;align-items:center;gap:8px;font-family:var(--sans);font-size:12px;color:var(--text);cursor:pointer}
-.dispatch-checks input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);cursor:pointer}
 .modal-actions{display:flex;gap:8px;margin-top:14px}
 .btn-primary{padding:9px 18px;border:none;border-radius:6px;font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff}
 .btn-primary:hover{opacity:.9}
@@ -619,11 +616,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
     <label>Facility <span style="color:var(--red)">*</span></label>
     <select id="dispatch-facility"><option value="">Select facility...</option></select>
     <div class="field-error">Facility is required</div>
-  </div>
-  <div class="modal-field" id="dispatch-checklist-field">
-    <label>Checklist Type <span style="color:var(--red)">*</span></label>
-    <div id="dispatch-checklist-options" class="dispatch-checks"></div>
-    <div class="field-error">Select at least one checklist type</div>
   </div>
   <div class="modal-field" id="dispatch-inspector-field">
     <label>Inspector</label>
@@ -2407,10 +2399,6 @@ function openDispatchInspection(){
   fbGetProfiles().forEach(function(p){if(p.facilityName)names[p.facilityName]=1;});
   var sorted=Object.keys(names).sort();
   facSel.innerHTML='<option value="">Select facility...</option>'+sorted.map(function(n){return '<option value="'+escHtml(n)+'">'+escHtml(n)+'</option>';}).join('');
-  // Populate checklist type checkboxes from active modules
-  var checkDiv=document.getElementById('dispatch-checklist-options');
-  var active=clGetAll().filter(function(c){return c.active;});
-  checkDiv.innerHTML=active.length>0?active.map(function(c){return '<label><input type="checkbox" value="'+c.id+'" data-type="'+escHtml(c.type)+'"> '+escHtml(c.type)+' '+c.version+' ('+c.itemCount+' items)</label>';}).join(''):'<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">No active checklists</span>';
   // Populate inspector dropdown
   var inspSel=document.getElementById('dispatch-inspector');
   inspSel.innerHTML='<option value="">\u2014 Unassigned (Assign Later) \u2014</option>'+getInspectors().map(function(i){return '<option value="'+escHtml(i.name)+'">'+escHtml(i.name)+'</option>';}).join('');
@@ -2419,21 +2407,41 @@ function openDispatchInspection(){
   // Clear notes
   document.getElementById('dispatch-notes').value='';
   // Clear validation errors
-  ['dispatch-facility-field','dispatch-checklist-field','dispatch-date-field'].forEach(function(id){document.getElementById(id).classList.remove('error');});
+  ['dispatch-facility-field','dispatch-date-field'].forEach(function(id){document.getElementById(id).classList.remove('error');});
   openModal('modal-dispatch-inspection');
 }
 function closeDispatchModal(){closeModal('modal-dispatch-inspection');}
+// Derive checklist type names and matching active module IDs for a facility
+function getChecklistsForFacility(facilityName){
+  var typeNames=[];
+  // 1. Check facility profiles for matchedModules on attractions
+  var profile=fbGetProfiles().find(function(p){return p.facilityName===facilityName;});
+  if(profile&&profile.attractions){
+    profile.attractions.forEach(function(a){
+      (a.matchedModules||[]).forEach(function(m){if(m&&typeNames.indexOf(m)===-1)typeNames.push(m);});
+    });
+  }
+  // 2. Fallback: check FACILITIES_DATA surveys for past inspection form types
+  if(typeNames.length===0){
+    var fac=FACILITIES_DATA.find(function(f){return f.name===facilityName;});
+    if(fac&&fac.surveys){
+      fac.surveys.forEach(function(s){if(s.type&&typeNames.indexOf(s.type)===-1)typeNames.push(s.type);});
+    }
+  }
+  // 3. Match type names to active checklist module IDs
+  var allMods=clGetAll();
+  var moduleIds=[];
+  typeNames.forEach(function(tn){var mod=allMods.find(function(c){return c.active&&c.type===tn;});if(mod)moduleIds.push(mod.id);});
+  return {typeNames:typeNames,moduleIds:moduleIds};
+}
 function confirmDispatchInspection(){
   var facility=document.getElementById('dispatch-facility').value;
-  var checkboxes=document.querySelectorAll('#dispatch-checklist-options input[type=checkbox]:checked');
-  var selectedModules=[];checkboxes.forEach(function(cb){selectedModules.push(cb.value);});
   var inspector=document.getElementById('dispatch-inspector').value;
   var date=document.getElementById('dispatch-date').value;
   var notes=document.getElementById('dispatch-notes').value.trim();
   // Validate required fields
   var valid=true;
   document.getElementById('dispatch-facility-field').classList.toggle('error',!facility);if(!facility)valid=false;
-  document.getElementById('dispatch-checklist-field').classList.toggle('error',selectedModules.length===0);if(selectedModules.length===0)valid=false;
   document.getElementById('dispatch-date-field').classList.toggle('error',!date);if(!date)valid=false;
   if(!valid)return;
   // Generate next INS-YYYY-NNNN ID
@@ -2441,12 +2449,12 @@ function confirmDispatchInspection(){
   all.forEach(function(r){var parts=r.id.split('-');var n=parseInt(parts[2]);if(n>maxNum)maxNum=n;});
   var yr=new Date().getFullYear();
   var newId='INS-'+yr+'-'+String(maxNum+1).padStart(4,'0');
-  // Derive form label from selected checklist type names
+  // Derive checklists from facility record
+  var cl=getChecklistsForFacility(facility);
+  var selectedModules=cl.moduleIds;
+  var formLabel=cl.typeNames.length>0?cl.typeNames.join(', '):'Not Configured';
+  // Expand matched checklist modules into items
   var mods=clGetAll();
-  var typeNames=[];
-  selectedModules.forEach(function(mid){var m=mods.find(function(c){return c.id===mid;});if(m&&typeNames.indexOf(m.type)===-1)typeNames.push(m.type);});
-  var formLabel=typeNames.join(', ')||'Inspection';
-  // Expand checklist modules into items
   var items=[];
   selectedModules.forEach(function(mid){
     var mod=mods.find(function(c){return c.id===mid;});
