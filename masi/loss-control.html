@@ -381,6 +381,12 @@ body.light-mode{
       <div class="subtab" onclick="switchInspSubtab(&#39;mailback&#39;)">Mail-Back</div>
     </div>
     <div id="insp-subtab-inspectors">
+      <div id="insp-import-dropzone" style="border:2px dashed var(--border);border-radius:6px;padding:20px 16px;text-align:center;cursor:pointer;transition:all .15s;background:var(--surface);display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:12px" onclick="document.getElementById('insp-import-file').click()">
+        <div style="font-family:var(--mono);font-size:18px;color:var(--text3);line-height:1">+</div>
+        <div><div style="font-size:13px;color:var(--text);font-weight:600">Drop inspector roster here</div><div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:2px">.xlsx or .csv — columns: Name, Territory, Certifications, Expiry, Email, Vendor</div></div>
+        <input type="file" id="insp-import-file" accept=".xlsx,.csv" style="display:none" onchange="inspImportFile(this)">
+      </div>
+      <div id="insp-import-status" style="font-family:var(--mono);font-size:10px;color:var(--text3);min-height:0;text-align:center;margin-bottom:8px"></div>
       <table class="tbl" id="inspectors-tbl">
         <thead><tr><th>Name</th><th>Territory</th><th>Certifications</th><th>Credential Expiry</th><th>Vendor</th><th>Portal Access</th><th>Delivery Mode</th><th>Active Inspections</th><th title="Corrective Action Request">Open CARs</th><th>Status</th><th></th></tr></thead>
         <tbody id="inspectorTable"><tr><td style="font-weight:600;color:var(--text)">M. Reyes</td><td>NJ, NY, PA</td><td style="font-family:var(--mono);font-size:10px">NAARSO Level II · AIMS</td><td><span class="badge badge-good">VALID</span> <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">2027-03-15</span></td><td style="font-size:11px">Amusement Standards</td><td><span class="badge badge-good">✓ Active</span></td><td><span class="badge badge-accent" style="cursor:pointer" onclick="cycleDeliveryMode(&#39;M. Reyes&#39;)" title="Mobile inspector portal access">PHONE</span></td><td style="text-align:center"><a href="https://amusementstandards.com/masi/loss-control.html#" style="font-family:var(--mono);font-weight:700;color:var(--accent);text-decoration:none" onclick="event.preventDefault();filterInspByName(&#39;M. Reyes&#39;)">3</a></td><td style="text-align:center"><a href="https://amusementstandards.com/masi/loss-control.html#" style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--red);text-decoration:none" onclick="event.preventDefault();filterCarsByInspector(&#39;M. Reyes&#39;)">2</a></td><td><span class="badge badge-good">ACTIVE</span></td><td><button class="btn-sm-action" onclick="openAssignToInspection(&#39;M. Reyes&#39;)">Assign to Inspection</button></td></tr><tr><td style="font-weight:600;color:var(--text)">R. Sandoval</td><td>NJ, MD, PA</td><td style="font-family:var(--mono);font-size:10px">NAARSO Level I · ASTM F24</td><td><span class="badge badge-warn">EXPIRING</span> <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">2026-06-30</span></td><td style="font-size:11px">Amusement Standards</td><td><span class="badge badge-accent">✗ Not Invited</span> <button class="btn-sm-action" onclick="provisionInspectorAccess(&#39;R. Sandoval&#39;)">Send Portal Invite</button></td><td><span class="badge badge-accent" style="cursor:pointer" onclick="cycleDeliveryMode(&#39;R. Sandoval&#39;)" title="Mobile inspector portal access">PHONE</span></td><td style="text-align:center"><a href="https://amusementstandards.com/masi/loss-control.html#" style="font-family:var(--mono);font-weight:700;color:var(--accent);text-decoration:none" onclick="event.preventDefault();filterInspByName(&#39;R. Sandoval&#39;)">2</a></td><td style="text-align:center"><a href="https://amusementstandards.com/masi/loss-control.html#" style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--red);text-decoration:none" onclick="event.preventDefault();filterCarsByInspector(&#39;R. Sandoval&#39;)">3</a></td><td><span class="badge badge-good">ACTIVE</span></td><td><button class="btn-sm-action" onclick="openAssignToInspection(&#39;R. Sandoval&#39;)">Assign to Inspection</button></td></tr><tr><td style="font-weight:600;color:var(--text)">A. Nguyen</td><td>CA, AZ</td><td style="font-family:var(--mono);font-size:10px">NAARSO Level I · CPO</td><td><span class="badge badge-good">VALID</span> <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">2026-11-20</span></td><td style="font-size:11px">Amusement Standards</td><td><span class="badge badge-accent">✗ Not Invited</span> <button class="btn-sm-action" onclick="provisionInspectorAccess(&#39;A. Nguyen&#39;)">Send Portal Invite</button></td><td><span class="badge badge-good" style="cursor:pointer" onclick="cycleDeliveryMode(&#39;A. Nguyen&#39;)" title="Mobile portal + paper backup">BOTH</span></td><td style="text-align:center"><a href="https://amusementstandards.com/masi/loss-control.html#" style="font-family:var(--mono);font-weight:700;color:var(--accent);text-decoration:none" onclick="event.preventDefault();filterInspByName(&#39;A. Nguyen&#39;)">0</a></td><td style="text-align:center"><span style="font-family:var(--mono);font-size:11px;color:var(--text3)">0</span></td><td><span class="badge badge-good">ACTIVE</span></td><td><button class="btn-sm-action" onclick="openAssignToInspection(&#39;A. Nguyen&#39;)">Assign to Inspection</button></td></tr><tr><td style="font-weight:600;color:var(--text)">K. Williams</td><td>TX, LA</td><td style="font-family:var(--mono);font-size:10px">AIMS · AFO</td><td><span class="badge badge-good">VALID</span> <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">2026-08-10</span></td><td style="font-size:11px">SafePark Inspections</td><td><span class="badge badge-accent">✗ Not Invited</span> <button class="btn-sm-action" onclick="provisionInspectorAccess(&#39;K. Williams&#39;)">Send Portal Invite</button></td><td><span class="badge badge-warn" style="cursor:pointer" onclick="cycleDeliveryMode(&#39;K. Williams&#39;)" title="Paper mail-back packet">PAPER</span></td><td style="text-align:center"><a href="https://amusementstandards.com/masi/loss-control.html#" style="font-family:var(--mono);font-weight:700;color:var(--accent);text-decoration:none" onclick="event.preventDefault();filterInspByName(&#39;K. Williams&#39;)">0</a></td><td style="text-align:center"><a href="https://amusementstandards.com/masi/loss-control.html#" style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--red);text-decoration:none" onclick="event.preventDefault();filterCarsByInspector(&#39;K. Williams&#39;)">1</a></td><td><span class="badge badge-good">ACTIVE</span></td><td><button class="btn-sm-action" onclick="openAssignToInspection(&#39;K. Williams&#39;)">Assign to Inspection</button></td></tr><tr><td style="font-weight:600;color:var(--text)">L. Davis</td><td>FL, GA</td><td style="font-family:var(--mono);font-size:10px">NAARSO Level I</td><td><span class="badge badge-warn">EXPIRING</span> <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">2026-05-01</span></td><td style="font-size:11px">Amusement Standards</td><td><span class="badge badge-accent">✗ Not Invited</span> <button class="btn-sm-action" onclick="provisionInspectorAccess(&#39;L. Davis&#39;)">Send Portal Invite</button></td><td><span class="badge badge-warn" style="cursor:pointer" onclick="cycleDeliveryMode(&#39;L. Davis&#39;)" title="Paper mail-back packet">PAPER</span></td><td style="text-align:center"><a href="https://amusementstandards.com/masi/loss-control.html#" style="font-family:var(--mono);font-weight:700;color:var(--accent);text-decoration:none" onclick="event.preventDefault();filterInspByName(&#39;L. Davis&#39;)">0</a></td><td style="text-align:center"><span style="font-family:var(--mono);font-size:11px;color:var(--text3)">0</span></td><td><span class="badge badge-good">ACTIVE</span></td><td><button class="btn-sm-action" onclick="openAssignToInspection(&#39;L. Davis&#39;)">Assign to Inspection</button></td></tr></tbody>
@@ -480,11 +486,6 @@ body.light-mode{
         </div>
       </div>
     </div>
-    <div class="ey">Recent Reports</div>
-    <table class="tbl" style="margin-top:8px">
-      <thead><tr><th>Report ID</th><th>Facility</th><th>Type</th><th>Generated</th><th>Status</th><th></th></tr></thead>
-      <tbody id="reportTable"></tbody>
-    </table>
     <div style="margin-top:24px">
       <div class="card" style="border-top:3px solid var(--accent)">
         <div class="card-label">Routing &amp; Permissions Matrix</div>
@@ -896,7 +897,7 @@ function showView(viewId){
     renderInspectors();renderVendors();
     if(subAction==='mailback')switchInspSubtab('mailback');
   }
-  if(viewId==='settings'||viewId==='access'||viewId==='reports'){renderRoutingMatrix();renderReports();}
+  if(viewId==='settings'||viewId==='access'||viewId==='reports'){renderRoutingMatrix();}
   if(tabMap[originalId]!==undefined&&tabs[tabMap[originalId]]){tabs[tabMap[originalId]].classList.add('active')}
 }
 function openModal(id){var el=document.getElementById(id);if(el)el.classList.add('open');}
@@ -1617,6 +1618,82 @@ function cycleDeliveryMode(inspectorName){
   saveInspectors(inspectors);
   renderInspectors();
 }
+// Inspector bulk import from spreadsheet
+function inspImportFile(input){
+  if(!input.files||!input.files[0])return;
+  var file=input.files[0];
+  var name=file.name.toLowerCase();
+  if(name.endsWith('.csv')){
+    var reader=new FileReader();
+    reader.onload=function(e){inspParseCSV(e.target.result);};
+    reader.readAsText(file);
+  }else if(name.endsWith('.xlsx')||name.endsWith('.xls')){
+    var doIt=function(){
+      var reader=new FileReader();
+      reader.onload=function(e){
+        try{
+          var wb=XLSX.read(e.target.result,{type:'array'});
+          var sheet=wb.Sheets[wb.SheetNames[0]];
+          var csv=XLSX.utils.sheet_to_csv(sheet);
+          inspParseCSV(csv);
+        }catch(ex){inspImportStatus('Could not parse spreadsheet: '+ex.message,'var(--red)');}
+      };
+      reader.readAsArrayBuffer(file);
+    };
+    if(typeof XLSX==='undefined'){
+      inspImportStatus('Loading SheetJS...','var(--accent)');
+      var s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.onload=doIt;s.onerror=function(){inspImportStatus('Failed to load SheetJS','var(--red)');};
+      document.head.appendChild(s);
+    }else doIt();
+  }else{inspImportStatus('Accepts .xlsx or .csv only','var(--red)');}
+  input.value='';
+}
+function inspImportStatus(msg,color){var el=document.getElementById('insp-import-status');if(el){el.textContent=msg;el.style.color=color||'var(--text3)';}}
+function inspParseCSV(csvText){
+  var lines=csvText.split(/\r?\n/).filter(function(l){return l.trim();});
+  if(lines.length<2){inspImportStatus('No data rows found','var(--red)');return;}
+  var headerLine=lines[0].toLowerCase();
+  var headers=headerLine.split(',').map(function(h){return h.trim().replace(/"/g,'');});
+  var colMap={name:-1,territory:-1,certs:-1,expiry:-1,email:-1,vendor:-1};
+  headers.forEach(function(h,i){
+    if(h.match(/\b(name|inspector|full name)\b/))colMap.name=i;
+    else if(h.match(/\b(territory|region|state|area)\b/))colMap.territory=i;
+    else if(h.match(/\b(cert|certification|credentials|license)\b/))colMap.certs=i;
+    else if(h.match(/\b(expir|expiry|exp date|credential)\b/))colMap.expiry=i;
+    else if(h.match(/\b(email|e-mail)\b/))colMap.email=i;
+    else if(h.match(/\b(vendor|company|firm)\b/))colMap.vendor=i;
+  });
+  if(colMap.name===-1){colMap.name=0;}
+  var inspectors=getInspectors();
+  var vendors=getVendors();
+  var added=0;
+  for(var i=1;i<lines.length;i++){
+    var cols=lines[i].split(',').map(function(c){return c.trim().replace(/"/g,'');});
+    var name=cols[colMap.name]||'';
+    if(!name||name.length<2)continue;
+    if(inspectors.find(function(x){return x.name.toLowerCase()===name.toLowerCase();}))continue;
+    var vendorName=colMap.vendor>=0?(cols[colMap.vendor]||''):'';
+    var vendorMatch=vendors.find(function(v){return v.name.toLowerCase()===vendorName.toLowerCase();});
+    inspectors.push({
+      name:name,
+      territory:colMap.territory>=0?(cols[colMap.territory]||'—'):'—',
+      certs:colMap.certs>=0?(cols[colMap.certs]||'—'):'—',
+      expiry:colMap.expiry>=0?(cols[colMap.expiry]||'2027-01-01'):'2027-01-01',
+      email:colMap.email>=0?(cols[colMap.email]||'—'):'—',
+      status:'ACTIVE',
+      vendorId:vendorMatch?vendorMatch.id:'V-001',
+      portalAccess:false,
+      deliveryMode:'Phone'
+    });
+    added++;
+  }
+  saveInspectors(inspectors);
+  renderInspectors();
+  if(added>0){inspImportStatus('Imported '+added+' inspector'+(added!==1?'s':''),'var(--good)');toast('Imported '+added+' inspector'+(added!==1?'s':''),'ok');}
+  else{inspImportStatus('No new inspectors found (all duplicates or empty rows)','var(--text3)');}
+}
 function renderVendors(){
   var vendors=getVendors();var inspectors=getInspectors();var inspections=getInspections();
   var tbody=document.getElementById('vendorTable');if(!tbody)return;var html='';
@@ -2279,7 +2356,7 @@ function renderMailback(){
   var html='';
   all.forEach(function(ins){
     var modNames=(ins.checklistModules||[]).map(function(mid){var m=mods.find(function(c){return c.id===mid;});return m?m.type+' '+m.version:'—';}).join(', ')||ins.form;
-    html+='<tr><td style="font-family:var(--mono);font-size:11px;color:var(--accent)">'+ins.id+'</td><td>'+ins.facility+'</td><td>'+ins.inspector+'</td><td style="font-family:var(--mono);font-size:11px">'+formatDate(ins.date)+'</td><td style="font-size:11px">'+modNames+'</td><td><div style="display:flex;gap:6px"><button class="btn-sm-action" onclick="mbGenerateOutboundPacket(\''+ins.id+'\')">Print Packet</button><button class="btn-sm-action" onclick="mbMarkMailed(\''+ins.id+'\')">Mark Mailed</button></div></td></tr>';
+    html+='<tr><td style="font-family:var(--mono);font-size:11px;color:var(--accent)">'+ins.id+'</td><td>'+ins.facility+'</td><td>'+ins.inspector+'</td><td style="font-family:var(--mono);font-size:11px">'+formatDate(ins.date)+'</td><td style="font-size:11px">'+modNames+'</td><td><div style="display:flex;gap:6px"><button class="btn-sm-action" onclick="mbGenerateOutboundPacket(\''+ins.id+'\')">Print Packet</button><button class="btn-sm-action" onclick="mbSendToInspector(\''+ins.id+'\')">Send to Inspector</button><button class="btn-sm-action" onclick="mbMarkMailed(\''+ins.id+'\')">Mark Mailed</button></div></td></tr>';
   });
   if(all.length===0)html='<tr><td colspan="6" style="text-align:center;color:var(--text3);font-family:var(--mono);font-size:10px;padding:20px">No scheduled/assigned inspections</td></tr>';
   tbody.innerHTML=html;
@@ -2293,6 +2370,27 @@ function mbMarkMailed(insId){
   fireStatusEmail(ins,'MAIL OUT');
   renderMailback();
   toast('Marked as mailed: '+insId+' → status MAIL OUT','ok');
+}
+function mbSendToInspector(insId){
+  var all=getInspections();var ins=all.find(function(r){return r.id===insId;});
+  if(!ins)return;
+  var inspectors=getInspectors();
+  var insp=inspectors.find(function(i){return i.name===ins.inspector;});
+  var email=insp?insp.email:'unknown';
+  if(!confirm('Send inspection packet to '+ins.inspector+' ('+email+')?\n\nFacility: '+ins.facility+'\nDate: '+ins.date))return;
+  console.log('--- INSPECTOR EMAIL ---');
+  console.log('To: '+email);
+  console.log('Subject: Inspection Assignment — '+ins.id+' — '+ins.facility);
+  console.log('Body: You have been assigned inspection '+ins.id+'.\n  Facility: '+ins.facility+'\n  Date: '+ins.date+'\n  Please complete and return via the Inspector Portal or mail-back.');
+  console.log('Attachment: Field Packet PDF for '+ins.id);
+  console.log('-----------------------');
+  if(ins.status==='SCHEDULED'){
+    ins.status='ASSIGNED';
+    saveInspections(all);
+    fireStatusEmail(ins,'ASSIGNED');
+  }
+  renderMailback();
+  toast('Sent to '+ins.inspector+' ('+email+')','ok');
 }
 
 function mbGenerateOutboundPacket(insId){
@@ -2607,7 +2705,16 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'){var el=docu
 // ═══════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════
-document.addEventListener('DOMContentLoaded',function(){loadTheme();renderInspections();clRenderTable();retryPendingSync();});
+document.addEventListener('DOMContentLoaded',function(){
+  loadTheme();renderInspections();clRenderTable();retryPendingSync();
+  // Inspector import drag-and-drop
+  var idz=document.getElementById('insp-import-dropzone');
+  if(idz){
+    idz.addEventListener('dragover',function(e){e.preventDefault();e.stopPropagation();idz.style.borderColor='var(--accent)';idz.style.background='var(--accent-l)';});
+    idz.addEventListener('dragleave',function(e){e.preventDefault();e.stopPropagation();idz.style.borderColor='var(--border)';idz.style.background='var(--surface)';});
+    idz.addEventListener('drop',function(e){e.preventDefault();e.stopPropagation();idz.style.borderColor='var(--border)';idz.style.background='var(--surface)';if(e.dataTransfer.files.length>0){var fakeInput={files:e.dataTransfer.files};inspImportFile(fakeInput);}});
+  }
+});
 </script>
 
 
