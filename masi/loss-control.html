@@ -211,12 +211,12 @@ body.light-mode .tab.active{color:#fff;border-bottom-color:#fff}
 
   <!-- INSPECTIONS -->
   <div class="panel active" id="view-inspections" style="display: block;">
-    <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div class="subtab-bar" id="insp-mode-tabs" style="margin-bottom:0">
+        <div class="subtab active" onclick="switchInspMode(&#39;list&#39;)">List</div>
+        <div class="subtab" onclick="switchInspMode(&#39;calendar&#39;)">Calendar</div>
+      </div>
       <button class="btn-primary" onclick="openDispatchInspection()">+ New Inspection</button>
-    </div>
-    <div class="subtab-bar" id="insp-mode-tabs" style="margin-bottom:12px">
-      <div class="subtab active" onclick="switchInspMode(&#39;list&#39;)">List</div>
-      <div class="subtab" onclick="switchInspMode(&#39;calendar&#39;)">Calendar</div>
     </div>
     <div id="insp-mode-list">
       <div class="filter-bar" id="inspections-filter-bar">
