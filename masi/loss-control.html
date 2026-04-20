@@ -497,6 +497,51 @@ body.light-mode .tab.active{color:#fff;border-bottom-color:#fff}
         </div>
       </div>
     </div>
+    <div style="margin-top:16px">
+      <div class="card">
+        <div class="card-label">Notification Preferences</div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:6px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--text)">Status change alerts</div>
+              <div style="font-size:11px;color:var(--text3)">Email when an inspection changes status</div>
+            </div>
+            <label class="toggle"><input type="checkbox" checked id="setting-notify-status" onchange="saveNotifyPrefs()"><span class="toggle-slider"></span></label>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--text)">Overdue CAR alerts</div>
+              <div style="font-size:11px;color:var(--text3)">Email when a CAR passes its due date</div>
+            </div>
+            <label class="toggle"><input type="checkbox" checked id="setting-notify-overdue" onchange="saveNotifyPrefs()"><span class="toggle-slider"></span></label>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--text)">Credential expiry warnings</div>
+              <div style="font-size:11px;color:var(--text3)">Alert 90 days before an inspector credential expires</div>
+            </div>
+            <label class="toggle"><input type="checkbox" checked id="setting-notify-creds" onchange="saveNotifyPrefs()"><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:16px">
+      <div class="card">
+        <div class="card-label">About</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text)">Loss Control Workspace</div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px">Version 1.0.0-pilot · Build 2026-04-20</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:6px">Developed by Amusement Standards LLC · Asbury Park, NJ</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">For MASI Loss Control · Tom Jones & Noel Rhodes</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text3)">SUPPORT</div>
+            <div style="font-size:11px;color:var(--accent)">adam@amusementstandards.com</div>
+          </div>
+        </div>
+      </div>
+    </div>
     <div style="margin-top:24px">
       <div class="card" style="border-top:3px solid var(--accent)">
         <div class="card-label">Routing &amp; Permissions Matrix</div>
@@ -706,6 +751,18 @@ function saveCarDueSettings(){
   LS.set('as360_car_due_defaults',{sev1:s1,sev2:s2,sev3:s3});
   toast('CAR due date defaults saved','ok');
 }
+function getNotifyPrefs(){
+  return LS.get('as360_notify_prefs',{status:true,overdue:true,creds:true});
+}
+function saveNotifyPrefs(){
+  var prefs={
+    status:document.getElementById('setting-notify-status').checked,
+    overdue:document.getElementById('setting-notify-overdue').checked,
+    creds:document.getElementById('setting-notify-creds').checked
+  };
+  LS.set('as360_notify_prefs',prefs);
+  toast('Notification preferences saved','ok');
+}
 function loadSettingsUI(){
   var d=getCarDueDefaults();
   var e1=document.getElementById('setting-sev1-days');if(e1)e1.value=d.sev1;
@@ -718,6 +775,11 @@ function loadSettingsUI(){
     if(userEl)userEl.textContent=LC_SESSION.display+' ('+LC_SESSION.role+')';
     if(timeEl)timeEl.textContent='Signed in: '+LC_SESSION.loginAt.substring(0,19).replace('T',' ');
   }
+  // Notification prefs
+  var np=getNotifyPrefs();
+  var ns=document.getElementById('setting-notify-status');if(ns)ns.checked=np.status;
+  var no=document.getElementById('setting-notify-overdue');if(no)no.checked=np.overdue;
+  var nc=document.getElementById('setting-notify-creds');if(nc)nc.checked=np.creds;
 }
 function logoutSession(){
   if(!confirm('Sign out? You will need to log in again.'))return;
@@ -729,7 +791,7 @@ function resetDemoData(){
   if(!confirm('This will erase ALL data (inspections, CARs, inspectors, facility profiles, checklists, routing matrix) and reload with defaults.\n\nThis cannot be undone. Continue?'))return;
   if(!confirm('Are you sure? All changes will be lost.'))return;
   try{
-    ['as360_inspections','as360_cars','as360_inspectors','as360_facility_profiles','as360_checklist_library','as360_routing_matrix','as360_routing_matrix_audit','as360_vendors','as360_reports','as360_mailback_inbound','as360_pending_sync','as360_seed_version','as360_car_due_defaults'].forEach(function(k){localStorage.removeItem(k);});
+    ['as360_inspections','as360_cars','as360_inspectors','as360_facility_profiles','as360_checklist_library','as360_routing_matrix','as360_routing_matrix_audit','as360_vendors','as360_reports','as360_mailback_inbound','as360_pending_sync','as360_seed_version','as360_car_due_defaults','as360_notify_prefs'].forEach(function(k){localStorage.removeItem(k);});
   }catch(e){}
   location.reload();
 }
@@ -2299,18 +2361,40 @@ function fbRenderAttractionsEditor(){
   var mods=clGetAll().filter(function(c){return c.active;});
   var html='';
   fbCurrentAttractions.forEach(function(a,idx){
-    var modNames=a.moduleIds.map(function(mid){var m=mods.find(function(c){return c.id===mid;});return m?m.type+' '+m.version:'?';}).join(', ')||'<span style="color:var(--red)">Unmatched</span>';
-    html+='<tr'+(a.unmatched?' style="background:var(--red-bg)"':'')+'>';
+    var modNames=a.moduleIds.map(function(mid){var m=mods.find(function(c){return c.id===mid;});return m?m.type+' '+m.version:'?';}).join(', ');
+    var isUnmatched=!a.moduleIds||a.moduleIds.length===0;
+    // Build module dropdown options
+    var optionsHtml='<option value="">\u2014 Select Module \u2014</option>';
+    mods.forEach(function(m){
+      optionsHtml+='<option value="'+m.id+'">'+escHtml(m.type)+' '+m.version+'</option>';
+    });
+    html+='<tr'+(isUnmatched?' style="background:var(--red-bg)"':'')+'>';
     html+='<td style="font-weight:600;color:var(--text)">'+escHtml(a.name)+'</td>';
     html+='<td>'+escHtml(a.manufacturer)+'</td>';
     html+='<td style="font-family:var(--mono);font-size:10px">'+escHtml(a.type)+'</td>';
-    html+='<td style="font-size:11px">'+modNames+'</td>';
+    html+='<td style="font-size:11px">';
+    if(isUnmatched){
+      html+='<select style="padding:4px 8px;background:var(--surface2);border:1px solid var(--red-b);border-radius:4px;font-family:var(--sans);font-size:11px;color:var(--text);outline:none;min-width:140px" onchange="fbAssignModule('+idx+',this.value)">'+optionsHtml+'</select>';
+    }else{
+      html+=modNames+' <button class="btn-sm-action" style="margin-left:6px;font-size:8px;color:var(--text3)" onclick="fbClearModule('+idx+')">change</button>';
+    }
+    html+='</td>';
     html+='<td><button class="btn-sm-action" onclick="fbRemoveAttraction('+idx+')">Remove</button></td></tr>';
   });
   tbody.innerHTML=html;
 }
 
 function fbRemoveAttraction(idx){fbCurrentAttractions.splice(idx,1);fbRenderAttractionsEditor();}
+function fbAssignModule(idx,modId){
+  if(!modId){fbCurrentAttractions[idx].moduleIds=[];fbCurrentAttractions[idx].unmatched=true;}
+  else{fbCurrentAttractions[idx].moduleIds=[modId];fbCurrentAttractions[idx].unmatched=false;}
+  fbRenderAttractionsEditor();
+}
+function fbClearModule(idx){
+  fbCurrentAttractions[idx].moduleIds=[];
+  fbCurrentAttractions[idx].unmatched=true;
+  fbRenderAttractionsEditor();
+}
 
 function fbSaveCurrentProfile(){
   var name=document.getElementById('fb-facility-name').value.trim();
@@ -2383,7 +2467,7 @@ function fbOpenProfile(profileId){
   fbCurrentFileName=p.sourceFileName;
   document.getElementById('fb-editor').style.display='block';
   document.getElementById('fb-facility-name').value=p.facilityName;
-  document.getElementById('fb-facility-location').value=p.location;
+  document.getElementById('fb-facility-location').value=p.location||'';
   fbRenderAttractionsEditor();
 }
 
