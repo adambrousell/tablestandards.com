@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <!-- saved from url=(0053)https://amusementstandards.com/masi/loss-control.html -->
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -167,9 +167,9 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 <div class="hdr">
   <div class="hdr-top">
     <div class="hdr-brand">
-      <div class="hdr-logo">Amusement <span>Standards</span></div>
+      <img src="./loss-control_files/masi-logo.png" style="height:24px;vertical-align:middle;opacity:.9">
       <div class="hdr-divider"></div>
-      <div class="hdr-prepared">Loss Control Workspace · <img src="./loss-control_files/masi-logo.png" style="height:22px;vertical-align:middle;opacity:.9"></div>
+      <div class="hdr-prepared">Loss Control Workspace</div>
     </div>
     <div class="hdr-meta">
       <span id="sync-indicator" style="font-family: var(--mono); font-size: 9px; color: var(--good);">⬤ Synced 10:39 AM</span>
@@ -193,7 +193,6 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
   <div class="panel active" id="view-inspections" style="display: block;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start">
       <div>
-        <div class="ey">Field Operations</div>
         <div class="ttl">Inspections</div>
       </div>
       <button class="btn-primary" onclick="openDispatchInspection()" style="margin-top:6px">+ New Inspection</button>
@@ -1073,6 +1072,16 @@ function renderInspections(){
     html+=modulesHtml;
     html+='<div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:10px;margin-bottom:4px">NEXT ACTION</div><div style="font-size:11px;color:var(--text)">'+(na[r.status]||'—')+'</div>';
     html+='<div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:10px;margin-bottom:4px">DAYS UNTIL DUE</div><div style="font-size:11px;color:var(--text);font-weight:700">'+(r.status==='CLOSED'||r.status==='DELIVERED'?'—':daysUntil+'d')+'</div>';
+    // Status workflow actions
+    html+='<div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:10px;margin-bottom:4px">ACTIONS</div><div style="display:flex;gap:6px;flex-wrap:wrap">';
+    if(r.status==='SCHEDULED')html+='<button class="btn-sm-action" onclick="event.stopPropagation();changeInspectionStatus(\''+r.id+'\',\'ASSIGNED\')">Mark Assigned</button>';
+    else if(r.status==='ASSIGNED')html+='<button class="btn-sm-action" onclick="event.stopPropagation();changeInspectionStatus(\''+r.id+'\',\'IN FIELD\')">Mark In Field</button>';
+    else if(r.status==='IN FIELD')html+='<button class="btn-sm-action" onclick="event.stopPropagation();changeInspectionStatus(\''+r.id+'\',\'SUBMITTED\')">Mark Submitted</button>';
+    else if(r.status==='SUBMITTED')html+='<button class="btn-sm-action" onclick="event.stopPropagation();changeInspectionStatus(\''+r.id+'\',\'DELIVERED\')">Approve &amp; Deliver</button><button class="btn-sm-action" onclick="event.stopPropagation();changeInspectionStatus(\''+r.id+'\',\'UNDER REVIEW\')">Return for Review</button>';
+    else if(r.status==='UNDER REVIEW')html+='<button class="btn-sm-action" onclick="event.stopPropagation();changeInspectionStatus(\''+r.id+'\',\'DELIVERED\')">Approve &amp; Deliver</button>';
+    else if(r.status==='DELIVERED'||r.status==='AWAITING REMEDIATION')html+='<button class="btn-sm-action" onclick="event.stopPropagation();changeInspectionStatus(\''+r.id+'\',\'CLOSED\')">Close Inspection</button>';
+    else if(r.status==='CLOSED')html+='<span style="font-family:var(--mono);font-size:10px;color:var(--good)">Complete</span>';
+    html+='</div>';
     html+='</div></div></td></tr>';
   });
   tbody.innerHTML=html;
@@ -1178,7 +1187,7 @@ function openFacility(facId){
   html+='<button class="facility-back-btn" onclick="closeFacility()">\u2190 Back to Facilities</button>';
   html+='<div class="facility-detail-hdr"><div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">';
   html+='<div><div style="font-family:var(--sans);font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px">'+f.name+'</div><div style="font-size:12px;color:var(--text2)">'+f.address+'</div><div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:6px">Contact: '+f.contact+' \u00b7 '+f.phone+'</div></div>';
-  html+='<div style="text-align:right"><div style="font-family:var(--mono);font-size:9px;color:var(--text3)">VENDOR</div><div style="font-size:12px;color:var(--text);font-weight:600">'+(vn?vn.name:'—')+'</div><div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:8px">UNDERWRITER</div><div style="font-size:12px;color:var(--text);font-weight:600">'+f.underwriter+'</div></div>';
+  html+='<div style="text-align:right"><div style="font-family:var(--mono);font-size:9px;color:var(--text3)">VENDOR</div><div style="font-size:12px;color:var(--text);font-weight:600">'+(vn?vn.name:'—')+'</div><div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:8px">UNDERWRITER</div><div style="font-size:12px;color:var(--text);font-weight:600">'+f.underwriter+'</div><button class="btn-primary" style="margin-top:12px;font-size:12px;padding:7px 14px" onclick="openDispatchInspection(\''+escAttr(f.name)+'\')">Dispatch Inspection</button></div>';
   html+='</div></div>';
   // FIX 9 — Survey table without Score column
   var sections=[
@@ -1787,7 +1796,8 @@ function renderCars(){
   filtered.forEach(function(c){
     var sevBadge=c.severity<=2?'badge-red':c.severity===3?'badge-warn':'badge-accent';
     var statusBadge=c.status==='CLOSED'?'badge-good':c.status==='IN REMEDIATION'?'badge-warn':'badge-red';
-    html+='<tr><td style="font-family:var(--mono);font-size:11px;color:var(--accent)">'+c.id+'</td><td>'+c.facility+'</td><td>'+c.ride+'</td><td style="font-size:11px">'+c.finding+'</td><td><span class="badge '+sevBadge+'">SEV '+c.severity+'</span></td><td>'+c.assignedTo+'</td><td style="font-family:var(--mono);font-size:11px">'+c.dueDate+'</td><td><span class="badge '+statusBadge+'">'+c.status+'</span></td>';
+    var dueDateOverdue=c.status!=='CLOSED'&&c.dueDate&&c.dueDate<today;
+    html+='<tr><td style="font-family:var(--mono);font-size:11px;color:var(--accent)">'+c.id+'</td><td>'+c.facility+'</td><td>'+c.ride+'</td><td style="font-size:11px">'+c.finding+'</td><td><span class="badge '+sevBadge+'">SEV '+c.severity+'</span></td><td>'+c.assignedTo+'</td><td style="font-family:var(--mono);font-size:11px'+(dueDateOverdue?';color:var(--red);font-weight:700':'')+'">'+c.dueDate+'</td><td><span class="badge '+statusBadge+'">'+c.status+'</span></td>';
     html+='<td>';
     if(c.status==='OPEN')html+='<button class="btn-sm-action" onclick="openSubmitRemediation(\''+c.id+'\')">Submit Remediation</button>';
     else if(c.status==='IN REMEDIATION')html+='<button class="btn-sm-action" onclick="openReviewClose(\''+c.id+'\')">Review &amp; Close</button>';
@@ -2390,7 +2400,7 @@ function formatDateShort(d){var months=['Jan','Feb','Mar','Apr','May','Jun','Jul
 // ═══════════════════════════════════════
 //  DISPATCH NEW INSPECTION
 // ═══════════════════════════════════════
-function openDispatchInspection(){
+function openDispatchInspection(facilityName){
   // Populate facility dropdown: merge FACILITIES_DATA + unique facilities from inspections + facility profiles
   var facSel=document.getElementById('dispatch-facility');
   var names={};
@@ -2399,6 +2409,7 @@ function openDispatchInspection(){
   fbGetProfiles().forEach(function(p){if(p.facilityName)names[p.facilityName]=1;});
   var sorted=Object.keys(names).sort();
   facSel.innerHTML='<option value="">Select facility...</option>'+sorted.map(function(n){return '<option value="'+escHtml(n)+'">'+escHtml(n)+'</option>';}).join('');
+  if(facilityName)facSel.value=facilityName;
   // Populate inspector dropdown
   var inspSel=document.getElementById('dispatch-inspector');
   inspSel.innerHTML='<option value="">\u2014 Unassigned (Assign Later) \u2014</option>'+getInspectors().map(function(i){return '<option value="'+escHtml(i.name)+'">'+escHtml(i.name)+'</option>';}).join('');
