@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <!-- saved from url=(0053)https://amusementstandards.com/masi/loss-control.html -->
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -106,6 +106,8 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 .btn-secondary:hover{border-color:var(--accent);color:var(--text2)}
 .btn-sm-action{padding:4px 10px;border:1px solid var(--border);border-radius:4px;font-family:var(--mono);font-size:9px;font-weight:600;cursor:pointer;background:var(--surface2);color:var(--accent);white-space:nowrap}
 .btn-sm-action:hover{border-color:var(--accent);background:var(--accent-l)}
+.btn-md-action{padding:7px 14px;border:1px solid var(--border);border-radius:5px;font-family:var(--mono);font-size:11px;font-weight:600;cursor:pointer;background:var(--surface2);color:var(--accent);white-space:nowrap}
+.btn-md-action:hover{border-color:var(--accent);background:var(--accent-l)}
 .filter-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
 .filter-bar select{padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;font-family:var(--sans);font-size:12px;color:var(--text);outline:none;cursor:pointer;min-width:140px}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:6px;overflow:hidden;min-height:320px}
@@ -198,11 +200,9 @@ body.light-mode{
 
   <!-- INSPECTIONS -->
   <div class="panel active" id="view-inspections" style="display: block;">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start">
-      <div>
-        <div class="ttl">Inspections</div>
-      </div>
-      <button class="btn-primary" onclick="openDispatchInspection()" style="margin-top:6px">+ New Inspection</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div class="ttl" style="margin-bottom:0">Inspections</div>
+      <button class="btn-primary" onclick="openDispatchInspection()">+ New Inspection</button>
     </div>
     <div id="inspections-stats" class="stat-row"><div class="stat"><div class="stat-num" style="color:var(--accent)">3</div><div class="stat-label">Scheduled</div></div><div class="stat"><div class="stat-num" style="color:var(--warn)">1</div><div class="stat-label">In Field</div></div><div class="stat"><div class="stat-num" style="color:var(--accent)">2</div><div class="stat-label">Submitted</div></div><div class="stat"><div class="stat-num" style="color:var(--good)">2</div><div class="stat-label">Closed</div></div></div>
     <div class="subtab-bar" id="insp-mode-tabs" style="margin-bottom:12px">
@@ -211,6 +211,7 @@ body.light-mode{
     </div>
     <div id="insp-mode-list">
       <div class="filter-bar" id="inspections-filter-bar">
+        <input type="text" id="filter-facility-search" placeholder="Search facility..." oninput="renderInspections()" style="padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;font-family:var(--sans);font-size:12px;color:var(--text);outline:none;min-width:160px">
         <select id="filter-status" onchange="renderInspections()">
           <option value="">All Statuses</option>
           <option value="SCHEDULED">Scheduled</option>
@@ -248,8 +249,10 @@ body.light-mode{
   <!-- FACILITIES -->
   <div class="panel" id="view-facilities" style="display: none;">
     <div id="facilities-list-view" style="display: block;">
-      <div class="ttl">Facilities</div>
-      <div style="margin-bottom:12px"><button class="btn-primary" onclick="fbOpenBuilder()">+ New Facility</button></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="ttl" style="margin-bottom:0">Facilities</div>
+        <button class="btn-primary" onclick="fbOpenBuilder()">+ New Facility</button>
+      </div>
       <table class="tbl" id="facilitiesTable"><thead><tr><th>Facility</th><th>Type</th><th>Location</th><th>Vendor</th><th>Last Inspection</th><th title="Corrective Action Request">Open CARs</th></tr></thead><tbody><tr style="cursor:pointer" onclick="openFacility(&#39;thunder-road&#39;)"><td style="font-weight:600;color:var(--text)">Thunder Road FEC</td><td style="font-family:var(--mono);font-size:10px">FEC</td><td>Tampa, FL</td><td style="font-size:11px">Amusement Standards</td><td style="font-family:var(--mono);font-size:11px">Apr 14, 2026</td><td style="text-align:center"><span style="font-family:var(--mono);font-size:11px;color:var(--text3)">0</span></td></tr><tr style="cursor:pointer" onclick="openFacility(&#39;splash-kingdom&#39;)"><td style="font-weight:600;color:var(--text)">Splash Kingdom Waterpark</td><td style="font-family:var(--mono);font-size:10px">Waterpark</td><td>Canton, TX</td><td style="font-size:11px">Amusement Standards</td><td style="font-family:var(--mono);font-size:11px">Apr 12, 2026</td><td style="text-align:center"><a href="https://amusementstandards.com/masi/loss-control.html#" style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--warn);text-decoration:none" onclick="event.preventDefault();event.stopPropagation();filterCarsByFacility(&#39;Splash Kingdom Waterpark&#39;)">2</a></td></tr><tr style="cursor:pointer" onclick="openFacility(&#39;adventure-park&#39;)"><td style="font-weight:600;color:var(--text)">Adventure Park USA</td><td style="font-family:var(--mono);font-size:10px">Amusement Park</td><td>New Market, MD</td><td style="font-size:11px">Amusement Standards</td><td style="font-family:var(--mono);font-size:11px">Apr 10, 2026</td><td style="text-align:center"><a href="https://amusementstandards.com/masi/loss-control.html#" style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--red);text-decoration:none" onclick="event.preventDefault();event.stopPropagation();filterCarsByFacility(&#39;Adventure Park USA&#39;)">3</a></td></tr><tr style="cursor:pointer" onclick="openFacility(&#39;heritage-carousel&#39;)"><td style="font-weight:600;color:var(--text)">Heritage Carousel Gardens</td><td style="font-family:var(--mono);font-size:10px">Carousel Park</td><td>Pasadena, CA</td><td style="font-size:11px">SafePark Inspections</td><td style="font-family:var(--mono);font-size:11px">Apr 8, 2026</td><td style="text-align:center"><span style="font-family:var(--mono);font-size:11px;color:var(--text3)">0</span></td></tr></tbody></table>
     </div>
     <div id="facility-detail-view" style="display:none">
@@ -368,14 +371,16 @@ body.light-mode{
 
   <!-- INSPECTORS -->
   <div class="panel" id="view-inspectors" style="display: none;">
-    <div class="ttl">Inspectors</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div class="ttl" style="margin-bottom:0">Inspectors</div>
+      <button class="btn-primary" onclick="openModal('modal-add-inspector')">+ Add Inspector</button>
+    </div>
     <div class="subtab-bar" id="insp-subtabs">
       <div class="subtab active" onclick="switchInspSubtab(&#39;inspectors&#39;)">Inspectors</div>
       <div class="subtab" onclick="switchInspSubtab(&#39;vendors&#39;)">Vendors</div>
       <div class="subtab" onclick="switchInspSubtab(&#39;mailback&#39;)">Mail-Back</div>
     </div>
     <div id="insp-subtab-inspectors">
-      <div style="margin-bottom:12px"><button class="btn-primary" onclick="openModal(&#39;modal-add-inspector&#39;)">Add Inspector</button></div>
       <table class="tbl" id="inspectors-tbl">
         <thead><tr><th>Name</th><th>Territory</th><th>Certifications</th><th>Credential Expiry</th><th>Vendor</th><th>Portal Access</th><th>Delivery Mode</th><th>Active Inspections</th><th title="Corrective Action Request">Open CARs</th><th>Status</th><th></th></tr></thead>
         <tbody id="inspectorTable"><tr><td style="font-weight:600;color:var(--text)">M. Reyes</td><td>NJ, NY, PA</td><td style="font-family:var(--mono);font-size:10px">NAARSO Level II · AIMS</td><td><span class="badge badge-good">VALID</span> <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">2027-03-15</span></td><td style="font-size:11px">Amusement Standards</td><td><span class="badge badge-good">✓ Active</span></td><td><span class="badge badge-accent" style="cursor:pointer" onclick="cycleDeliveryMode(&#39;M. Reyes&#39;)" title="Mobile inspector portal access">PHONE</span></td><td style="text-align:center"><a href="https://amusementstandards.com/masi/loss-control.html#" style="font-family:var(--mono);font-weight:700;color:var(--accent);text-decoration:none" onclick="event.preventDefault();filterInspByName(&#39;M. Reyes&#39;)">3</a></td><td style="text-align:center"><a href="https://amusementstandards.com/masi/loss-control.html#" style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--red);text-decoration:none" onclick="event.preventDefault();filterCarsByInspector(&#39;M. Reyes&#39;)">2</a></td><td><span class="badge badge-good">ACTIVE</span></td><td><button class="btn-sm-action" onclick="openAssignToInspection(&#39;M. Reyes&#39;)">Assign to Inspection</button></td></tr><tr><td style="font-weight:600;color:var(--text)">R. Sandoval</td><td>NJ, MD, PA</td><td style="font-family:var(--mono);font-size:10px">NAARSO Level I · ASTM F24</td><td><span class="badge badge-warn">EXPIRING</span> <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">2026-06-30</span></td><td style="font-size:11px">Amusement Standards</td><td><span class="badge badge-accent">✗ Not Invited</span> <button class="btn-sm-action" onclick="provisionInspectorAccess(&#39;R. Sandoval&#39;)">Send Portal Invite</button></td><td><span class="badge badge-accent" style="cursor:pointer" onclick="cycleDeliveryMode(&#39;R. Sandoval&#39;)" title="Mobile inspector portal access">PHONE</span></td><td style="text-align:center"><a href="https://amusementstandards.com/masi/loss-control.html#" style="font-family:var(--mono);font-weight:700;color:var(--accent);text-decoration:none" onclick="event.preventDefault();filterInspByName(&#39;R. Sandoval&#39;)">2</a></td><td style="text-align:center"><a href="https://amusementstandards.com/masi/loss-control.html#" style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--red);text-decoration:none" onclick="event.preventDefault();filterCarsByInspector(&#39;R. Sandoval&#39;)">3</a></td><td><span class="badge badge-good">ACTIVE</span></td><td><button class="btn-sm-action" onclick="openAssignToInspection(&#39;R. Sandoval&#39;)">Assign to Inspection</button></td></tr><tr><td style="font-weight:600;color:var(--text)">A. Nguyen</td><td>CA, AZ</td><td style="font-family:var(--mono);font-size:10px">NAARSO Level I · CPO</td><td><span class="badge badge-good">VALID</span> <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">2026-11-20</span></td><td style="font-size:11px">Amusement Standards</td><td><span class="badge badge-accent">✗ Not Invited</span> <button class="btn-sm-action" onclick="provisionInspectorAccess(&#39;A. Nguyen&#39;)">Send Portal Invite</button></td><td><span class="badge badge-good" style="cursor:pointer" onclick="cycleDeliveryMode(&#39;A. Nguyen&#39;)" title="Mobile portal + paper backup">BOTH</span></td><td style="text-align:center"><a href="https://amusementstandards.com/masi/loss-control.html#" style="font-family:var(--mono);font-weight:700;color:var(--accent);text-decoration:none" onclick="event.preventDefault();filterInspByName(&#39;A. Nguyen&#39;)">0</a></td><td style="text-align:center"><span style="font-family:var(--mono);font-size:11px;color:var(--text3)">0</span></td><td><span class="badge badge-good">ACTIVE</span></td><td><button class="btn-sm-action" onclick="openAssignToInspection(&#39;A. Nguyen&#39;)">Assign to Inspection</button></td></tr><tr><td style="font-weight:600;color:var(--text)">K. Williams</td><td>TX, LA</td><td style="font-family:var(--mono);font-size:10px">AIMS · AFO</td><td><span class="badge badge-good">VALID</span> <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">2026-08-10</span></td><td style="font-size:11px">SafePark Inspections</td><td><span class="badge badge-accent">✗ Not Invited</span> <button class="btn-sm-action" onclick="provisionInspectorAccess(&#39;K. Williams&#39;)">Send Portal Invite</button></td><td><span class="badge badge-warn" style="cursor:pointer" onclick="cycleDeliveryMode(&#39;K. Williams&#39;)" title="Paper mail-back packet">PAPER</span></td><td style="text-align:center"><a href="https://amusementstandards.com/masi/loss-control.html#" style="font-family:var(--mono);font-weight:700;color:var(--accent);text-decoration:none" onclick="event.preventDefault();filterInspByName(&#39;K. Williams&#39;)">0</a></td><td style="text-align:center"><a href="https://amusementstandards.com/masi/loss-control.html#" style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--red);text-decoration:none" onclick="event.preventDefault();filterCarsByInspector(&#39;K. Williams&#39;)">1</a></td><td><span class="badge badge-good">ACTIVE</span></td><td><button class="btn-sm-action" onclick="openAssignToInspection(&#39;K. Williams&#39;)">Assign to Inspection</button></td></tr><tr><td style="font-weight:600;color:var(--text)">L. Davis</td><td>FL, GA</td><td style="font-family:var(--mono);font-size:10px">NAARSO Level I</td><td><span class="badge badge-warn">EXPIRING</span> <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">2026-05-01</span></td><td style="font-size:11px">Amusement Standards</td><td><span class="badge badge-accent">✗ Not Invited</span> <button class="btn-sm-action" onclick="provisionInspectorAccess(&#39;L. Davis&#39;)">Send Portal Invite</button></td><td><span class="badge badge-warn" style="cursor:pointer" onclick="cycleDeliveryMode(&#39;L. Davis&#39;)" title="Paper mail-back packet">PAPER</span></td><td style="text-align:center"><a href="https://amusementstandards.com/masi/loss-control.html#" style="font-family:var(--mono);font-weight:700;color:var(--accent);text-decoration:none" onclick="event.preventDefault();filterInspByName(&#39;L. Davis&#39;)">0</a></td><td style="text-align:center"><span style="font-family:var(--mono);font-size:11px;color:var(--text3)">0</span></td><td><span class="badge badge-good">ACTIVE</span></td><td><button class="btn-sm-action" onclick="openAssignToInspection(&#39;L. Davis&#39;)">Assign to Inspection</button></td></tr></tbody>
@@ -420,7 +425,7 @@ body.light-mode{
 
   <!-- CARS (promoted from Reports sub-section per FIX 6) -->
   <div class="panel" id="view-cars" style="display: none;">
-    <div class="ttl"><span title="Corrective Action Request">Corrective Action Requests</span></div>
+    <div style="margin-bottom:12px"><div class="ttl" style="margin-bottom:0"><span title="Corrective Action Request">Corrective Action Requests</span></div></div>
     <div id="cars-stats" class="stat-row"><div class="stat"><div class="stat-num" style="color:var(--red)">6</div><div class="stat-label">Open</div></div><div class="stat"><div class="stat-num" style="color:var(--accent)">0</div><div class="stat-label">Assigned</div></div><div class="stat"><div class="stat-num" style="color:var(--warn)">0</div><div class="stat-label">In Remediation</div></div><div class="stat"><div class="stat-num" style="color:var(--warn)">0</div><div class="stat-label">Awaiting Verification</div></div><div class="stat"><div class="stat-num" style="color:var(--good)">0</div><div class="stat-label">Closed</div></div><div class="stat"><div class="stat-num" style="color:var(--red)">2</div><div class="stat-label">Overdue</div></div></div>
     <div class="filter-bar" id="cars-filter-bar">
       <select id="car-filter-severity" onchange="renderCars()">
@@ -558,6 +563,7 @@ body.light-mode{
 <div class="modal-overlay" id="modal-close-car"><div class="modal">
   <div class="modal-title" id="close-car-modal-title">Close CAR</div>
   <div class="modal-field"><label>CAR ID</label><input type="text" id="close-car-id" readonly=""></div>
+  <div id="close-car-context" style="padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;margin-bottom:10px"></div>
   <div class="modal-field" id="close-car-reviewer-field" style="display:none"><label>Reviewer Name</label><input type="text" id="close-car-reviewer" placeholder="Your name"></div>
   <div class="modal-field"><label>Resolution / Review Notes</label><textarea id="close-car-notes" placeholder="Describe the corrective action taken..."></textarea></div>
   <div class="modal-actions"><button class="btn-primary" id="close-car-submit-btn" onclick="confirmCloseCar()">Close CAR</button><button class="btn-secondary" onclick="closeModal(&#39;modal-close-car&#39;)">Cancel</button></div>
@@ -566,6 +572,7 @@ body.light-mode{
 <div class="modal-overlay" id="modal-submit-remediation"><div class="modal">
   <div class="modal-title">Submit Remediation</div>
   <div class="modal-field"><label>CAR ID</label><input type="text" id="remediation-car-id" readonly=""></div>
+  <div id="remediation-context" style="padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;margin-bottom:10px"></div>
   <div class="modal-field"><label>Remediation Notes</label><textarea id="remediation-notes" placeholder="Describe corrective action taken..."></textarea></div>
   <div class="modal-field"><label>Photo Filename (if applicable)</label><input type="text" id="remediation-photo" placeholder="e.g. fix_photo_001.jpg"></div>
   <div class="modal-actions"><button class="btn-primary" onclick="confirmSubmitRemediation()">Submit</button><button class="btn-secondary" onclick="closeModal(&#39;modal-submit-remediation&#39;)">Cancel</button></div>
@@ -989,7 +996,8 @@ function renderInspections(){
   if(fInsp){var names={};all.forEach(function(r){names[r.inspector]=1;});var h='<option value="">All Inspectors</option>';Object.keys(names).sort().forEach(function(n){h+='<option value="'+n+'"'+(curInsp===n?' selected':'')+'>'+n+'</option>';});fInsp.innerHTML=h;}
   if(fForm){var forms={};all.forEach(function(r){forms[r.form]=1;});var h2='<option value="">All Types</option>';Object.keys(forms).sort().forEach(function(f){h2+='<option value="'+f+'"'+(curForm===f?' selected':'')+'>'+f+'</option>';});fForm.innerHTML=h2;}
   var fs=document.getElementById('filter-status');var statusF=fs?fs.value:'';var inspF=fInsp?fInsp.value:'';var formF=fForm?fForm.value:'';
-  var filtered=all.filter(function(r){if(statusF&&r.status!==statusF)return false;if(inspF&&r.inspector!==inspF)return false;if(formF&&r.form!==formF)return false;return true;});
+  var facSearch=(document.getElementById('filter-facility-search')||{}).value||'';
+  var filtered=all.filter(function(r){if(statusF&&r.status!==statusF)return false;if(inspF&&r.inspector!==inspF)return false;if(formF&&r.form!==formF)return false;if(facSearch&&r.facility.toLowerCase().indexOf(facSearch.toLowerCase())===-1)return false;return true;});
   // FIX 3 — 4 status buckets matching actual row statuses
   var sched=0,inField=0,submitted=0,closedCt=0;
   all.forEach(function(r){
@@ -1054,8 +1062,8 @@ function renderInspections(){
     var insp=inspectors.find(function(x){return x.name===r.inspector;});var contact=insp?insp.email:'—';
     html+='<tr id="insp-detail-'+r.id+'" style="display:none"><td colspan="8" style="padding:0;background:var(--surface2)"><div style="padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:16px">';
     html+='<div><div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-bottom:6px">ITEMS ('+r.items.length+')</div>'+itemsHtml;
-    if(canAddItems)html+='<div style="margin-top:8px;display:flex;gap:6px"><button class="btn-sm-action" onclick="event.stopPropagation();openAddItem(\''+r.id+'\')">+ Add Item</button><button class="btn-sm-action" onclick="event.stopPropagation();openAddForm(\''+r.id+'\')">+ Add Form</button></div>';
-    html+='<div style="margin-top:6px"><button class="btn-sm-action" onclick="event.stopPropagation();generateCrashKit(\''+r.id+'\')">Crash Kit PDF</button></div>';
+    if(canAddItems)html+='<div style="margin-top:8px;display:flex;gap:6px"><button class="btn-md-action" onclick="event.stopPropagation();openAddItem(\''+r.id+'\')">+ Add Item</button><button class="btn-md-action" onclick="event.stopPropagation();openAddForm(\''+r.id+'\')">+ Add Form</button></div>';
+    html+='<div style="margin-top:6px"><button class="btn-md-action" onclick="event.stopPropagation();generateCrashKit(\''+r.id+'\')">Field Packet</button></div>';
     // Discoveries section
     if(r.discoveredAttractions&&r.discoveredAttractions.length>0){
       html+='<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border)"><div style="font-family:var(--mono);font-size:9px;color:var(--warn);margin-bottom:6px">DISCOVERIES ('+r.discoveredAttractions.length+')</div>';
@@ -1438,9 +1446,74 @@ function clGuessType(fileName){var n=(fileName||'').toLowerCase();var map={'go-k
 function clShowPreview(result,fileName){clParsedResult=result;clParsedResult.fileName=fileName;var sections=result.sections;var totalItems=clCountItems(sections);if(totalItems===0){clSetStatus('No checklist items found — check file format','var(--red)');clSetParseStatus('0 items');document.getElementById('cl-preview-panel').style.display='none';return;}clSetStatus('','var(--text3)');clSetParseStatus(totalItems+' items found');var guess=clGuessType(fileName);if(!guess&&sections.length>0)guess=clGuessType(sections[0].name);var typeSelect=document.getElementById('cl-type-select');if(typeSelect&&guess)typeSelect.value=guess;var previewType=typeSelect?typeSelect.value:'';var versionLabel=previewType?clNextVersion(previewType):'v?';document.getElementById('cl-preview-version').textContent=versionLabel;document.getElementById('cl-preview-items').textContent=totalItems+' items · '+sections.length+' sections';typeSelect.onchange=function(){document.getElementById('cl-preview-version').textContent=this.value?clNextVersion(this.value):'v?';};var secDiv=document.getElementById('cl-preview-sections');var html='';sections.forEach(function(sec,si){html+='<div style="margin-bottom:10px"><div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--text);padding:5px 0;border-bottom:2px solid var(--accent);margin-bottom:4px;display:flex;justify-content:space-between"><span>'+(si+1)+' · '+escHtml(sec.name).toUpperCase()+'</span><span style="color:var(--text3);font-weight:400">'+sec.items.length+' item'+(sec.items.length!==1?'s':'')+(sec.hasComments?' · comments':'')+'</span></div>';sec.items.forEach(function(item){html+='<div style="padding:3px 0 3px 12px;font-size:11px;color:var(--text2);border-bottom:1px solid var(--border)">'+escHtml(item)+'</div>';});html+='</div>';});secDiv.innerHTML=html;var sigDiv=document.getElementById('cl-preview-sig');if(result.signatureLines.length>0){sigDiv.style.display='block';sigDiv.innerHTML='<strong>Signature block detected:</strong> '+result.signatureLines.map(function(l){return escHtml(l);}).join(' · ');}else sigDiv.style.display='none';document.getElementById('cl-preview-panel').style.display='block';}
 function clConfirmSave(){if(!clParsedResult||!clParsedResult.sections.length)return;var typeSelect=document.getElementById('cl-type-select');var type=typeSelect?typeSelect.value:'';if(!type){clSetStatus('Select an attraction type before saving','var(--red)');return;}var version=clNextVersion(type);var record={id:'cl-'+Date.now(),type:type,version:version,uploadedBy:'Noel Rhodes',uploadDate:new Date().toISOString().split('T')[0],itemCount:clCountItems(clParsedResult.sections),active:false,sections:clParsedResult.sections,signatureLines:clParsedResult.signatureLines||[],fileName:clParsedResult.fileName||'unknown'};var all=clGetAll();all.forEach(function(c){if(c.type===type)c.active=false;});record.active=true;all.push(record);clSaveAll(all);clRenderTable();clDiscardPreview();}
 function clDiscardPreview(){clPendingFile=null;clParsedResult=null;document.getElementById('cl-file-info').style.display='none';document.getElementById('cl-preview-panel').style.display='none';document.getElementById('cl-file-input').value='';var typeSelect=document.getElementById('cl-type-select');if(typeSelect){typeSelect.value='';typeSelect.onchange=null;}clSetStatus('','var(--text3)');clSetParseStatus('Ready to parse');}
-function clRenderTable(){var all=clGetAll();var tbody=document.getElementById('cl-version-tbody');var empty=document.getElementById('cl-empty-state');var countEl=document.getElementById('cl-version-count');var tbl=document.getElementById('cl-version-table');if(!tbody)return;if(countEl)countEl.textContent=all.length+' checklist'+(all.length!==1?'s':'');if(all.length===0){if(tbl)tbl.style.display='none';if(empty)empty.style.display='block';return;}if(tbl)tbl.style.display='';if(empty)empty.style.display='none';var sorted=all.slice().sort(function(a,b){if(a.type<b.type)return -1;if(a.type>b.type)return 1;return parseInt(b.version.replace('v',''))-parseInt(a.version.replace('v',''));});var html='';sorted.forEach(function(c){var toggleHtml='<label class="toggle" onclick="event.stopPropagation()"><input type="checkbox"'+(c.active?' checked':'')+' onchange="clToggleActive(\''+c.id+'\')"><span class="toggle-slider"></span></label>';var lastDeployedCell=c.lastDeployed?'<td style="font-family:var(--mono);font-size:11px">'+escHtml(c.lastDeployed)+'</td>':'<td style="font-family:var(--mono);font-size:11px;color:var(--text3);text-align:center">\u2014</td>';html+='<tr style="cursor:pointer" onclick="clTogglePreview(\''+c.id+'\')"><td style="font-weight:600;color:var(--text)">'+c.type+'</td><td style="font-family:var(--mono);font-size:11px;color:var(--accent);font-weight:700">'+c.version+'</td><td>'+c.uploadedBy+'</td><td style="font-family:var(--mono);font-size:11px">'+c.uploadDate+'</td><td style="font-family:var(--mono);font-size:11px;text-align:center;font-weight:700">'+c.itemCount+'</td><td>'+toggleHtml+'</td>'+lastDeployedCell+'<td>'+(c.active?'<button class="btn-sm-action" title="Printable backup checklist for field use when portal is unavailable" onclick="event.stopPropagation();clGeneratePDF(\''+c.id+'\')">Field Print Backup</button>':'')+'</td></tr>';html+='<tr id="cl-preview-row-'+c.id+'" style="display:none"><td colspan="8" style="padding:0;background:var(--surface2)"><div style="padding:14px">'+clRenderPreviewContent(c)+'</div></td></tr>';});tbody.innerHTML=html;}
+function clRenderTable(){
+  var all=clGetAll();
+  var tbody=document.getElementById('cl-version-tbody');
+  var empty=document.getElementById('cl-empty-state');
+  var countEl=document.getElementById('cl-version-count');
+  var tbl=document.getElementById('cl-version-table');
+  if(!tbody)return;
+  if(countEl)countEl.textContent=all.length+' checklist'+(all.length!==1?'s':'');
+  if(all.length===0){if(tbl)tbl.style.display='none';if(empty)empty.style.display='block';return;}
+  if(tbl)tbl.style.display='';if(empty)empty.style.display='none';
+  // Group by type
+  var groups={};var groupOrder=[];
+  all.slice().sort(function(a,b){
+    if(a.type<b.type)return -1;if(a.type>b.type)return 1;
+    return parseInt(b.version.replace('v',''))-parseInt(a.version.replace('v',''));
+  }).forEach(function(c){
+    if(!groups[c.type]){groups[c.type]=[];groupOrder.push(c.type);}
+    groups[c.type].push(c);
+  });
+  var html='';
+  groupOrder.forEach(function(type){
+    var items=groups[type];
+    var activeItem=items.find(function(c){return c.active;});
+    var hasMultiple=items.length>1;
+    var groupId='cl-group-'+type.replace(/[^a-zA-Z0-9]/g,'-');
+    // Group header row
+    html+='<tr style="cursor:pointer;background:var(--surface2)" onclick="clToggleGroup(\''+groupId+'\')">';
+    html+='<td style="font-weight:700;color:var(--text);font-size:13px" colspan="4">'+escHtml(type);
+    if(hasMultiple)html+=' <span style="font-family:var(--mono);font-size:10px;color:var(--text3);font-weight:400">('+items.length+' versions)</span>';
+    html+='</td>';
+    html+='<td style="font-family:var(--mono);font-size:11px;text-align:center;font-weight:700">'+(activeItem?activeItem.itemCount:'\u2014')+'</td>';
+    html+='<td>'+(activeItem?'<span class="badge badge-good">ACTIVE \u00B7 '+activeItem.version+'</span>':'<span class="badge badge-accent">NONE ACTIVE</span>')+'</td>';
+    html+='<td style="font-family:var(--mono);font-size:11px;color:var(--text3);text-align:center">'+(activeItem&&activeItem.lastDeployed?escHtml(activeItem.lastDeployed):'\u2014')+'</td>';
+    html+='<td>';
+    if(activeItem)html+='<button class="btn-sm-action" title="Printable backup checklist for field use when portal is unavailable" onclick="event.stopPropagation();clGeneratePDF(\''+activeItem.id+'\')">Field Print Backup</button>';
+    if(hasMultiple)html+=' <span style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-left:4px" id="'+groupId+'-arrow">\u25B6</span>';
+    html+='</td></tr>';
+    // Individual version rows (hidden by default if multiple)
+    items.forEach(function(c){
+      var isHidden=hasMultiple;
+      var toggleHtml='<label class="toggle" onclick="event.stopPropagation()"><input type="checkbox"'+(c.active?' checked':'')+' onchange="clToggleActive(\''+c.id+'\')"><span class="toggle-slider"></span></label>';
+      var lastDeployedCell=c.lastDeployed?'<td style="font-family:var(--mono);font-size:11px">'+escHtml(c.lastDeployed)+'</td>':'<td style="font-family:var(--mono);font-size:11px;color:var(--text3);text-align:center">\u2014</td>';
+      html+='<tr class="'+groupId+'-row" style="cursor:pointer;'+(isHidden?'display:none;':'')+'" onclick="clTogglePreview(\''+c.id+'\')">';
+      html+='<td style="font-weight:600;color:var(--text);padding-left:24px">'+c.type+'</td>';
+      html+='<td style="font-family:var(--mono);font-size:11px;color:var(--accent);font-weight:700">'+c.version+'</td>';
+      html+='<td>'+c.uploadedBy+'</td>';
+      html+='<td style="font-family:var(--mono);font-size:11px">'+c.uploadDate+'</td>';
+      html+='<td style="font-family:var(--mono);font-size:11px;text-align:center;font-weight:700">'+c.itemCount+'</td>';
+      html+='<td>'+toggleHtml+'</td>';
+      html+=lastDeployedCell;
+      html+='<td>'+(c.active?'<button class="btn-sm-action" title="Printable backup checklist for field use when portal is unavailable" onclick="event.stopPropagation();clGeneratePDF(\''+c.id+'\')">Field Print Backup</button>':'')+'</td>';
+      html+='</tr>';
+      // Preview row
+      html+='<tr id="cl-preview-row-'+c.id+'" style="display:none"><td colspan="8" style="padding:0;background:var(--surface2)"><div style="padding:14px">'+clRenderPreviewContent(c)+'</div></td></tr>';
+    });
+  });
+  tbody.innerHTML=html;
+}
 function clRenderPreviewContent(checklist){var html='<div style="font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:10px">'+checklist.type+' · '+checklist.version+' · '+checklist.fileName+'</div>';checklist.sections.forEach(function(sec,si){html+='<div style="margin-bottom:12px"><div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--text);padding:6px 0;border-bottom:2px solid var(--accent);margin-bottom:6px;display:flex;justify-content:space-between"><span>'+(si+1)+' · '+sec.name.toUpperCase()+'</span><span style="font-weight:400;color:var(--text3)">'+sec.items.length+' item'+(sec.items.length!==1?'s':'')+(sec.hasComments?' · comments field':'')+'</span></div>';sec.items.forEach(function(item){html+='<div style="padding:4px 0 4px 12px;font-size:12px;color:var(--text2);border-bottom:1px solid var(--border)">'+escHtml(item)+'</div>';});html+='</div>';});if(checklist.signatureLines&&checklist.signatureLines.length>0)html+='<div style="font-family:var(--mono);font-size:9px;color:var(--text3);padding:6px 0;border-top:1px solid var(--border)">Signature block: '+checklist.signatureLines.map(function(l){return escHtml(l);}).join(' · ')+'</div>';return html;}
 function clTogglePreview(id){var row=document.getElementById('cl-preview-row-'+id);if(!row)return;if(clExpandedRow&&clExpandedRow!==id){var prev=document.getElementById('cl-preview-row-'+clExpandedRow);if(prev)prev.style.display='none';}row.style.display=row.style.display==='none'?'':'none';clExpandedRow=row.style.display===''?id:null;}
+function clToggleGroup(groupId){
+  var rows=document.querySelectorAll('.'+groupId+'-row');
+  var arrow=document.getElementById(groupId+'-arrow');
+  if(!rows.length)return;
+  var isHidden=rows[0].style.display==='none';
+  rows.forEach(function(r){r.style.display=isHidden?'':'none';});
+  if(arrow)arrow.textContent=isHidden?'\u25BC':'\u25B6';
+}
 function clToggleActive(id){var all=clGetAll();var target=all.find(function(c){return c.id===id;});if(!target)return;if(target.active)target.active=false;else{all.forEach(function(c){if(c.type===target.type)c.active=false;});target.active=true;}clSaveAll(all);clRenderTable();}
 function clGeneratePDF(id){var all=clGetAll();var cl=all.find(function(c){return c.id===id;});if(!cl)return;var pa=document.getElementById('printArea');var html='<div id="printArea"><h2>'+cl.type+' Inspection Checklist — '+cl.version+'</h2><table style="margin-bottom:16px"><tr><td style="width:33%"><strong>Facility:</strong> ______________________</td><td style="width:33%"><strong>Inspector:</strong> ______________________</td><td><strong>Date:</strong> ______________</td></tr><tr><td><strong>Job ID:</strong> ______________________</td><td colspan="2"></td></tr></table>';cl.sections.forEach(function(sec,si){html+='<div class="print-section"><h3>'+(si+1)+'. '+sec.name+'</h3><table><thead><tr><th style="width:60%">Item</th><th style="width:8%">Pass</th><th style="width:8%">Fail</th><th style="width:8%">N/A</th><th style="width:16%">Notes</th></tr></thead><tbody>';sec.items.forEach(function(item){html+='<tr><td>'+escHtml(item)+'</td><td style="text-align:center"><span class="print-checkbox"></span></td><td style="text-align:center"><span class="print-checkbox"></span></td><td style="text-align:center"><span class="print-checkbox"></span></td><td></td></tr>';});html+='</tbody></table><div style="margin-top:6px"><strong>Section Comments:</strong> _____________________________________________</div></div>';});html+='<div style="margin-top:30px;margin-bottom:20px;font-style:italic;line-height:1.5">I have visually inspected the '+escHtml(cl.type)+' as indicated above and have checked all items as directed by the above checklist. I certify that by my signature below this ride is ready for operational testing procedures.</div>';html+='<table style="margin-top:10px;border:none"><tr><td style="border:none;padding:4px 0"><strong>Inspector Name (Print):</strong> _________________________________</td></tr><tr><td style="border:none;padding:4px 0"><strong>Inspector Signature:</strong> _________________________________&nbsp;&nbsp;&nbsp;&nbsp;<strong>Date:</strong> _____________</td></tr></table>';html+='<div style="margin-top:20px;font-size:10px"><strong>Primary:</strong> Noel Rhodes, [address placeholder]<br><strong>Secondary:</strong> Adam Brousell, Asbury Park NJ</div></div>';pa.innerHTML=html;pa.style.display='block';setTimeout(function(){window.print();pa.style.display='none';},200);}
 
@@ -1824,7 +1897,16 @@ function filterCarsByInspector(inspName){
   showView('cars');
   setTimeout(function(){var fi=document.getElementById('car-filter-inspector');if(fi){fi.value=inspName;}renderCars();},0);
 }
-function openSubmitRemediation(carId){document.getElementById('remediation-car-id').value=carId;document.getElementById('remediation-notes').value='';document.getElementById('remediation-photo').value='';openModal('modal-submit-remediation');}
+function openSubmitRemediation(carId){
+  document.getElementById('remediation-car-id').value=carId;
+  document.getElementById('remediation-notes').value='';
+  document.getElementById('remediation-photo').value='';
+  var car=getCars().find(function(c){return c.id===carId;});
+  var ctx=document.getElementById('remediation-context');
+  if(ctx&&car){ctx.innerHTML='<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">'+escHtml(car.facility)+'</div><div style="font-size:12px;color:var(--text2);margin-bottom:2px">'+escHtml(car.finding)+'</div><div><span class="badge '+(car.severity<=2?'badge-red':'badge-warn')+'">SEV '+car.severity+'</span> <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">Due: '+car.dueDate+'</span></div>';}
+  else if(ctx){ctx.innerHTML='';}
+  openModal('modal-submit-remediation');
+}
 function confirmSubmitRemediation(){
   var carId=document.getElementById('remediation-car-id').value;var notes=document.getElementById('remediation-notes').value.trim();if(!notes)return;
   var cars=getCars();var car=cars.find(function(c){return c.id===carId;});
@@ -1837,6 +1919,10 @@ function openReviewClose(carId){
   document.getElementById('close-car-reviewer-field').style.display='';
   document.getElementById('close-car-reviewer').value='';
   document.getElementById('close-car-submit-btn').textContent='Review & Close';
+  var car=getCars().find(function(c){return c.id===carId;});
+  var ctx=document.getElementById('close-car-context');
+  if(ctx&&car){ctx.innerHTML='<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">'+escHtml(car.facility)+'</div><div style="font-size:12px;color:var(--text2);margin-bottom:2px">'+escHtml(car.finding)+'</div><div><span class="badge '+(car.severity<=2?'badge-red':'badge-warn')+'">SEV '+car.severity+'</span>'+(car.remediationNotes?' <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">Remediation: '+escHtml(car.remediationNotes.substring(0,80))+'</span>':'')+'</div>';}
+  else if(ctx){ctx.innerHTML='';}
   openModal('modal-close-car');
 }
 function confirmCloseCar(){
@@ -2105,7 +2191,20 @@ function fbOpenProfile(profileId){
   var p=profiles.find(function(x){return x.id===profileId;});
   if(!p)return;
   fbEditingProfileId=p.id;
-  fbCurrentAttractions=p.attractions.slice();
+  // Migrate attractions: if they have matchedModules (type name strings) but no moduleIds, resolve to active checklist IDs
+  var allMods=clGetAll();
+  fbCurrentAttractions=p.attractions.map(function(a){
+    var copy={name:a.name,manufacturer:a.manufacturer||'',type:a.type||'',moduleIds:a.moduleIds||[],unmatched:false};
+    if((!copy.moduleIds||copy.moduleIds.length===0)&&a.matchedModules&&a.matchedModules.length>0){
+      copy.moduleIds=[];
+      a.matchedModules.forEach(function(typeName){
+        var mod=allMods.find(function(c){return c.active&&c.type===typeName;});
+        if(mod&&copy.moduleIds.indexOf(mod.id)===-1)copy.moduleIds.push(mod.id);
+      });
+    }
+    copy.unmatched=copy.moduleIds.length===0;
+    return copy;
+  });
   fbCurrentFileName=p.sourceFileName;
   document.getElementById('fb-editor').style.display='block';
   document.getElementById('fb-facility-name').value=p.facilityName;
