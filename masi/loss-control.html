@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <!-- saved from url=(0053)https://amusementstandards.com/masi/loss-control.html -->
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -261,7 +261,10 @@ body.light-mode .tab.active{color:#fff;border-bottom-color:#fff}
     <div id="facilities-list-view" style="display: block;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <div class="ttl" style="margin-bottom:0">Facilities</div>
-        <button class="btn-primary" onclick="fbOpenBuilder()">+ New Facility</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn-primary" onclick="fbOpenBuilder()">+ New Facility</button>
+          <button class="btn-secondary" onclick="fbOpenBuilder()">Import from File</button>
+        </div>
       </div>
       <table class="tbl" id="facilitiesTable"><thead><tr><th>Facility</th><th>Type</th><th>Location</th><th>Vendor</th><th>Last Inspection</th><th title="Corrective Action Request">Open CARs</th></tr></thead><tbody><tr style="cursor:pointer" onclick="openFacility(&#39;thunder-road&#39;)"><td style="font-weight:600;color:var(--text)">Thunder Road FEC</td><td style="font-family:var(--mono);font-size:10px">FEC</td><td>Tampa, FL</td><td style="font-size:11px">Amusement Standards</td><td style="font-family:var(--mono);font-size:11px">Apr 14, 2026</td><td style="text-align:center"><span style="font-family:var(--mono);font-size:11px;color:var(--text3)">0</span></td></tr><tr style="cursor:pointer" onclick="openFacility(&#39;splash-kingdom&#39;)"><td style="font-weight:600;color:var(--text)">Splash Kingdom Waterpark</td><td style="font-family:var(--mono);font-size:10px">Waterpark</td><td>Canton, TX</td><td style="font-size:11px">Amusement Standards</td><td style="font-family:var(--mono);font-size:11px">Apr 12, 2026</td><td style="text-align:center"><a href="https://amusementstandards.com/masi/loss-control.html#" style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--warn);text-decoration:none" onclick="event.preventDefault();event.stopPropagation();filterCarsByFacility(&#39;Splash Kingdom Waterpark&#39;)">2</a></td></tr><tr style="cursor:pointer" onclick="openFacility(&#39;adventure-park&#39;)"><td style="font-weight:600;color:var(--text)">Adventure Park USA</td><td style="font-family:var(--mono);font-size:10px">Amusement Park</td><td>New Market, MD</td><td style="font-size:11px">Amusement Standards</td><td style="font-family:var(--mono);font-size:11px">Apr 10, 2026</td><td style="text-align:center"><a href="https://amusementstandards.com/masi/loss-control.html#" style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--red);text-decoration:none" onclick="event.preventDefault();event.stopPropagation();filterCarsByFacility(&#39;Adventure Park USA&#39;)">3</a></td></tr><tr style="cursor:pointer" onclick="openFacility(&#39;heritage-carousel&#39;)"><td style="font-weight:600;color:var(--text)">Heritage Carousel Gardens</td><td style="font-family:var(--mono);font-size:10px">Carousel Park</td><td>Pasadena, CA</td><td style="font-size:11px">SafePark Inspections</td><td style="font-family:var(--mono);font-size:11px">Apr 8, 2026</td><td style="text-align:center"><span style="font-family:var(--mono);font-size:11px;color:var(--text3)">0</span></td></tr></tbody></table>
     </div>
@@ -1350,7 +1353,7 @@ function renderFacilitiesList(){
     var derivedType='Mixed';
     if(typeKeys.length===1)derivedType=typeKeys[0];
     else if(typeKeys.length>1){var max=0;typeKeys.forEach(function(k){if(typeCounts[k]>max){max=typeCounts[k];derivedType=k;}});}
-    html+='<tr style="border-left:3px solid var(--accent)"><td style="font-weight:600;color:var(--text)">'+escHtml(p.facilityName)+'</td><td style="font-family:var(--mono);font-size:10px">'+escHtml(derivedType)+' <span class="badge badge-accent" style="margin-left:4px">FROM BUILDER</span></td><td>'+escHtml(p.location||'—')+'</td><td style="font-size:11px">—</td><td style="font-family:var(--mono);font-size:11px">—</td><td style="text-align:center"><span style="font-family:var(--mono);font-size:11px;color:var(--text3)">0</span></td></tr>';
+    html+='<tr style="cursor:pointer;border-left:3px solid var(--accent)" onclick="openProfileFacility(\''+escAttr(p.id)+'\')"><td style="font-weight:600;color:var(--text)">'+escHtml(p.facilityName)+'</td><td style="font-family:var(--mono);font-size:10px">'+escHtml(derivedType)+'</td><td>'+escHtml(p.location||'—')+'</td><td style="font-size:11px">—</td><td style="font-family:var(--mono);font-size:11px">—</td><td style="text-align:center"><span style="font-family:var(--mono);font-size:11px;color:var(--text3)">0</span></td></tr>';
   });
   el.innerHTML=html+'</tbody>';
 }
@@ -1377,6 +1380,64 @@ function openFacility(facId){
   dc.innerHTML=html;
 }
 function closeFacility(){document.getElementById('facility-detail-view').style.display='none';document.getElementById('facilities-list-view').style.display='block';}
+function openProfileFacility(profileId){
+  var profiles=fbGetProfiles();
+  var p=profiles.find(function(x){return x.id===profileId;});
+  if(!p)return;
+  document.getElementById('facilities-list-view').style.display='none';
+  var dv=document.getElementById('facility-detail-view');dv.style.display='block';
+  var dc=document.getElementById('facility-detail-content');
+  // Pull live inspections and CARs for this facility
+  var inspections=getInspections().filter(function(r){return r.facility===p.facilityName;});
+  var cars=getCars().filter(function(c){return c.facility===p.facilityName;});
+  var html='';
+  html+='<button class="facility-back-btn" onclick="closeFacility()">\u2190 Back to Facilities</button>';
+  html+='<div class="facility-detail-hdr"><div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">';
+  html+='<div><div style="font-family:var(--sans);font-size:20px;font-weight:700;color:var(--text);margin-bottom:4px">'+escHtml(p.facilityName)+'</div>';
+  html+='<div style="font-size:12px;color:var(--text2)">'+escHtml(p.location||'—')+'</div>';
+  if(p.contact)html+='<div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:6px">Contact: '+escHtml(p.contact)+(p.phone?' \u00b7 '+escHtml(p.phone):'')+'</div>';
+  html+='</div>';
+  html+='<div style="text-align:right"><div style="font-family:var(--mono);font-size:9px;color:var(--text3)">TYPE</div><div style="font-size:12px;color:var(--text);font-weight:600">'+escHtml(p.type||'—')+'</div>';
+  html+='<button class="btn-primary" style="margin-top:12px;font-size:12px;padding:7px 14px" onclick="openDispatchInspection(\''+escAttr(p.facilityName)+'\')">Dispatch Inspection</button></div>';
+  html+='</div></div>';
+  // Attractions / Locations
+  var attrCount=(p.attractions||[]).length;
+  var sections=[];
+  if(attrCount>0){
+    sections.push({id:'fc-prof-attr',title:'Attractions ('+attrCount+')',open:true,body:function(){
+      var h='';(p.attractions||[]).forEach(function(a){
+        h+='<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;color:var(--text2);display:flex;justify-content:space-between"><span>'+escHtml(a.name)+'</span>';
+        if(a.manufacturer)h+='<span style="font-family:var(--mono);font-size:10px;color:var(--text3)">'+escHtml(a.manufacturer)+'</span>';
+        h+='</div>';
+      });return h;
+    }});
+  }
+  // Live inspection history
+  if(inspections.length>0){
+    sections.push({id:'fc-prof-surveys',title:'Inspection History ('+inspections.length+')',open:false,body:function(){
+      var h='<table class="tbl"><thead><tr><th>Date</th><th>Type</th><th>Inspector</th><th>Status</th></tr></thead><tbody>';
+      inspections.forEach(function(ins){
+        h+='<tr><td style="font-family:var(--mono);font-size:11px">'+formatDate(ins.date)+'</td><td>'+escHtml(ins.form)+'</td><td>'+escHtml(ins.inspector)+'</td><td><span class="badge '+badgeClass(ins.status)+'">'+ins.status+'</span></td></tr>';
+      });
+      h+='</tbody></table>';return h;
+    }});
+  }
+  // Live CARs
+  var openCars=cars.filter(function(c){return c.status!=='CLOSED';});
+  sections.push({id:'fc-prof-cars',title:'Open Corrective Actions ('+openCars.length+')',open:false,body:function(){
+    if(openCars.length===0)return '<div style="font-family:var(--mono);font-size:11px;color:var(--good);padding:8px 0">\u2713 No open corrective actions</div>';
+    var h='<table class="tbl"><thead><tr><th>CAR ID</th><th>Finding</th><th>Severity</th><th>Due Date</th><th>Status</th></tr></thead><tbody>';
+    openCars.forEach(function(c){
+      var sb=c.severity<=2?'badge-red':'badge-warn';
+      h+='<tr><td style="font-family:var(--mono);font-size:11px;color:var(--accent)">'+c.id+'</td><td style="font-size:11px">'+escHtml(c.finding)+'</td><td><span class="badge '+sb+'">SEV '+c.severity+'</span></td><td style="font-family:var(--mono);font-size:11px">'+c.dueDate+'</td><td><span class="badge badge-red">'+c.status+'</span></td></tr>';
+    });
+    h+='</tbody></table>';return h;
+  }});
+  sections.forEach(function(s){
+    html+='<div class="facility-collapsible'+(s.open?' open':'')+'" id="'+s.id+'"><div class="facility-collapsible-hdr" onclick="toggleFacilityPanel(\''+s.id+'\')"><span class="fc-title">'+s.title+'</span><span class="fc-arrow">\u25B6</span></div><div class="facility-collapsible-body">'+s.body()+'</div></div>';
+  });
+  dc.innerHTML=html;
+}
 function toggleFacilityPanel(panelId){var el=document.getElementById(panelId);if(el)el.classList.toggle('open');}
 
 // ═══════════════════════════════════════
