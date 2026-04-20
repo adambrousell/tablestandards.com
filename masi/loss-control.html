@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <!-- saved from url=(0053)https://amusementstandards.com/masi/loss-control.html -->
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -910,6 +910,7 @@ function changeInspectionStatus(insId,newStatus){
   var all=getInspections();
   var ins=all.find(function(r){return r.id===insId;});
   if(!ins)return;
+  if(!confirm('Change '+insId+' status to '+newStatus+'?'))return;
   // FIX 2 — Block SUBMITTED if FAIL items lack explanations
   if(newStatus==='SUBMITTED'){
     var v=validateInspectionForSubmit(ins);
@@ -922,6 +923,17 @@ function changeInspectionStatus(insId,newStatus){
   // FIX 6 — email routing
   fireStatusEmail(ins,newStatus);
   renderInspections();
+}
+function revertInspectionStatus(insId,prevStatus){
+  if(!confirm('Revert '+insId+' back to '+prevStatus+'?\n\nThis will undo the last status change.'))return;
+  var all=getInspections();
+  var ins=all.find(function(r){return r.id===insId;});
+  if(!ins)return;
+  ins.status=prevStatus;
+  saveInspections(all);
+  fireStatusEmail(ins,prevStatus);
+  renderInspections();
+  toast('Reverted '+insId+' to '+prevStatus,'ok');
 }
 
 // ═══════════════════════════════════════
@@ -1031,6 +1043,9 @@ function renderInspections(){
     else if(r.status==='UNDER REVIEW')html+='<button class="btn-sm-action" onclick="event.stopPropagation();changeInspectionStatus(\''+r.id+'\',\'DELIVERED\')">Approve &amp; Deliver</button>';
     else if(r.status==='DELIVERED'||r.status==='AWAITING REMEDIATION')html+='<button class="btn-sm-action" onclick="event.stopPropagation();changeInspectionStatus(\''+r.id+'\',\'CLOSED\')">Close Inspection</button>';
     else if(r.status==='CLOSED')html+='<span style="font-family:var(--mono);font-size:10px;color:var(--good)">Complete</span>';
+    // Revert button — allows undoing a wrong status click
+    var revertMap={'ASSIGNED':'SCHEDULED','IN FIELD':'ASSIGNED','SUBMITTED':'IN FIELD','UNDER REVIEW':'SUBMITTED','DELIVERED':'SUBMITTED','AWAITING REMEDIATION':'DELIVERED','CLOSED':'DELIVERED','MAIL OUT':'ASSIGNED'};
+    if(revertMap[r.status]){html+=' <button class="btn-sm-action" style="color:var(--text3);border-color:var(--border)" onclick="event.stopPropagation();revertInspectionStatus(\''+r.id+'\',\''+revertMap[r.status]+'\')">← Revert to '+revertMap[r.status]+'</button>';}
     html+='</div>';
     html+='</div></div></td></tr>';
   });
@@ -1750,8 +1765,9 @@ function renderCars(){
     html+='<tr><td style="font-family:var(--mono);font-size:11px;color:var(--accent)">'+c.id+'</td><td>'+c.facility+'</td><td>'+c.ride+'</td><td style="font-size:11px">'+c.finding+'</td><td><span class="badge '+sevBadge+'">SEV '+c.severity+'</span></td><td>'+c.assignedTo+'</td><td style="font-family:var(--mono);font-size:11px'+(dueDateOverdue?';color:var(--red);font-weight:700':'')+'">'+c.dueDate+'</td><td><span class="badge '+statusBadge+'">'+c.status+'</span></td>';
     html+='<td>';
     if(c.status==='OPEN')html+='<button class="btn-sm-action" onclick="openSubmitRemediation(\''+c.id+'\')">Submit Remediation</button>';
-    else if(c.status==='IN REMEDIATION')html+='<button class="btn-sm-action" onclick="openReviewClose(\''+c.id+'\')">Review &amp; Close</button>';
-    else html+='<span style="font-family:var(--mono);font-size:9px;color:var(--text3)">Closed</span>';
+    else if(c.status==='IN REMEDIATION')html+='<button class="btn-sm-action" onclick="openReviewClose(\''+c.id+'\')">Review &amp; Close</button> <button class="btn-sm-action" style="color:var(--text3)" onclick="revertCarToOpen(\''+c.id+'\')">← Revert to Open</button>';
+    else if(c.status==='CLOSED')html+='<button class="btn-sm-action" style="color:var(--text3)" onclick="reopenCar(\''+c.id+'\')">Reopen</button>';
+    else html+='';
     html+='</td></tr>';
   });
   if(filtered.length===0)html='<tr><td colspan="9" style="text-align:center;color:var(--text3);font-family:var(--mono);font-size:10px;padding:20px">No CARs match current filters</td></tr>';
@@ -1770,7 +1786,7 @@ function openSubmitRemediation(carId){document.getElementById('remediation-car-i
 function confirmSubmitRemediation(){
   var carId=document.getElementById('remediation-car-id').value;var notes=document.getElementById('remediation-notes').value.trim();if(!notes)return;
   var cars=getCars();var car=cars.find(function(c){return c.id===carId;});
-  if(car){car.status='IN REMEDIATION';car.remediationNotes=notes;car.remediationPhoto=document.getElementById('remediation-photo').value.trim();}
+  if(car){if(!confirm('Submit remediation for '+carId+'?'))return;car.status='IN REMEDIATION';car.remediationNotes=notes;car.remediationPhoto=document.getElementById('remediation-photo').value.trim();}
   saveCars(cars);closeModal('modal-submit-remediation');renderCars();
 }
 function openReviewClose(carId){
@@ -1785,8 +1801,22 @@ function confirmCloseCar(){
   var carId=document.getElementById('close-car-id').value;var notes=document.getElementById('close-car-notes').value.trim();if(!notes)return;
   var reviewer=document.getElementById('close-car-reviewer').value.trim();
   var cars=getCars();var car=cars.find(function(c){return c.id===carId;});
-  if(car){car.status='CLOSED';car.resolution=notes;car.reviewer=reviewer||'';}
+  if(car){if(!confirm('Close '+carId+'? This marks the finding as resolved.'))return;car.status='CLOSED';car.resolution=notes;car.reviewer=reviewer||'';}
   saveCars(cars);closeModal('modal-close-car');renderCars();
+}
+function reopenCar(carId){
+  if(!confirm('Reopen '+carId+'? This will set status back to OPEN.'))return;
+  var cars=getCars();var car=cars.find(function(c){return c.id===carId;});
+  if(car){car.status='OPEN';car.resolution='';car.reviewer='';}
+  saveCars(cars);renderCars();
+  toast('Reopened '+carId,'ok');
+}
+function revertCarToOpen(carId){
+  if(!confirm('Revert '+carId+' back to OPEN? Remediation notes will be cleared.'))return;
+  var cars=getCars();var car=cars.find(function(c){return c.id===carId;});
+  if(car){car.status='OPEN';car.remediationNotes='';car.remediationPhoto='';}
+  saveCars(cars);renderCars();
+  toast('Reverted '+carId+' to OPEN','ok');
 }
 
 // ═══════════════════════════════════════
