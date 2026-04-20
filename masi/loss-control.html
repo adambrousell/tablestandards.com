@@ -214,7 +214,6 @@ body.light-mode .tab.active{color:#fff;border-bottom-color:#fff}
     <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
       <button class="btn-primary" onclick="openDispatchInspection()">+ New Inspection</button>
     </div>
-    <div id="inspections-stats" class="stat-row"><div class="stat"><div class="stat-num" style="color:var(--accent)">3</div><div class="stat-label">Scheduled</div></div><div class="stat"><div class="stat-num" style="color:var(--warn)">1</div><div class="stat-label">In Field</div></div><div class="stat"><div class="stat-num" style="color:var(--accent)">2</div><div class="stat-label">Submitted</div></div><div class="stat"><div class="stat-num" style="color:var(--good)">2</div><div class="stat-label">Closed</div></div></div>
     <div class="subtab-bar" id="insp-mode-tabs" style="margin-bottom:12px">
       <div class="subtab active" onclick="switchInspMode(&#39;list&#39;)">List</div>
       <div class="subtab" onclick="switchInspMode(&#39;calendar&#39;)">Calendar</div>
@@ -1170,8 +1169,6 @@ function renderInspections(){
     else if(r.status==='SUBMITTED'||r.status==='UNDER REVIEW'||r.status==='DELIVERED')submitted++;
     else if(r.status==='CLOSED')closedCt++;
   });
-  var se=document.getElementById('inspections-stats');
-  if(se)se.innerHTML='<div class="stat" style="cursor:pointer" onclick="filterInspsBy(\'scheduled\')"><div class="stat-num" style="color:var(--accent)">'+sched+'</div><div class="stat-label">Scheduled</div></div><div class="stat" style="cursor:pointer" onclick="filterInspsBy(\'infield\')"><div class="stat-num" style="color:var(--warn)">'+inField+'</div><div class="stat-label">In Field</div></div><div class="stat" style="cursor:pointer" onclick="filterInspsBy(\'submitted\')"><div class="stat-num" style="color:var(--accent)">'+submitted+'</div><div class="stat-label">Submitted</div></div><div class="stat" style="cursor:pointer" onclick="filterInspsBy(\'closed\')"><div class="stat-num" style="color:var(--good)">'+closedCt+'</div><div class="stat-label">Closed</div></div>';
   var tbody=document.getElementById('inspectionTable');if(!tbody)return;
   var html='';
   filtered.forEach(function(r){
