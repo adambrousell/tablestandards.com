@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <!-- saved from url=(0053)https://amusementstandards.com/masi/loss-control.html -->
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -170,7 +170,18 @@ body.light-mode{
   --good:#1A7F37;--good-bg:rgba(26,127,55,.06);--good-b:rgba(26,127,55,.2);
   --warn:#9A6700;--warn-bg:rgba(154,103,0,.06);--warn-b:rgba(154,103,0,.2);
   --red:#CF222E;--red-bg:rgba(207,34,46,.06);--red-b:rgba(207,34,46,.2);
+  --hdr-bg:#1E293B;
 }
+body.light-mode .hdr{background:var(--hdr-bg);border-bottom-color:rgba(0,0,0,.1)}
+body.light-mode .hdr .hdr-prepared{color:rgba(255,255,255,.5)}
+body.light-mode .hdr .hdr-meta{color:rgba(255,255,255,.5)}
+body.light-mode .hdr .hdr-meta span{color:rgba(255,255,255,.5)}
+body.light-mode .hdr #sync-indicator{color:var(--good) !important}
+body.light-mode .hdr #hdr-user-name{color:rgba(255,255,255,.7)}
+body.light-mode .tabs{background:var(--hdr-bg);border-bottom-color:rgba(0,0,0,.1)}
+body.light-mode .tab{color:rgba(255,255,255,.45)}
+body.light-mode .tab:hover{color:rgba(255,255,255,.7)}
+body.light-mode .tab.active{color:#fff;border-bottom-color:#fff}
 </style>
 </head>
 <body>
@@ -494,6 +505,50 @@ body.light-mode{
         <div id="routing-matrix-container" style="overflow-x:auto"></div>
       </div>
     </div>
+    <div style="margin-top:24px">
+      <div class="card">
+        <div class="card-label">CAR Due Date Defaults</div>
+        <div class="card-body" style="margin-bottom:10px">Days until due for each severity level when a CAR is auto-generated.</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:120px">
+            <label style="font-family:var(--mono);font-size:9px;color:var(--text3);display:block;margin-bottom:4px">SEV 1 (DAYS)</label>
+            <input type="number" id="setting-sev1-days" min="0" max="365" style="width:100%;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:13px;color:var(--text);outline:none" onchange="saveCarDueSettings()">
+          </div>
+          <div style="flex:1;min-width:120px">
+            <label style="font-family:var(--mono);font-size:9px;color:var(--text3);display:block;margin-bottom:4px">SEV 2 (DAYS)</label>
+            <input type="number" id="setting-sev2-days" min="0" max="365" style="width:100%;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:13px;color:var(--text);outline:none" onchange="saveCarDueSettings()">
+          </div>
+          <div style="flex:1;min-width:120px">
+            <label style="font-family:var(--mono);font-size:9px;color:var(--text3);display:block;margin-bottom:4px">SEV 3 (DAYS)</label>
+            <input type="number" id="setting-sev3-days" min="0" max="365" style="width:100%;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-family:var(--mono);font-size:13px;color:var(--text);outline:none" onchange="saveCarDueSettings()">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:16px">
+      <div class="card">
+        <div class="card-label">Session</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text)" id="setting-session-user">—</div>
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text3)" id="setting-session-time">—</div>
+          </div>
+          <button class="btn-secondary" onclick="logoutSession()">Sign Out</button>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:16px">
+      <div class="card" style="border-top:3px solid var(--red)">
+        <div class="card-label" style="color:var(--red)">Danger Zone</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text)">Reset Demo Data</div>
+            <div style="font-size:11px;color:var(--text3)">Clear all localStorage and reload with seed data. Cannot be undone.</div>
+          </div>
+          <button class="btn-secondary" style="color:var(--red);border-color:var(--red-b)" onclick="resetDemoData()">Reset All Data</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- MAIL-BACK: relocated into #view-inspectors as #insp-subtab-mailback -->
@@ -639,6 +694,47 @@ function loadTheme(){
 }
 
 // ═══════════════════════════════════════
+//  SETTINGS HELPERS
+// ═══════════════════════════════════════
+function getCarDueDefaults(){
+  return LS.get('as360_car_due_defaults',{sev1:0,sev2:7,sev3:30});
+}
+function saveCarDueSettings(){
+  var s1=parseInt(document.getElementById('setting-sev1-days').value)||0;
+  var s2=parseInt(document.getElementById('setting-sev2-days').value)||7;
+  var s3=parseInt(document.getElementById('setting-sev3-days').value)||30;
+  LS.set('as360_car_due_defaults',{sev1:s1,sev2:s2,sev3:s3});
+  toast('CAR due date defaults saved','ok');
+}
+function loadSettingsUI(){
+  var d=getCarDueDefaults();
+  var e1=document.getElementById('setting-sev1-days');if(e1)e1.value=d.sev1;
+  var e2=document.getElementById('setting-sev2-days');if(e2)e2.value=d.sev2;
+  var e3=document.getElementById('setting-sev3-days');if(e3)e3.value=d.sev3;
+  // Session info
+  var userEl=document.getElementById('setting-session-user');
+  var timeEl=document.getElementById('setting-session-time');
+  if(LC_SESSION){
+    if(userEl)userEl.textContent=LC_SESSION.display+' ('+LC_SESSION.role+')';
+    if(timeEl)timeEl.textContent='Signed in: '+LC_SESSION.loginAt.substring(0,19).replace('T',' ');
+  }
+}
+function logoutSession(){
+  if(!confirm('Sign out? You will need to log in again.'))return;
+  try{sessionStorage.removeItem('lc_session');}catch(e){}
+  LC_SESSION=null;
+  location.reload();
+}
+function resetDemoData(){
+  if(!confirm('This will erase ALL data (inspections, CARs, inspectors, facility profiles, checklists, routing matrix) and reload with defaults.\n\nThis cannot be undone. Continue?'))return;
+  if(!confirm('Are you sure? All changes will be lost.'))return;
+  try{
+    ['as360_inspections','as360_cars','as360_inspectors','as360_facility_profiles','as360_checklist_library','as360_routing_matrix','as360_routing_matrix_audit','as360_vendors','as360_reports','as360_mailback_inbound','as360_pending_sync','as360_seed_version','as360_car_due_defaults'].forEach(function(k){localStorage.removeItem(k);});
+  }catch(e){}
+  location.reload();
+}
+
+// ═══════════════════════════════════════
 //  DATA LAYER
 // ═══════════════════════════════════════
 var LS={get:function(k,d){try{return JSON.parse(localStorage.getItem(k))||d;}catch(e){return d;}},set:function(k,v){localStorage.setItem(k,JSON.stringify(v));}};
@@ -779,9 +875,10 @@ function deriveSeedCars(){
     fails.forEach(function(f){
       carNum++;
       var due=new Date(ins.date+'T00:00:00');
-      if(f.severity===1)due=new Date(due);
-      else if(f.severity===2)due.setDate(due.getDate()+7);
-      else due.setDate(due.getDate()+30);
+      var dueDefs=getCarDueDefaults();
+      if(f.severity===1)due.setDate(due.getDate()+dueDefs.sev1);
+      else if(f.severity===2)due.setDate(due.getDate()+dueDefs.sev2);
+      else due.setDate(due.getDate()+dueDefs.sev3);
       cars.push({id:'CAR-2026-'+String(carNum).padStart(4,'0'),facility:ins.facility,ride:f.sectionName||ins.form,finding:f.itemText,severity:f.severity,assignedTo:ins.inspector,dueDate:due.toISOString().split('T')[0],status:'OPEN',resolution:'',remediationNotes:'',remediationPhoto:'',reviewer:''});
     });
   });
@@ -897,7 +994,7 @@ function showView(viewId){
     renderInspectors();renderVendors();
     if(subAction==='mailback')switchInspSubtab('mailback');
   }
-  if(viewId==='settings'||viewId==='access'||viewId==='reports'){renderRoutingMatrix();}
+  if(viewId==='settings'||viewId==='access'||viewId==='reports'){renderRoutingMatrix();loadSettingsUI();}
   if(tabMap[originalId]!==undefined&&tabs[tabMap[originalId]]){tabs[tabMap[originalId]].classList.add('active')}
 }
 function openModal(id){var el=document.getElementById(id);if(el)el.classList.add('open');}
@@ -947,9 +1044,10 @@ function autoGenerateCars(inspection){
   fails.forEach(function(f){
     maxNum++;
     var due=new Date(inspection.date+'T00:00:00');
-    if(f.severity===1)due=new Date(due);
-    else if(f.severity===2)due.setDate(due.getDate()+7);
-    else due.setDate(due.getDate()+30);
+    var dueDefs=getCarDueDefaults();
+    if(f.severity===1)due.setDate(due.getDate()+dueDefs.sev1);
+    else if(f.severity===2)due.setDate(due.getDate()+dueDefs.sev2);
+    else due.setDate(due.getDate()+dueDefs.sev3);
     cars.push({id:'CAR-2026-'+String(maxNum).padStart(4,'0'),facility:inspection.facility,ride:f.sectionName||inspection.form,finding:f.itemText,severity:f.severity,assignedTo:inspection.inspector,dueDate:due.toISOString().split('T')[0],status:'OPEN',resolution:'',remediationNotes:'',remediationPhoto:'',reviewer:''});
   });
   saveCars(cars);
