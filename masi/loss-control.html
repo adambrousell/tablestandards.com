@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <!-- saved from url=(0053)https://amusementstandards.com/masi/loss-control.html -->
 <html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,24 +17,24 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--bg);color:var(--text2)}
 .hdr{position:fixed;top:0;left:0;right:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border)}
-.hdr-top{display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:44px}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:48px}
 .hdr-brand{display:flex;align-items:center;gap:10px}
 .hdr-logo{font-family:var(--sans);font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.02em}
 .hdr-logo span{color:var(--accent);font-weight:700}
 .hdr-divider{width:1px;height:16px;background:var(--border)}
-.hdr-prepared{font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:.02em}
-.hdr-meta{font-family:var(--mono);font-size:9px;color:var(--text3);display:flex;align-items:center;gap:12px}
-.tabs{display:flex;padding:0 16px;height:42px;gap:0;border-bottom:1px solid var(--border);background:var(--surface)}
-.tab{padding:0 14px;font-family:var(--sans);font-size:15px;font-weight:500;color:var(--text3);cursor:pointer;display:flex;align-items:center;border-bottom:2px solid transparent;transition:all .1s;white-space:nowrap}
+.hdr-prepared{font-family:var(--mono);font-size:12px;color:var(--text3);letter-spacing:.02em}
+.hdr-meta{font-family:var(--mono);font-size:11px;color:var(--text3);display:flex;align-items:center;gap:12px}
+.tabs{display:flex;padding:0 16px;height:48px;gap:0;border-bottom:1px solid var(--border);background:var(--surface)}
+.tab{padding:0 18px;font-family:var(--sans);font-size:16px;font-weight:500;color:var(--text3);cursor:pointer;display:flex;align-items:center;border-bottom:2px solid transparent;transition:all .1s;white-space:nowrap}
 .tab:hover{color:var(--text2)}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
-.panels{position:fixed;top:88px;left:0;right:0;bottom:0;overflow:hidden}
+.panels{position:fixed;top:94px;left:0;right:0;bottom:0;overflow:hidden}
 .panel{position:absolute;inset:0;overflow-y:auto;padding:20px 40px 30px;display:none;max-width:1200px;margin:0 auto;background:var(--bg)}
 .panel.active{display:block}
 .panel::-webkit-scrollbar{width:5px}
 .panel::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 .ey{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.06em;color:var(--accent);margin-bottom:4px;text-transform:uppercase}
-.ttl{font-family:var(--sans);font-size:28px;font-weight:700;color:var(--text);line-height:1.15;letter-spacing:-.02em;margin-bottom:8px}
+.ttl{font-family:var(--sans);font-size:32px;font-weight:700;color:var(--text);line-height:1.15;letter-spacing:-.02em;margin-bottom:8px}
 .body{font-size:13px;line-height:1.65;color:var(--text2);max-width:680px;margin-bottom:16px}
 .body strong{color:var(--text)}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
@@ -43,24 +43,24 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 .g6{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:14px;transition:box-shadow .15s}
 .card:hover{box-shadow:0 2px 8px rgba(0,0,0,.04)}
-.card-label{font-family:var(--mono);font-size:9px;font-weight:600;letter-spacing:.04em;color:var(--accent);margin-bottom:4px;text-transform:uppercase}
-.card-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:3px}
-.card-body{font-size:12.5px;color:var(--text2);line-height:1.5}
+.card-label{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.04em;color:var(--accent);margin-bottom:4px;text-transform:uppercase}
+.card-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:3px}
+.card-body{font-size:13px;color:var(--text2);line-height:1.5}
 .stat-row{display:flex;gap:8px;margin-bottom:24px}
-.stat{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:14px;text-align:center}
-.stat-num{font-family:var(--mono);font-size:32px;font-weight:700;color:var(--text);line-height:1}
-.stat-label{font-size:11px;color:var(--text3);margin-top:4px;line-height:1.3}
+.stat{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:18px;text-align:center}
+.stat-num{font-family:var(--mono);font-size:36px;font-weight:700;color:var(--text);line-height:1}
+.stat-label{font-size:12px;color:var(--text3);margin-top:4px;line-height:1.3}
 .note{background:var(--accent-l);border:1px solid var(--accent-b);border-radius:6px;padding:10px 14px;margin-top:12px}
 .note-hd{font-family:var(--mono);font-size:9px;font-weight:600;color:var(--accent);margin-bottom:3px}
 .note-body{font-size:11px;color:var(--text2);line-height:1.5}
 .note-warn{background:var(--warn-bg);border:1px solid var(--warn-b);border-radius:6px;padding:12px 16px;margin-bottom:20px}
 .note-warn .note-hd{color:var(--warn)}
 .tbl{width:100%;border-collapse:separate;border-spacing:0;background:var(--surface);border:1px solid var(--border);border-radius:6px;overflow:hidden}
-.tbl th{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);background:var(--surface2);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)}
-.tbl td{font-size:13px;color:var(--text2);padding:10px 12px;border-bottom:1px solid var(--border)}
+.tbl th{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);background:var(--surface2);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border)}
+.tbl td{font-size:14px;color:var(--text2);padding:12px 14px;border-bottom:1px solid var(--border)}
 .tbl tr:last-child td{border-bottom:none}
 .tbl tr:hover td{background:var(--surface2)}
-.badge{font-family:var(--mono);font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;letter-spacing:.03em}
+.badge{font-family:var(--mono);font-size:10px;font-weight:700;padding:3px 8px;border-radius:3px;letter-spacing:.03em}
 .badge-good{background:var(--good-bg);color:var(--good);border:1px solid var(--good-b)}
 .badge-warn{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-b)}
 .badge-red{background:var(--red-bg);color:var(--red);border:1px solid var(--red-b)}
@@ -91,25 +91,25 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:center}
 .modal-overlay.open{display:flex}
 .modal{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;width:90%;max-width:480px;max-height:80vh;overflow-y:auto}
-.modal-title{font-family:var(--sans);font-size:20px;font-weight:700;color:var(--text);margin-bottom:12px}
+.modal-title{font-family:var(--sans);font-size:22px;font-weight:700;color:var(--text);margin-bottom:12px}
 .modal-field{margin-bottom:10px}
-.modal-field label{font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);display:block;margin-bottom:4px}
-.modal-field input,.modal-field select,.modal-field textarea{width:100%;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-family:var(--sans);font-size:13px;color:var(--text);outline:none}
+.modal-field label{font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);display:block;margin-bottom:4px}
+.modal-field input,.modal-field select,.modal-field textarea{width:100%;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;font-family:var(--sans);font-size:14px;color:var(--text);outline:none}
 .modal-field textarea{resize:vertical;min-height:60px}
 .modal-field.error input,.modal-field.error select,.modal-field.error textarea{border-color:var(--red)}
 .modal-field .field-error{font-family:var(--mono);font-size:9px;color:var(--red);margin-top:3px;display:none}
 .modal-field.error .field-error{display:block}
 .modal-actions{display:flex;gap:8px;margin-top:14px}
-.btn-primary{padding:10px 20px;border:none;border-radius:6px;font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff}
+.btn-primary{padding:12px 24px;border:none;border-radius:6px;font-family:var(--sans);font-size:15px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff}
 .btn-primary:hover{opacity:.9}
-.btn-secondary{padding:9px 18px;border:1px solid var(--border);border-radius:6px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;background:transparent;color:var(--text3)}
+.btn-secondary{padding:11px 22px;border:1px solid var(--border);border-radius:6px;font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;background:transparent;color:var(--text3)}
 .btn-secondary:hover{border-color:var(--accent);color:var(--text2)}
-.btn-sm-action{padding:5px 12px;border:1px solid var(--border);border-radius:4px;font-family:var(--mono);font-size:10px;font-weight:600;cursor:pointer;background:var(--surface2);color:var(--accent);white-space:nowrap}
+.btn-sm-action{padding:6px 14px;border:1px solid var(--border);border-radius:4px;font-family:var(--mono);font-size:11px;font-weight:600;cursor:pointer;background:var(--surface2);color:var(--accent);white-space:nowrap}
 .btn-sm-action:hover{border-color:var(--accent);background:var(--accent-l)}
-.btn-md-action{padding:8px 16px;border:1px solid var(--border);border-radius:5px;font-family:var(--mono);font-size:12px;font-weight:600;cursor:pointer;background:var(--surface2);color:var(--accent);white-space:nowrap}
+.btn-md-action{padding:10px 18px;border:1px solid var(--border);border-radius:5px;font-family:var(--mono);font-size:13px;font-weight:600;cursor:pointer;background:var(--surface2);color:var(--accent);white-space:nowrap}
 .btn-md-action:hover{border-color:var(--accent);background:var(--accent-l)}
 .filter-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-.filter-bar select{padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:6px;font-family:var(--sans);font-size:13px;color:var(--text);outline:none;cursor:pointer;min-width:140px}
+.filter-bar select{padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:6px;font-family:var(--sans);font-size:14px;color:var(--text);outline:none;cursor:pointer;min-width:140px}
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:6px;overflow:hidden;min-height:320px}
 .cal-hdr{background:var(--surface2);padding:8px 6px;font-family:var(--mono);font-size:9px;font-weight:600;color:var(--text3);text-align:center;text-transform:uppercase;letter-spacing:.06em}
 .cal-day{background:var(--surface);padding:8px 6px;min-height:110px;vertical-align:top}
@@ -134,7 +134,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
 .matrix-tbl input[type=checkbox]{width:14px;height:14px;cursor:pointer;accent-color:var(--accent)}
 /* Sub-tab toggle */
 .subtab-bar{display:flex;gap:0;margin-bottom:14px;border-bottom:1px solid var(--border)}
-.subtab{padding:8px 16px;font-family:var(--sans);font-size:14px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent}
+.subtab{padding:10px 18px;font-family:var(--sans);font-size:15px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent}
 .subtab:hover{color:var(--text2)}
 .subtab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
 @media print{
@@ -155,7 +155,7 @@ html,body{height:100%;overflow:hidden;font-family:var(--sans);background:var(--b
   #printArea .bubble{font-size:14px;letter-spacing:4px}
 }
 @media(max-width:900px){
-  .tabs{padding:0 12px;overflow-x:auto}.tab{padding:0 12px;font-size:13px}
+  .tabs{padding:0 12px;overflow-x:auto}.tab{padding:0 14px;font-size:14px}
   .panel{padding:20px 16px 40px}
   .g2,.g3,.g4,.g6{grid-template-columns:1fr}
   .stat-row{flex-wrap:wrap}
@@ -211,8 +211,7 @@ body.light-mode .tab.active{color:#fff;border-bottom-color:#fff}
 
   <!-- INSPECTIONS -->
   <div class="panel active" id="view-inspections" style="display: block;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div class="ttl" style="margin-bottom:0">Inspections</div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
       <button class="btn-primary" onclick="openDispatchInspection()">+ New Inspection</button>
     </div>
     <div id="inspections-stats" class="stat-row"><div class="stat"><div class="stat-num" style="color:var(--accent)">3</div><div class="stat-label">Scheduled</div></div><div class="stat"><div class="stat-num" style="color:var(--warn)">1</div><div class="stat-label">In Field</div></div><div class="stat"><div class="stat-num" style="color:var(--accent)">2</div><div class="stat-label">Submitted</div></div><div class="stat"><div class="stat-num" style="color:var(--good)">2</div><div class="stat-label">Closed</div></div></div>
@@ -222,7 +221,7 @@ body.light-mode .tab.active{color:#fff;border-bottom-color:#fff}
     </div>
     <div id="insp-mode-list">
       <div class="filter-bar" id="inspections-filter-bar">
-        <input type="text" id="filter-facility-search" placeholder="Search facility..." oninput="renderInspections()" style="padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:6px;font-family:var(--sans);font-size:13px;color:var(--text);outline:none;min-width:180px">
+        <input type="text" id="filter-facility-search" placeholder="Search facility..." oninput="renderInspections()" style="padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:6px;font-family:var(--sans);font-size:14px;color:var(--text);outline:none;min-width:200px">
         <select id="filter-status" onchange="renderInspections()">
           <option value="">All Statuses</option>
           <option value="SCHEDULED">Scheduled</option>
@@ -460,6 +459,7 @@ body.light-mode .tab.active{color:#fff;border-bottom-color:#fff}
         <option value="OPEN">Open</option>
         <option value="IN REMEDIATION">In Remediation</option>
         <option value="CLOSED">Closed</option>
+        <option value="OVERDUE">Overdue</option>
       </select>
     </div>
     <table class="tbl" style="margin-top:8px">
@@ -1168,7 +1168,7 @@ function renderInspections(){
     else if(r.status==='CLOSED')closedCt++;
   });
   var se=document.getElementById('inspections-stats');
-  if(se)se.innerHTML='<div class="stat"><div class="stat-num" style="color:var(--accent)">'+sched+'</div><div class="stat-label">Scheduled</div></div><div class="stat"><div class="stat-num" style="color:var(--warn)">'+inField+'</div><div class="stat-label">In Field</div></div><div class="stat"><div class="stat-num" style="color:var(--accent)">'+submitted+'</div><div class="stat-label">Submitted</div></div><div class="stat"><div class="stat-num" style="color:var(--good)">'+closedCt+'</div><div class="stat-label">Closed</div></div>';
+  if(se)se.innerHTML='<div class="stat" style="cursor:pointer" onclick="filterInspsBy(\'scheduled\')"><div class="stat-num" style="color:var(--accent)">'+sched+'</div><div class="stat-label">Scheduled</div></div><div class="stat" style="cursor:pointer" onclick="filterInspsBy(\'infield\')"><div class="stat-num" style="color:var(--warn)">'+inField+'</div><div class="stat-label">In Field</div></div><div class="stat" style="cursor:pointer" onclick="filterInspsBy(\'submitted\')"><div class="stat-num" style="color:var(--accent)">'+submitted+'</div><div class="stat-label">Submitted</div></div><div class="stat" style="cursor:pointer" onclick="filterInspsBy(\'closed\')"><div class="stat-num" style="color:var(--good)">'+closedCt+'</div><div class="stat-label">Closed</div></div>';
   var tbody=document.getElementById('inspectionTable');if(!tbody)return;
   var html='';
   filtered.forEach(function(r){
@@ -2083,15 +2083,16 @@ function renderCars(){
   var sev=document.getElementById('car-filter-severity');var sevF=sev?sev.value:'';
   var stat=document.getElementById('car-filter-status');var statF=stat?stat.value:'';
   var facF=ff?ff.value:'';var inspF=fi?fi.value:'';
+  var today=new Date().toISOString().split('T')[0];
   var filtered=cars.filter(function(c){
     if(sevF&&String(c.severity)!==sevF)return false;
     if(facF&&c.facility!==facF)return false;
     if(inspF&&c.assignedTo!==inspF)return false;
-    if(statF&&c.status!==statF)return false;
+    if(statF==='OVERDUE'){if(c.status==='CLOSED'||!c.dueDate||c.dueDate>=today)return false;}
+    else if(statF&&c.status!==statF)return false;
     return true;
   });
-  // FIX 6 — 6 counter cards
-  var today=new Date().toISOString().split('T')[0];
+  // Counter cards
   var openCt=0,assignedCt=0,remedCt=0,awaitingCt=0,closedCt=0,overdueCt=0;
   cars.forEach(function(c){
     if(c.status==='OPEN')openCt++;
@@ -2101,14 +2102,11 @@ function renderCars(){
     else if(c.status==='CLOSED')closedCt++;
     if(c.status!=='CLOSED'&&c.dueDate&&c.dueDate<today)overdueCt++;
   });
+  var totalOpen=openCt+assignedCt+remedCt+awaitingCt;
   var statsEl=document.getElementById('cars-stats');
   if(statsEl)statsEl.innerHTML=
-    '<div class="stat"><div class="stat-num" style="color:var(--red)">'+openCt+'</div><div class="stat-label">Open</div></div>'+
-    '<div class="stat"><div class="stat-num" style="color:var(--accent)">'+assignedCt+'</div><div class="stat-label">Assigned</div></div>'+
-    '<div class="stat"><div class="stat-num" style="color:var(--warn)">'+remedCt+'</div><div class="stat-label">In Remediation</div></div>'+
-    '<div class="stat"><div class="stat-num" style="color:var(--warn)">'+awaitingCt+'</div><div class="stat-label">Awaiting Verification</div></div>'+
-    '<div class="stat"><div class="stat-num" style="color:var(--good)">'+closedCt+'</div><div class="stat-label">Closed</div></div>'+
-    '<div class="stat"><div class="stat-num" style="color:var(--red)">'+overdueCt+'</div><div class="stat-label">Overdue</div></div>';
+    '<div class="stat" style="cursor:pointer" onclick="filterCarsBy(\'open\')"><div class="stat-num" style="color:var(--red)">'+totalOpen+'</div><div class="stat-label">Open</div></div>'+
+    '<div class="stat" style="cursor:pointer" onclick="filterCarsBy(\'overdue\')"><div class="stat-num" style="color:'+(overdueCt>0?'var(--red)':'var(--good)')+'">'+overdueCt+'</div><div class="stat-label">Overdue</div></div>';
   var tbody=document.getElementById('carTable');if(!tbody)return;var html='';
   filtered.forEach(function(c){
     var sevBadge=c.severity<=2?'badge-red':c.severity===3?'badge-warn':'badge-accent';
@@ -2133,6 +2131,26 @@ function filterCarsByFacility(facName){
 function filterCarsByInspector(inspName){
   showView('cars');
   setTimeout(function(){var fi=document.getElementById('car-filter-inspector');if(fi){fi.value=inspName;}renderCars();},0);
+}
+function filterCarsBy(type){
+  var statusSel=document.getElementById('car-filter-status');
+  if(type==='open'){
+    if(statusSel)statusSel.value='OPEN';
+    renderCars();
+  }else if(type==='overdue'){
+    if(statusSel)statusSel.value='OVERDUE';
+    renderCars();
+  }
+}
+function filterInspsBy(type){
+  var statusSel=document.getElementById('filter-status');
+  if(!statusSel)return;
+  if(type==='scheduled')statusSel.value='SCHEDULED';
+  else if(type==='infield')statusSel.value='IN FIELD';
+  else if(type==='submitted')statusSel.value='SUBMITTED';
+  else if(type==='closed')statusSel.value='CLOSED';
+  else statusSel.value='';
+  renderInspections();
 }
 function openSubmitRemediation(carId){
   document.getElementById('remediation-car-id').value=carId;
