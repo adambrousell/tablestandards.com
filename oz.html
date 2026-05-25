@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reel Oz — Asbury Park's Crowdsourced Film Collective</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,300;0,400;0,700;0,900;1,300;1,700&family=Playfair+Display:ital@1&family=DM+Mono:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --chalk:   #f2ede6;
+  --cream:   #e8e0d3;
+  --fog:     #c9bfb0;
+  --shore:   #8a7d6e;
+  --driftwood: #5c4f40;
+  --tar:     #1a1612;
+  --ink:     #0e0c0a;
+  --ember:   #d94f2b;
+  --rust:    #b33a1a;
+  --gold:    #c9922a;
+  --mist:    rgba(242,237,230,0.06);
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; font-size:16px; }
+
+body {
+  background: var(--ink);
+  color: var(--chalk);
+  font-family: 'Barlow Condensed', sans-serif;
+  overflow-x: hidden;
+  cursor: crosshair;
+}
+
+/* ─── GRAIN OVERLAY ─── */
+body::before {
+  content:'';
+  position:fixed; inset:0; z-index:999; pointer-events:none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23g)' opacity='0.09'/%3E%3C/svg%3E");
+  opacity: 0.55;
+  mix-blend-mode: overlay;
+}
+
+/* ─── UTILITY ─── */
+.overline {
+  font-size: 0.62rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--ember);
+  font-weight: 400;
+  font-style: italic;
+}
+
+.rule {
+  width: 40px; height: 2px;
+  background: var(--ember);
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 12px;
+}
+
+/* ─────────────────────────────────────────
+   NAV
+───────────────────────────────────────── */
+nav {
+  position: fixed; top:0; left:0; right:0; z-index: 200;
+  padding: 1.4rem 3rem;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+nav::before {
+  content:'';
+  position:absolute; inset:0;
+  background: linear-gradient(to bottom, rgba(14,12,10,0.92), transparent);
+  pointer-events:none;
+}
+
+.nav-logo {
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--chalk);
+  position:relative; z-index:1;
+  text-decoration:none;
+}
+
+.nav-logo em {
+  font-style: italic;
+  color: var(--ember);
+}
+
+.nav-links {
+  display: flex; gap: 2.5rem;
+  list-style: none;
+  position:relative; z-index:1;
+}
+
+.nav-links a {
+  font-size: 0.7rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--fog);
+  text-decoration: none;
+  transition: color 0.25s;
+}
+
+.nav-links a:hover { color: var(--chalk); }
+
+.nav-cta {
+  position:relative; z-index:1;
+  font-size: 0.65rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 0.6rem 1.4rem;
+  border: 1.5px solid var(--ember);
+  color: var(--ember);
+  text-decoration: none;
+  transition: background 0.25s, color 0.25s;
+}
+
+.nav-cta:hover {
+  background: var(--ember);
+  color: var(--chalk);
+}
+
+/* ─────────────────────────────────────────
+   HERO
+───────────────────────────────────────── */
+.hero {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Film strip edge — left */
+.hero::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 28px;
+  background: var(--tar);
+  border-right: 1px solid rgba(242,237,230,0.08);
+  z-index: 10;
+}
+
+.sprockets {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 28px;
+  z-index: 11;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  padding: 2rem 0;
+}
+
+.sprocket {
+  width: 10px; height: 14px;
+  border-radius: 2px;
+  background: var(--ink);
+  border: 1px solid rgba(242,237,230,0.12);
+  flex-shrink: 0;
+}
+
+/* Left panel — text */
+.hero-left {
+  padding: 12rem 4rem 5rem 5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  z-index: 5;
+}
+
+.hero-eyebrow {
+  margin-bottom: 2rem;
+  display: flex; align-items: center; gap: 0.8rem;
+}
+
+.hero-eyebrow span {
+  font-size: 0.6rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--fog);
+}
+
+.hero-eyebrow em {
+  font-family: 'Playfair Display', serif;
+  font-size: 0.8rem;
+  color: var(--gold);
+  font-style: italic;
+  letter-spacing: 0.05em;
+}
+
+.hero-headline {
+  font-size: clamp(5rem, 9vw, 9.5rem);
+  font-weight: 900;
+  line-height: 0.88;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  margin-bottom: 2.5rem;
+}
+
+.hero-headline .line-1 { color: var(--chalk); display:block; }
+.hero-headline .line-2 {
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--chalk);
+  display: block;
+  font-style: italic;
+}
+.hero-headline .line-3 {
+  color: var(--ember);
+  display: block;
+  font-style: italic;
+}
+
+.hero-body {
+  font-size: 1rem;
+  font-weight: 300;
+  line-height: 1.75;
+  color: var(--fog);
+  max-width: 380px;
+  margin-bottom: 3rem;
+  letter-spacing: 0.02em;
+}
+
+.hero-body strong { color: var(--chalk); font-weight: 700; }
+
+.hero-actions {
+  display: flex; align-items: center; gap: 2rem;
+}
+
+.btn-primary {
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  font-weight: 700;
+  padding: 1rem 2.2rem;
+  background: var(--ember);
+  color: var(--chalk);
+  text-decoration: none;
+  display: inline-block;
+  transition: background 0.25s, transform 0.2s;
+}
+
+.btn-primary:hover {
+  background: var(--rust);
+  transform: translateY(-2px);
+}
+
+.btn-ghost {
+  font-size: 0.65rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--fog);
+  text-decoration: none;
+  display: flex; align-items: center; gap: 0.6rem;
+  transition: color 0.25s;
+}
+
+.btn-ghost::before {
+  content: '▶';
+  font-size: 0.5rem;
+  color: var(--ember);
+}
+
+.btn-ghost:hover { color: var(--chalk); }
+
+.hero-scroll-hint {
+  margin-top: auto;
+  padding-top: 4rem;
+  font-size: 0.55rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--shore);
+  display: flex; align-items: center; gap: 1rem;
+}
+
+.hero-scroll-hint::before {
+  content: '';
+  display: inline-block;
+  width: 30px; height: 1px;
+  background: var(--shore);
+}
+
+/* Right panel — mosaic */
+.hero-right {
+  position: relative;
+  overflow: hidden;
+}
+
+.mosaic {
+  position: absolute; inset: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: 3px;
+}
+
+.mosaic-cell {
+  position: relative;
+  overflow: hidden;
+  background: var(--tar);
+}
+
+.mosaic-cell:nth-child(1)  { background: linear-gradient(135deg, #2a1f0e 0%, #1a0f04 100%); grid-column: 1/2; grid-row: 1/3; }
+.mosaic-cell:nth-child(2)  { background: linear-gradient(225deg, #0e1a2a 0%, #040e1a 100%); grid-column: 2/4; grid-row: 1/2; }
+.mosaic-cell:nth-child(3)  { background: linear-gradient(135deg, #1a0a08 0%, #2a100c 100%); grid-column: 2/3; grid-row: 2/3; }
+.mosaic-cell:nth-child(4)  { background: linear-gradient(315deg, #0e1505 0%, #1a2a08 100%); grid-column: 3/4; grid-row: 2/4; }
+.mosaic-cell:nth-child(5)  { background: linear-gradient(135deg, #20100a 0%, #0a0604 100%); grid-column: 1/3; grid-row: 3/4; }
+.mosaic-cell:nth-child(6)  { background: linear-gradient(225deg, #0a1520 0%, #040a14 100%); grid-column: 1/2; grid-row: 4/5; }
+.mosaic-cell:nth-child(7)  { background: linear-gradient(135deg, #1e0c06 0%, #120604 100%); grid-column: 2/4; grid-row: 4/5; }
+
+.mosaic-cell .cell-label {
+  position: absolute;
+  z-index: 3;
+  bottom: 10px; left: 12px;
+  font-size: 0.55rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(242,237,230,0.4);
+}
+
+.mosaic-cell .cell-tag {
+  position: absolute;
+  z-index: 3;
+  top: 10px; right: 10px;
+  font-size: 0.5rem;
+  letter-spacing: 0.15em;
+  background: var(--ember);
+  color: var(--chalk);
+  padding: 2px 6px;
+  text-transform: uppercase;
+}
+
+.mosaic::after {
+  content: '';
+  position: absolute; inset: 0; z-index: 5;
+  background: linear-gradient(105deg,
+    transparent 20%,
+    rgba(201,146,42,0.07) 50%,
+    transparent 80%
+  );
+  animation: sweep 6s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes sweep {
+  from { transform: translateX(-40%); }
+  to   { transform: translateX(40%); }
+}
+
+/* Counter row */
+.hero-counters {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(14,12,10,0.85);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(242,237,230,0.08);
+  display: flex;
+  z-index: 10;
+}
+
+.counter-item {
+  flex: 1;
+  padding: 1.4rem 2rem;
+  border-right: 1px solid rgba(242,237,230,0.08);
+  display: flex; flex-direction: column; gap: 0.3rem;
+}
+
+.counter-item:last-child { border-right: none; }
+
+.counter-num {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: var(--chalk);
+  line-height: 1;
+}
+
+.counter-num em { color: var(--ember); font-style: normal; }
+
+.counter-label {
+  font-size: 0.55rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--shore);
+}
+
+/* ─────────────────────────────────────────
+   MARQUEE STRIP
+───────────────────────────────────────── */
+.marquee-strip {
+  background: var(--ember);
+  padding: 0.75rem 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.marquee-inner {
+  display: flex;
+  white-space: nowrap;
+  animation: scroll-left 25s linear infinite;
+}
+
+.marquee-item {
+  padding: 0 3rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--chalk);
+  flex-shrink: 0;
+}
+
+.marquee-item::before {
+  content: '◆';
+  margin-right: 1.5rem;
+  font-size: 0.4rem;
+  vertical-align: middle;
+  opacity: 0.6;
+}
+
+@keyframes scroll-left {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ─────────────────────────────────────────
+   HOW IT WORKS
+───────────────────────────────────────── */
+.how {
+  padding: 8rem 5rem;
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  gap: 6rem;
+  align-items: start;
+  position: relative;
+}
+
+.how::before {
+  content: 'HOW';
+  position: absolute;
+  top: 4rem; right: 3rem;
+  font-size: 18rem;
+  font-weight: 900;
+  color: rgba(242,237,230,0.02);
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+.section-kicker {
+  display: flex; align-items: center; gap: 0.8rem;
+  margin-bottom: 1.5rem;
+}
+
+.how-headline {
+  font-size: clamp(3rem, 5vw, 5.5rem);
+  font-weight: 900;
+  line-height: 0.9;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+.how-headline em {
+  font-style: italic;
+  color: var(--ember);
+}
+
+.how-subtext {
+  margin-top: 2rem;
+  font-size: 0.95rem;
+  font-weight: 300;
+  line-height: 1.85;
+  color: var(--fog);
+  max-width: 320px;
+}
+
+.steps {
+  display: flex; flex-direction: column; gap: 0;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 2rem;
+  padding: 2.5rem 0;
+  border-bottom: 1px solid rgba(242,237,230,0.07);
+  transition: background 0.3s;
+}
+
+.step:first-child { border-top: 1px solid rgba(242,237,230,0.07); }
+.step:hover { background: rgba(242,237,230,0.02); }
+
+.step-num {
+  font-size: 3.5rem;
+  font-weight: 900;
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(242,237,230,0.15);
+  line-height: 1;
+  padding-top: 0.2rem;
+  font-style: italic;
+  transition: -webkit-text-stroke-color 0.3s;
+}
+
+.step:hover .step-num { -webkit-text-stroke-color: var(--ember); }
+
+.step-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.6rem;
+  color: var(--chalk);
+}
+
+.step-desc {
+  font-size: 0.88rem;
+  font-weight: 300;
+  line-height: 1.75;
+  color: var(--fog);
+}
+
+.step-tag {
+  display: inline-block;
+  margin-top: 0.8rem;
+  font-size: 0.55rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--ember);
+  border: 1px solid rgba(217,79,43,0.4);
+  padding: 0.2rem 0.6rem;
+}
+
+/* ─────────────────────────────────────────
+   FEATURED REELS
+───────────────────────────────────────── */
+.reels-section {
+  padding: 6rem 5rem;
+  background: var(--tar);
+  position: relative;
+  overflow: hidden;
+}
+
+.reels-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 4rem;
+}
+
+.reels-headline {
+  font-size: clamp(2.5rem, 5vw, 5rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  line-height: 0.9;
+}
+
+.reels-headline em {
+  font-style: italic;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--chalk);
+}
+
+.reels-meta {
+  font-size: 0.65rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--shore);
+  text-align: right;
+  line-height: 2;
+}
+
+.reels-meta strong { color: var(--ember); font-weight: 700; }
+
+.reel-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: auto;
+  gap: 3px;
+}
+
+.reel-card {
+  position: relative;
+  overflow: hidden;
+  background: var(--ink);
+  cursor: pointer;
+}
+
+.reel-card::after {
+  content: '▶';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: var(--chalk);
+  background: rgba(14,12,10,0.5);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.reel-card:hover::after { opacity: 1; }
+
+.reel-card .thumb {
+  width: 100%;
+  display: block;
+  position: relative;
+}
+
+.reel-card:nth-child(1)  { grid-column: 1/6;  }
+.reel-card:nth-child(2)  { grid-column: 6/9;  }
+.reel-card:nth-child(3)  { grid-column: 9/13; }
+.reel-card:nth-child(4)  { grid-column: 1/4;  }
+.reel-card:nth-child(5)  { grid-column: 4/8;  }
+.reel-card:nth-child(6)  { grid-column: 8/13; }
+
+.thumb-bg { position: absolute; inset: 0; }
+
+.reel-card:nth-child(1) .thumb-bg { background: linear-gradient(135deg, #1f2c0a 0%, #0c1504 40%, #1a2810 100%); }
+.reel-card:nth-child(2) .thumb-bg { background: linear-gradient(225deg, #200f04 0%, #3a1a08 60%, #1a0c04 100%); }
+.reel-card:nth-child(3) .thumb-bg { background: linear-gradient(135deg, #04101f 0%, #081a30 60%, #020a14 100%); }
+.reel-card:nth-child(4) .thumb-bg { background: linear-gradient(315deg, #1f0c04 0%, #2c1408 60%, #140804 100%); }
+.reel-card:nth-child(5) .thumb-bg { background: linear-gradient(135deg, #0c0c0c 0%, #1a1a14 50%, #0a0a08 100%); }
+.reel-card:nth-child(6) .thumb-bg { background: linear-gradient(225deg, #0a1520 0%, #04101c 60%, #020810 100%); }
+
+.thumb-scene {
+  position: absolute;
+  bottom: 30%;
+  left: 0; right: 0;
+  height: 1px;
+  background: rgba(242,237,230,0.08);
+}
+
+.thumb-scene::before {
+  content:'';
+  position:absolute;
+  width: 30%; height: 40px;
+  bottom: 0; left: 10%;
+  border-left: 1px solid rgba(242,237,230,0.1);
+  border-top: 1px solid rgba(242,237,230,0.1);
+}
+
+.reel-info {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 1rem;
+  background: linear-gradient(to top, rgba(14,12,10,0.95), transparent);
+  z-index: 2;
+}
+
+.reel-info-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--chalk);
+  margin-bottom: 0.2rem;
+}
+
+.reel-info-sub {
+  font-size: 0.55rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--shore);
+}
+
+.reel-card:nth-child(1) .thumb,
+.reel-card:nth-child(5) .thumb { min-height: 220px; }
+.thumb { min-height: 180px; }
+
+.reel-duration {
+  position: absolute;
+  top: 10px; right: 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.55rem;
+  background: rgba(14,12,10,0.8);
+  padding: 2px 6px;
+  color: var(--fog);
+  z-index: 3;
+}
+
+/* ─────────────────────────────────────────
+   SUBMIT
+───────────────────────────────────────── */
+.submit {
+  padding: 8rem 5rem;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 6rem;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.submit::before {
+  content: '';
+  position: absolute;
+  top: -1px; left: 0; right: 0;
+  height: 8px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--ember) 0px, var(--ember) 40px,
+    var(--ink) 40px, var(--ink) 60px
+  );
+  opacity: 0.7;
+}
+
+.submit-headline {
+  font-size: clamp(3rem, 6vw, 6.5rem);
+  font-weight: 900;
+  text-transform: uppercase;
+  line-height: 0.88;
+  letter-spacing: -0.01em;
+}
+
+.submit-headline .ghost {
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(242,237,230,0.2);
+  display: block;
+  font-style: italic;
+}
+
+.submit-headline .solid { color: var(--chalk); display: block; }
+.submit-headline .accent { color: var(--ember); display: block; font-style: italic; }
+
+.submit-body {
+  margin-top: 2rem;
+  font-size: 0.95rem;
+  font-weight: 300;
+  line-height: 1.85;
+  color: var(--fog);
+}
+
+.submit-body strong { color: var(--chalk); }
+
+.submit-action {
+  margin-top: 3rem;
+  display: flex; flex-direction: column; gap: 1rem;
+}
+
+.submit-action .btn-primary { display: inline-flex; align-items: center; gap: 1rem; align-self: flex-start; }
+
+.submit-note {
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--shore);
+}
+
+.requirements {
+  background: rgba(242,237,230,0.03);
+  border: 1px solid rgba(242,237,230,0.08);
+  padding: 2.5rem;
+}
+
+.req-title {
+  font-size: 0.6rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--ember);
+  margin-bottom: 2rem;
+  font-style: italic;
+}
+
+.req-list { list-style: none; display: flex; flex-direction: column; gap: 0; }
+
+.req-item {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 1rem;
+  padding: 1.2rem 0;
+  border-bottom: 1px solid rgba(242,237,230,0.06);
+  align-items: start;
+}
+
+.req-item:last-child { border-bottom: none; }
+.req-icon { font-size: 0.9rem; padding-top: 0.1rem; color: var(--gold); }
+
+.req-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--chalk);
+  margin-bottom: 0.2rem;
+}
+
+.req-detail {
+  font-size: 0.72rem;
+  font-weight: 300;
+  color: var(--shore);
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+}
+
+/* ─────────────────────────────────────────
+   AP IDENTITY STRIP
+───────────────────────────────────────── */
+.ap-strip {
+  padding: 5rem;
+  background: linear-gradient(135deg, #100d09 0%, #0e0c0a 100%);
+  border-top: 1px solid rgba(242,237,230,0.06);
+  border-bottom: 1px solid rgba(242,237,230,0.06);
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  gap: 5rem;
+  align-items: center;
+}
+
+.ap-wordmark { font-size: 5rem; font-weight: 900; text-transform: uppercase; line-height: 0.9; letter-spacing: -0.02em; }
+.ap-wordmark .ap  { color: var(--ember); font-style: italic; display:block; }
+.ap-wordmark .zip { font-size: 1.1rem; letter-spacing: 0.2em; color: var(--shore); font-weight: 400; display:block; margin-top: 0.5rem; }
+
+.ap-manifesto {
+  font-size: 1.05rem;
+  font-weight: 300;
+  line-height: 1.9;
+  color: var(--fog);
+  font-style: italic;
+  font-family: 'Playfair Display', serif;
+  border-left: 2px solid var(--ember);
+  padding-left: 2rem;
+}
+
+.ap-manifesto strong { color: var(--chalk); font-style: normal; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; letter-spacing: 0.05em; }
+
+.ap-spots-title {
+  font-size: 0.55rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--ember);
+  margin-bottom: 1.5rem;
+  font-style: italic;
+}
+
+.spot-list { list-style: none; display: flex; flex-direction: column; gap: 0.8rem; }
+
+.spot-item {
+  display: flex; align-items: baseline; gap: 0.8rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--fog);
+}
+
+.spot-item::before { content: '—'; color: var(--shore); font-size: 0.5rem; }
+.spot-item.active { color: var(--chalk); }
+.spot-item.active::before { color: var(--ember); content: '▶'; font-size: 0.45rem; }
+
+/* ─────────────────────────────────────────
+   EDITORIAL / ABOUT
+───────────────────────────────────────── */
+.editorial {
+  padding: 8rem 5rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4rem;
+  position: relative;
+}
+
+.editorial-large-text {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-style: italic;
+  line-height: 1.2;
+  color: var(--chalk);
+  grid-column: 2/4;
+  padding-left: 3rem;
+  border-left: 2px solid rgba(242,237,230,0.1);
+}
+
+.editorial-large-text em { color: var(--ember); }
+
+.editorial-heading {
+  font-size: 2.2rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  line-height: 0.95;
+  margin-bottom: 1.5rem;
+}
+
+.editorial-body {
+  font-size: 0.85rem;
+  font-weight: 300;
+  line-height: 1.9;
+  color: var(--fog);
+}
+
+/* ─────────────────────────────────────────
+   FOOTER
+───────────────────────────────────────── */
+footer {
+  background: var(--ink);
+  border-top: 1px solid rgba(242,237,230,0.08);
+  padding: 4rem 5rem 2.5rem;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 3rem;
+  padding-bottom: 4rem;
+  border-bottom: 1px solid rgba(242,237,230,0.06);
+  margin-bottom: 2rem;
+}
+
+.footer-brand-name {
+  font-size: 2.5rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: var(--chalk);
+  letter-spacing: -0.01em;
+  line-height: 1;
+  margin-bottom: 1rem;
+}
+
+.footer-brand-name em { color: var(--ember); font-style: italic; }
+
+.footer-tagline {
+  font-size: 0.75rem;
+  font-weight: 300;
+  line-height: 1.8;
+  color: var(--shore);
+  max-width: 260px;
+}
+
+.footer-col-head {
+  font-size: 0.6rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--ember);
+  font-style: italic;
+  margin-bottom: 1.5rem;
+}
+
+.footer-links { list-style: none; display: flex; flex-direction: column; gap: 0.8rem; }
+
+.footer-links a {
+  font-size: 0.8rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--shore);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer-links a:hover { color: var(--chalk); }
+
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.footer-legal { font-size: 0.6rem; letter-spacing: 0.15em; color: rgba(138,125,110,0.5); }
+.footer-ap-tag { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 0.2em; color: var(--ember); opacity: 0.7; }
+
+/* ─── REVEALS ─── */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.8s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1);
+}
+.reveal.visible { opacity:1; transform:translateY(0); }
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+
+/* ─── MOBILE ─── */
+@media (max-width: 900px) {
+  .hero { grid-template-columns: 1fr; }
+  .hero-right { display: none; }
+  .hero-left { padding: 10rem 2rem 5rem 3rem; }
+  .how { grid-template-columns: 1fr; padding: 5rem 2rem; gap: 3rem; }
+  .how::before { display: none; }
+  .reels-section { padding: 5rem 2rem; }
+  .reel-card { grid-column: span 12 !important; }
+  .submit { grid-template-columns: 1fr; padding: 5rem 2rem; gap: 3rem; }
+  .ap-strip { grid-template-columns: 1fr; padding: 4rem 2rem; gap: 2.5rem; }
+  .editorial { grid-template-columns: 1fr; padding: 5rem 2rem; gap: 2.5rem; }
+  .editorial-large-text { grid-column: 1; padding-left: 1.5rem; }
+  .footer-grid { grid-template-columns: 1fr 1fr; gap: 2.5rem; }
+  footer { padding: 3rem 2rem 2rem; }
+  nav { padding: 1.2rem 1.5rem; }
+  .nav-links { display: none; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="#" class="nav-logo">Reel<em>Oz</em></a>
+  <ul class="nav-links">
+    <li><a href="#how">Process</a></li>
+    <li><a href="#reels">Reels</a></li>
+    <li><a href="#submit">Submit</a></li>
+    <li><a href="#about">About</a></li>
+  </ul>
+  <a href="#submit" class="nav-cta">Submit Your Footage</a>
+</nav>
+
+<!-- ════════ HERO ════════ -->
+<section class="hero">
+  <div class="sprockets" id="sprockets"></div>
+
+  <div class="hero-left">
+    <div class="hero-eyebrow">
+      <span class="rule"></span>
+      <span>Asbury Park, NJ</span>
+      <em>· 07712</em>
+    </div>
+
+    <h1 class="hero-headline">
+      <span class="line-1">Reel</span>
+      <span class="line-2">Oz</span>
+      <span class="line-3">Collective</span>
+    </h1>
+
+    <p class="hero-body">
+      <strong>Your footage. Our edit.</strong> Reel Oz is Asbury Park's crowdsourced video production company — we gather raw clips from locals, creatives, and visitors, then cut them into film that actually feels like this place.
+    </p>
+
+    <div class="hero-actions">
+      <a href="#reels" class="btn-primary">Watch the Reels</a>
+      <a href="#submit" class="btn-ghost">Submit Footage</a>
+    </div>
+
+    <div class="hero-scroll-hint">Scroll to explore</div>
+  </div>
+
+  <div class="hero-right">
+    <div class="mosaic">
+      <div class="mosaic-cell">
+        <span class="cell-label">Cookman Ave · 06:12</span>
+        <span class="cell-tag">New</span>
+      </div>
+      <div class="mosaic-cell">
+        <span class="cell-label">The Boardwalk · Dusk</span>
+      </div>
+      <div class="mosaic-cell">
+        <span class="cell-label">Convention Hall</span>
+        <span class="cell-tag">Featured</span>
+      </div>
+      <div class="mosaic-cell">
+        <span class="cell-label">Stone Pony · Live</span>
+      </div>
+      <div class="mosaic-cell">
+        <span class="cell-label">Deal Lake · Dawn</span>
+      </div>
+      <div class="mosaic-cell">
+        <span class="cell-label">Ocean Ave · Storm</span>
+        <span class="cell-tag">Staff Pick</span>
+      </div>
+      <div class="mosaic-cell">
+        <span class="cell-label">Power Plant · Night</span>
+      </div>
+    </div>
+
+    <div class="hero-counters">
+      <div class="counter-item">
+        <div class="counter-num" id="c1">0</div>
+        <div class="counter-label">Clips submitted</div>
+      </div>
+      <div class="counter-item">
+        <div class="counter-num" id="c2">0</div>
+        <div class="counter-label">Local contributors</div>
+      </div>
+      <div class="counter-item">
+        <div class="counter-num" id="c3">0</div>
+        <div class="counter-label">Films produced</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ MARQUEE ════════ -->
+<div class="marquee-strip">
+  <div class="marquee-inner">
+    <span class="marquee-item">Submit Your Footage</span>
+    <span class="marquee-item">Asbury Park Film Collective</span>
+    <span class="marquee-item">Crowdsourced. Community-Edited.</span>
+    <span class="marquee-item">The Shore on Film</span>
+    <span class="marquee-item">07712 Always</span>
+    <span class="marquee-item">Your Clip. Our Cut.</span>
+    <span class="marquee-item">Raw Footage Welcome</span>
+    <span class="marquee-item">Submit Your Footage</span>
+    <span class="marquee-item">Asbury Park Film Collective</span>
+    <span class="marquee-item">Crowdsourced. Community-Edited.</span>
+    <span class="marquee-item">The Shore on Film</span>
+    <span class="marquee-item">07712 Always</span>
+    <span class="marquee-item">Your Clip. Our Cut.</span>
+    <span class="marquee-item">Raw Footage Welcome</span>
+  </div>
+</div>
+
+<!-- ════════ HOW IT WORKS ════════ -->
+<section class="how" id="how">
+  <div>
+    <div class="section-kicker">
+      <span class="rule"></span>
+      <span class="overline">The Process</span>
+    </div>
+    <h2 class="how-headline reveal">
+      Film<br>Made<br><em>Together</em>
+    </h2>
+    <p class="how-subtext reveal reveal-delay-1">
+      No studio. No gatekeepers. Reel Oz runs entirely on footage from people who actually live, work, and breathe this city.
+    </p>
+  </div>
+
+  <div class="steps">
+    <div class="step reveal">
+      <div class="step-num">01</div>
+      <div class="step-body">
+        <div class="step-title">Shoot Anything. Shoot Everything.</div>
+        <div class="step-desc">Phone, mirrorless, GoPro — doesn't matter. If it's Asbury Park, we want it. Early morning Deal Lake fog. Saturday night on Cookman. A storm rolling in off the Atlantic. All of it.</div>
+        <span class="step-tag">Any device. Any format.</span>
+      </div>
+    </div>
+    <div class="step reveal reveal-delay-1">
+      <div class="step-num">02</div>
+      <div class="step-body">
+        <div class="step-title">Drop It in the Portal</div>
+        <div class="step-desc">Upload your raw clips through our submission portal. Tag the location, time of day, and mood. One clip or a hundred — we'll take them all. No editing required on your end.</div>
+        <span class="step-tag">Upload · Tag · Done</span>
+      </div>
+    </div>
+    <div class="step reveal reveal-delay-2">
+      <div class="step-num">03</div>
+      <div class="step-body">
+        <div class="step-title">Our Editors Go to Work</div>
+        <div class="step-desc">The Reel Oz editorial team digs through submissions and builds the film. We sequence, color grade, score, and cut — pulling the best from hundreds of contributors into one coherent piece.</div>
+        <span class="step-tag">Professional edit · Color · Score</span>
+      </div>
+    </div>
+    <div class="step reveal reveal-delay-3">
+      <div class="step-num">04</div>
+      <div class="step-body">
+        <div class="step-title">Your Name in the Credits</div>
+        <div class="step-desc">Every contributor whose footage makes the final cut is credited. You're not a stock library — you're a co-director. Films screen locally, stream online, and run in AP venues.</div>
+        <span class="step-tag">Full contributor credit · Revenue share</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ FEATURED REELS ════════ -->
+<section class="reels-section" id="reels">
+  <div class="reels-header reveal">
+    <div>
+      <div class="section-kicker">
+        <span class="rule"></span>
+        <span class="overline">Latest Productions</span>
+      </div>
+      <h2 class="reels-headline">The<br><em>Reels</em></h2>
+    </div>
+    <div class="reels-meta">
+      <strong>38</strong> films produced<br>
+      <strong>4,800+</strong> clips in archive<br>
+      Updated weekly
+    </div>
+  </div>
+
+  <div class="reel-grid">
+    <div class="reel-card reveal">
+      <div class="thumb"><div class="thumb-bg"></div><div class="thumb-scene"></div></div>
+      <div class="reel-duration">12:44</div>
+      <div class="reel-info">
+        <div class="reel-info-title">Asbury After Dark — Vol. 3</div>
+        <div class="reel-info-sub">84 contributors · Cookman, Ocean Ave, Stone Pony</div>
+      </div>
+    </div>
+    <div class="reel-card reveal reveal-delay-1">
+      <div class="thumb"><div class="thumb-bg"></div><div class="thumb-scene"></div></div>
+      <div class="reel-duration">6:02</div>
+      <div class="reel-info">
+        <div class="reel-info-title">Power Plant Sessions</div>
+        <div class="reel-info-sub">31 contributors · Industrial district</div>
+      </div>
+    </div>
+    <div class="reel-card reveal reveal-delay-2">
+      <div class="thumb"><div class="thumb-bg"></div><div class="thumb-scene"></div></div>
+      <div class="reel-duration">8:17</div>
+      <div class="reel-info">
+        <div class="reel-info-title">Shore Season — Summer '24</div>
+        <div class="reel-info-sub">120+ contributors · Full boardwalk</div>
+      </div>
+    </div>
+    <div class="reel-card reveal">
+      <div class="thumb"><div class="thumb-bg"></div><div class="thumb-scene"></div></div>
+      <div class="reel-duration">4:30</div>
+      <div class="reel-info">
+        <div class="reel-info-title">Deal Lake at Dawn</div>
+        <div class="reel-info-sub">22 contributors</div>
+      </div>
+    </div>
+    <div class="reel-card reveal reveal-delay-1">
+      <div class="thumb"><div class="thumb-bg"></div><div class="thumb-scene"></div></div>
+      <div class="reel-duration">9:55</div>
+      <div class="reel-info">
+        <div class="reel-info-title">Convention Hall — Hundred Years</div>
+        <div class="reel-info-sub">67 contributors · Archival + new</div>
+      </div>
+    </div>
+    <div class="reel-card reveal reveal-delay-2">
+      <div class="thumb"><div class="thumb-bg"></div><div class="thumb-scene"></div></div>
+      <div class="reel-duration">3:48</div>
+      <div class="reel-info">
+        <div class="reel-info-title">Stone Pony — 50 Years of the Stage</div>
+        <div class="reel-info-sub">49 contributors · Music / live footage</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ SUBMIT ════════ -->
+<section class="submit" id="submit">
+  <div>
+    <div class="section-kicker">
+      <span class="rule"></span>
+      <span class="overline">Open Submissions</span>
+    </div>
+    <h2 class="submit-headline reveal">
+      <span class="ghost">Your</span>
+      <span class="solid">Footage</span>
+      <span class="accent">Belongs Here.</span>
+    </h2>
+    <p class="submit-body reveal reveal-delay-1">
+      Every frame of Asbury Park matters. The <strong>quiet Tuesday afternoon on Bangs Ave</strong>. The crowd spilling out of a show at 1 AM. The way the light hits Convention Hall at the exact wrong angle and makes it look perfect. <strong>We want all of it.</strong>
+    </p>
+    <div class="submit-action reveal reveal-delay-2">
+      <a href="#" class="btn-primary">Upload Your Clips →</a>
+      <span class="submit-note">Free to submit · Contributors credited · Revenue share available</span>
+    </div>
+  </div>
+
+  <div class="requirements reveal reveal-delay-1">
+    <div class="req-title">What We're Looking For</div>
+    <ul class="req-list">
+      <li class="req-item">
+        <span class="req-icon">📍</span>
+        <div>
+          <div class="req-name">Location</div>
+          <div class="req-detail">Must be Asbury Park, NJ or immediate surrounding area — Neptune, Bradley Beach, Ocean Grove.</div>
+        </div>
+      </li>
+      <li class="req-item">
+        <span class="req-icon">📱</span>
+        <div>
+          <div class="req-name">Any Device</div>
+          <div class="req-detail">Phone footage, DSLR, mirrorless, GoPro, dashcam, Super 8 — all accepted. We grade in post.</div>
+        </div>
+      </li>
+      <li class="req-item">
+        <span class="req-icon">🎬</span>
+        <div>
+          <div class="req-name">Raw Preferred</div>
+          <div class="req-detail">Send us the unedited original. Don't apply filters or crop first — our editors do that work.</div>
+        </div>
+      </li>
+      <li class="req-item">
+        <span class="req-icon">⏱</span>
+        <div>
+          <div class="req-name">Length</div>
+          <div class="req-detail">5 seconds to 60 minutes. Longer raw footage = more material for our editors to work with.</div>
+        </div>
+      </li>
+      <li class="req-item">
+        <span class="req-icon">©</span>
+        <div>
+          <div class="req-name">Your Original Work</div>
+          <div class="req-detail">Must be footage you shot. You retain ownership; we license usage with full credit given.</div>
+        </div>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- ════════ AP IDENTITY ════════ -->
+<div class="ap-strip">
+  <div class="ap-wordmark reveal">
+    <span class="ap">Asbury<br>Park</span>
+    <span class="zip">07712 · NJ</span>
+  </div>
+  <div class="ap-manifesto reveal reveal-delay-1">
+    "Asbury Park doesn't look like anywhere else and it doesn't sound like anywhere else. The <strong>Power Plant</strong> ruins against the ocean. <strong>Cookman</strong> at midnight in July. The Stone Pony crowd spilling onto the sidewalk. <strong>Reel Oz exists because this place deserves a film company that actually lives here.</strong>"
+  </div>
+  <div class="reveal reveal-delay-2">
+    <div class="ap-spots-title">Locations We're Filming</div>
+    <ul class="spot-list">
+      <li class="spot-item active">The Boardwalk</li>
+      <li class="spot-item active">Power Plant</li>
+      <li class="spot-item active">Stone Pony</li>
+      <li class="spot-item active">Convention Hall</li>
+      <li class="spot-item">Deal Lake</li>
+      <li class="spot-item">Cookman Ave</li>
+      <li class="spot-item">Ocean Ave</li>
+      <li class="spot-item">Springwood Ave</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ════════ EDITORIAL ════════ -->
+<section class="editorial" id="about">
+  <div>
+    <div class="section-kicker" style="margin-bottom:1.5rem">
+      <span class="rule"></span>
+      <span class="overline">About Reel Oz</span>
+    </div>
+    <h3 class="editorial-heading reveal">Not a<br>Studio.<br>A City.</h3>
+    <p class="editorial-body reveal reveal-delay-1">
+      Reel Oz isn't a production house with a lot. We're a collective — editors, musicians, and locals who believe the best documentary of Asbury Park is the one being shot right now by 300 people who call it home.
+    </p>
+  </div>
+  <div class="editorial-large-text reveal reveal-delay-1">
+    "The most honest film about a place is never made by an outsider with a budget. It's made by <em>the people who were already there</em> — before the cameras showed up."
+  </div>
+</section>
+
+<!-- ════════ FOOTER ════════ -->
+<footer>
+  <div class="footer-grid">
+    <div>
+      <div class="footer-brand-name">Reel<em>Oz</em></div>
+      <p class="footer-tagline">Asbury Park's crowdsourced film collective. Your footage. Our edit. 07712 always.</p>
+    </div>
+    <div>
+      <div class="footer-col-head">Navigate</div>
+      <ul class="footer-links">
+        <li><a href="#reels">Watch Reels</a></li>
+        <li><a href="#how">How It Works</a></li>
+        <li><a href="#submit">Submit Footage</a></li>
+        <li><a href="#about">About</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-head">Community</div>
+      <ul class="footer-links">
+        <li><a href="#">Contributors</a></li>
+        <li><a href="#">Local Screenings</a></li>
+        <li><a href="#">Editorial Calendar</a></li>
+        <li><a href="#">Revenue Share</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-head">Connect</div>
+      <ul class="footer-links">
+        <li><a href="#">Instagram</a></li>
+        <li><a href="#">YouTube</a></li>
+        <li><a href="#">Vimeo</a></li>
+        <li><a href="#">Contact</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-legal">© 2025 Reel Oz · Asbury Park, NJ · All contributor rights reserved</span>
+    <span class="footer-ap-tag">ASBURY PARK · 07712 · SHORE MADE</span>
+  </div>
+</footer>
+
+<script>
+// Sprocket holes
+const sc = document.getElementById('sprockets');
+for (let i = 0; i < 30; i++) {
+  const d = document.createElement('div');
+  d.className = 'sprocket';
+  sc.appendChild(d);
+}
+
+// Scroll reveal
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+  });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// Counters
+function animateCounter(el, target, suffix) {
+  let start = null;
+  const dur = 1800;
+  const step = ts => {
+    if (!start) start = ts;
+    const p = Math.min((ts - start) / dur, 1);
+    const ease = 1 - Math.pow(1 - p, 3);
+    const val = Math.floor(ease * target);
+    el.textContent = val.toLocaleString() + (suffix || '');
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+const counterObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      animateCounter(document.getElementById('c1'), 4800, '+');
+      animateCounter(document.getElementById('c2'), 312, '');
+      animateCounter(document.getElementById('c3'), 38, '');
+      counterObs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.5 });
+
+const cRow = document.querySelector('.hero-counters');
+if (cRow) counterObs.observe(cRow);
+</script>
+</body>
+</html>
