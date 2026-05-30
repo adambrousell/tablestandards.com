@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -943,7 +943,7 @@
 
 
     <div class="btn-row">
-      <button class="btn-primary" onclick="generate()">Generate Email Preview →</button>
+      <button class="btn-primary" onclick="generate();goTab(2)">Generate Email Preview →</button>
       <button class="btn-secondary" onclick="cfSaveShift()">&#9729; Save Draft</button>
       <button class="btn-secondary" onclick="goTab(0)">← Back</button>
     </div>
@@ -1021,7 +1021,7 @@ function goTab(n) {
     if (i === n) d.classList.add('active');
   });
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  if (n === 2) { generate(); generateExec(); }
+  if (n === 2) { generateExec(); }
 }
 
 // ── Toggles ──
