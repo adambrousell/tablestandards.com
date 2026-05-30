@@ -486,6 +486,49 @@
     transition: opacity 0.3s;
   }
   #exec-box.loading { opacity: 0.3; }
+
+  .note-entry {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: var(--cream-warm);
+    border: 0.5px solid var(--border-light);
+    border-left: 3px solid var(--gold);
+    border-radius: 0 6px 6px 0;
+    padding: 8px 12px;
+    animation: fadeUp 0.2s ease both;
+  }
+  .note-meta {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-faint);
+    white-space: nowrap;
+    padding-top: 1px;
+    min-width: 80px;
+  }
+  .note-text {
+    font-size: 13px;
+    color: var(--ink);
+    flex: 1;
+    line-height: 1.5;
+  }
+  .note-del {
+    background: none;
+    border: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 0;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .note-del:hover { color: var(--red-deep); }
+  .notes-empty {
+    font-size: 13px;
+    color: var(--ink-faint);
+    font-style: italic;
+    padding: 6px 0;
+  }
 </style>
 </head>
 <body>
@@ -676,9 +719,22 @@
             <div class="metric-val"><input type="number" id="s-resy" placeholder="0"></div>
           </div>
         </div>
-        <div class="field">
-          <div class="field-label">Shift summary</div>
-          <textarea id="s-summary" placeholder="Brief narrative of how service went..." style="min-height:64px"></textarea>
+        <div class="field" style="margin-top:14px;max-width:320px">
+          <div class="field-label">Closing manager</div>
+          <select id="s-closer">
+            <option value="">— select —</option>
+            <option value="Adam Brousell">Adam Brousell</option>
+            <option value="Kelly Carrillo">Kelly Carrillo</option>
+            <option value="Caitlin Sinno">Caitlin Sinno</option>
+          </select>
+        </div>
+        <div class="field" style="margin-top:14px">
+          <div class="field-label" style="margin-bottom:8px">Shift notes</div>
+          <div style="display:flex;gap:8px;margin-bottom:10px">
+            <input type="text" id="s-note-input" placeholder="Add a note..." style="flex:1" onkeydown="if(event.key==='Enter'){addShiftNote();event.preventDefault()}">
+            <button class="tag-add-btn" onclick="addShiftNote()">+ Post</button>
+          </div>
+          <div id="shift-notes-log" style="display:flex;flex-direction:column;gap:6px;min-height:40px"></div>
         </div>
       </div>
     </div>
@@ -1020,11 +1076,13 @@ function generate() {
   var date = document.getElementById('o-date').value;
   var mgr  = document.getElementById('o-manager').value || 'Manager';
   var wthr = document.getElementById('o-weather').value || '—';
+  var opener = document.getElementById('o-manager').value || '—';
+  var closer = document.getElementById('s-closer').value || '—';
   var sales = document.getElementById('s-sales').value || '—';
   var avg   = document.getElementById('s-avg').value || '—';
   var cvrs  = document.getElementById('s-covers').value || '—';
   var resy  = document.getElementById('s-resy').value || '—';
-  var summ  = document.getElementById('s-summary').value;
+  var summ  = shiftNotes.map(function(n){ return n.ts + ' · ' + n.who + ' — ' + n.text; }).join('\n');
   var foh   = document.getElementById('s-foh').value || 'Nothing to note.';
   var foodN = document.getElementById('s-food').value;
   var bev   = document.getElementById('s-bev').value || 'Nothing to note.';
@@ -1036,12 +1094,19 @@ function generate() {
 
   var lines = [];
   lines.push('Shift: ' + fmtDate(date));
+  lines.push('Opening Manager: ' + opener + '  |  Closing Manager: ' + closer);
   lines.push('');
   lines.push('- Net Sales: ' + sales);
   lines.push('- Check Average: ' + avg);
   lines.push('- Covers: ' + cvrs + '  Resy: ' + resy);
   lines.push('- Weather: ' + wthr);
-  if (summ) { lines.push(''); lines.push(summ); }
+  if (shiftNotes.length) {
+    lines.push('');
+    lines.push('Shift Notes:');
+    shiftNotes.forEach(function(n) {
+      lines.push(n.ts + ' · ' + n.who + ' — ' + n.text);
+    });
+  }
 
   lines.push('');
   lines.push('Opening Checklist:');
@@ -1183,12 +1248,14 @@ function copyExec() {
 function buildContext() {
   var date = document.getElementById('o-date').value;
   var mgr  = document.getElementById('o-manager').value || 'the manager';
+  var opener = document.getElementById('o-manager') ? document.getElementById('o-manager').value : '';
+  var closer = document.getElementById('s-closer') ? document.getElementById('s-closer').value : '';
   var wthr = document.getElementById('o-weather').value || '';
   var sales = document.getElementById('s-sales').value || '';
   var avg   = document.getElementById('s-avg').value || '';
   var cvrs  = document.getElementById('s-covers').value || '';
   var resy  = document.getElementById('s-resy').value || '';
-  var summ  = document.getElementById('s-summary').value || '';
+  var summ  = shiftNotes.map(function(n){ return n.ts + ' · ' + n.who + ' — ' + n.text; }).join('; ');
   var foh   = document.getElementById('s-foh').value || '';
   var foodN = document.getElementById('s-food').value || '';
   var bev   = document.getElementById('s-bev').value || '';
@@ -1216,6 +1283,8 @@ function buildContext() {
 
   return [
     'Date: ' + fmtDate(date),
+    opener ? 'Opening manager: ' + opener : '',
+    closer ? 'Closing manager: ' + closer : '',
     'Manager: ' + mgr,
     'Weather: ' + wthr,
     'Net sales: ' + sales,
@@ -1285,6 +1354,48 @@ async function generateExec() {
   }
 }
 
+// ── Shift Notes ──
+var shiftNotes = [];
+
+function addShiftNote() {
+  var inp = document.getElementById('s-note-input');
+  var txt = inp.value.trim();
+  if (!txt) return;
+  var mgr = document.getElementById('o-manager').value || 'Manager';
+  // First name only
+  var firstName = mgr.split(' ')[0];
+  var now = new Date();
+  var h = now.getHours();
+  var m = String(now.getMinutes()).padStart(2,'0');
+  var ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  var ts = h + ':' + m + ' ' + ampm;
+  shiftNotes.push({ ts: ts, who: firstName, text: txt });
+  inp.value = '';
+  renderShiftNotes();
+}
+
+function removeShiftNote(i) {
+  shiftNotes.splice(i, 1);
+  renderShiftNotes();
+}
+
+function renderShiftNotes() {
+  var log = document.getElementById('shift-notes-log');
+  if (!log) return;
+  if (shiftNotes.length === 0) {
+    log.innerHTML = '<div class="notes-empty">No notes yet — post one above.</div>';
+    return;
+  }
+  log.innerHTML = shiftNotes.map(function(n, i) {
+    return '<div class="note-entry">' +
+      '<div class="note-meta">' + n.ts + ' · ' + n.who + '</div>' +
+      '<div class="note-text">' + n.text + '</div>' +
+      '<button class="note-del" onclick="removeShiftNote(' + i + ')" aria-label="Remove">×</button>' +
+      '</div>';
+  }).join('');
+}
+
 // ── Weather ──
 async function fetchWeather() {
   var inp = document.getElementById('o-weather');
@@ -1336,6 +1447,7 @@ async function fetchWeather() {
   document.getElementById('o-date').value = t.getFullYear() + '-' + mm + '-' + dd;
   document.getElementById('o-manager').value = 'Adam Brousell';
   fetchWeather();
+  renderShiftNotes();
 })();
 </script>
 </body>
