@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>River Pointe Inn — Shift Report</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1612;
+    --ink-mid: #3d3530;
+    --ink-soft: #7a6e68;
+    --ink-faint: #b8ada7;
+    --cream: #faf8f5;
+    --cream-warm: #f3efe9;
+    --cream-mid: #e8e2da;
+    --gold: #8a6d3b;
+    --gold-light: #c9a96e;
+    --gold-pale: #f5edd8;
+    --red-deep: #6b2323;
+    --red-pale: #f9eded;
+    --green-deep: #1e3d2a;
+    --green-pale: #e8f2ec;
+    --border: #ddd6cc;
+    --border-light: #ede8e2;
+    --shadow: 0 1px 3px rgba(26,22,18,0.06), 0 4px 16px rgba(26,22,18,0.04);
+    --shadow-card: 0 2px 8px rgba(26,22,18,0.08), 0 8px 32px rgba(26,22,18,0.05);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ── HEADER ── */
+  .site-header {
+    background: var(--ink);
+    color: var(--cream);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .site-header .brand {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    color: var(--gold-light);
+  }
+  .site-header .brand span {
+    color: rgba(250,248,245,0.45);
+    font-style: italic;
+    font-size: 14px;
+    margin-left: 10px;
+  }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .prog-label {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(250,248,245,0.4);
+  }
+  .prog-dots {
+    display: flex;
+    gap: 6px;
+  }
+  .prog-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: rgba(250,248,245,0.2);
+    transition: background 0.3s;
+  }
+  .prog-dot.done { background: var(--gold-light); }
+  .prog-dot.active { background: var(--cream); }
+
+  /* ── LAYOUT ── */
+  .app {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab-btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    color: var(--ink-soft);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 10px 20px;
+    cursor: pointer;
+    margin-bottom: -1px;
+    transition: color 0.2s, border-color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tab-btn:hover { color: var(--ink); }
+  .tab-btn.active {
+    color: var(--ink);
+    border-bottom-color: var(--gold);
+    font-weight: 500;
+  }
+  .tab-btn .tab-num {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--cream-warm);
+    font-size: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink-soft);
+  }
+  .tab-btn.active .tab-num {
+    background: var(--gold);
+    color: var(--cream);
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── SECTIONS ── */
+  .section {
+    background: #fff;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .section-head {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--cream-warm);
+  }
+  .section-icon {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    background: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .section-icon svg { width: 14px; height: 14px; stroke: var(--gold-light); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+  }
+  .section-body { padding: 20px; }
+
+  /* ── FORM ELEMENTS ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  @media (max-width: 600px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
+  }
+
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  input[type=text], input[type=date], input[type=number], select, textarea {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--gold);
+    background: #fff;
+  }
+  textarea { resize: vertical; min-height: 72px; line-height: 1.55; }
+
+  /* ── TOGGLE (YES/NO) ── */
+  .check-row {
+    display: flex;
+    align-items: center;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border-light);
+    gap: 12px;
+  }
+  .check-row:last-child { border-bottom: none; }
+  .check-info { flex: 1; }
+  .check-name { font-size: 14px; color: var(--ink); }
+  .check-sub { font-size: 11px; color: var(--ink-faint); margin-top: 1px; }
+  .toggle-pair { display: flex; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
+  .tog {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 400;
+    padding: 5px 12px;
+    border: none;
+    cursor: pointer;
+    background: #fff;
+    color: var(--ink-faint);
+    transition: all 0.15s;
+  }
+  .tog:first-child { border-right: 1px solid var(--border); }
+  .tog.yes.on { background: var(--green-deep); color: #fff; }
+  .tog.no.on { background: var(--red-deep); color: #fff; }
+  .tog:hover:not(.on) { background: var(--cream-warm); color: var(--ink); }
+
+  /* ── METRIC CARDS ── */
+  .metric-card {
+    background: var(--cream-warm);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .metric-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 4px;
+  }
+  .metric-val {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .metric-val input {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--ink);
+    background: transparent;
+    border: none;
+    border-bottom: 1px dashed var(--border);
+    border-radius: 0;
+    padding: 0;
+    width: 100%;
+  }
+  .metric-val input:focus { border-bottom-color: var(--gold); background: transparent; }
+
+  /* ── SPECIALS / 86 ROWS ── */
+  .special-row {
+    display: grid;
+    grid-template-columns: 1fr 80px 80px 32px;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .special-row input { margin: 0; }
+  .rm { background: none; border: none; color: var(--ink-faint); cursor: pointer; font-size: 18px; line-height: 1; padding: 0 4px; transition: color 0.15s; }
+  .rm:hover { color: var(--red-deep); }
+  .add-row-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    background: none;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    padding: 7px 14px;
+    cursor: pointer;
+    width: 100%;
+    justify-content: center;
+    margin-top: 8px;
+    transition: all 0.15s;
+  }
+  .add-row-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* ── TAGS (VIPs / 86s) ── */
+  .tag-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--gold-pale);
+    border: 1px solid #e0c98a;
+    border-radius: 100px;
+    padding: 3px 10px 3px 12px;
+    font-size: 13px;
+    color: var(--gold);
+  }
+  .tag button { background: none; border: none; cursor: pointer; color: var(--gold); font-size: 15px; line-height: 1; padding: 0; opacity: 0.6; }
+  .tag button:hover { opacity: 1; }
+  .tag-input-row { display: flex; gap: 8px; }
+  .tag-add-btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 8px 16px;
+    background: var(--ink);
+    color: var(--cream);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .tag-add-btn:hover { background: var(--ink-mid); }
+
+  /* ── CLOSING STATUS GRID ── */
+  .close-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .close-card {
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+  }
+  .close-name { font-size: 13px; color: var(--ink); }
+
+  /* ── PREVIEW ── */
+  .preview-box {
+    font-family: 'DM Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.75;
+    background: var(--ink);
+    color: #c9b99f;
+    border-radius: 8px;
+    padding: 24px 28px;
+    white-space: pre-wrap;
+    max-height: 520px;
+    overflow-y: auto;
+  }
+  .preview-box .hi-gold { color: var(--gold-light); }
+
+  /* ── BUTTONS ── */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 11px 24px;
+    background: var(--ink);
+    color: var(--cream);
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-primary:hover { background: var(--gold); }
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 11px 24px;
+    background: #fff;
+    color: var(--ink);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .btn-secondary:hover { border-color: var(--gold); background: var(--gold-pale); }
+  .btn-row { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+
+  /* ── DIVIDER ── */
+  .divider { height: 1px; background: var(--border-light); margin: 16px 0; }
+
+  /* ── STATUS BADGE ── */
+  .badge-open { display: inline-block; font-size: 10px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 100px; background: var(--green-pale); color: var(--green-deep); }
+
+  /* ── SCROLL ANIM ── */
+  .section { animation: fadeUp 0.3s ease both; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* stagger children */
+  .panel.active .section:nth-child(1) { animation-delay: 0.02s; }
+  .panel.active .section:nth-child(2) { animation-delay: 0.06s; }
+  .panel.active .section:nth-child(3) { animation-delay: 0.10s; }
+  .panel.active .section:nth-child(4) { animation-delay: 0.14s; }
+  .panel.active .section:nth-child(5) { animation-delay: 0.18s; }
+  .panel.active .section:nth-child(6) { animation-delay: 0.22s; }
+  .panel.active .section:nth-child(7) { animation-delay: 0.26s; }
+  .panel.active .section:nth-child(8) { animation-delay: 0.30s; }
+  .panel.active .section:nth-child(9) { animation-delay: 0.34s; }
+
+  /* ── NOTICE ── */
+  .notice {
+    background: var(--gold-pale);
+    border: 1px solid #e0c98a;
+    border-left: 3px solid var(--gold);
+    border-radius: 0 6px 6px 0;
+    padding: 10px 16px;
+    font-size: 13px;
+    color: var(--gold);
+    margin-bottom: 16px;
+  }
+  .spacer { height: 10px; }
+
+  /* Eighty six tag */
+  .tag-86 {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--red-pale);
+    border: 1px solid #e8c0c0;
+    border-radius: 100px;
+    padding: 3px 10px 3px 12px;
+    font-size: 13px;
+    color: var(--red-deep);
+  }
+  .tag-86 button { background: none; border: none; cursor: pointer; color: var(--red-deep); font-size: 15px; line-height: 1; padding: 0; opacity: 0.6; }
+  .tag-86 button:hover { opacity: 1; }
+
+  /* Col headers for specials */
+  .special-header {
+    display: grid;
+    grid-template-columns: 1fr 80px 80px 32px;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .special-header span {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  /* 86 row */
+  .eighty-row {
+    display: grid;
+    grid-template-columns: 1fr 32px;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: center;
+  }
+
+  @media print {
+    .site-header, .tabs, .btn-row { display: none; }
+    .panel { display: block !important; }
+  }
+
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #exec-box {
+    transition: opacity 0.3s;
+  }
+  #exec-box.loading { opacity: 0.3; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="brand">River Pointe Inn <span>Shift Report</span></div>
+  <div class="header-right">
+    <span class="prog-label">Section</span>
+    <div class="prog-dots">
+      <div class="prog-dot active" id="dot-0"></div>
+      <div class="prog-dot" id="dot-1"></div>
+      <div class="prog-dot" id="dot-2"></div>
+    </div>
+  </div>
+</header>
+
+<div class="app">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="goTab(0)"><div class="tab-num">1</div> Opening Checklist</button>
+    <button class="tab-btn" onclick="goTab(1)"><div class="tab-num">2</div> Shift Report</button>
+    <button class="tab-btn" onclick="goTab(2)"><div class="tab-num">3</div> Preview &amp; Send</button>
+  </div>
+
+  <!-- ═══════════════ TAB 1: OPENING ═══════════════ -->
+  <div class="panel active" id="panel-0">
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+        <div class="section-title">Shift Info</div>
+      </div>
+      <div class="section-body">
+        <div class="grid-3">
+          <div class="field"><div class="field-label">Date</div><input type="date" id="o-date"></div>
+          <div class="field"><div class="field-label">Manager on duty</div><input type="text" id="o-manager" placeholder="Your name"></div>
+          <div class="field">
+            <div class="field-label" style="display:flex;align-items:center;justify-content:space-between">
+              Weather
+              <button onclick="fetchWeather()" id="wx-btn" style="font-size:11px;padding:2px 8px;border-radius:4px;border:0.5px solid var(--border);background:var(--cream-warm);color:var(--ink-soft);cursor:pointer">⟳ Auto-fill</button>
+            </div>
+            <input type="text" id="o-weather" placeholder="Fetching weather...">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-icon"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+        <div class="section-title">Print Menus</div>
+      </div>
+      <div class="section-body">
+        <div class="check-row">
+          <div class="check-info"><div class="check-name">Food menus</div><div class="check-sub">80 Sun–Wed · 120 Thu–Sat</div></div>
+          <div class="toggle-pair"><button class="tog yes" data-k="m-food" onclick="tog(this)">YES</button><button class="tog no" data-k="m-food" onclick="tog(this)">NO</button></div>
+        </div>
+        <div class="check-row">
+          <div class="check-info"><div class="check-name">Dessert menus</div><div class="check-sub">80 Sun–Wed · 120 Thu–Sat</div></div>
+          <div class="toggle-pair"><button class="tog yes" data-k="m-dessert" onclick="tog(this)">YES</button><button class="tog no" data-k="m-dessert" onclick="tog(this)">NO</button></div>
+        </div>
+        <div class="check-row">
+          <div class="check-info"><div class="check-name">Wine menus</div></div>
+          <div class="toggle-pair"><button class="tog yes" data-k="m-wine" onclick="tog(this)">YES</button><button class="tog no" data-k="m-wine" onclick="tog(this)">NO</button></div>
+        </div>
+        <div class="check-row">
+          <div class="check-info"><div class="check-name">Bar menus</div></div>
+          <div class="toggle-pair"><button class="tog yes" data-k="m-bar" onclick="tog(this)">YES</button><button class="tog no" data-k="m-bar" onclick="tog(this)">NO</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-icon"><svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+        <div class="section-title">Opening Tasks</div>
+      </div>
+      <div class="section-body">
+        <div class="check-row">
+          <div class="check-info"><div class="check-name">Update daily board &amp; pre-shift notes</div></div>
+          <div class="toggle-pair"><button class="tog yes" data-k="board" onclick="tog(this)">YES</button><button class="tog no" data-k="board" onclick="tog(this)">NO</button></div>
+        </div>
+        <div class="check-row">
+          <div class="check-info"><div class="check-name">Assign opening side work</div></div>
+          <div class="toggle-pair"><button class="tog yes" data-k="sidework" onclick="tog(this)">YES</button><button class="tog no" data-k="sidework" onclick="tog(this)">NO</button></div>
+        </div>
+        <div class="check-row">
+          <div class="check-info"><div class="check-name">Print and assign floor plan</div></div>
+          <div class="toggle-pair"><button class="tog yes" data-k="floorplan" onclick="tog(this)">YES</button><button class="tog no" data-k="floorplan" onclick="tog(this)">NO</button></div>
+        </div>
+        <div class="check-row">
+          <div class="check-info"><div class="check-name">Bank counted $600 &amp; tips distributed</div></div>
+          <div class="toggle-pair"><button class="tog yes" data-k="bank" onclick="tog(this)">YES</button><button class="tog no" data-k="bank" onclick="tog(this)">NO</button></div>
+        </div>
+        <div class="check-row">
+          <div class="check-info"><div class="check-name">Water flowers</div><div class="check-sub">Bar · front room · back room · vestibule</div></div>
+          <div class="toggle-pair"><button class="tog yes" data-k="flowers" onclick="tog(this)">YES</button><button class="tog no" data-k="flowers" onclick="tog(this)">NO</button></div>
+        </div>
+        <div class="check-row">
+          <div class="check-info"><div class="check-name">Change water in bud vases</div></div>
+          <div class="toggle-pair"><button class="tog yes" data-k="vases" onclick="tog(this)">YES</button><button class="tog no" data-k="vases" onclick="tog(this)">NO</button></div>
+        </div>
+        <div class="check-row">
+          <div class="check-info"><div class="check-name">Check tables 26–29 are in a straight line</div></div>
+          <div class="toggle-pair"><button class="tog yes" data-k="tables" onclick="tog(this)">YES</button><button class="tog no" data-k="tables" onclick="tog(this)">NO</button></div>
+        </div>
+        <div class="check-row">
+          <div class="check-info"><div class="check-name">2 Fête d'Or in front ice bucket</div></div>
+          <div class="toggle-pair"><button class="tog yes" data-k="fete" onclick="tog(this)">YES</button><button class="tog no" data-k="fete" onclick="tog(this)">NO</button></div>
+        </div>
+        <div class="check-row">
+          <div class="check-info"><div class="check-name">Blow down back patio and out front</div></div>
+          <div class="toggle-pair"><button class="tog yes" data-k="blowdown" onclick="tog(this)">YES</button><button class="tog no" data-k="blowdown" onclick="tog(this)">NO</button></div>
+        </div>
+        <div class="check-row">
+          <div class="check-info"><div class="check-name">Perimeter walk</div><div class="check-sub">Check trash · garbage gate closed · wipe front chairs</div></div>
+          <div class="toggle-pair"><button class="tog yes" data-k="perimeter" onclick="tog(this)">YES</button><button class="tog no" data-k="perimeter" onclick="tog(this)">NO</button></div>
+        </div>
+        <div class="check-row">
+          <div class="check-info"><div class="check-name">Atmosphere set (10 min before open)</div><div class="check-sub">Lights dimmed · lamps on · candles lit · music at 60</div></div>
+          <div class="toggle-pair"><button class="tog yes" data-k="atmosphere" onclick="tog(this)">YES</button><button class="tog no" data-k="atmosphere" onclick="tog(this)">NO</button></div>
+        </div>
+        <div class="check-row">
+          <div class="check-info"><div class="check-name">Confirm bar set-up and bar wiped down</div></div>
+          <div class="toggle-pair"><button class="tog yes" data-k="bar-setup" onclick="tog(this)">YES</button><button class="tog no" data-k="bar-setup" onclick="tog(this)">NO</button></div>
+        </div>
+        <div class="check-row">
+          <div class="check-info"><div class="check-name">Confirm service station set up</div></div>
+          <div class="toggle-pair"><button class="tog yes" data-k="station" onclick="tog(this)">YES</button><button class="tog no" data-k="station" onclick="tog(this)">NO</button></div>
+        </div>
+        <div class="check-row">
+          <div class="check-info"><div class="check-name">Tables polished · restaurant set for success</div></div>
+          <div class="toggle-pair"><button class="tog yes" data-k="polished" onclick="tog(this)">YES</button><button class="tog no" data-k="polished" onclick="tog(this)">NO</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <div class="section-title">Pre-Shift</div>
+      </div>
+      <div class="section-body">
+        <div class="check-row">
+          <div class="check-info"><div class="check-name">Uniform check completed</div></div>
+          <div class="toggle-pair"><button class="tog yes" data-k="uniform" onclick="tog(this)">YES</button><button class="tog no" data-k="uniform" onclick="tog(this)">NO</button></div>
+        </div>
+        <div class="check-row">
+          <div class="check-info"><div class="check-name">F&amp;B changes reviewed with staff</div></div>
+          <div class="toggle-pair"><button class="tog yes" data-k="fb-review" onclick="tog(this)">YES</button><button class="tog no" data-k="fb-review" onclick="tog(this)">NO</button></div>
+        </div>
+        <div class="divider"></div>
+        <div class="field">
+          <div class="field-label">Pre-shift notes</div>
+          <textarea id="o-preshift" placeholder="Staff announcements, items to communicate, special instructions..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-primary" onclick="goTab(1)">Continue to Shift Report →</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════ TAB 2: SHIFT ═══════════════ -->
+  <div class="panel" id="panel-1">
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <div class="section-title">Numbers</div>
+      </div>
+      <div class="section-body">
+        <div class="grid-4" style="margin-bottom:16px">
+          <div class="metric-card">
+            <div class="metric-label">Net Sales</div>
+            <div class="metric-val"><input type="text" id="s-sales" placeholder="$0.00"></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Check Avg</div>
+            <div class="metric-val"><input type="text" id="s-avg" placeholder="$0.00"></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Covers</div>
+            <div class="metric-val"><input type="number" id="s-covers" placeholder="0"></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Resy</div>
+            <div class="metric-val"><input type="number" id="s-resy" placeholder="0"></div>
+          </div>
+        </div>
+        <div class="field">
+          <div class="field-label">Shift summary</div>
+          <textarea id="s-summary" placeholder="Brief narrative of how service went..." style="min-height:64px"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <div class="section-title">Closing Checklist</div>
+      </div>
+      <div class="section-body">
+
+        <div class="field-label" style="margin-bottom:8px">Bar check</div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Cleanliness</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-bar-clean" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-bar-clean" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Trash taken out</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-bar-trash" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-bar-trash" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">All surfaces wiped down</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-bar-wipe" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-bar-wipe" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Bar restocked — don't forget waters</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-bar-stock" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-bar-stock" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row" style="margin-bottom:16px"><div class="check-info"><div class="check-name">Ice wells burnt</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-bar-ice" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-bar-ice" onclick="tog(this)">NO</button></div></div>
+
+        <div class="divider"></div>
+        <div class="field-label" style="margin:12px 0 8px">Side work check</div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Dining room walk — tables set for next service</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-sw-dining" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-sw-dining" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Outside fully broken down, water bottles cleaned</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-sw-outside" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-sw-outside" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Server stations clean — trash out, linen bins removed</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-sw-station" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-sw-station" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Coffee machine broken down</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-sw-coffee" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-sw-coffee" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row" style="margin-bottom:16px"><div class="check-info"><div class="check-name">Polishing station clean and complete</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-sw-polish" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-sw-polish" onclick="tog(this)">NO</button></div></div>
+
+        <div class="divider"></div>
+        <div class="field-label" style="margin:12px 0 8px">Candles</div>
+        <div class="check-row"><div class="check-info"><div class="check-name">All candles blown out &amp; replaced for next service</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-candle-out" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-candle-out" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row" style="margin-bottom:16px"><div class="check-info"><div class="check-name">Double check Winston Study &amp; bathrooms</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-candle-ws" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-candle-ws" onclick="tog(this)">NO</button></div></div>
+
+        <div class="divider"></div>
+        <div class="field-label" style="margin:12px 0 8px">Fireplace</div>
+        <div class="check-row" style="margin-bottom:16px">
+          <div class="check-info"><div class="check-name">Fireplace off</div></div>
+          <div class="toggle-pair">
+            <button class="tog yes" data-k="cl-fire" onclick="tog(this)">Done</button>
+            <button class="tog no" data-k="cl-fire" onclick="tog(this)">N/A</button>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="field-label" style="margin:12px 0 8px">Lamps</div>
+        <div class="check-row"><div class="check-info"><div class="check-name">All lamps charging (glowing orange)</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-lamp-in" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-lamp-in" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row" style="margin-bottom:16px"><div class="check-info"><div class="check-name">Outdoor lamps charging in office</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-lamp-out" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-lamp-out" onclick="tog(this)">NO</button></div></div>
+
+        <div class="divider"></div>
+        <div class="field-label" style="margin:12px 0 8px">Shift close</div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Tips handed in — owed to house confirmed, cash tips declared</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-sc-tips" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-sc-tips" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Cash tips distributed &amp; placed in safe for pick up</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-sc-cashtips" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-sc-cashtips" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Bar bank counted to $600</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-sc-bank" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-sc-bank" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row" style="margin-bottom:16px"><div class="check-info"><div class="check-name">Cash counted &amp; verified — in safe with Z-report &amp; CC tips</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-sc-safe" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-sc-safe" onclick="tog(this)">NO</button></div></div>
+
+        <div class="divider"></div>
+        <div class="field-label" style="margin:12px 0 8px">Doors locked</div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Front door</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-d-front" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-d-front" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Emergency exit next to 63</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-d-em63" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-d-em63" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Emergency exit next to Winston Study entrance</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-d-emws" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-d-emws" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Polishing door</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-d-polish" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-d-polish" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Kitchen door</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-d-kitchen" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-d-kitchen" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Entrance to The Ivy</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-d-ivy" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-d-ivy" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Back employee entrance</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-d-back" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-d-back" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row" style="margin-bottom:16px"><div class="check-info"><div class="check-name">White wine room, liquor cage, red wine room</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-d-wine" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-d-wine" onclick="tog(this)">NO</button></div></div>
+
+        <div class="divider"></div>
+        <div class="grid-2" style="margin-top:12px">
+          <div class="field">
+            <div class="field-label">Cash overage / underage</div>
+            <input type="text" id="cl-cash-variance" placeholder="e.g. +$5.00, -$3.00, or N/A">
+          </div>
+          <div class="field">
+            <div class="field-label">Closing notes</div>
+            <input type="text" id="cl-notes" placeholder="N/A if nothing to add">
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-icon"><svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+        <div class="section-title">VIPs</div>
+      </div>
+      <div class="section-body">
+        <div id="vip-tags" class="tag-wrap"></div>
+        <div class="tag-input-row">
+          <input type="text" id="vip-input" placeholder="Guest name..." onkeydown="if(event.key==='Enter'){addVip();event.preventDefault()}">
+          <button class="tag-add-btn" onclick="addVip()">+ Add</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+        <div class="section-title">FOH Notes</div>
+      </div>
+      <div class="section-body">
+        <textarea id="s-foh" placeholder="FOH summary, teamwork, guest situations, service wins and misses..."></textarea>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-icon"><svg viewBox="0 0 24 24"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></div>
+        <div class="section-title">Food</div>
+      </div>
+      <div class="section-body">
+        <div class="special-header">
+          <span>Special / Feature</span><span>Sold</span><span>Of</span><span></span>
+        </div>
+        <div id="specials-list"></div>
+        <button class="add-row-btn" onclick="addSpecial()">+ Add special</button>
+        <div class="divider"></div>
+        <div class="field">
+          <div class="field-label">Food notes</div>
+          <textarea id="s-food" placeholder="Complaints, send-backs, compliments, kitchen notes..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-icon"><svg viewBox="0 0 24 24"><path d="M8 21h8M12 21V9m0 0c0-3 2-5 2-5H2s2 2 2 5v0m8 0H4"/><path d="M22 6H12"/></svg></div>
+        <div class="section-title">Beverage</div>
+      </div>
+      <div class="section-body">
+        <textarea id="s-bev" placeholder="Wine sales, cocktail batch status, retail orders, low inventory flags, deliveries..."></textarea>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></div>
+        <div class="section-title">86'd Items</div>
+      </div>
+      <div class="section-body">
+        <div id="eighty-list"></div>
+        <button class="add-row-btn" onclick="addEighty()">+ Add 86</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/></svg></div>
+        <div class="section-title">Employees</div>
+      </div>
+      <div class="section-body">
+        <textarea id="s-emp" placeholder="Performance notes, training observations, uniform issues, HR items..."></textarea>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-icon"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg></div>
+        <div class="section-title">Interviews / New Hires</div>
+      </div>
+      <div class="section-body">
+        <textarea id="s-hire" placeholder="Applications received, interviews conducted, training start dates..."></textarea>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+        <div class="section-title">Batch</div>
+      </div>
+      <div class="section-body">
+        <textarea id="s-batch" placeholder="What was batched today, what's pending, who did it..."></textarea>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-icon"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
+        <div class="section-title">Maintenance / Orders</div>
+      </div>
+      <div class="section-body">
+        <textarea id="s-maint" placeholder="Orders placed, equipment issues, repairs needed, follow-up items..."></textarea>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn-primary" onclick="generate()">Generate Email Preview →</button>
+      <button class="btn-secondary" onclick="goTab(0)">← Back</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════ TAB 3: PREVIEW ═══════════════ -->
+  <div class="panel" id="panel-2">
+
+    <div class="section" id="exec-section">
+      <div class="section-head">
+        <div class="section-icon"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+        <div class="section-title">Executive Summary</div>
+        <div style="margin-left:auto">
+          <span style="font-size:11px;color:var(--ink-faint);font-style:italic">AI generated</span>
+        </div>
+      </div>
+      <div class="section-body">
+        <div id="exec-box" style="
+          font-family:'Cormorant Garamond',serif;
+          font-size:17px;
+          line-height:1.75;
+          color:var(--ink);
+          min-height:64px;
+          padding:4px 0;
+        ">
+          <span style="color:var(--ink-faint);font-style:italic;font-size:15px">Generate your report below to create an AI summary.</span>
+        </div>
+        <div id="exec-loading" style="display:none;align-items:center;gap:10px;margin-top:8px">
+          <div class="spinner"></div>
+          <span style="font-size:13px;color:var(--ink-soft)">Writing summary…</span>
+        </div>
+        <div class="btn-row" style="margin-top:14px">
+          <button class="btn-secondary" id="exec-copy-btn" onclick="copyExec()" style="display:none">Copy Summary</button>
+          <button class="btn-secondary" id="exec-regen-btn" onclick="generateExec()" style="display:none">↻ Rewrite</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head">
+        <div class="section-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+        <div class="section-title">Full Email</div>
+      </div>
+      <div class="section-body">
+        <div id="preview-box" class="preview-box">Generate your report to preview it here.</div>
+        <div class="btn-row">
+          <button class="btn-primary" onclick="copyEmail()">Copy Full Email</button>
+          <button class="btn-secondary" onclick="generate()">↻ Regenerate</button>
+          <button class="btn-secondary" onclick="goTab(1)">← Edit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── State ──
+var state = {};
+var vips = [];
+var specials = [];
+var eighties = [];
+
+// ── Tabs ──
+function goTab(n) {
+  document.querySelectorAll('.panel').forEach(function(p, i) {
+    p.classList.toggle('active', i === n);
+  });
+  document.querySelectorAll('.tab-btn').forEach(function(b, i) {
+    b.classList.toggle('active', i === n);
+  });
+  document.querySelectorAll('.prog-dot').forEach(function(d, i) {
+    d.classList.remove('active', 'done');
+    if (i < n) d.classList.add('done');
+    if (i === n) d.classList.add('active');
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (n === 2) { generate(); generateExec(); }
+}
+
+// ── Toggles ──
+function tog(btn) {
+  var k = btn.dataset.k;
+  var pair = btn.closest('.toggle-pair');
+  pair.querySelectorAll('.tog').forEach(function(b) { b.classList.remove('on'); });
+  btn.classList.add('on');
+  state[k] = btn.classList.contains('yes') ? 'YES' : 'NO';
+}
+
+function getV(k) { return state[k] || '—'; }
+
+// ── VIPs ──
+function addVip() {
+  var inp = document.getElementById('vip-input');
+  var v = inp.value.trim();
+  if (!v) return;
+  vips.push(v);
+  inp.value = '';
+  renderVips();
+}
+
+function removeVip(i) { vips.splice(i, 1); renderVips(); }
+
+function renderVips() {
+  document.getElementById('vip-tags').innerHTML = vips.map(function(v, i) {
+    return '<span class="tag">' + v + '<button onclick="removeVip(' + i + ')" aria-label="Remove">×</button></span>';
+  }).join('');
+}
+
+// ── Specials ──
+function addSpecial() {
+  var id = specials.length;
+  specials.push({ name: '', sold: '', of: '' });
+  renderSpecials();
+}
+
+function renderSpecials() {
+  document.getElementById('specials-list').innerHTML = specials.map(function(s, i) {
+    return '<div class="special-row">' +
+      '<input type="text" placeholder="e.g. Steak TT" value="' + (s.name||'') + '" oninput="specials[' + i + '].name=this.value">' +
+      '<input type="number" placeholder="0" value="' + (s.sold||'') + '" oninput="specials[' + i + '].sold=this.value">' +
+      '<input type="number" placeholder="0" value="' + (s.of||'') + '" oninput="specials[' + i + '].of=this.value">' +
+      '<button class="rm" onclick="specials.splice(' + i + ',1);renderSpecials()" aria-label="Remove">×</button>' +
+      '</div>';
+  }).join('');
+}
+
+// ── 86s ──
+function addEighty() {
+  eighties.push('');
+  renderEighties();
+}
+
+function renderEighties() {
+  document.getElementById('eighty-list').innerHTML = eighties.map(function(e, i) {
+    return '<div class="eighty-row">' +
+      '<input type="text" placeholder="Bin No., name, vintage..." value="' + (e||'') + '" oninput="eighties[' + i + ']=this.value">' +
+      '<button class="rm" onclick="eighties.splice(' + i + ',1);renderEighties()" aria-label="Remove">×</button>' +
+      '</div>';
+  }).join('');
+}
+
+// ── Date format ──
+function fmtDate(v) {
+  if (!v) return '';
+  var parts = v.split('-');
+  var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var d = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+  return days[d.getDay()] + ', ' + months[d.getMonth()] + ' ' + +parts[2] + ', ' + parts[0];
+}
+
+// ── Generate ──
+function generate() {
+  var date = document.getElementById('o-date').value;
+  var mgr  = document.getElementById('o-manager').value || 'Manager';
+  var wthr = document.getElementById('o-weather').value || '—';
+  var sales = document.getElementById('s-sales').value || '—';
+  var avg   = document.getElementById('s-avg').value || '—';
+  var cvrs  = document.getElementById('s-covers').value || '—';
+  var resy  = document.getElementById('s-resy').value || '—';
+  var summ  = document.getElementById('s-summary').value;
+  var foh   = document.getElementById('s-foh').value || 'Nothing to note.';
+  var foodN = document.getElementById('s-food').value;
+  var bev   = document.getElementById('s-bev').value || 'Nothing to note.';
+  var emp   = document.getElementById('s-emp').value || 'Nothing to note.';
+  var hire  = document.getElementById('s-hire').value || 'Nothing to note today.';
+  var batch = document.getElementById('s-batch').value || 'Nothing to note.';
+  var maint = document.getElementById('s-maint').value || 'Nothing to note.';
+  var pre   = document.getElementById('o-preshift').value;
+
+  var lines = [];
+  lines.push('Shift: ' + fmtDate(date));
+  lines.push('');
+  lines.push('- Net Sales: ' + sales);
+  lines.push('- Check Average: ' + avg);
+  lines.push('- Covers: ' + cvrs + '  Resy: ' + resy);
+  lines.push('- Weather: ' + wthr);
+  if (summ) { lines.push(''); lines.push(summ); }
+
+  lines.push('');
+  lines.push('Opening Checklist:');
+  lines.push('');
+  var checks = [
+    ['Food menus', 'm-food'], ['Dessert menus', 'm-dessert'],
+    ['Wine menus', 'm-wine'], ['Bar menus', 'm-bar'],
+    ['Daily board updated', 'board'], ['Side work assigned', 'sidework'],
+    ['Floor plan printed', 'floorplan'], ['Bank $600 / tips out', 'bank'],
+    ['Flowers watered', 'flowers'], ['Bud vases changed', 'vases'],
+    ['Tables 26-29 straight', 'tables'], ["2 Fête d'Or in ice", 'fete'],
+    ['Back patio blown down', 'blowdown'], ['Perimeter walk', 'perimeter'],
+    ['Atmosphere set', 'atmosphere'], ['Bar set-up confirmed', 'bar-setup'],
+    ['Service station set', 'station'], ['Tables polished', 'polished'],
+    ['Uniform check', 'uniform'], ['F&B changes reviewed', 'fb-review']
+  ];
+  checks.forEach(function(c) { lines.push('- ' + c[0] + ': ' + getV(c[1])); });
+
+  if (pre) { lines.push(''); lines.push('Pre-shift notes: ' + pre); }
+
+  var cashVar = document.getElementById('cl-cash-variance').value || 'N/A';
+  var clNotes = document.getElementById('cl-notes').value || 'N/A';
+
+  lines.push('');
+  lines.push('Closing Checklist:');
+  lines.push('');
+  lines.push('Bar check:');
+  lines.push('- Cleanliness: ' + getV('cl-bar-clean'));
+  lines.push('- Trash taken out: ' + getV('cl-bar-trash'));
+  lines.push('- All surfaces wiped down: ' + getV('cl-bar-wipe'));
+  lines.push('- Bar restocked / waters: ' + getV('cl-bar-stock'));
+  lines.push('- Ice wells burnt: ' + getV('cl-bar-ice'));
+  lines.push('');
+  lines.push('Side work:');
+  lines.push('- Dining room walk / tables set: ' + getV('cl-sw-dining'));
+  lines.push('- Outside broken down / water bottles cleaned: ' + getV('cl-sw-outside'));
+  lines.push('- Server stations clean / trash / linen bins: ' + getV('cl-sw-station'));
+  lines.push('- Coffee machine broken down: ' + getV('cl-sw-coffee'));
+  lines.push('- Polishing station clean: ' + getV('cl-sw-polish'));
+  lines.push('');
+  lines.push('Candles:');
+  lines.push('- All blown out & replaced: ' + getV('cl-candle-out'));
+  lines.push('- Winston Study & bathrooms checked: ' + getV('cl-candle-ws'));
+  lines.push('');
+  lines.push('Fireplace off: ' + getV('cl-fire'));
+  lines.push('');
+  lines.push('Lamps:');
+  lines.push('- All lamps charging (orange): ' + getV('cl-lamp-in'));
+  lines.push('- Outdoor lamps charging in office: ' + getV('cl-lamp-out'));
+  lines.push('');
+  lines.push('Shift close:');
+  lines.push('- Tips handed in / owed to house confirmed: ' + getV('cl-sc-tips'));
+  lines.push('- Cash tips distributed & in safe: ' + getV('cl-sc-cashtips'));
+  lines.push('- Bar bank counted to $600: ' + getV('cl-sc-bank'));
+  lines.push('- Cash counted / Z-report / CC tips in safe: ' + getV('cl-sc-safe'));
+  lines.push('');
+  lines.push('Doors locked:');
+  lines.push('- Front door: ' + getV('cl-d-front'));
+  lines.push('- Emergency exit next to 63: ' + getV('cl-d-em63'));
+  lines.push('- Emergency exit next to Winston Study: ' + getV('cl-d-emws'));
+  lines.push('- Polishing door: ' + getV('cl-d-polish'));
+  lines.push('- Kitchen door: ' + getV('cl-d-kitchen'));
+  lines.push('- Entrance to The Ivy: ' + getV('cl-d-ivy'));
+  lines.push('- Back employee entrance: ' + getV('cl-d-back'));
+  lines.push('- White wine / liquor cage / red wine room: ' + getV('cl-d-wine'));
+  lines.push('');
+  lines.push('Cash overage/underage: ' + cashVar);
+  lines.push('Closing notes: ' + clNotes);
+
+  lines.push('');
+  lines.push('VIPs:');
+  if (vips.length) vips.forEach(function(v) { lines.push(v); });
+  else lines.push('N/A');
+
+  lines.push('');
+  lines.push('FOH:');
+  lines.push(foh);
+
+  lines.push('');
+  lines.push('Food:');
+  specials.forEach(function(s) {
+    if (s.name) lines.push('- ' + s.name + ': sold ' + (s.sold||'?') + ' out of ' + (s.of||'?'));
+  });
+  if (foodN) lines.push(foodN);
+
+  lines.push('');
+  lines.push("Beverage:");
+  lines.push(bev);
+
+  lines.push('');
+  lines.push("86's:");
+  if (eighties.filter(Boolean).length) {
+    eighties.forEach(function(e) { if (e) lines.push("86'd " + e); });
+  } else { lines.push('N/A'); }
+
+  lines.push('');
+  lines.push('Employees:');
+  lines.push(emp);
+
+  lines.push('');
+  lines.push('Interviews/New hires:');
+  lines.push(hire);
+
+  lines.push('');
+  lines.push('Batch:');
+  lines.push(batch);
+
+  lines.push('');
+  lines.push('Maintenance/orders:');
+  lines.push(maint);
+
+  lines.push('');
+  lines.push('Sincerely,');
+  lines.push('');
+  lines.push(mgr);
+
+  document.getElementById('preview-box').textContent = lines.join('\n');
+}
+
+function copyEmail() {
+  var txt = document.getElementById('preview-box').textContent;
+  navigator.clipboard.writeText(txt).then(function() {
+    var b = document.querySelector('.btn-primary');
+    var orig = b.textContent;
+    b.textContent = '✓ Copied!';
+    setTimeout(function() { b.textContent = orig; }, 2200);
+  });
+}
+
+function copyExec() {
+  var txt = document.getElementById('exec-box').innerText;
+  navigator.clipboard.writeText(txt).then(function() {
+    var b = document.getElementById('exec-copy-btn');
+    b.textContent = '✓ Copied!';
+    setTimeout(function() { b.textContent = 'Copy Summary'; }, 2200);
+  });
+}
+
+function buildContext() {
+  var date = document.getElementById('o-date').value;
+  var mgr  = document.getElementById('o-manager').value || 'the manager';
+  var wthr = document.getElementById('o-weather').value || '';
+  var sales = document.getElementById('s-sales').value || '';
+  var avg   = document.getElementById('s-avg').value || '';
+  var cvrs  = document.getElementById('s-covers').value || '';
+  var resy  = document.getElementById('s-resy').value || '';
+  var summ  = document.getElementById('s-summary').value || '';
+  var foh   = document.getElementById('s-foh').value || '';
+  var foodN = document.getElementById('s-food').value || '';
+  var bev   = document.getElementById('s-bev').value || '';
+  var emp   = document.getElementById('s-emp').value || '';
+  var hire  = document.getElementById('s-hire').value || '';
+  var maint = document.getElementById('s-maint').value || '';
+  var closing = [
+    'Bar clean: ' + getV('cl-bar-clean'),
+    'Bar stocked: ' + getV('cl-bar-stock'),
+    'Ice wells burnt: ' + getV('cl-bar-ice'),
+    'Side work done: ' + getV('cl-sw-dining'),
+    'Candles out: ' + getV('cl-candle-out'),
+    'Fireplace: ' + getV('cl-fire'),
+    'Lamps charging: ' + getV('cl-lamp-in'),
+    'Tips/safe: ' + getV('cl-sc-safe'),
+    'Bar bank $600: ' + getV('cl-sc-bank'),
+    'All doors locked: ' + getV('cl-d-front'),
+    'Cash variance: ' + (document.getElementById('cl-cash-variance').value || 'N/A')
+  ].join('; ');
+  var specialsStr = specials.filter(function(s){return s.name;}).map(function(s){
+    return s.name + ': ' + (s.sold||'?') + '/' + (s.of||'?') + ' sold';
+  }).join('; ');
+  var eightiesStr = eighties.filter(Boolean).join('; ');
+  var vipStr = vips.join(', ') || 'none';
+
+  return [
+    'Date: ' + fmtDate(date),
+    'Manager: ' + mgr,
+    'Weather: ' + wthr,
+    'Net sales: ' + sales,
+    'Check average: ' + avg,
+    'Covers: ' + cvrs + ' (Resy: ' + resy + ')',
+    summ ? 'Shift narrative: ' + summ : '',
+    foh ? 'FOH notes: ' + foh : '',
+    specialsStr ? 'Food specials: ' + specialsStr : '',
+    foodN ? 'Food notes: ' + foodN : '',
+    bev ? 'Beverage: ' + bev : '',
+    eightiesStr ? "86'd: " + eightiesStr : '',
+    emp ? 'Employee notes: ' + emp : '',
+    hire ? 'Hiring: ' + hire : '',
+    maint ? 'Maintenance/orders: ' + maint : '',
+    'VIPs: ' + vipStr,
+    'Closing check: ' + closing
+  ].filter(Boolean).join('\n');
+}
+
+async function generateExec() {
+  var ctx = buildContext();
+  var box = document.getElementById('exec-box');
+  var loading = document.getElementById('exec-loading');
+  var copyBtn = document.getElementById('exec-copy-btn');
+  var regenBtn = document.getElementById('exec-regen-btn');
+
+  box.classList.add('loading');
+  loading.style.display = 'flex';
+  copyBtn.style.display = 'none';
+  regenBtn.style.display = 'none';
+  box.innerHTML = '<span style="color:var(--ink-faint);font-style:italic;font-size:15px">Writing summary…</span>';
+
+  try {
+    var resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': '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',
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: 'You are an experienced fine-dining restaurant operations assistant. Write executive summaries for nightly shift reports at River Pointe Inn, a fine dining establishment in Rumson, NJ. Write in a confident, professional, concise tone — like a seasoned GM briefing ownership. One tight paragraph, 3–5 sentences. Lead with the financial performance, then cover service quality and any notable events, staff observations, or operational items. No bullet points, no headers, no lists. Plain prose only. Do not start with "Tonight" or "This evening."',
+        messages: [{
+          role: 'user',
+          content: 'Write a one-paragraph executive summary for this shift report:\n\n' + ctx
+        }]
+      })
+    });
+
+    var data = await resp.json();
+    var text = data.content && data.content[0] && data.content[0].text
+      ? data.content[0].text.trim()
+      : 'Unable to generate summary — check your connection and try again.';
+
+    box.classList.remove('loading');
+    box.textContent = text;
+    loading.style.display = 'none';
+    copyBtn.style.display = 'inline-flex';
+    regenBtn.style.display = 'inline-flex';
+  } catch(e) {
+    box.classList.remove('loading');
+    box.innerHTML = '<span style="color:var(--red-deep);font-size:14px">Error connecting to AI — ensure you are using this tool within Claude.ai.</span>';
+    loading.style.display = 'none';
+  }
+}
+
+// ── Weather ──
+async function fetchWeather() {
+  var inp = document.getElementById('o-weather');
+  var btn = document.getElementById('wx-btn');
+  inp.value = 'Fetching...';
+  if (btn) btn.textContent = '...';
+  try {
+    // Step 1: get grid point for Rumson NJ (07760)
+    var ptResp = await fetch('https://api.weather.gov/points/40.3468,-74.0121');
+    var ptData = await ptResp.json();
+    var forecastUrl = ptData.properties.forecast;
+    var forecastHourlyUrl = ptData.properties.forecastHourly;
+
+    // Step 2: get hourly forecast for current conditions
+    var fResp = await fetch(forecastHourlyUrl);
+    var fData = await fResp.json();
+    var periods = fData.properties.periods;
+
+    // Find the current period (first one)
+    var now = periods[0];
+    var temp = now.temperature;
+    var unit = now.temperatureUnit;
+    var desc = now.shortForecast;
+    var wind = now.windSpeed;
+    var humidity = now.relativeHumidity ? now.relativeHumidity.value + '% humidity' : '';
+
+    var wxStr = desc + ', ' + temp + '°' + unit;
+    if (wind) wxStr += ', winds ' + wind;
+    if (humidity) wxStr += ', ' + humidity;
+
+    inp.value = wxStr;
+    if (btn) btn.textContent = '✓ Done';
+    setTimeout(function() { if (btn) btn.textContent = '⟳ Auto-fill'; }, 2000);
+  } catch(e) {
+    inp.value = '';
+    inp.placeholder = 'Could not fetch — enter manually';
+    if (btn) btn.textContent = '⟳ Retry';
+  }
+}
+
+// ── Init ──
+(function() {
+  var t = new Date();
+  var dd = String(t.getDate()).padStart(2,'0');
+  var mm = String(t.getMonth()+1).padStart(2,'0');
+  document.getElementById('o-date').value = t.getFullYear() + '-' + mm + '-' + dd;
+  document.getElementById('o-manager').value = 'Adam Brousell';
+  fetchWeather();
+})();
+</script>
+</body>
+</html>
