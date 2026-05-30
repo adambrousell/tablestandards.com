@@ -1292,29 +1292,32 @@ async function fetchWeather() {
   inp.value = 'Fetching...';
   if (btn) btn.textContent = '...';
   try {
-    // Step 1: get grid point for Rumson NJ (07760)
+    // Get daily forecast for Rumson NJ
     var ptResp = await fetch('https://api.weather.gov/points/40.3468,-74.0121');
     var ptData = await ptResp.json();
     var forecastUrl = ptData.properties.forecast;
-    var forecastHourlyUrl = ptData.properties.forecastHourly;
 
-    // Step 2: get hourly forecast for current conditions
-    var fResp = await fetch(forecastHourlyUrl);
+    var fResp = await fetch(forecastUrl);
     var fData = await fResp.json();
     var periods = fData.properties.periods;
 
-    // Find the current period (first one)
-    var now = periods[0];
-    var temp = now.temperature;
-    var unit = now.temperatureUnit;
-    var desc = now.shortForecast;
-    var wind = now.windSpeed;
-    var humidity = now.relativeHumidity ? now.relativeHumidity.value + '% humidity' : '';
+    // Find today daytime period and tonight period
+    var daytime = null, tonight = null;
+    for (var i = 0; i < periods.length; i++) {
+      if (periods[i].isDaytime && !daytime) daytime = periods[i];
+      if (!periods[i].isDaytime && !tonight) tonight = periods[i];
+    }
 
-    var wxStr = desc + ', ' + temp + '°' + unit;
-    if (wind) wxStr += ', winds ' + wind;
-    if (humidity) wxStr += ', ' + humidity;
+    var p = daytime || periods[0];
+    var hi = p.temperature + '°' + p.temperatureUnit;
+    var desc = p.shortForecast;
+    var wind = p.windSpeed + ' ' + p.windDirection;
 
+    // Tonight low
+    var loStr = '';
+    if (tonight) loStr = ', low ' + tonight.temperature + '°' + tonight.temperatureUnit;
+
+    var wxStr = desc + ' — High ' + hi + loStr + ', winds ' + wind;
     inp.value = wxStr;
     if (btn) btn.textContent = '✓ Done';
     setTimeout(function() { if (btn) btn.textContent = '⟳ Auto-fill'; }, 2000);
