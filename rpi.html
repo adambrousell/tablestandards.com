@@ -1394,7 +1394,7 @@ async function cfLoadNotes() {
   } catch(e) { console.log('Notes load failed'); }
 }
 
-async function cfClearNotes() {
+async async function cfClearNotes() {
   try {
     await fetch(CF_WORKER + '/notes', { method: 'DELETE' });
     shiftNotes = [];
