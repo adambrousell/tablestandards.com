@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1394,7 +1394,7 @@ async function cfLoadNotes() {
   } catch(e) { console.log('Notes load failed'); }
 }
 
-async async function cfClearNotes() {
+async function cfClearNotes() {
   try {
     await fetch(CF_WORKER + '/notes', { method: 'DELETE' });
     shiftNotes = [];
