@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>River Pointe Inn — Shift Report</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -179,8 +179,82 @@
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
   .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-  @media (max-width: 600px) {
-    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
+  @media (max-width: 640px) {
+    .app { padding: 1rem 1rem 4rem; }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: 1fr 1fr; }
+    .grid-4 { grid-template-columns: 1fr 1fr; }
+
+    /* Larger tap targets for toggles */
+    .tog { padding: 8px 14px; font-size: 12px; }
+    .toggle-pair { border-radius: 8px; }
+
+    /* Check rows easier to read */
+    .check-name { font-size: 13px; }
+    .check-sub { font-size: 11px; }
+    .check-row { padding: 11px 0; }
+
+    /* Metric cards compact */
+    .metric-card { padding: 10px 12px; }
+    .metric-val input { font-size: 22px; }
+
+    /* Section body breathing room */
+    .section-body { padding: 14px; }
+    .section-head { padding: 10px 14px; }
+
+    /* Tabs scrollable on small screens */
+    .tabs { overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+    .tab-btn { padding: 10px 14px; font-size: 12px; flex-shrink: 0; }
+
+    /* Specials rows stack on mobile */
+    .special-row { grid-template-columns: 1fr 64px 64px 28px !important; gap: 6px; }
+    .special-header { grid-template-columns: 1fr 64px 64px 28px !important; gap: 6px; }
+
+    /* Shift specials header/rows */
+    #shift-specials-list > div[style*="grid-template-columns:1fr 70px 70px 80px 32px"] {
+      grid-template-columns: 1fr 48px 48px 60px 0px !important;
+      gap: 5px;
+    }
+
+    /* VIP quick pills wrap nicely */
+    .vip-quick { font-size: 12px; padding: 6px 12px; }
+
+    /* Buttons full width on mobile */
+    .btn-row { flex-direction: column; }
+    .btn-primary, .btn-secondary { width: 100%; justify-content: center; padding: 13px; }
+
+    /* Note entry */
+    .note-entry { padding: 8px 10px; }
+    .note-meta { font-size: 10px; min-width: 70px; }
+    .note-text { font-size: 13px; }
+
+    /* Tag input row */
+    .tag-input-row { gap: 6px; }
+
+    /* Close grid 1 col on very small */
+    .close-grid { grid-template-columns: 1fr; }
+
+    /* Preview box */
+    .preview-box { font-size: 11.5px; padding: 16px; }
+
+    /* Header */
+    .site-header { padding: 0 1rem; }
+    .site-header .brand { font-size: 17px; }
+    .prog-label { display: none; }
+
+    /* Field labels */
+    .field-label { font-size: 10px; }
+
+    /* Opening specials on mobile */
+    #opening-specials-list .special-row {
+      grid-template-columns: 1fr 72px 28px !important;
+    }
+
+    /* Exec summary */
+    #exec-box { font-size: 15px; }
+
+    /* Cash/closing notes grid */
+    .grid-2[style*="margin-top:12px"] { grid-template-columns: 1fr; }
   }
 
   .field { display: flex; flex-direction: column; gap: 5px; }
@@ -234,6 +308,9 @@
     transition: all 0.15s;
   }
   .tog:first-child { border-right: 1px solid var(--border); }
+  .tog { touch-action: manipulation; }
+  .vip-quick { touch-action: manipulation; }
+  .btn-primary, .btn-secondary, .add-row-btn { touch-action: manipulation; }
   .tog.yes.on { background: var(--green-deep); color: #fff; }
   .tog.no.on { background: var(--red-deep); color: #fff; }
   .tog:hover:not(.on) { background: var(--cream-warm); color: var(--ink); }
@@ -1611,10 +1688,12 @@ function renderShiftSpecials() {
   var el = document.getElementById('shift-specials-list');
   if (!el) return;
 
+  var isMobile = window.innerWidth < 640;
+  var specCols = isMobile ? '1fr 52px 52px 64px 24px' : '1fr 70px 70px 80px 32px';
   var rows = '';
 
   // Header
-  rows += '<div style="display:grid;grid-template-columns:1fr 70px 70px 80px 32px;gap:8px;margin-bottom:6px">' +
+  rows += '<div style="display:grid;grid-template-columns:' + specCols + ';gap:8px;margin-bottom:6px">' +
     '<span style="font-size:10px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:var(--ink-faint)">Special</span>' +
     '<span style="font-size:10px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:var(--ink-faint)">Avail.</span>' +
     '<span style="font-size:10px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:var(--ink-faint)">Sold</span>' +
@@ -1626,7 +1705,7 @@ function renderShiftSpecials() {
     if (!s.name) return;
     var sid = 'ss-sold-' + i;
     var is86 = s.eightysixed || false;
-    rows += '<div style="display:grid;grid-template-columns:1fr 70px 70px 80px 32px;gap:8px;align-items:center;margin-bottom:8px">' +
+    rows += '<div style="display:grid;grid-template-columns:' + specCols + ';gap:8px;align-items:center;margin-bottom:8px">' +
       '<div style="font-size:14px;color:var(--ink);padding:8px 0">' + s.name + '</div>' +
       '<div style="font-size:14px;color:var(--ink-soft);padding:8px 0;text-align:center">' + (s.count || '—') + '</div>' +
       '<input type="number" id="' + sid + '" placeholder="0" value="' + (s.sold || '') + '" oninput="openingSpecials[' + i + '].sold=this.value" ' + (is86 ? 'disabled style="opacity:0.4"' : '') + '>' +
@@ -1640,7 +1719,7 @@ function renderShiftSpecials() {
     var opts = COMMON_SPECIALS.map(function(n) {
       return '<option value="' + n + '"' + (s.name === n ? ' selected' : '') + '>' + n + '</option>';
     }).join('');
-    rows += '<div style="display:grid;grid-template-columns:1fr 70px 70px 80px 32px;gap:8px;align-items:center;margin-bottom:8px">' +
+    rows += '<div style="display:grid;grid-template-columns:' + specCols + ';gap:8px;align-items:center;margin-bottom:8px">' +
       '<select oninput="shiftExtras[' + i + '].name=this.value" style="font-size:13px"><option value="">— select —</option>' + opts + '</select>' +
       '<input type="number" placeholder="Avail" value="' + (s.avail || '') + '" oninput="shiftExtras[' + i + '].avail=this.value">' +
       '<input type="number" placeholder="Sold" value="' + (s.sold || '') + '" oninput="shiftExtras[' + i + '].sold=this.value">' +
