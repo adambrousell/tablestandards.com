@@ -1077,170 +1077,141 @@ function fmtDate(v) {
   var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   var d = new Date(+parts[0], +parts[1] - 1, +parts[2]);
-  return days[d.getDay()] + ', ' + months[d.getMonth()] + ' ' + +parts[2] + ', ' + parts[0];
+  var day = +parts[2];
+  var suffix = 'th';
+  if (day % 100 < 11 || day % 100 > 13) {
+    if (day % 10 === 1) suffix = 'st';
+    else if (day % 10 === 2) suffix = 'nd';
+    else if (day % 10 === 3) suffix = 'rd';
+  }
+  return days[d.getDay()] + ' ' + months[d.getMonth()] + ' ' + day + suffix + ', ' + parts[0];
 }
 
 // ── Generate ──
 function generate() {
-  var date = document.getElementById('o-date').value;
-  var mgr  = document.getElementById('o-manager').value || 'Manager';
-  var wthr = document.getElementById('o-weather').value || '—';
-  var opener = document.getElementById('o-manager').value || '—';
-  var closer = document.getElementById('s-closer').value || '—';
-  var sales = document.getElementById('s-sales').value || '—';
-  var avg   = document.getElementById('s-avg').value || '—';
-  var cvrs  = document.getElementById('s-covers').value || '—';
-  var resy  = document.getElementById('s-resy').value || '—';
-  var summ  = shiftNotes.map(function(n){ return n.ts + ' · ' + n.who + ' — ' + n.text; }).join('\n');
-  var foh   = document.getElementById('s-foh').value || 'Nothing to note.';
-  var foodN = document.getElementById('s-food').value;
-  var bev   = document.getElementById('s-bev').value || 'Nothing to note.';
-  var emp   = document.getElementById('s-emp').value || 'Nothing to note.';
-  var hire  = document.getElementById('s-hire').value || 'Nothing to note today.';
-  var batch = document.getElementById('s-batch').value || 'Nothing to note.';
-  var maint = document.getElementById('s-maint').value || 'Nothing to note.';
-  var pre   = document.getElementById('o-preshift').value;
+  var date    = document.getElementById('o-date').value;
+  var mgr     = document.getElementById('o-manager').value || 'Manager';
+  var closer  = document.getElementById('s-closer').value || '';
+  var wthr    = document.getElementById('o-weather').value || '—';
+  var sales   = document.getElementById('s-sales').value || '—';
+  var avg     = document.getElementById('s-avg').value || '—';
+  var cvrs    = document.getElementById('s-covers').value || '—';
+  var resy    = document.getElementById('s-resy').value || '—';
+  var foh     = document.getElementById('s-foh').value || '';
+  var foodN   = document.getElementById('s-food').value || '';
+  var bev     = document.getElementById('s-bev').value || '';
+  var emp     = document.getElementById('s-emp').value || '';
+  var hire    = document.getElementById('s-hire').value || '';
+  var batch   = document.getElementById('s-batch').value || '';
+  var maint   = document.getElementById('s-maint').value || '';
+  var cashVar = document.getElementById('cl-cash-variance').value || '';
+  var clNotes = document.getElementById('cl-notes').value || '';
+  var signoff = closer || mgr;
 
   var lines = [];
+
+  // Header
   lines.push('Shift: ' + fmtDate(date));
-  lines.push('Opening Manager: ' + opener + '  |  Closing Manager: ' + closer);
-  lines.push('');
   lines.push('- Net Sales: ' + sales);
   lines.push('- Check Average: ' + avg);
   lines.push('- Covers: ' + cvrs + '  Resy: ' + resy);
   lines.push('- Weather: ' + wthr);
+
+  // Shift notes (narrative paragraph)
   if (shiftNotes.length) {
     lines.push('');
-    lines.push('Shift Notes:');
     shiftNotes.forEach(function(n) {
-      lines.push(n.ts + ' · ' + n.who + ' — ' + n.text);
+      lines.push(n.text);
     });
   }
 
+  // Closing check — compact 4-line format
   lines.push('');
-  lines.push('Opening Checklist:');
-  lines.push('');
-  var checks = [
-    ['Food menus', 'm-food'], ['Dessert menus', 'm-dessert'],
-    ['Wine menus', 'm-wine'], ['Bar menus', 'm-bar'],
-    ['Daily board updated', 'board'], ['Side work assigned', 'sidework'],
-    ['Floor plan printed', 'floorplan'], ['Bank $600 / tips out', 'bank'],
-    ['Flowers watered', 'flowers'], ['Bud vases changed', 'vases'],
-    ['Tables 26-29 straight', 'tables'], ["2 Fête d'Or in ice", 'fete'],
-    ['Back patio blown down', 'blowdown'], ['Perimeter walk', 'perimeter'],
-    ['Atmosphere set', 'atmosphere'], ['Bar set-up confirmed', 'bar-setup'],
-    ['Service station set', 'station'], ['Tables polished', 'polished'],
-    ['Uniform check', 'uniform'], ['F&B changes reviewed', 'fb-review']
-  ];
-  checks.forEach(function(c) { lines.push('- ' + c[0] + ': ' + getV(c[1])); });
+  lines.push('Closing Check:');
+  lines.push('- Polishing area clean: ' + getV('cl-sw-polish'));
+  lines.push('- Perimeter walked: '     + getV('c-perimeter'));
+  lines.push('- Doors Locked: '         + getV('cl-d-front'));
+  lines.push('- Liquor Cage Locked: '   + getV('cl-d-wine'));
 
-  if (pre) { lines.push(''); lines.push('Pre-shift notes: ' + pre); }
+  // VIPs
+  lines.push('');
+  lines.push('VIPs: ');
+  if (vips.length) { vips.forEach(function(v) { lines.push(v); }); }
+  else { lines.push('N/A'); }
 
-  var cashVar = document.getElementById('cl-cash-variance').value || 'N/A';
-  var clNotes = document.getElementById('cl-notes').value || 'N/A';
+  // FOH
+  lines.push('');
+  lines.push('FOH: ');
+  if (foh) lines.push(foh);
 
-  lines.push('');
-  lines.push('Closing Checklist:');
-  lines.push('');
-  lines.push('Bar check:');
-  lines.push('- Cleanliness: ' + getV('cl-bar-clean'));
-  lines.push('- Trash taken out: ' + getV('cl-bar-trash'));
-  lines.push('- All surfaces wiped down: ' + getV('cl-bar-wipe'));
-  lines.push('- Bar restocked / waters: ' + getV('cl-bar-stock'));
-  lines.push('- Ice wells burnt: ' + getV('cl-bar-ice'));
-  lines.push('');
-  lines.push('Side work:');
-  lines.push('- Dining room walk / tables set: ' + getV('cl-sw-dining'));
-  lines.push('- Outside broken down / water bottles cleaned: ' + getV('cl-sw-outside'));
-  lines.push('- Server stations clean / trash / linen bins: ' + getV('cl-sw-station'));
-  lines.push('- Coffee machine broken down: ' + getV('cl-sw-coffee'));
-  lines.push('- Polishing station clean: ' + getV('cl-sw-polish'));
-  lines.push('');
-  lines.push('Candles:');
-  lines.push('- All blown out & replaced: ' + getV('cl-candle-out'));
-  lines.push('- Winston Study & bathrooms checked: ' + getV('cl-candle-ws'));
-  lines.push('');
-  lines.push('Fireplace off: ' + getV('cl-fire'));
-  lines.push('');
-  lines.push('Lamps:');
-  lines.push('- All lamps charging (orange): ' + getV('cl-lamp-in'));
-  lines.push('- Outdoor lamps charging in office: ' + getV('cl-lamp-out'));
-  lines.push('');
-  lines.push('Shift close:');
-  lines.push('- Tips handed in / owed to house confirmed: ' + getV('cl-sc-tips'));
-  lines.push('- Cash tips distributed & in safe: ' + getV('cl-sc-cashtips'));
-  lines.push('- Bar bank counted to $600: ' + getV('cl-sc-bank'));
-  lines.push('- Cash counted / Z-report / CC tips in safe: ' + getV('cl-sc-safe'));
-  lines.push('');
-  lines.push('Doors locked:');
-  lines.push('- Front door: ' + getV('cl-d-front'));
-  lines.push('- Emergency exit next to 63: ' + getV('cl-d-em63'));
-  lines.push('- Emergency exit next to Winston Study: ' + getV('cl-d-emws'));
-  lines.push('- Polishing door: ' + getV('cl-d-polish'));
-  lines.push('- Kitchen door: ' + getV('cl-d-kitchen'));
-  lines.push('- Entrance to The Ivy: ' + getV('cl-d-ivy'));
-  lines.push('- Back employee entrance: ' + getV('cl-d-back'));
-  lines.push('- White wine / liquor cage / red wine room: ' + getV('cl-d-wine'));
-  lines.push('');
-  lines.push('Cash overage/underage: ' + cashVar);
-  lines.push('Closing notes: ' + clNotes);
-
-  lines.push('');
-  lines.push('VIPs:');
-  if (vips.length) vips.forEach(function(v) { lines.push(v); });
-  else lines.push('N/A');
-
-  lines.push('');
-  lines.push('FOH:');
-  lines.push(foh);
-
+  // Food
   lines.push('');
   lines.push('Food:');
-  lines.push('');
+  if (foodN) lines.push(foodN);
   openingSpecials.forEach(function(s) {
     if (!s.name) return;
     if (s.eightysixed) {
-      lines.push('- ' + s.name + ': 86\'d');
-    } else {
-      lines.push('- ' + s.name + ': sold ' + (s.sold || '?') + ' out of ' + (s.count || '?'));
+      lines.push('-' + s.name + ': 86&#39;d');
+    } else if (s.sold) {
+      lines.push('-' + s.name + ': Sold ' + s.sold + ' out of ' + (s.count || '?'));
     }
   });
   shiftExtras.forEach(function(s) {
     if (!s.name) return;
-    lines.push('- ' + s.name + ': sold ' + (s.sold || '?') + ' out of ' + (s.avail || '?'));
+    lines.push('-' + s.name + ': sold ' + (s.sold || '?') + ' out of ' + (s.avail || '?'));
   });
-  if (foodN) { lines.push(''); lines.push(foodN); }
 
+  // Beverage
   lines.push('');
-  lines.push("Beverage:");
-  lines.push(bev);
+  lines.push('Beverage: ');
+  if (bev) lines.push(bev);
 
+  // Employees
   lines.push('');
-  lines.push("86's:");
+  lines.push('Employees:     ');
+  if (emp) lines.push(emp);
+
+  // Interviews
+  lines.push('');
+  lines.push('Interviews/New hires:');
+  if (hire) lines.push(hire);
+
+  // 86s
+  lines.push('');
+  lines.push("86's :");
+  lines.push('');
   if (eighties.filter(Boolean).length) {
     eighties.forEach(function(e) { if (e) lines.push("86'd " + e); });
   } else { lines.push('N/A'); }
 
-  lines.push('');
-  lines.push('Employees:');
-  lines.push(emp);
-
-  lines.push('');
-  lines.push('Interviews/New hires:');
-  lines.push(hire);
-
+  // Batch
   lines.push('');
   lines.push('Batch:');
-  lines.push(batch);
+  if (batch) lines.push(batch);
 
+  // Maintenance
   lines.push('');
   lines.push('Maintenance/orders:');
-  lines.push(maint);
+  if (maint) lines.push(maint);
 
+  // Cash variance if noted
+  if (cashVar && cashVar.toLowerCase() !== 'n/a' && cashVar !== '') {
+    lines.push('');
+    lines.push('Cash overage/underage: ' + cashVar);
+  }
+
+  // Closing notes if any
+  if (clNotes && clNotes.toLowerCase() !== 'n/a' && clNotes !== '') {
+    lines.push('');
+    lines.push(clNotes);
+  }
+
+  // Sign-off
   lines.push('');
-  lines.push('Sincerely,');
   lines.push('');
-  lines.push(mgr);
+  lines.push('Thank you,');
+  lines.push('');
+  lines.push(signoff);
 
   document.getElementById('preview-box').textContent = lines.join('\n');
   cfSaveShift();
@@ -1275,7 +1246,7 @@ function buildContext() {
   var avg   = document.getElementById('s-avg').value || '';
   var cvrs  = document.getElementById('s-covers').value || '';
   var resy  = document.getElementById('s-resy').value || '';
-  var summ  = shiftNotes.map(function(n){ return n.ts + ' · ' + n.who + ' — ' + n.text; }).join('; ');
+  var summ  = shiftNotes.map(function(n){ return n.text; }).join(' ');
   var foh   = document.getElementById('s-foh').value || '';
   var foodN = document.getElementById('s-food').value || '';
   var bev   = document.getElementById('s-bev').value || '';
