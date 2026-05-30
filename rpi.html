@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1257,13 +1257,9 @@ function generate() {
   lines.push('- Covers: ' + cvrs + '  Resy: ' + resy);
   lines.push('- Weather: ' + wthr);
 
-  // Shift notes (narrative paragraph)
-  if (shiftNotes.length) {
-    lines.push('');
-    shiftNotes.forEach(function(n) {
-      lines.push(n.text);
-    });
-  }
+  // Narrative paragraph — placeholder replaced by exec summary after AI generates
+  lines.push('');
+  lines.push('{{NARRATIVE}}');
 
   // Closing check — compact 4-line format matching actual email
   lines.push('');
@@ -1363,6 +1359,11 @@ function generate() {
 
 function copyEmail() {
   var txt = document.getElementById('preview-box').textContent;
+  // If AI summary hasn't loaded yet, replace placeholder with shift notes as fallback
+  if (txt.indexOf('{{NARRATIVE}}') !== -1) {
+    var fallback = shiftNotes.length ? shiftNotes.map(function(n){return n.text;}).join(' ') : '';
+    txt = txt.replace('{{NARRATIVE}}', fallback);
+  }
   navigator.clipboard.writeText(txt).then(function() {
     var b = document.querySelector('.btn-primary');
     var orig = b.textContent;
@@ -1473,6 +1474,11 @@ async function generateExec() {
     loading.style.display = 'none';
     copyBtn.style.display = 'inline-flex';
     regenBtn.style.display = 'inline-flex';
+    // Inject summary into email preview replacing the placeholder
+    var pb = document.getElementById('preview-box');
+    if (pb && pb.textContent.indexOf('{{NARRATIVE}}') !== -1) {
+      pb.textContent = pb.textContent.replace('{{NARRATIVE}}', text);
+    }
   } catch(e) {
     box.classList.remove('loading');
     box.innerHTML = '<span style="color:var(--red-deep);font-size:14px">Error connecting to AI — ensure you are using this tool within Claude.ai.</span>';
