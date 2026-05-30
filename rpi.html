@@ -1455,22 +1455,11 @@ async function generateExec() {
   box.innerHTML = '<span style="color:var(--ink-faint);font-style:italic;font-size:15px">Writing summary…</span>';
 
   try {
-    var resp = await fetch('https://api.anthropic.com/v1/messages', {
+    var resp = await fetch(CF_WORKER + '/summary', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': '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',
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: 'You are an experienced fine-dining restaurant operations assistant. Write executive summaries for nightly shift reports at River Pointe Inn, a fine dining establishment in Rumson, NJ. Write in a confident, professional, concise tone — like a seasoned GM briefing ownership. One tight paragraph, 3–5 sentences. Lead with the financial performance, then cover service quality and any notable events, staff observations, or operational items. No bullet points, no headers, no lists. Plain prose only. Do not start with "Tonight" or "This evening."',
-        messages: [{
-          role: 'user',
-          content: 'Write a one-paragraph executive summary for this shift report:\n\n' + ctx
-        }]
+        prompt: 'Write a one-paragraph executive summary for this shift report:\n\n' + ctx
       })
     });
 
