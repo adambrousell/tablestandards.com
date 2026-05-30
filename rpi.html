@@ -756,6 +756,11 @@
             <button class="tag-add-btn" onclick="addShiftNote()">+ Post</button>
           </div>
           <div id="shift-notes-log" style="display:flex;flex-direction:column;gap:6px;min-height:40px"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;flex-wrap:wrap;gap:8px">
+            <button class="btn-secondary" style="padding:6px 14px;font-size:12px" onclick="cfLoadNotes()">↓ Pull latest notes</button>
+            <button class="btn-secondary" style="padding:6px 14px;font-size:12px;color:var(--red-deep);border-color:var(--red-deep)" onclick="if(confirm('Clear all shift notes?'))cfClearNotes()">Clear notes</button>
+            <span id="sync-status" style="font-size:12px;color:var(--green-deep);opacity:0;transition:opacity 0.3s;font-family:'DM Mono',monospace"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -939,6 +944,7 @@
 
     <div class="btn-row">
       <button class="btn-primary" onclick="generate()">Generate Email Preview →</button>
+      <button class="btn-secondary" onclick="cfSaveShift()">&#9729; Save Draft</button>
       <button class="btn-secondary" onclick="goTab(0)">← Back</button>
     </div>
   </div>
@@ -1369,6 +1375,122 @@ async function generateExec() {
   }
 }
 
+// ── Cloudflare Sync ──
+var CF_WORKER = 'https://rpi-shift-api.adam-brousell.workers.dev';
+
+async function cfSaveShift() {
+  var payload = collectShiftPayload();
+  try {
+    await fetch(CF_WORKER + '/shift', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    showSyncStatus('Shift saved ✓');
+  } catch(e) { showSyncStatus('Save failed — check connection'); }
+}
+
+async function cfLoadShift() {
+  try {
+    var resp = await fetch(CF_WORKER + '/shift');
+    var data = await resp.json();
+    if (data && Object.keys(data).length > 0) {
+      applyShiftPayload(data);
+      showSyncStatus('Last shift loaded ✓');
+    }
+  } catch(e) { console.log('No previous shift to load'); }
+}
+
+async function cfPostNote(note) {
+  try {
+    await fetch(CF_WORKER + '/notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(note)
+    });
+  } catch(e) { console.log('Note sync failed'); }
+}
+
+async function cfLoadNotes() {
+  try {
+    var resp = await fetch(CF_WORKER + '/notes');
+    var notes = await resp.json();
+    if (notes && notes.length > 0) {
+      shiftNotes = notes;
+      renderShiftNotes();
+    }
+  } catch(e) { console.log('Notes load failed'); }
+}
+
+async function cfClearNotes() {
+  try {
+    await fetch(CF_WORKER + '/notes', { method: 'DELETE' });
+    shiftNotes = [];
+    renderShiftNotes();
+    showSyncStatus('Notes cleared ✓');
+  } catch(e) { showSyncStatus('Clear failed'); }
+}
+
+function showSyncStatus(msg) {
+  var el = document.getElementById('sync-status');
+  if (el) {
+    el.textContent = msg;
+    el.style.opacity = '1';
+    setTimeout(function() { el.style.opacity = '0'; }, 3000);
+  }
+}
+
+function collectShiftPayload() {
+  return {
+    savedAt: new Date().toISOString(),
+    manager: document.getElementById('o-manager').value,
+    weather: document.getElementById('o-weather').value,
+    date: document.getElementById('o-date').value,
+    preshift: document.getElementById('o-preshift').value,
+    sales: document.getElementById('s-sales').value,
+    avg: document.getElementById('s-avg').value,
+    covers: document.getElementById('s-covers').value,
+    resy: document.getElementById('s-resy').value,
+    closer: document.getElementById('s-closer').value,
+    foh: document.getElementById('s-foh').value,
+    food: document.getElementById('s-food').value,
+    bev: document.getElementById('s-bev').value,
+    emp: document.getElementById('s-emp').value,
+    hire: document.getElementById('s-hire').value,
+    batch: document.getElementById('s-batch').value,
+    maint: document.getElementById('s-maint').value,
+    cashVariance: document.getElementById('cl-cash-variance').value,
+    clNotes: document.getElementById('cl-notes').value,
+    vips: vips,
+    shiftNotes: shiftNotes,
+    openingSpecials: openingSpecials,
+    shiftExtras: shiftExtras,
+    eighties: eighties,
+    toggles: state
+  };
+}
+
+function applyShiftPayload(d) {
+  var fields = [
+    ['s-foh', d.foh], ['s-food', d.food], ['s-bev', d.bev],
+    ['s-emp', d.emp], ['s-hire', d.hire], ['s-batch', d.batch],
+    ['s-maint', d.maint]
+  ];
+  fields.forEach(function(f) {
+    var el = document.getElementById(f[0]);
+    if (el && f[1]) el.value = f[1];
+  });
+  if (d.openingSpecials && d.openingSpecials.length) {
+    openingSpecials = d.openingSpecials.map(function(s) {
+      return { name: s.name, count: s.count, sold: '', eightysixed: false };
+    });
+    renderOpeningSpecials();
+    renderShiftSpecials();
+  }
+  if (d.eighties && d.eighties.length) { eighties = d.eighties; renderEighties(); }
+  if (d.vips && d.vips.length) { vips = d.vips; renderVips(); }
+}
+
 // ── Opening Specials ──
 var openingSpecials = [];
 
@@ -1498,9 +1620,11 @@ function addShiftNote() {
   var ampm = h >= 12 ? 'PM' : 'AM';
   h = h % 12 || 12;
   var ts = h + ':' + m + ' ' + ampm;
-  shiftNotes.push({ ts: ts, who: firstName, text: txt });
+  var note = { ts: ts, who: firstName, text: txt };
+  shiftNotes.push(note);
   inp.value = '';
   renderShiftNotes();
+  cfPostNote(note);
   // Auto-add today's special
   var todaySpecial = DAY_SPECIALS[new Date().getDay()];
   if (todaySpecial) {
@@ -1589,6 +1713,8 @@ async function fetchWeather() {
   document.getElementById('o-date').value = t.getFullYear() + '-' + mm + '-' + dd;
   document.getElementById('o-manager').value = 'Adam Brousell';
   fetchWeather();
+  cfLoadShift();
+  cfLoadNotes();
   renderShiftNotes();
   // Auto-add today's special
   var todaySpecial = DAY_SPECIALS[new Date().getDay()];
