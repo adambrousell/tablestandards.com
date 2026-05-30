@@ -523,6 +523,29 @@
     flex-shrink: 0;
   }
   .note-del:hover { color: var(--red-deep); }
+  .vip-quick {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 100px;
+    border: 0.5px solid var(--border);
+    background: #fff;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .vip-quick:hover {
+    background: var(--gold-pale);
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+  .vip-quick.added {
+    background: var(--gold-pale);
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
   .notes-empty {
     font-size: 13px;
     color: var(--ink-faint);
@@ -771,9 +794,30 @@
         <div class="section-title">VIPs</div>
       </div>
       <div class="section-body">
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
+          <div style="font-size:10px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:var(--ink-faint);width:100%;margin-bottom:2px">Quick add</div>
+          <button class="vip-quick" onclick="quickVip('Jeff Cady')">Jeff Cady</button>
+          <button class="vip-quick" onclick="quickVip('Eli Rallo')">Eli Rallo</button>
+          <button class="vip-quick" onclick="quickVip('Bill Baccigalupi')">Bill Baccigalupi</button>
+          <button class="vip-quick" onclick="quickVip('Bobby Rallo')">Bobby Rallo</button>
+          <button class="vip-quick" onclick="quickVip('Jake Rallo')">Jake Rallo</button>
+          <button class="vip-quick" onclick="quickVip('Victor Rallo')">Victor Rallo</button>
+          <button class="vip-quick" onclick="quickVip('James Walker')">James Walker</button>
+          <button class="vip-quick" onclick="quickVip('Denise Natsis')">Denise Natsis</button>
+          <button class="vip-quick" onclick="quickVip('Glen Fogel')">Glen Fogel</button>
+          <button class="vip-quick" onclick="quickVip('Bill Baccigalupi')">Bill Baccigalupi</button>
+          <button class="vip-quick" onclick="quickVip('Katie Engel')">Katie Engel</button>
+          <button class="vip-quick" onclick="quickVip('Julio')">Julio — Somm</button>
+          <button class="vip-quick" onclick="quickVip('John Gorga')">John Gorga</button>
+          <button class="vip-quick" onclick="quickVip('Josh Laurano')">Josh Laurano</button>
+          <button class="vip-quick" onclick="quickVip('Enilda Sansone')">Enilda Sansone</button>
+          <button class="vip-quick" onclick="quickVip('Kari Rallo')">Kari Rallo</button>
+          <button class="vip-quick" onclick="quickVip('Zack Diaco')">Zack Diaco</button>
+          <button class="vip-quick" onclick="quickVip('Kim Clark')">Kim Clark</button>
+        </div>
         <div id="vip-tags" class="tag-wrap"></div>
         <div class="tag-input-row">
-          <input type="text" id="vip-input" placeholder="Guest name..." onkeydown="if(event.key==='Enter'){addVip();event.preventDefault()}">
+          <input type="text" id="vip-input" placeholder="Other guest name..." onkeydown="if(event.key==='Enter'){addVip();event.preventDefault()}">
           <button class="tag-add-btn" onclick="addVip()">+ Add</button>
         </div>
       </div>
@@ -916,6 +960,10 @@
         <div class="check-row" style="margin-bottom:16px"><div class="check-info"><div class="check-name">Cash counted &amp; verified — in safe with Z-report &amp; CC tips</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-sc-safe" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-sc-safe" onclick="tog(this)">NO</button></div></div>
 
         <div class="divider"></div>
+        <div class="field-label" style="margin:12px 0 8px">Perimeter &amp; security</div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Perimeter walked</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-perimeter" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-perimeter" onclick="tog(this)">NO</button></div></div>
+
+        <div class="divider"></div>
         <div class="field-label" style="margin:12px 0 8px">Doors locked</div>
         <div class="check-row"><div class="check-info"><div class="check-name">Front door</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-d-front" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-d-front" onclick="tog(this)">NO</button></div></div>
         <div class="check-row"><div class="check-info"><div class="check-name">Emergency exit next to 63</div></div><div class="toggle-pair"><button class="tog yes" data-k="cl-d-em63" onclick="tog(this)">YES</button><button class="tog no" data-k="cl-d-em63" onclick="tog(this)">NO</button></div></div>
@@ -1036,6 +1084,21 @@ function tog(btn) {
 function getV(k) { return state[k] || '—'; }
 
 // ── VIPs ──
+function quickVip(name) {
+  if (vips.indexOf(name) === -1) {
+    vips.push(name);
+    renderVips();
+  }
+  // Visual feedback on button
+  var btns = document.querySelectorAll('.vip-quick');
+  btns.forEach(function(b) {
+    if (b.textContent.trim() === name || b.getAttribute('onclick').indexOf(name) !== -1) {
+      b.classList.add('added');
+      setTimeout(function() { b.classList.remove('added'); }, 1500);
+    }
+  });
+}
+
 function addVip() {
   var inp = document.getElementById('vip-input');
   var v = inp.value.trim();
@@ -1125,11 +1188,12 @@ function generate() {
     });
   }
 
-  // Closing check — compact 4-line format
+  // Closing check — compact 4-line format matching actual email
   lines.push('');
   lines.push('Closing Check:');
+  lines.push('');
   lines.push('- Polishing area clean: ' + getV('cl-sw-polish'));
-  lines.push('- Perimeter walked: '     + getV('c-perimeter'));
+  lines.push('- Perimeter walked: '     + getV('cl-perimeter'));
   lines.push('- Doors Locked: '         + getV('cl-d-front'));
   lines.push('- Liquor Cage Locked: '   + getV('cl-d-wine'));
 
@@ -1208,6 +1272,9 @@ function generate() {
 
   // Sign-off
   lines.push('');
+  lines.push('');
+  lines.push('RPI Purchase & Maintenance Log');
+  lines.push('https://docs.google.com/spreadsheets/d/1KykcMECKFuFxw9688164cfa8CwPLFLHc0MTWFsCWgN0/edit?gid=0#gid=0');
   lines.push('');
   lines.push('Thank you,');
   lines.push('');
