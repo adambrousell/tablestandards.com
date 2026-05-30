@@ -1456,6 +1456,19 @@ function applyShiftPayload(d) {
     openingSpecials = d.openingSpecials.map(function(s) {
       return { name: s.name, count: s.count, sold: '', eightysixed: false };
     });
+    // Always ensure Steak Tartare is present
+    var hasTartare = openingSpecials.some(function(s) { return s.name === 'Steak Tartare'; });
+    if (!hasTartare) {
+      openingSpecials.push({ name: 'Steak Tartare', count: '', sold: '', eightysixed: false });
+    }
+    // Always ensure today's daily special is present
+    var todaySpecial = DAY_SPECIALS[new Date().getDay()];
+    if (todaySpecial) {
+      var hasToday = openingSpecials.some(function(s) { return s.name === todaySpecial; });
+      if (!hasToday) {
+        openingSpecials.unshift({ name: todaySpecial, count: '', sold: '', eightysixed: false });
+      }
+    }
     renderOpeningSpecials();
     renderShiftSpecials();
   }
@@ -1598,11 +1611,14 @@ function addShiftNote() {
   renderShiftNotes();
   cfPostNote(note);
   // Auto-add today's special + Steak Tartare (runs every night)
-  var todaySpecial = DAY_SPECIALS[new Date().getDay()];
-  if (todaySpecial) {
-    openingSpecials.push({ name: todaySpecial, count: '', sold: '', eightysixed: false });
+  // Only add defaults if carry-forward didn't already populate specials
+  if (openingSpecials.length === 0) {
+    var todaySpecial = DAY_SPECIALS[new Date().getDay()];
+    if (todaySpecial) {
+      openingSpecials.push({ name: todaySpecial, count: '', sold: '', eightysixed: false });
+    }
+    openingSpecials.push({ name: 'Steak Tartare', count: '', sold: '', eightysixed: false });
   }
-  openingSpecials.push({ name: 'Steak Tartare', count: '', sold: '', eightysixed: false });
   renderOpeningSpecials();
   renderShiftSpecials();
 }
@@ -1611,11 +1627,14 @@ function removeShiftNote(i) {
   shiftNotes.splice(i, 1);
   renderShiftNotes();
   // Auto-add today's special + Steak Tartare (runs every night)
-  var todaySpecial = DAY_SPECIALS[new Date().getDay()];
-  if (todaySpecial) {
-    openingSpecials.push({ name: todaySpecial, count: '', sold: '', eightysixed: false });
+  // Only add defaults if carry-forward didn't already populate specials
+  if (openingSpecials.length === 0) {
+    var todaySpecial = DAY_SPECIALS[new Date().getDay()];
+    if (todaySpecial) {
+      openingSpecials.push({ name: todaySpecial, count: '', sold: '', eightysixed: false });
+    }
+    openingSpecials.push({ name: 'Steak Tartare', count: '', sold: '', eightysixed: false });
   }
-  openingSpecials.push({ name: 'Steak Tartare', count: '', sold: '', eightysixed: false });
   renderOpeningSpecials();
   renderShiftSpecials();
 }
@@ -1691,11 +1710,14 @@ async function fetchWeather() {
   cfLoadNotes();
   renderShiftNotes();
   // Auto-add today's special + Steak Tartare (runs every night)
-  var todaySpecial = DAY_SPECIALS[new Date().getDay()];
-  if (todaySpecial) {
-    openingSpecials.push({ name: todaySpecial, count: '', sold: '', eightysixed: false });
+  // Only add defaults if carry-forward didn't already populate specials
+  if (openingSpecials.length === 0) {
+    var todaySpecial = DAY_SPECIALS[new Date().getDay()];
+    if (todaySpecial) {
+      openingSpecials.push({ name: todaySpecial, count: '', sold: '', eightysixed: false });
+    }
+    openingSpecials.push({ name: 'Steak Tartare', count: '', sold: '', eightysixed: false });
   }
-  openingSpecials.push({ name: 'Steak Tartare', count: '', sold: '', eightysixed: false });
   renderOpeningSpecials();
   renderShiftSpecials();
 })();
