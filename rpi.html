@@ -1362,7 +1362,7 @@ function copyEmail() {
   // If AI summary hasn't loaded yet, replace placeholder with shift notes as fallback
   if (txt.indexOf('{{NARRATIVE}}') !== -1) {
     var fallback = shiftNotes.length ? shiftNotes.map(function(n){return n.text;}).join(' ') : '';
-    txt = txt.replace('{{NARRATIVE}}', fallback);
+    txt = txt.replace('\n{{NARRATIVE}}', fallback ? '\n' + fallback : '');
   }
   navigator.clipboard.writeText(txt).then(function() {
     var b = document.querySelector('.btn-primary');
@@ -1464,10 +1464,12 @@ async function generateExec() {
       })
     });
 
-    var data = await resp.json();
+    var raw = await resp.text();
+    var data;
+    try { data = JSON.parse(raw); } catch(e) { throw new Error('Worker returned: ' + raw.substring(0, 100)); }
     var text = data.content && data.content[0] && data.content[0].text
       ? data.content[0].text.trim()
-      : 'Unable to generate summary — check your connection and try again.';
+      : ('API error: ' + JSON.stringify(data.error || data).substring(0, 120));
 
     box.classList.remove('loading');
     box.textContent = text;
@@ -1477,12 +1479,19 @@ async function generateExec() {
     // Inject summary into email preview replacing the placeholder
     var pb = document.getElementById('preview-box');
     if (pb && pb.textContent.indexOf('{{NARRATIVE}}') !== -1) {
-      pb.textContent = pb.textContent.replace('{{NARRATIVE}}', text);
+      pb.textContent = pb.textContent.replace('\n{{NARRATIVE}}', '\n' + text);
     }
   } catch(e) {
     box.classList.remove('loading');
-    box.innerHTML = '<span style="color:var(--red-deep);font-size:14px">Error connecting to AI — ensure you are using this tool within Claude.ai.</span>';
+    box.innerHTML = '<span style="color:var(--red-deep);font-size:14px">Unable to generate summary — deploy the updated Worker to Cloudflare and try again.</span>';
     loading.style.display = 'none';
+    regenBtn.style.display = 'inline-flex';
+    // Remove placeholder from email on failure — use shift notes as fallback
+    var pb = document.getElementById('preview-box');
+    if (pb && pb.textContent.indexOf('{{NARRATIVE}}') !== -1) {
+      var fallback = shiftNotes.length ? shiftNotes.map(function(n){ return n.text; }).join('\n') : '';
+      pb.textContent = pb.textContent.replace('\n{{NARRATIVE}}', fallback ? '\n' + fallback : '');
+    }
   }
 }
 
