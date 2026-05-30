@@ -1243,6 +1243,7 @@ function generate() {
   lines.push(mgr);
 
   document.getElementById('preview-box').textContent = lines.join('\n');
+  cfSaveShift();
 }
 
 function copyEmail() {
@@ -1512,7 +1513,8 @@ var COMMON_SPECIALS = [
   'Bouillabaisse Provençale',
   'Prime Short Rib Bourguignon',
   'Lobster Frites',
-  'Steak TT'
+  'Steak TT',
+  'Steak Tartare'
 ];
 
 function addOpeningSpecial(name, count) {
@@ -1625,11 +1627,12 @@ function addShiftNote() {
   inp.value = '';
   renderShiftNotes();
   cfPostNote(note);
-  // Auto-add today's special
+  // Auto-add today's special + Steak Tartare (runs every night)
   var todaySpecial = DAY_SPECIALS[new Date().getDay()];
   if (todaySpecial) {
     openingSpecials.push({ name: todaySpecial, count: '', sold: '', eightysixed: false });
   }
+  openingSpecials.push({ name: 'Steak Tartare', count: '', sold: '', eightysixed: false });
   renderOpeningSpecials();
   renderShiftSpecials();
 }
@@ -1637,11 +1640,12 @@ function addShiftNote() {
 function removeShiftNote(i) {
   shiftNotes.splice(i, 1);
   renderShiftNotes();
-  // Auto-add today's special
+  // Auto-add today's special + Steak Tartare (runs every night)
   var todaySpecial = DAY_SPECIALS[new Date().getDay()];
   if (todaySpecial) {
     openingSpecials.push({ name: todaySpecial, count: '', sold: '', eightysixed: false });
   }
+  openingSpecials.push({ name: 'Steak Tartare', count: '', sold: '', eightysixed: false });
   renderOpeningSpecials();
   renderShiftSpecials();
 }
@@ -1716,11 +1720,12 @@ async function fetchWeather() {
   cfLoadShift();
   cfLoadNotes();
   renderShiftNotes();
-  // Auto-add today's special
+  // Auto-add today's special + Steak Tartare (runs every night)
   var todaySpecial = DAY_SPECIALS[new Date().getDay()];
   if (todaySpecial) {
     openingSpecials.push({ name: todaySpecial, count: '', sold: '', eightysixed: false });
   }
+  openingSpecials.push({ name: 'Steak Tartare', count: '', sold: '', eightysixed: false });
   renderOpeningSpecials();
   renderShiftSpecials();
 })();
