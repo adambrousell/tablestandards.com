@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Station Sensor Spec — River Pointe Inn</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=Playfair+Display:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #1c2433;
+  --s1:       #212d40;
+  --s2:       #161e2d;
+  --border:   rgba(201,164,122,0.2);
+  --border2:  rgba(201,164,122,0.4);
+  --text:     #f0ead8;
+  --muted:    #8a99aa;
+  --gold:     #c9a47a;
+  --gold2:    #e0bc96;
+
+  /* wire colors */
+  --wire-red:   #e05555;
+  --wire-black: #555;
+  --wire-white: #e8e4dc;
+  --wire-green: #4caf7d;
+  --wire-yellow:#d4c44c;
+  --wire-blue:  #4a9eca;
+  --wire-orange:#d4813a;
+  --wire-purple:#9b72cf;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 300;
+  font-size: 13px;
+  line-height: 1.6;
+  min-height: 100vh;
+  padding: 40px 24px 80px;
+}
+
+/* ===== HEADER ===== */
+.header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+.header .eyebrow {
+  font-size: 9px;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+.header h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.header .sub {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+}
+.divider {
+  width: 48px;
+  height: 1px;
+  background: var(--gold);
+  margin: 14px auto;
+}
+
+/* ===== LAYOUT ===== */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  max-width: 1100px;
+  margin: 0 auto 32px;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  max-width: 1100px;
+  margin: 0 auto 32px;
+}
+
+.full-width {
+  max-width: 1100px;
+  margin: 0 auto 32px;
+}
+
+/* ===== CARD ===== */
+.card {
+  background: var(--s1);
+  border: 1px solid var(--border);
+  padding: 20px;
+}
+
+.card-title {
+  font-size: 9px;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ===== WIRING DIAGRAM SVG WRAPPER ===== */
+.diagram-wrap {
+  background: var(--s2);
+  border: 1px solid var(--border);
+  padding: 24px;
+  max-width: 1100px;
+  margin: 0 auto 32px;
+}
+
+.diagram-wrap .card-title {
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+
+svg text { font-family: 'JetBrains Mono', monospace; }
+
+/* ===== PARTS TABLE ===== */
+.parts-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.parts-table th {
+  font-size: 8px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-align: left;
+  padding: 8px 12px 8px 0;
+  border-bottom: 1px solid var(--border2);
+  font-weight: 400;
+}
+
+.parts-table td {
+  padding: 10px 12px 10px 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  vertical-align: top;
+  line-height: 1.4;
+}
+
+.parts-table tr:last-child td { border-bottom: none; }
+
+.parts-table td.qty {
+  color: var(--gold2);
+  text-align: center;
+  padding-right: 16px;
+}
+
+.parts-table td.price {
+  color: var(--gold2);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.parts-table tr.total td {
+  border-top: 1px solid var(--border2);
+  border-bottom: none;
+  padding-top: 14px;
+  color: var(--gold2);
+  font-weight: 400;
+}
+
+.parts-table td.note {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+/* ===== PIN TABLE ===== */
+.pin-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+}
+.pin-row:last-child { border-bottom: none; }
+
+.wire-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.pin-from { color: var(--text); min-width: 80px; }
+.pin-arrow { color: var(--muted); }
+.pin-to { color: var(--gold2); min-width: 100px; }
+.pin-desc { color: var(--muted); font-size: 10px; flex: 1; }
+
+/* ===== MOUNT DIAGRAM ===== */
+.mount-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  margin: 16px 0;
+}
+
+.mount-layer {
+  width: 100%;
+  max-width: 320px;
+  padding: 12px 16px;
+  text-align: center;
+  border: 1px solid var(--border);
+  position: relative;
+}
+
+.mount-layer + .mount-layer { border-top: none; }
+
+.layer-label {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 3px;
+}
+
+.layer-desc {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.mount-arrow {
+  font-size: 14px;
+  color: var(--border2);
+  margin: 0;
+  line-height: 1.2;
+}
+
+/* ===== CODE BLOCK ===== */
+.code-block {
+  background: var(--s2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  padding: 20px;
+  font-size: 11px;
+  line-height: 1.7;
+  overflow-x: auto;
+  margin-top: 8px;
+}
+
+.code-comment { color: var(--muted); }
+.code-key     { color: var(--gold2); }
+.code-val     { color: #4caf7d; }
+.code-fn      { color: #4a9eca; }
+.code-str     { color: #d4813a; }
+
+/* ===== CALLOUT ===== */
+.callout {
+  background: rgba(201,164,122,0.07);
+  border-left: 3px solid var(--gold);
+  padding: 14px 16px;
+  margin-top: 16px;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.callout strong { color: var(--gold2); font-weight: 400; }
+
+/* ===== TOTAL BAR ===== */
+.total-bar {
+  background: var(--s2);
+  border: 1px solid var(--border2);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1100px;
+  margin: 0 auto 32px;
+}
+
+.total-label {
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.total-val {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--gold2);
+}
+
+.total-note {
+  font-size: 10px;
+  color: var(--muted);
+  text-align: right;
+}
+
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="eyebrow">River Pointe Inn · Technical Specification</div>
+  <h1>Station Sensor Build</h1>
+  <div class="divider"></div>
+  <div class="sub">Parts list · Wiring diagram · Mount spec · Firmware · Per-station cost</div>
+</div>
+
+<!-- ============================================================
+     WIRING DIAGRAM
+     ============================================================ -->
+<div class="diagram-wrap">
+  <div class="card-title">Complete Wiring Diagram — One Station (4 Bins)</div>
+  <svg viewBox="0 0 900 420" width="100%" style="display:block;">
+
+    <!-- Background grid -->
+    <defs>
+      <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+        <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(201,164,122,0.05)" stroke-width="0.5"/>
+      </pattern>
+    </defs>
+    <rect width="900" height="420" fill="url(#grid)"/>
+
+    <!-- ===== LOAD CELLS (4 bins) ===== -->
+    <!-- LC1 -->
+    <rect x="20" y="40" width="110" height="64" rx="2" fill="#212d40" stroke="rgba(201,164,122,0.35)" stroke-width="1"/>
+    <text x="75" y="60" text-anchor="middle" fill="#c9a47a" font-size="8" letter-spacing="1">LOAD CELL 1</text>
+    <text x="75" y="76" text-anchor="middle" fill="#8a99aa" font-size="9">Dinner Fork Bin</text>
+    <text x="75" y="92" text-anchor="middle" fill="#8a99aa" font-size="8">50kg · bar type</text>
+
+    <!-- LC2 -->
+    <rect x="20" y="130" width="110" height="64" rx="2" fill="#212d40" stroke="rgba(201,164,122,0.35)" stroke-width="1"/>
+    <text x="75" y="150" text-anchor="middle" fill="#c9a47a" font-size="8" letter-spacing="1">LOAD CELL 2</text>
+    <text x="75" y="166" text-anchor="middle" fill="#8a99aa" font-size="9">Dinner Knife Bin</text>
+    <text x="75" y="182" text-anchor="middle" fill="#8a99aa" font-size="8">50kg · bar type</text>
+
+    <!-- LC3 -->
+    <rect x="20" y="220" width="110" height="64" rx="2" fill="#212d40" stroke="rgba(201,164,122,0.35)" stroke-width="1"/>
+    <text x="75" y="240" text-anchor="middle" fill="#c9a47a" font-size="8" letter-spacing="1">LOAD CELL 3</text>
+    <text x="75" y="256" text-anchor="middle" fill="#8a99aa" font-size="9">Steak Knife Bin</text>
+    <text x="75" y="272" text-anchor="middle" fill="#8a99aa" font-size="8">50kg · bar type</text>
+
+    <!-- LC4 -->
+    <rect x="20" y="310" width="110" height="64" rx="2" fill="#212d40" stroke="rgba(201,164,122,0.35)" stroke-width="1"/>
+    <text x="75" y="330" text-anchor="middle" fill="#c9a47a" font-size="8" letter-spacing="1">LOAD CELL 4</text>
+    <text x="75" y="346" text-anchor="middle" fill="#8a99aa" font-size="9">Fork / Spoon Bin</text>
+    <text x="75" y="362" text-anchor="middle" fill="#8a99aa" font-size="8">50kg · bar type</text>
+
+    <!-- ===== HX711 BOARDS (one per load cell) ===== -->
+    <!-- HX1 -->
+    <rect x="220" y="48" width="90" height="48" rx="2" fill="#1a3a2a" stroke="#4caf7d" stroke-width="1"/>
+    <text x="265" y="68" text-anchor="middle" fill="#4caf7d" font-size="8" letter-spacing="1">HX711 #1</text>
+    <text x="265" y="83" text-anchor="middle" fill="#8a99aa" font-size="9">ADC Amplifier</text>
+
+    <!-- HX2 -->
+    <rect x="220" y="138" width="90" height="48" rx="2" fill="#1a3a2a" stroke="#4caf7d" stroke-width="1"/>
+    <text x="265" y="158" text-anchor="middle" fill="#4caf7d" font-size="8" letter-spacing="1">HX711 #2</text>
+    <text x="265" y="173" text-anchor="middle" fill="#8a99aa" font-size="9">ADC Amplifier</text>
+
+    <!-- HX3 -->
+    <rect x="220" y="228" width="90" height="48" rx="2" fill="#1a3a2a" stroke="#4caf7d" stroke-width="1"/>
+    <text x="265" y="248" text-anchor="middle" fill="#4caf7d" font-size="8" letter-spacing="1">HX711 #3</text>
+    <text x="265" y="263" text-anchor="middle" fill="#8a99aa" font-size="9">ADC Amplifier</text>
+
+    <!-- HX4 -->
+    <rect x="220" y="318" width="90" height="48" rx="2" fill="#1a3a2a" stroke="#4caf7d" stroke-width="1"/>
+    <text x="265" y="338" text-anchor="middle" fill="#4caf7d" font-size="8" letter-spacing="1">HX711 #4</text>
+    <text x="265" y="353" text-anchor="middle" fill="#8a99aa" font-size="9">ADC Amplifier</text>
+
+    <!-- WIRES: Load cells → HX711 (4-wire each) -->
+    <!-- LC1 → HX1 -->
+    <line x1="130" y1="58" x2="220" y2="62" stroke="#e05555" stroke-width="1.5"/>
+    <line x1="130" y1="66" x2="220" y2="68" stroke="#444" stroke-width="1.5"/>
+    <line x1="130" y1="74" x2="220" y2="74" stroke="#e8e4dc" stroke-width="1.5"/>
+    <line x1="130" y1="82" x2="220" y2="80" stroke="#4caf7d" stroke-width="1.5"/>
+
+    <!-- LC2 → HX2 -->
+    <line x1="130" y1="148" x2="220" y2="152" stroke="#e05555" stroke-width="1.5"/>
+    <line x1="130" y1="156" x2="220" y2="158" stroke="#444" stroke-width="1.5"/>
+    <line x1="130" y1="164" x2="220" y2="164" stroke="#e8e4dc" stroke-width="1.5"/>
+    <line x1="130" y1="172" x2="220" y2="170" stroke="#4caf7d" stroke-width="1.5"/>
+
+    <!-- LC3 → HX3 -->
+    <line x1="130" y1="238" x2="220" y2="242" stroke="#e05555" stroke-width="1.5"/>
+    <line x1="130" y1="246" x2="220" y2="248" stroke="#444" stroke-width="1.5"/>
+    <line x1="130" y1="254" x2="220" y2="254" stroke="#e8e4dc" stroke-width="1.5"/>
+    <line x1="130" y1="262" x2="220" y2="260" stroke="#4caf7d" stroke-width="1.5"/>
+
+    <!-- LC4 → HX4 -->
+    <line x1="130" y1="328" x2="220" y2="332" stroke="#e05555" stroke-width="1.5"/>
+    <line x1="130" y1="336" x2="220" y2="338" stroke="#444" stroke-width="1.5"/>
+    <line x1="130" y1="344" x2="220" y2="344" stroke="#e8e4dc" stroke-width="1.5"/>
+    <line x1="130" y1="352" x2="220" y2="350" stroke="#4caf7d" stroke-width="1.5"/>
+
+    <!-- ===== ESP32 ===== -->
+    <rect x="420" y="130" width="130" height="170" rx="2" fill="#1a2a3a" stroke="#4a9eca" stroke-width="1.5"/>
+    <text x="485" y="152" text-anchor="middle" fill="#4a9eca" font-size="9" letter-spacing="1.5">ESP32</text>
+    <text x="485" y="167" text-anchor="middle" fill="#8a99aa" font-size="8">30-pin dev board</text>
+
+    <!-- ESP32 pin labels -->
+    <text x="432" y="192" fill="#c9a47a" font-size="8">GPIO 4</text>
+    <text x="432" y="207" fill="#c9a47a" font-size="8">GPIO 5</text>
+    <text x="432" y="222" fill="#c9a47a" font-size="8">GPIO 18</text>
+    <text x="432" y="237" fill="#c9a47a" font-size="8">GPIO 19</text>
+    <text x="432" y="252" fill="#c9a47a" font-size="8">GPIO 21</text>
+    <text x="432" y="267" fill="#c9a47a" font-size="8">GPIO 22</text>
+    <text x="432" y="282" fill="#c9a47a" font-size="8">GPIO 23</text>
+    <text x="432" y="297" fill="#c9a47a" font-size="8">GPIO 25</text>
+    <text x="432" y="312" fill="#8a99aa" font-size="8">3.3V · GND</text>
+
+    <!-- WIRES: HX711 → ESP32 (DT + SCK per board) -->
+    <!-- HX1 DT → GPIO4, SCK → GPIO5 -->
+    <line x1="310" y1="65" x2="420" y2="188" stroke="#d4c44c" stroke-width="1.5"/>
+    <line x1="310" y1="75" x2="420" y2="203" stroke="#9b72cf" stroke-width="1.5"/>
+
+    <!-- HX2 DT → GPIO18, SCK → GPIO19 -->
+    <line x1="310" y1="155" x2="420" y2="218" stroke="#d4813a" stroke-width="1.5"/>
+    <line x1="310" y1="165" x2="420" y2="233" stroke="#4a9eca" stroke-width="1.5"/>
+
+    <!-- HX3 DT → GPIO21, SCK → GPIO22 -->
+    <line x1="310" y1="245" x2="420" y2="248" stroke="#e05555" stroke-width="1.5"/>
+    <line x1="310" y1="255" x2="420" y2="263" stroke="#4caf7d" stroke-width="1.5"/>
+
+    <!-- HX4 DT → GPIO23, SCK → GPIO25 -->
+    <line x1="310" y1="335" x2="420" y2="278" stroke="#c9a47a" stroke-width="1.5"/>
+    <line x1="310" y1="345" x2="420" y2="293" stroke="#e8e4dc" stroke-width="1.5"/>
+
+    <!-- ===== POWER ===== -->
+    <rect x="420" y="50" width="130" height="50" rx="2" fill="#212d40" stroke="rgba(201,164,122,0.35)" stroke-width="1"/>
+    <text x="485" y="70" text-anchor="middle" fill="#c9a47a" font-size="8" letter-spacing="1">USB POWER</text>
+    <text x="485" y="85" text-anchor="middle" fill="#8a99aa" font-size="9">5V · 2A adapter</text>
+    <line x1="485" y1="100" x2="485" y2="130" stroke="#e05555" stroke-width="1.5"/>
+
+    <!-- ===== WIFI CLOUD ===== -->
+    <rect x="650" y="120" width="130" height="60" rx="2" fill="#1a2033" stroke="rgba(201,164,122,0.35)" stroke-width="1"/>
+    <text x="715" y="144" text-anchor="middle" fill="#c9a47a" font-size="8" letter-spacing="1">WIFI</text>
+    <text x="715" y="160" text-anchor="middle" fill="#8a99aa" font-size="9">Restaurant network</text>
+    <text x="715" y="172" text-anchor="middle" fill="#8a99aa" font-size="9">→ Cloudflare Worker</text>
+    <line x1="550" y1="215" x2="650" y2="150" stroke="rgba(201,164,122,0.4)" stroke-width="1.5" stroke-dasharray="5,3"/>
+    <text x="600" y="178" fill="#8a99aa" font-size="8" transform="rotate(-12,600,178)">HTTP POST</text>
+
+    <!-- ===== LEGEND ===== -->
+    <rect x="650" y="240" width="220" height="160" rx="2" fill="#161e2d" stroke="rgba(201,164,122,0.2)" stroke-width="1"/>
+    <text x="665" y="260" fill="#c9a47a" font-size="8" letter-spacing="2">WIRE LEGEND</text>
+
+    <line x1="665" y1="276" x2="690" y2="276" stroke="#e05555" stroke-width="2"/>
+    <text x="696" y="280" fill="#e8e4dc" font-size="9">Red — E+ (excitation +)</text>
+
+    <line x1="665" y1="294" x2="690" y2="294" stroke="#444" stroke-width="2"/>
+    <text x="696" y="298" fill="#e8e4dc" font-size="9">Black — E- (excitation -)</text>
+
+    <line x1="665" y1="312" x2="690" y2="312" stroke="#e8e4dc" stroke-width="2"/>
+    <text x="696" y="316" fill="#e8e4dc" font-size="9">White — A+ (signal +)</text>
+
+    <line x1="665" y1="330" x2="690" y2="330" stroke="#4caf7d" stroke-width="2"/>
+    <text x="696" y="334" fill="#e8e4dc" font-size="9">Green — A- (signal -)</text>
+
+    <line x1="665" y1="348" x2="690" y2="348" stroke="#d4c44c" stroke-width="2"/>
+    <text x="696" y="352" fill="#e8e4dc" font-size="9">Yellow — DT (data)</text>
+
+    <line x1="665" y1="366" x2="690" y2="366" stroke="#9b72cf" stroke-width="2"/>
+    <text x="696" y="370" fill="#e8e4dc" font-size="9">Purple — SCK (clock)</text>
+
+    <line x1="665" y1="384" x2="690" y2="384" stroke="rgba(201,164,122,0.4)" stroke-width="2" stroke-dasharray="4,2"/>
+    <text x="696" y="388" fill="#e8e4dc" font-size="9">Dashed — WiFi (wireless)</text>
+
+  </svg>
+</div>
+
+<!-- ============================================================
+     PARTS LIST
+     ============================================================ -->
+<div class="full-width">
+  <div class="card">
+    <div class="card-title">Bill of Materials — One Station</div>
+    <table class="parts-table">
+      <thead>
+        <tr>
+          <th style="width:28px;">#</th>
+          <th>Component</th>
+          <th>Spec / Part</th>
+          <th style="text-align:center;">Qty</th>
+          <th style="text-align:right;">Unit $</th>
+          <th style="text-align:right;">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="color:var(--muted);">1</td>
+          <td>Bar-type load cell</td>
+          <td class="note">50kg aluminum single-point. TAL220B or equivalent. IP65 rated.</td>
+          <td class="qty">4</td>
+          <td class="price">$4.50</td>
+          <td class="price">$18.00</td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted);">2</td>
+          <td>HX711 amplifier board</td>
+          <td class="note">24-bit ADC. Green PCB module ~22×16mm. One per load cell.</td>
+          <td class="qty">4</td>
+          <td class="price">$1.50</td>
+          <td class="price">$6.00</td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted);">3</td>
+          <td>ESP32 dev board</td>
+          <td class="note">ESP32-WROOM-32 30-pin. Built-in WiFi + Bluetooth. 5V USB input.</td>
+          <td class="qty">1</td>
+          <td class="price">$5.50</td>
+          <td class="price">$5.50</td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted);">4</td>
+          <td>USB-C power adapter</td>
+          <td class="note">5V 2A minimum. Standard phone charger works.</td>
+          <td class="qty">1</td>
+          <td class="price">$6.00</td>
+          <td class="price">$6.00</td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted);">5</td>
+          <td>Acrylic platform sheet</td>
+          <td class="note">3mm clear acrylic cut to bin footprint. Load cell sandwiches between this and the shelf. Laser-cut or score/snap.</td>
+          <td class="qty">4</td>
+          <td class="price">$2.00</td>
+          <td class="price">$8.00</td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted);">6</td>
+          <td>M4 spacer bolts + nuts</td>
+          <td class="note">4× per load cell to mount cell between base plate and platform. Stainless preferred for kitchen environment.</td>
+          <td class="qty">1 set</td>
+          <td class="price">$4.00</td>
+          <td class="price">$4.00</td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted);">7</td>
+          <td>22 AWG hookup wire</td>
+          <td class="note">Multicolor stranded. 1m per load cell to HX711 + 0.5m HX711 to ESP32. ~6m total per station.</td>
+          <td class="qty">1 roll</td>
+          <td class="price">$4.00</td>
+          <td class="price">$4.00</td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted);">8</td>
+          <td>JST connectors (optional)</td>
+          <td class="note">Makes load cells unpluggable for cleaning. 4-pin JST-PH. Not required but strongly recommended for kitchen environment.</td>
+          <td class="qty">8</td>
+          <td class="price">$0.50</td>
+          <td class="price">$4.00</td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted);">9</td>
+          <td>Project enclosure box</td>
+          <td class="note">Small ABS or IP54 plastic box to house ESP32 + HX711 boards. Mounts to underside of shelf.</td>
+          <td class="qty">1</td>
+          <td class="price">$5.00</td>
+          <td class="price">$5.00</td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted);">10</td>
+          <td>Heat shrink tubing</td>
+          <td class="note">Protects solder joints. Mixed diameter pack.</td>
+          <td class="qty">1 pack</td>
+          <td class="price">$3.00</td>
+          <td class="price">$3.00</td>
+        </tr>
+        <tr class="total">
+          <td colspan="5">Total per station</td>
+          <td class="price" style="font-family:'Playfair Display',serif;font-size:16px;">~$63.50</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ============================================================
+     TOTAL BAR
+     ============================================================ -->
+<div class="total-bar">
+  <div>
+    <div class="total-label">Full Restaurant — 4 Service Stations</div>
+    <div style="font-size:10px;color:var(--muted);margin-top:3px;">Kitchen Pass · Side Station A · Side Station B · Bar</div>
+  </div>
+  <div style="text-align:right;">
+    <div class="total-val">~$254</div>
+    <div class="total-note">hardware only · excludes labor</div>
+  </div>
+</div>
+
+<!-- ============================================================
+     PIN CONNECTIONS
+     ============================================================ -->
+<div class="grid-2">
+
+  <div class="card">
+    <div class="card-title">Load Cell → HX711 Connections</div>
+    <div class="pin-row">
+      <div class="wire-dot" style="background:#e05555;"></div>
+      <div class="pin-from">Red wire</div>
+      <div class="pin-arrow">→</div>
+      <div class="pin-to">E+ pin</div>
+      <div class="pin-desc">Excitation positive</div>
+    </div>
+    <div class="pin-row">
+      <div class="wire-dot" style="background:#555;border:1px solid #888;"></div>
+      <div class="pin-from">Black wire</div>
+      <div class="pin-arrow">→</div>
+      <div class="pin-to">E- pin</div>
+      <div class="pin-desc">Excitation negative</div>
+    </div>
+    <div class="pin-row">
+      <div class="wire-dot" style="background:#e8e4dc;"></div>
+      <div class="pin-from">White wire</div>
+      <div class="pin-arrow">→</div>
+      <div class="pin-to">A+ pin</div>
+      <div class="pin-desc">Signal positive</div>
+    </div>
+    <div class="pin-row">
+      <div class="wire-dot" style="background:#4caf7d;"></div>
+      <div class="pin-from">Green wire</div>
+      <div class="pin-arrow">→</div>
+      <div class="pin-to">A- pin</div>
+      <div class="pin-desc">Signal negative</div>
+    </div>
+    <div class="pin-row">
+      <div class="wire-dot" style="background:#e05555;"></div>
+      <div class="pin-from">VCC</div>
+      <div class="pin-arrow">→</div>
+      <div class="pin-to">3.3V (ESP32)</div>
+      <div class="pin-desc">Power from ESP32</div>
+    </div>
+    <div class="pin-row">
+      <div class="wire-dot" style="background:#555;border:1px solid #888;"></div>
+      <div class="pin-from">GND</div>
+      <div class="pin-arrow">→</div>
+      <div class="pin-to">GND (ESP32)</div>
+      <div class="pin-desc">Common ground</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">HX711 → ESP32 GPIO Connections</div>
+    <div class="pin-row">
+      <div class="wire-dot" style="background:#d4c44c;"></div>
+      <div class="pin-from">HX711 #1 DT</div>
+      <div class="pin-arrow">→</div>
+      <div class="pin-to">GPIO 4</div>
+      <div class="pin-desc">Bin 1 data</div>
+    </div>
+    <div class="pin-row">
+      <div class="wire-dot" style="background:#9b72cf;"></div>
+      <div class="pin-from">HX711 #1 SCK</div>
+      <div class="pin-arrow">→</div>
+      <div class="pin-to">GPIO 5</div>
+      <div class="pin-desc">Bin 1 clock</div>
+    </div>
+    <div class="pin-row">
+      <div class="wire-dot" style="background:#d4813a;"></div>
+      <div class="pin-from">HX711 #2 DT</div>
+      <div class="pin-arrow">→</div>
+      <div class="pin-to">GPIO 18</div>
+      <div class="pin-desc">Bin 2 data</div>
+    </div>
+    <div class="pin-row">
+      <div class="wire-dot" style="background:#4a9eca;"></div>
+      <div class="pin-from">HX711 #2 SCK</div>
+      <div class="pin-arrow">→</div>
+      <div class="pin-to">GPIO 19</div>
+      <div class="pin-desc">Bin 2 clock</div>
+    </div>
+    <div class="pin-row">
+      <div class="wire-dot" style="background:#e05555;"></div>
+      <div class="pin-from">HX711 #3 DT</div>
+      <div class="pin-arrow">→</div>
+      <div class="pin-to">GPIO 21</div>
+      <div class="pin-desc">Bin 3 data</div>
+    </div>
+    <div class="pin-row">
+      <div class="wire-dot" style="background:#4caf7d;"></div>
+      <div class="pin-from">HX711 #3 SCK</div>
+      <div class="pin-arrow">→</div>
+      <div class="pin-to">GPIO 22</div>
+      <div class="pin-desc">Bin 3 clock</div>
+    </div>
+    <div class="pin-row">
+      <div class="wire-dot" style="background:#c9a47a;"></div>
+      <div class="pin-from">HX711 #4 DT</div>
+      <div class="pin-arrow">→</div>
+      <div class="pin-to">GPIO 23</div>
+      <div class="pin-desc">Bin 4 data</div>
+    </div>
+    <div class="pin-row">
+      <div class="wire-dot" style="background:#e8e4dc;"></div>
+      <div class="pin-from">HX711 #4 SCK</div>
+      <div class="pin-arrow">→</div>
+      <div class="pin-to">GPIO 25</div>
+      <div class="pin-desc">Bin 4 clock</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================================
+     PHYSICAL MOUNT
+     ============================================================ -->
+<div class="grid-2">
+
+  <div class="card">
+    <div class="card-title">Physical Mount — Cross Section</div>
+    <div class="mount-stack">
+      <div class="mount-layer" style="background:rgba(74,158,202,0.1);border-color:#4a9eca;">
+        <div class="layer-label" style="color:#4a9eca;">Cutlery Bin</div>
+        <div class="layer-desc">Standard stainless or plastic bin</div>
+      </div>
+      <div class="mount-arrow">↕ sits on</div>
+      <div class="mount-layer" style="background:rgba(212,129,58,0.1);border-color:#d4813a;">
+        <div class="layer-label" style="color:#d4813a;">Acrylic Platform (3mm)</div>
+        <div class="layer-desc">Cut to bin footprint · M4 corner bolts</div>
+      </div>
+      <div class="mount-arrow">↕ bolted to</div>
+      <div class="mount-layer" style="background:rgba(76,175,125,0.1);border-color:#4caf7d;">
+        <div class="layer-label" style="color:#4caf7d;">Load Cell</div>
+        <div class="layer-desc">Bar-type · 4 M4 mounting holes · 10mm standoff</div>
+      </div>
+      <div class="mount-arrow">↕ bolted to</div>
+      <div class="mount-layer" style="background:rgba(201,164,122,0.1);border-color:var(--gold);">
+        <div class="layer-label">Base Plate (3mm acrylic)</div>
+        <div class="layer-desc">Screwed or epoxied to shelf surface</div>
+      </div>
+      <div class="mount-arrow">↕ sits on</div>
+      <div class="mount-layer" style="background:rgba(26,32,45,0.8);border-color:var(--border);">
+        <div class="layer-label" style="color:var(--muted);">Station Shelf</div>
+        <div class="layer-desc">Existing surface · no modification needed</div>
+      </div>
+    </div>
+    <div class="callout">
+      <strong>Total stack height:</strong> approximately 18–22mm (¾"). Bins sit ~¾" higher than before. Visually invisible. Functionally identical.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">ESP32 Firmware — Core Logic</div>
+    <div class="code-block">
+<span class="code-comment">// River Pointe — Station Sensor Firmware</span>
+<span class="code-comment">// Flash to ESP32 via Arduino IDE or PlatformIO</span>
+<span class="code-comment">// Library: HX711 by bogde (Library Manager)</span>
+
+<span class="code-key">#include</span> <span class="code-str">"HX711.h"</span>
+<span class="code-key">#include</span> <span class="code-str">"WiFi.h"</span>
+<span class="code-key">#include</span> <span class="code-str">"HTTPClient.h"</span>
+
+<span class="code-comment">// ── CONFIG ──────────────────────────</span>
+<span class="code-key">const char*</span> SSID        = <span class="code-str">"RPI_KITCHEN"</span>;
+<span class="code-key">const char*</span> PASS        = <span class="code-str">"your_wifi_password"</span>;
+<span class="code-key">const char*</span> WORKER_URL  = <span class="code-str">"https://rpi-cutlery.workers.dev/event"</span>;
+<span class="code-key">const char*</span> API_KEY     = <span class="code-str">"your_api_key"</span>;
+<span class="code-key">const char*</span> STATION_ID  = <span class="code-str">"PASS"</span>;
+
+<span class="code-comment">// Calibration: grams per raw unit</span>
+<span class="code-comment">// Run calibration sketch first with</span>
+<span class="code-comment">// known weights to get these values</span>
+<span class="code-key">float</span> CALIBRATION[4]   = {420.0, 415.0, 412.0, 418.0};
+
+<span class="code-comment">// Piece weight profiles (grams each)</span>
+<span class="code-key">float</span> PIECE_WEIGHT[4]   = {85.0, 95.0, 110.0, 85.0};
+
+<span class="code-comment">// Bin codes match Airtable exactly</span>
+<span class="code-key">const char*</span> BIN_CODES[4] = {
+  <span class="code-str">"PASS-DFORK-1"</span>, <span class="code-str">"PASS-DKNIFE-1"</span>,
+  <span class="code-str">"PASS-SKNIFE-1"</span>, <span class="code-str">"PASS-SFORK-1"</span>
+};
+
+<span class="code-comment">// GPIO pins (DT, SCK) per HX711</span>
+<span class="code-key">int</span> DT_PINS[4]  = {4,  18, 21, 23};
+<span class="code-key">int</span> SCK_PINS[4] = {5,  19, 22, 25};
+
+HX711 scales[4];
+<span class="code-key">int</span>   lastQty[4] = {-1,-1,-1,-1};
+<span class="code-key">const long</span> READ_INTERVAL = 30000; <span class="code-comment">// 30s</span>
+<span class="code-key">const int</span>  CHANGE_THRESH  = 1;    <span class="code-comment">// min piece delta</span>
+
+<span class="code-fn">void</span> <span class="code-key">setup</span>() {
+  Serial.begin(115200);
+  <span class="code-key">for</span> (<span class="code-key">int</span> i=0; i&lt;4; i++) {
+    scales[i].begin(DT_PINS[i], SCK_PINS[i]);
+    scales[i].set_scale(CALIBRATION[i]);
+    scales[i].tare();
+  }
+  WiFi.begin(SSID, PASS);
+  <span class="code-key">while</span> (WiFi.status() != WL_CONNECTED) delay(500);
+}
+
+<span class="code-fn">void</span> <span class="code-key">loop</span>() {
+  <span class="code-key">for</span> (<span class="code-key">int</span> i=0; i&lt;4; i++) {
+    <span class="code-key">float</span> grams = scales[i].get_units(5);
+    <span class="code-key">int</span>   qty   = max(0, (<span class="code-key">int</span>)(grams / PIECE_WEIGHT[i]));
+    <span class="code-key">if</span> (abs(qty - lastQty[i]) >= CHANGE_THRESH) {
+      postReading(BIN_CODES[i], qty);
+      lastQty[i] = qty;
+    }
+  }
+  delay(READ_INTERVAL);
+}
+
+<span class="code-fn">void</span> postReading(<span class="code-key">const char*</span> bin, <span class="code-key">int</span> qty) {
+  HTTPClient http;
+  http.begin(WORKER_URL);
+  http.addHeader(<span class="code-str">"Content-Type"</span>, <span class="code-str">"application/json"</span>);
+  http.addHeader(<span class="code-str">"X-API-Key"</span>, API_KEY);
+  String body = <span class="code-str">"{"</span>
+    <span class="code-str">"\"sensor_type\":\"SENSOR_WEIGHT\","</span>
+    <span class="code-str">"\"bin_code\":\""</span> + String(bin) + <span class="code-str">"\","</span>
+    <span class="code-str">"\"quantity\":"</span>  + String(qty)  +
+  <span class="code-str">"}"</span>;
+  http.POST(body);
+  http.end();
+}
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================================
+     CALIBRATION NOTE
+     ============================================================ -->
+<div class="full-width">
+  <div class="card">
+    <div class="card-title">Calibration — One-Time Setup Per Bin</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;font-size:12px;color:var(--muted);line-height:1.7;">
+      <div>
+        <div style="color:var(--gold2);margin-bottom:6px;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;">Step 1 — Tare</div>
+        Place the empty bin on the platform. Power on the ESP32. Run the tare function — this zeros out the platform + bin weight so only the cutlery weight is measured.
+      </div>
+      <div>
+        <div style="color:var(--gold2);margin-bottom:6px;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;">Step 2 — Known Weight</div>
+        Place exactly 10 pieces of that bin's cutlery type on the scale. The raw reading ÷ known weight (10 × piece grams) = your calibration factor. Update <code style="color:var(--gold);">CALIBRATION[]</code> in firmware.
+      </div>
+      <div>
+        <div style="color:var(--gold2);margin-bottom:6px;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;">Step 3 — Verify</div>
+        Add and remove pieces. Confirm the count matches within ±1 piece. The HX711 at 24-bit resolution is accurate to fractions of a gram — variation comes from pieces not being perfectly identical weight.
+      </div>
+    </div>
+    <div class="callout">
+      <strong>Tip:</strong> Weigh 20 pieces of each type individually and use the average. For mixed bins (e.g. salad forks and dinner forks together) you'll want separate bins per type — the sensor can't distinguish pieces by type, only by total weight.
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
