@@ -38,7 +38,6 @@
     line-height: 1.6;
   }
 
-  /* ── HEADER ── */
   .site-header {
     background: var(--ink);
     color: var(--cream);
@@ -64,44 +63,16 @@
     font-size: 14px;
     margin-left: 10px;
   }
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .prog-label {
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: rgba(250,248,245,0.4);
-  }
-  .prog-dots {
-    display: flex;
-    gap: 6px;
-  }
-  .prog-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: rgba(250,248,245,0.2);
-    transition: background 0.3s;
-  }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .prog-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(250,248,245,0.4); }
+  .prog-dots { display: flex; gap: 6px; }
+  .prog-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(250,248,245,0.2); transition: background 0.3s; }
   .prog-dot.done { background: var(--gold-light); }
   .prog-dot.active { background: var(--cream); }
 
-  /* ── LAYOUT ── */
-  .app {
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 2rem 1.5rem 4rem;
-  }
+  .app { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
 
-  /* ── TABS ── */
-  .tabs {
-    display: flex;
-    gap: 0;
-    margin-bottom: 2rem;
-    border-bottom: 1px solid var(--border);
-  }
+  .tabs { display: flex; gap: 0; margin-bottom: 2rem; border-bottom: 1px solid var(--border); }
   .tab-btn {
     font-family: 'DM Sans', sans-serif;
     font-size: 13px;
@@ -120,151 +91,65 @@
     gap: 6px;
   }
   .tab-btn:hover { color: var(--ink); }
-  .tab-btn.active {
-    color: var(--ink);
-    border-bottom-color: var(--gold);
-    font-weight: 500;
-  }
+  .tab-btn.active { color: var(--ink); border-bottom-color: var(--gold); font-weight: 500; }
   .tab-btn .tab-num {
-    width: 18px; height: 18px;
-    border-radius: 50%;
-    background: var(--cream-warm);
-    font-size: 10px;
-    display: flex; align-items: center; justify-content: center;
-    color: var(--ink-soft);
+    width: 18px; height: 18px; border-radius: 50%; background: var(--cream-warm);
+    font-size: 10px; display: flex; align-items: center; justify-content: center; color: var(--ink-soft);
   }
-  .tab-btn.active .tab-num {
-    background: var(--gold);
-    color: var(--cream);
-  }
+  .tab-btn.active .tab-num { background: var(--gold); color: var(--cream); }
 
   .panel { display: none; }
   .panel.active { display: block; }
 
-  /* ── SECTIONS ── */
-  .section {
-    background: #fff;
-    border: 1px solid var(--border-light);
-    border-radius: 8px;
-    margin-bottom: 16px;
-    overflow: hidden;
-    box-shadow: var(--shadow);
-  }
-  .section-head {
-    padding: 12px 20px;
-    border-bottom: 1px solid var(--border-light);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: var(--cream-warm);
-  }
-  .section-icon {
-    width: 28px; height: 28px;
-    border-radius: 6px;
-    background: var(--ink);
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-  }
+  .section { background: #fff; border: 1px solid var(--border-light); border-radius: 8px; margin-bottom: 16px; overflow: hidden; box-shadow: var(--shadow); }
+  .section-head { padding: 12px 20px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; gap: 10px; background: var(--cream-warm); }
+  .section-icon { width: 28px; height: 28px; border-radius: 6px; background: var(--ink); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .section-icon svg { width: 14px; height: 14px; stroke: var(--gold-light); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-  .section-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 16px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    color: var(--ink);
-  }
+  .section-title { font-family: 'Cormorant Garamond', serif; font-size: 16px; font-weight: 600; letter-spacing: 0.02em; color: var(--ink); }
   .section-body { padding: 20px; }
 
-  /* ── FORM ELEMENTS ── */
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
   .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+
   @media (max-width: 640px) {
     .app { padding: 1rem 1rem 4rem; }
     .grid-2 { grid-template-columns: 1fr 1fr; }
     .grid-3 { grid-template-columns: 1fr 1fr; }
     .grid-4 { grid-template-columns: 1fr 1fr; }
-
-    /* Larger tap targets for toggles */
     .tog { padding: 8px 14px; font-size: 12px; }
     .toggle-pair { border-radius: 8px; }
-
-    /* Check rows easier to read */
     .check-name { font-size: 13px; }
     .check-sub { font-size: 11px; }
     .check-row { padding: 11px 0; }
-
-    /* Metric cards compact */
     .metric-card { padding: 10px 12px; }
     .metric-val input { font-size: 22px; }
-
-    /* Section body breathing room */
     .section-body { padding: 14px; }
     .section-head { padding: 10px 14px; }
-
-    /* Tabs scrollable on small screens */
     .tabs { overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
     .tab-btn { padding: 10px 14px; font-size: 12px; flex-shrink: 0; }
-
-    /* Specials rows stack on mobile */
     .special-row { grid-template-columns: 1fr 64px 64px 28px !important; gap: 6px; }
     .special-header { grid-template-columns: 1fr 64px 64px 28px !important; gap: 6px; }
-
-    /* Shift specials header/rows */
-    #shift-specials-list > div[style*="grid-template-columns:1fr 70px 70px 80px 32px"] {
-      grid-template-columns: 1fr 48px 48px 60px 0px !important;
-      gap: 5px;
-    }
-
-    /* VIP quick pills wrap nicely */
     .vip-quick { font-size: 12px; padding: 6px 12px; }
-
-    /* Buttons full width on mobile */
     .btn-row { flex-direction: column; }
     .btn-primary, .btn-secondary { width: 100%; justify-content: center; padding: 13px; }
-
-    /* Note entry */
     .note-entry { padding: 8px 10px; }
     .note-meta { font-size: 10px; min-width: 70px; }
     .note-text { font-size: 13px; }
-
-    /* Tag input row */
     .tag-input-row { gap: 6px; }
-
-    /* Close grid 1 col on very small */
     .close-grid { grid-template-columns: 1fr; }
-
-    /* Preview box */
     .preview-box { font-size: 11.5px; padding: 16px; }
-
-    /* Header */
     .site-header { padding: 0 1rem; }
     .site-header .brand { font-size: 17px; }
     .prog-label { display: none; }
-
-    /* Field labels */
     .field-label { font-size: 10px; }
-
-    /* Opening specials on mobile */
-    #opening-specials-list .special-row {
-      grid-template-columns: 1fr 72px 28px !important;
-    }
-
-    /* Exec summary */
+    #opening-specials-list .special-row { grid-template-columns: 1fr 72px 28px !important; }
     #exec-box { font-size: 15px; }
-
-    /* Cash/closing notes grid */
     .grid-2[style*="margin-top:12px"] { grid-template-columns: 1fr; }
   }
 
   .field { display: flex; flex-direction: column; gap: 5px; }
-  .field-label {
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-  }
+  .field-label { font-size: 11px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-soft); }
   input[type=text], input[type=date], input[type=number], select, textarea {
     font-family: 'DM Sans', sans-serif;
     font-size: 14px;
@@ -277,212 +162,62 @@
     outline: none;
     transition: border-color 0.15s, background 0.15s;
   }
-  input:focus, select:focus, textarea:focus {
-    border-color: var(--gold);
-    background: #fff;
-  }
+  input:focus, select:focus, textarea:focus { border-color: var(--gold); background: #fff; }
   textarea { resize: vertical; min-height: 72px; line-height: 1.55; }
 
-  /* ── TOGGLE (YES/NO) ── */
-  .check-row {
-    display: flex;
-    align-items: center;
-    padding: 9px 0;
-    border-bottom: 1px solid var(--border-light);
-    gap: 12px;
-  }
+  .check-row { display: flex; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border-light); gap: 12px; }
   .check-row:last-child { border-bottom: none; }
   .check-info { flex: 1; }
   .check-name { font-size: 14px; color: var(--ink); }
   .check-sub { font-size: 11px; color: var(--ink-faint); margin-top: 1px; }
   .toggle-pair { display: flex; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); }
-  .tog {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    font-weight: 400;
-    padding: 5px 12px;
-    border: none;
-    cursor: pointer;
-    background: #fff;
-    color: var(--ink-faint);
-    transition: all 0.15s;
-  }
+  .tog { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 400; padding: 5px 12px; border: none; cursor: pointer; background: #fff; color: var(--ink-faint); transition: all 0.15s; touch-action: manipulation; }
   .tog:first-child { border-right: 1px solid var(--border); }
-  .tog { touch-action: manipulation; }
   .vip-quick { touch-action: manipulation; }
   .btn-primary, .btn-secondary, .add-row-btn { touch-action: manipulation; }
   .tog.yes.on { background: var(--green-deep); color: #fff; }
   .tog.no.on { background: var(--red-deep); color: #fff; }
   .tog:hover:not(.on) { background: var(--cream-warm); color: var(--ink); }
 
-  /* ── METRIC CARDS ── */
-  .metric-card {
-    background: var(--cream-warm);
-    border: 1px solid var(--border-light);
-    border-radius: 8px;
-    padding: 14px 16px;
-  }
-  .metric-label {
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    margin-bottom: 4px;
-  }
-  .metric-val {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 26px;
-    font-weight: 600;
-    color: var(--ink);
-    line-height: 1;
-  }
-  .metric-val input {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 26px;
-    font-weight: 600;
-    color: var(--ink);
-    background: transparent;
-    border: none;
-    border-bottom: 1px dashed var(--border);
-    border-radius: 0;
-    padding: 0;
-    width: 100%;
-  }
+  .metric-card { background: var(--cream-warm); border: 1px solid var(--border-light); border-radius: 8px; padding: 14px 16px; }
+  .metric-label { font-size: 10px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 4px; }
+  .metric-val { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 600; color: var(--ink); line-height: 1; }
+  .metric-val input { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 600; color: var(--ink); background: transparent; border: none; border-bottom: 1px dashed var(--border); border-radius: 0; padding: 0; width: 100%; }
   .metric-val input:focus { border-bottom-color: var(--gold); background: transparent; }
 
-  /* ── SPECIALS / 86 ROWS ── */
-  .special-row {
-    display: grid;
-    grid-template-columns: 1fr 80px 80px 32px;
-    gap: 8px;
-    align-items: center;
-    margin-bottom: 8px;
-  }
+  .special-row { display: grid; grid-template-columns: 1fr 80px 80px 32px; gap: 8px; align-items: center; margin-bottom: 8px; }
   .special-row input { margin: 0; }
   .rm { background: none; border: none; color: var(--ink-faint); cursor: pointer; font-size: 18px; line-height: 1; padding: 0 4px; transition: color 0.15s; }
   .rm:hover { color: var(--red-deep); }
-  .add-row-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: var(--ink-soft);
-    background: none;
-    border: 1px dashed var(--border);
-    border-radius: 6px;
-    padding: 7px 14px;
-    cursor: pointer;
-    width: 100%;
-    justify-content: center;
-    margin-top: 8px;
-    transition: all 0.15s;
-  }
+  .add-row-btn { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-soft); background: none; border: 1px dashed var(--border); border-radius: 6px; padding: 7px 14px; cursor: pointer; width: 100%; justify-content: center; margin-top: 8px; transition: all 0.15s; }
   .add-row-btn:hover { border-color: var(--gold); color: var(--gold); }
 
-  /* ── TAGS (VIPs / 86s) ── */
   .tag-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
-  .tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    background: var(--gold-pale);
-    border: 1px solid #e0c98a;
-    border-radius: 100px;
-    padding: 3px 10px 3px 12px;
-    font-size: 13px;
-    color: var(--gold);
-  }
+  .tag { display: inline-flex; align-items: center; gap: 5px; background: var(--gold-pale); border: 1px solid #e0c98a; border-radius: 100px; padding: 3px 10px 3px 12px; font-size: 13px; color: var(--gold); }
   .tag button { background: none; border: none; cursor: pointer; color: var(--gold); font-size: 15px; line-height: 1; padding: 0; opacity: 0.6; }
   .tag button:hover { opacity: 1; }
   .tag-input-row { display: flex; gap: 8px; }
-  .tag-add-btn {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    padding: 8px 16px;
-    background: var(--ink);
-    color: var(--cream);
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background 0.15s;
-  }
+  .tag-add-btn { font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 8px 16px; background: var(--ink); color: var(--cream); border: none; border-radius: 6px; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
   .tag-add-btn:hover { background: var(--ink-mid); }
 
-  /* ── CLOSING STATUS GRID ── */
   .close-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .close-card {
-    border: 1px solid var(--border-light);
-    border-radius: 8px;
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: #fff;
-  }
+  .close-card { border: 1px solid var(--border-light); border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; background: #fff; }
   .close-name { font-size: 13px; color: var(--ink); }
 
-  /* ── PREVIEW ── */
-  .preview-box {
-    font-family: 'DM Mono', monospace;
-    font-size: 12.5px;
-    line-height: 1.75;
-    background: var(--ink);
-    color: #c9b99f;
-    border-radius: 8px;
-    padding: 24px 28px;
-    white-space: pre-wrap;
-    max-height: 520px;
-    overflow-y: auto;
-  }
+  .preview-box { font-family: 'DM Mono', monospace; font-size: 12.5px; line-height: 1.75; background: var(--ink); color: #c9b99f; border-radius: 8px; padding: 24px 28px; white-space: pre-wrap; max-height: 520px; overflow-y: auto; }
   .preview-box .hi-gold { color: var(--gold-light); }
 
-  /* ── BUTTONS ── */
-  .btn-primary {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    font-weight: 500;
-    padding: 11px 24px;
-    background: var(--ink);
-    color: var(--cream);
-    border: none;
-    border-radius: 7px;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
+  .btn-primary { display: inline-flex; align-items: center; gap: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; padding: 11px 24px; background: var(--ink); color: var(--cream); border: none; border-radius: 7px; cursor: pointer; transition: background 0.15s; }
   .btn-primary:hover { background: var(--gold); }
-  .btn-secondary {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    padding: 11px 24px;
-    background: #fff;
-    color: var(--ink);
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
-  }
+  .btn-secondary { display: inline-flex; align-items: center; gap: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; padding: 11px 24px; background: #fff; color: var(--ink); border: 1px solid var(--border); border-radius: 7px; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
   .btn-secondary:hover { border-color: var(--gold); background: var(--gold-pale); }
   .btn-row { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
 
-  /* ── DIVIDER ── */
   .divider { height: 1px; background: var(--border-light); margin: 16px 0; }
-
-  /* ── STATUS BADGE ── */
   .badge-open { display: inline-block; font-size: 10px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 100px; background: var(--green-pale); color: var(--green-deep); }
 
-  /* ── SCROLL ANIM ── */
   .section { animation: fadeUp 0.3s ease both; }
   @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
-  /* stagger children */
   .panel.active .section:nth-child(1) { animation-delay: 0.02s; }
   .panel.active .section:nth-child(2) { animation-delay: 0.06s; }
   .panel.active .section:nth-child(3) { animation-delay: 0.10s; }
@@ -493,142 +228,40 @@
   .panel.active .section:nth-child(8) { animation-delay: 0.30s; }
   .panel.active .section:nth-child(9) { animation-delay: 0.34s; }
 
-  /* ── NOTICE ── */
-  .notice {
-    background: var(--gold-pale);
-    border: 1px solid #e0c98a;
-    border-left: 3px solid var(--gold);
-    border-radius: 0 6px 6px 0;
-    padding: 10px 16px;
-    font-size: 13px;
-    color: var(--gold);
-    margin-bottom: 16px;
-  }
+  .notice { background: var(--gold-pale); border: 1px solid #e0c98a; border-left: 3px solid var(--gold); border-radius: 0 6px 6px 0; padding: 10px 16px; font-size: 13px; color: var(--gold); margin-bottom: 16px; }
   .spacer { height: 10px; }
 
-  /* Eighty six tag */
-  .tag-86 {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    background: var(--red-pale);
-    border: 1px solid #e8c0c0;
-    border-radius: 100px;
-    padding: 3px 10px 3px 12px;
-    font-size: 13px;
-    color: var(--red-deep);
-  }
+  .tag-86 { display: inline-flex; align-items: center; gap: 5px; background: var(--red-pale); border: 1px solid #e8c0c0; border-radius: 100px; padding: 3px 10px 3px 12px; font-size: 13px; color: var(--red-deep); }
   .tag-86 button { background: none; border: none; cursor: pointer; color: var(--red-deep); font-size: 15px; line-height: 1; padding: 0; opacity: 0.6; }
   .tag-86 button:hover { opacity: 1; }
 
-  /* Col headers for specials */
-  .special-header {
-    display: grid;
-    grid-template-columns: 1fr 80px 80px 32px;
-    gap: 8px;
-    margin-bottom: 6px;
-  }
-  .special-header span {
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: var(--ink-faint);
-  }
+  .special-header { display: grid; grid-template-columns: 1fr 80px 80px 32px; gap: 8px; margin-bottom: 6px; }
+  .special-header span { font-size: 10px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-faint); }
 
-  /* 86 row */
-  .eighty-row {
-    display: grid;
-    grid-template-columns: 1fr 32px;
-    gap: 8px;
-    margin-bottom: 8px;
-    align-items: center;
-  }
+  .eighty-row { display: grid; grid-template-columns: 1fr 32px; gap: 8px; margin-bottom: 8px; align-items: center; }
 
   @media print {
     .site-header, .tabs, .btn-row { display: none; }
     .panel { display: block !important; }
   }
 
-  .spinner {
-    width: 16px; height: 16px;
-    border: 2px solid var(--border);
-    border-top-color: var(--gold);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-  }
+  .spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  #exec-box {
-    transition: opacity 0.3s;
-  }
+  #exec-box { transition: opacity 0.3s; }
   #exec-box.loading { opacity: 0.3; }
 
-  .note-entry {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    background: var(--cream-warm);
-    border: 0.5px solid var(--border-light);
-    border-left: 3px solid var(--gold);
-    border-radius: 0 6px 6px 0;
-    padding: 8px 12px;
-    animation: fadeUp 0.2s ease both;
-  }
-  .note-meta {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--ink-faint);
-    white-space: nowrap;
-    padding-top: 1px;
-    min-width: 80px;
-  }
-  .note-text {
-    font-size: 13px;
-    color: var(--ink);
-    flex: 1;
-    line-height: 1.5;
-  }
-  .note-del {
-    background: none;
-    border: none;
-    color: var(--ink-faint);
-    cursor: pointer;
-    font-size: 16px;
-    padding: 0;
-    line-height: 1;
-    flex-shrink: 0;
-  }
+  .note-entry { display: flex; align-items: flex-start; gap: 10px; background: var(--cream-warm); border: 0.5px solid var(--border-light); border-left: 3px solid var(--gold); border-radius: 0 6px 6px 0; padding: 8px 12px; animation: fadeUp 0.2s ease both; }
+  .note-meta { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--ink-faint); white-space: nowrap; padding-top: 1px; min-width: 80px; }
+  .note-text { font-size: 13px; color: var(--ink); flex: 1; line-height: 1.5; }
+  .note-del { background: none; border: none; color: var(--ink-faint); cursor: pointer; font-size: 16px; padding: 0; line-height: 1; flex-shrink: 0; }
   .note-del:hover { color: var(--red-deep); }
-  .vip-quick {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    padding: 5px 12px;
-    border-radius: 100px;
-    border: 0.5px solid var(--border);
-    background: #fff;
-    color: var(--ink-soft);
-    cursor: pointer;
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
-  .vip-quick:hover {
-    background: var(--gold-pale);
-    border-color: var(--gold);
-    color: var(--gold);
-  }
-  .vip-quick.added {
-    background: var(--gold-pale);
-    border-color: var(--gold);
-    color: var(--gold);
-  }
 
-  .notes-empty {
-    font-size: 13px;
-    color: var(--ink-faint);
-    font-style: italic;
-    padding: 6px 0;
-  }
+  .vip-quick { font-family: 'DM Sans', sans-serif; font-size: 12px; padding: 5px 12px; border-radius: 100px; border: 0.5px solid var(--border); background: #fff; color: var(--ink-soft); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .vip-quick:hover { background: var(--gold-pale); border-color: var(--gold); color: var(--gold); }
+  .vip-quick.added { background: var(--gold-pale); border-color: var(--gold); color: var(--gold); }
+
+  .notes-empty { font-size: 13px; color: var(--ink-faint); font-style: italic; padding: 6px 0; }
 </style>
 </head>
 <body>
@@ -652,7 +285,7 @@
     <button class="tab-btn" onclick="goTab(2)"><div class="tab-num">3</div> Preview &amp; Send</button>
   </div>
 
-  <!-- ═══════════════ TAB 1: OPENING ═══════════════ -->
+  <!-- TAB 1: OPENING -->
   <div class="panel active" id="panel-0">
 
     <div class="section">
@@ -662,8 +295,20 @@
       </div>
       <div class="section-body">
         <div class="grid-3">
-          <div class="field"><div class="field-label">Date</div><input type="date" id="o-date"></div>
-          <div class="field"><div class="field-label">Manager on duty</div><input type="text" id="o-manager" placeholder="Your name"></div>
+          <div class="field">
+            <div class="field-label">Date</div>
+            <input type="date" id="o-date">
+          </div>
+          <!-- CHANGED: was "Manager on duty" text input, now "Opening Manager" select -->
+          <div class="field">
+            <div class="field-label">Opening Manager</div>
+            <select id="o-manager">
+              <option value="">— select —</option>
+              <option value="Adam Brousell">Adam Brousell</option>
+              <option value="Kelly Carrillo">Kelly Carrillo</option>
+              <option value="Caitlin Sinno">Caitlin Sinno</option>
+            </select>
+          </div>
           <div class="field">
             <div class="field-label" style="display:flex;align-items:center;justify-content:space-between">
               Weather
@@ -706,62 +351,20 @@
         <div class="section-title">Opening Tasks</div>
       </div>
       <div class="section-body">
-        <div class="check-row">
-          <div class="check-info"><div class="check-name">Update daily board &amp; pre-shift notes</div></div>
-          <div class="toggle-pair"><button class="tog yes" data-k="board" onclick="tog(this)">YES</button><button class="tog no" data-k="board" onclick="tog(this)">NO</button></div>
-        </div>
-        <div class="check-row">
-          <div class="check-info"><div class="check-name">Assign opening side work</div></div>
-          <div class="toggle-pair"><button class="tog yes" data-k="sidework" onclick="tog(this)">YES</button><button class="tog no" data-k="sidework" onclick="tog(this)">NO</button></div>
-        </div>
-        <div class="check-row">
-          <div class="check-info"><div class="check-name">Print and assign floor plan</div></div>
-          <div class="toggle-pair"><button class="tog yes" data-k="floorplan" onclick="tog(this)">YES</button><button class="tog no" data-k="floorplan" onclick="tog(this)">NO</button></div>
-        </div>
-        <div class="check-row">
-          <div class="check-info"><div class="check-name">Bank counted $600 &amp; tips distributed</div></div>
-          <div class="toggle-pair"><button class="tog yes" data-k="bank" onclick="tog(this)">YES</button><button class="tog no" data-k="bank" onclick="tog(this)">NO</button></div>
-        </div>
-        <div class="check-row">
-          <div class="check-info"><div class="check-name">Water flowers</div><div class="check-sub">Bar · front room · back room · vestibule</div></div>
-          <div class="toggle-pair"><button class="tog yes" data-k="flowers" onclick="tog(this)">YES</button><button class="tog no" data-k="flowers" onclick="tog(this)">NO</button></div>
-        </div>
-        <div class="check-row">
-          <div class="check-info"><div class="check-name">Change water in bud vases</div></div>
-          <div class="toggle-pair"><button class="tog yes" data-k="vases" onclick="tog(this)">YES</button><button class="tog no" data-k="vases" onclick="tog(this)">NO</button></div>
-        </div>
-        <div class="check-row">
-          <div class="check-info"><div class="check-name">Check tables 26–29 are in a straight line</div></div>
-          <div class="toggle-pair"><button class="tog yes" data-k="tables" onclick="tog(this)">YES</button><button class="tog no" data-k="tables" onclick="tog(this)">NO</button></div>
-        </div>
-        <div class="check-row">
-          <div class="check-info"><div class="check-name">2 Fête d'Or in front ice bucket</div></div>
-          <div class="toggle-pair"><button class="tog yes" data-k="fete" onclick="tog(this)">YES</button><button class="tog no" data-k="fete" onclick="tog(this)">NO</button></div>
-        </div>
-        <div class="check-row">
-          <div class="check-info"><div class="check-name">Blow down back patio and out front</div></div>
-          <div class="toggle-pair"><button class="tog yes" data-k="blowdown" onclick="tog(this)">YES</button><button class="tog no" data-k="blowdown" onclick="tog(this)">NO</button></div>
-        </div>
-        <div class="check-row">
-          <div class="check-info"><div class="check-name">Perimeter walk</div><div class="check-sub">Check trash · garbage gate closed · wipe front chairs</div></div>
-          <div class="toggle-pair"><button class="tog yes" data-k="perimeter" onclick="tog(this)">YES</button><button class="tog no" data-k="perimeter" onclick="tog(this)">NO</button></div>
-        </div>
-        <div class="check-row">
-          <div class="check-info"><div class="check-name">Atmosphere set (10 min before open)</div><div class="check-sub">Lights dimmed · lamps on · candles lit · music at 60</div></div>
-          <div class="toggle-pair"><button class="tog yes" data-k="atmosphere" onclick="tog(this)">YES</button><button class="tog no" data-k="atmosphere" onclick="tog(this)">NO</button></div>
-        </div>
-        <div class="check-row">
-          <div class="check-info"><div class="check-name">Confirm bar set-up and bar wiped down</div></div>
-          <div class="toggle-pair"><button class="tog yes" data-k="bar-setup" onclick="tog(this)">YES</button><button class="tog no" data-k="bar-setup" onclick="tog(this)">NO</button></div>
-        </div>
-        <div class="check-row">
-          <div class="check-info"><div class="check-name">Confirm service station set up</div></div>
-          <div class="toggle-pair"><button class="tog yes" data-k="station" onclick="tog(this)">YES</button><button class="tog no" data-k="station" onclick="tog(this)">NO</button></div>
-        </div>
-        <div class="check-row">
-          <div class="check-info"><div class="check-name">Tables polished · restaurant set for success</div></div>
-          <div class="toggle-pair"><button class="tog yes" data-k="polished" onclick="tog(this)">YES</button><button class="tog no" data-k="polished" onclick="tog(this)">NO</button></div>
-        </div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Update daily board &amp; pre-shift notes</div></div><div class="toggle-pair"><button class="tog yes" data-k="board" onclick="tog(this)">YES</button><button class="tog no" data-k="board" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Assign opening side work</div></div><div class="toggle-pair"><button class="tog yes" data-k="sidework" onclick="tog(this)">YES</button><button class="tog no" data-k="sidework" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Print and assign floor plan</div></div><div class="toggle-pair"><button class="tog yes" data-k="floorplan" onclick="tog(this)">YES</button><button class="tog no" data-k="floorplan" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Bank counted $600 &amp; tips distributed</div></div><div class="toggle-pair"><button class="tog yes" data-k="bank" onclick="tog(this)">YES</button><button class="tog no" data-k="bank" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Water flowers</div><div class="check-sub">Bar · front room · back room · vestibule</div></div><div class="toggle-pair"><button class="tog yes" data-k="flowers" onclick="tog(this)">YES</button><button class="tog no" data-k="flowers" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Change water in bud vases</div></div><div class="toggle-pair"><button class="tog yes" data-k="vases" onclick="tog(this)">YES</button><button class="tog no" data-k="vases" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Check tables 26–29 are in a straight line</div></div><div class="toggle-pair"><button class="tog yes" data-k="tables" onclick="tog(this)">YES</button><button class="tog no" data-k="tables" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">2 Fête d'Or in front ice bucket</div></div><div class="toggle-pair"><button class="tog yes" data-k="fete" onclick="tog(this)">YES</button><button class="tog no" data-k="fete" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Blow down back patio and out front</div></div><div class="toggle-pair"><button class="tog yes" data-k="blowdown" onclick="tog(this)">YES</button><button class="tog no" data-k="blowdown" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Perimeter walk</div><div class="check-sub">Check trash · garbage gate closed · wipe front chairs</div></div><div class="toggle-pair"><button class="tog yes" data-k="perimeter" onclick="tog(this)">YES</button><button class="tog no" data-k="perimeter" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Atmosphere set (10 min before open)</div><div class="check-sub">Lights dimmed · lamps on · candles lit · music at 60</div></div><div class="toggle-pair"><button class="tog yes" data-k="atmosphere" onclick="tog(this)">YES</button><button class="tog no" data-k="atmosphere" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Confirm bar set-up and bar wiped down</div></div><div class="toggle-pair"><button class="tog yes" data-k="bar-setup" onclick="tog(this)">YES</button><button class="tog no" data-k="bar-setup" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Confirm service station set up</div></div><div class="toggle-pair"><button class="tog yes" data-k="station" onclick="tog(this)">YES</button><button class="tog no" data-k="station" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Tables polished · restaurant set for success</div></div><div class="toggle-pair"><button class="tog yes" data-k="polished" onclick="tog(this)">YES</button><button class="tog no" data-k="polished" onclick="tog(this)">NO</button></div></div>
       </div>
     </div>
 
@@ -778,28 +381,20 @@
         <button class="add-row-btn" onclick="addOpeningSpecial()">+ Add special</button>
         <div class="divider"></div>
         <div class="check-row">
-          <div class="check-info">
-            <div class="check-name">Counts entered into Toast POS</div>
-          </div>
+          <div class="check-info"><div class="check-name">Counts entered into Toast POS</div></div>
           <div class="toggle-pair"><button class="tog yes" data-k="specials-toast" onclick="tog(this)">YES</button><button class="tog no" data-k="specials-toast" onclick="tog(this)">NO</button></div>
         </div>
       </div>
     </div>
 
-        <div class="section">
+    <div class="section">
       <div class="section-head">
         <div class="section-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
         <div class="section-title">Pre-Shift</div>
       </div>
       <div class="section-body">
-        <div class="check-row">
-          <div class="check-info"><div class="check-name">Uniform check completed</div></div>
-          <div class="toggle-pair"><button class="tog yes" data-k="uniform" onclick="tog(this)">YES</button><button class="tog no" data-k="uniform" onclick="tog(this)">NO</button></div>
-        </div>
-        <div class="check-row">
-          <div class="check-info"><div class="check-name">F&amp;B changes reviewed with staff</div></div>
-          <div class="toggle-pair"><button class="tog yes" data-k="fb-review" onclick="tog(this)">YES</button><button class="tog no" data-k="fb-review" onclick="tog(this)">NO</button></div>
-        </div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Uniform check completed</div></div><div class="toggle-pair"><button class="tog yes" data-k="uniform" onclick="tog(this)">YES</button><button class="tog no" data-k="uniform" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">F&amp;B changes reviewed with staff</div></div><div class="toggle-pair"><button class="tog yes" data-k="fb-review" onclick="tog(this)">YES</button><button class="tog no" data-k="fb-review" onclick="tog(this)">NO</button></div></div>
         <div class="divider"></div>
         <div class="field">
           <div class="field-label">Pre-shift notes</div>
@@ -813,7 +408,7 @@
     </div>
   </div>
 
-  <!-- ═══════════════ TAB 2: SHIFT ═══════════════ -->
+  <!-- TAB 2: SHIFT -->
   <div class="panel" id="panel-1">
 
     <div class="section">
@@ -823,22 +418,10 @@
       </div>
       <div class="section-body">
         <div class="grid-4" style="margin-bottom:16px">
-          <div class="metric-card">
-            <div class="metric-label">Net Sales</div>
-            <div class="metric-val"><input type="text" id="s-sales" placeholder="$0.00"></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">Check Avg</div>
-            <div class="metric-val"><input type="text" id="s-avg" placeholder="$0.00"></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">Covers</div>
-            <div class="metric-val"><input type="number" id="s-covers" placeholder="0"></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">Resy</div>
-            <div class="metric-val"><input type="number" id="s-resy" placeholder="0"></div>
-          </div>
+          <div class="metric-card"><div class="metric-label">Net Sales</div><div class="metric-val"><input type="text" id="s-sales" placeholder="$0.00"></div></div>
+          <div class="metric-card"><div class="metric-label">Check Avg</div><div class="metric-val"><input type="text" id="s-avg" placeholder="$0.00"></div></div>
+          <div class="metric-card"><div class="metric-label">Covers</div><div class="metric-val"><input type="number" id="s-covers" placeholder="0"></div></div>
+          <div class="metric-card"><div class="metric-label">Resy</div><div class="metric-val"><input type="number" id="s-resy" placeholder="0"></div></div>
         </div>
         <div class="field" style="margin-top:14px;max-width:320px">
           <div class="field-label">Closing manager</div>
@@ -882,7 +465,6 @@
           <button class="vip-quick" onclick="quickVip('James Walker')">James Walker</button>
           <button class="vip-quick" onclick="quickVip('Denise Natsis')">Denise Natsis</button>
           <button class="vip-quick" onclick="quickVip('Glen Fogel')">Glen Fogel</button>
-          <button class="vip-quick" onclick="quickVip('Bill Baccigalupi')">Bill Baccigalupi</button>
           <button class="vip-quick" onclick="quickVip('Katie Engel')">Katie Engel</button>
           <button class="vip-quick" onclick="quickVip('Julio')">Julio — Somm</button>
           <button class="vip-quick" onclick="quickVip('John Gorga')">John Gorga</button>
@@ -1018,10 +600,7 @@
         <div class="field-label" style="margin:12px 0 8px">Fireplace</div>
         <div class="check-row" style="margin-bottom:16px">
           <div class="check-info"><div class="check-name">Fireplace off</div></div>
-          <div class="toggle-pair">
-            <button class="tog yes" data-k="cl-fire" onclick="tog(this)">Done</button>
-            <button class="tog no" data-k="cl-fire" onclick="tog(this)">N/A</button>
-          </div>
+          <div class="toggle-pair"><button class="tog yes" data-k="cl-fire" onclick="tog(this)">Done</button><button class="tog no" data-k="cl-fire" onclick="tog(this)">N/A</button></div>
         </div>
 
         <div class="divider"></div>
@@ -1062,10 +641,8 @@
             <input type="text" id="cl-notes" placeholder="N/A if nothing to add">
           </div>
         </div>
-
       </div>
     </div>
-
 
     <div class="btn-row">
       <button class="btn-primary" onclick="generate();goTab(2)">Generate Email Preview →</button>
@@ -1074,26 +651,17 @@
     </div>
   </div>
 
-  <!-- ═══════════════ TAB 3: PREVIEW ═══════════════ -->
+  <!-- TAB 3: PREVIEW -->
   <div class="panel" id="panel-2">
 
     <div class="section" id="exec-section">
       <div class="section-head">
         <div class="section-icon"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
         <div class="section-title">Executive Summary</div>
-        <div style="margin-left:auto">
-          <span style="font-size:11px;color:var(--ink-faint);font-style:italic">AI generated</span>
-        </div>
+        <div style="margin-left:auto"><span style="font-size:11px;color:var(--ink-faint);font-style:italic">AI generated</span></div>
       </div>
       <div class="section-body">
-        <div id="exec-box" style="
-          font-family:'Cormorant Garamond',serif;
-          font-size:17px;
-          line-height:1.75;
-          color:var(--ink);
-          min-height:64px;
-          padding:4px 0;
-        ">
+        <div id="exec-box" style="font-family:'Cormorant Garamond',serif;font-size:17px;line-height:1.75;color:var(--ink);min-height:64px;padding:4px 0;">
           <span style="color:var(--ink-faint);font-style:italic;font-size:15px">Generate your report below to create an AI summary.</span>
         </div>
         <div id="exec-loading" style="display:none;align-items:center;gap:10px;margin-top:8px">
@@ -1126,750 +694,520 @@
 </div>
 
 <script>
-// ── State ──
 var state = {};
 var vips = [];
-
 var eighties = [];
 
-// ── Tabs ──
+// Opening checklist carryforward — persists until midnight via date-keyed localStorage
+function openingStorageKey(){
+  var t=new Date();
+  var mm=String(t.getMonth()+1).padStart(2,'0');
+  var dd=String(t.getDate()).padStart(2,'0');
+  return'rpi_opening_'+t.getFullYear()+'-'+mm+'-'+dd;
+}
+
+function saveOpeningState(){
+  try{localStorage.setItem(openingStorageKey(),JSON.stringify(state));}catch(e){}
+}
+
+function loadOpeningState(){
+  try{
+    var raw=localStorage.getItem(openingStorageKey());
+    if(!raw)return;
+    var saved=JSON.parse(raw);
+    Object.keys(saved).forEach(function(k){
+      state[k]=saved[k];
+      document.querySelectorAll('.tog[data-k="'+k+'"]').forEach(function(btn){
+        btn.classList.remove('on');
+        if((saved[k]==='YES'&&btn.classList.contains('yes'))||(saved[k]==='NO'&&btn.classList.contains('no'))){
+          btn.classList.add('on');
+        }
+      });
+    });
+  }catch(e){}
+}
+
 function goTab(n) {
-  document.querySelectorAll('.panel').forEach(function(p, i) {
-    p.classList.toggle('active', i === n);
+  document.querySelectorAll('.panel').forEach(function(p,i){p.classList.toggle('active',i===n);});
+  document.querySelectorAll('.tab-btn').forEach(function(b,i){b.classList.toggle('active',i===n);});
+  document.querySelectorAll('.prog-dot').forEach(function(d,i){
+    d.classList.remove('active','done');
+    if(i<n)d.classList.add('done');
+    if(i===n)d.classList.add('active');
   });
-  document.querySelectorAll('.tab-btn').forEach(function(b, i) {
-    b.classList.toggle('active', i === n);
-  });
-  document.querySelectorAll('.prog-dot').forEach(function(d, i) {
-    d.classList.remove('active', 'done');
-    if (i < n) d.classList.add('done');
-    if (i === n) d.classList.add('active');
-  });
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-  if (n === 2) { generateExec(); }
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(n===2){generateExec();}
 }
 
-// ── Toggles ──
-function tog(btn) {
-  var k = btn.dataset.k;
-  var pair = btn.closest('.toggle-pair');
-  pair.querySelectorAll('.tog').forEach(function(b) { b.classList.remove('on'); });
+function tog(btn){
+  var k=btn.dataset.k;
+  var pair=btn.closest('.toggle-pair');
+  pair.querySelectorAll('.tog').forEach(function(b){b.classList.remove('on');});
   btn.classList.add('on');
-  state[k] = btn.classList.contains('yes') ? 'YES' : 'NO';
+  state[k]=btn.classList.contains('yes')?'YES':'NO';
+  saveOpeningState();
 }
 
-function getV(k) { return state[k] || '—'; }
+function getV(k){return state[k]||'—';}
 
-// ── VIPs ──
-function quickVip(name) {
-  if (vips.indexOf(name) === -1) {
-    vips.push(name);
-    renderVips();
-  }
-  // Visual feedback on button
-  var btns = document.querySelectorAll('.vip-quick');
-  btns.forEach(function(b) {
-    if (b.textContent.trim() === name || b.getAttribute('onclick').indexOf(name) !== -1) {
+function quickVip(name){
+  if(vips.indexOf(name)===-1){vips.push(name);renderVips();}
+  document.querySelectorAll('.vip-quick').forEach(function(b){
+    if(b.getAttribute('onclick').indexOf(name)!==-1){
       b.classList.add('added');
-      setTimeout(function() { b.classList.remove('added'); }, 1500);
+      setTimeout(function(){b.classList.remove('added');},1500);
     }
   });
 }
 
-function addVip() {
-  var inp = document.getElementById('vip-input');
-  var v = inp.value.trim();
-  if (!v) return;
-  vips.push(v);
-  inp.value = '';
-  renderVips();
+function addVip(){
+  var inp=document.getElementById('vip-input');
+  var v=inp.value.trim();
+  if(!v)return;
+  vips.push(v);inp.value='';renderVips();
 }
 
-function removeVip(i) { vips.splice(i, 1); renderVips(); }
+function removeVip(i){vips.splice(i,1);renderVips();}
 
-function renderVips() {
-  document.getElementById('vip-tags').innerHTML = vips.map(function(v, i) {
-    return '<span class="tag">' + v + '<button onclick="removeVip(' + i + ')" aria-label="Remove">×</button></span>';
+function renderVips(){
+  document.getElementById('vip-tags').innerHTML=vips.map(function(v,i){
+    return '<span class="tag">'+v+'<button onclick="removeVip('+i+')" aria-label="Remove">×</button></span>';
   }).join('');
 }
 
-// ── Specials (managed via Opening Checklist) ──
+function addEighty(){eighties.push('');renderEighties();}
 
-// ── 86s ──
-function addEighty() {
-  eighties.push('');
-  renderEighties();
-}
-
-function renderEighties() {
-  document.getElementById('eighty-list').innerHTML = eighties.map(function(e, i) {
-    return '<div class="eighty-row">' +
-      '<input type="text" placeholder="Bin No., name, vintage..." value="' + (e||'') + '" oninput="eighties[' + i + ']=this.value">' +
-      '<button class="rm" onclick="eighties.splice(' + i + ',1);renderEighties()" aria-label="Remove">×</button>' +
-      '</div>';
+function renderEighties(){
+  document.getElementById('eighty-list').innerHTML=eighties.map(function(e,i){
+    return '<div class="eighty-row"><input type="text" placeholder="Bin No., name, vintage..." value="'+(e||'')+'" oninput="eighties['+i+']=this.value"><button class="rm" onclick="eighties.splice('+i+',1);renderEighties()" aria-label="Remove">×</button></div>';
   }).join('');
 }
 
-// ── Date format ──
-function fmtDate(v) {
-  if (!v) return '';
-  var parts = v.split('-');
-  var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  var d = new Date(+parts[0], +parts[1] - 1, +parts[2]);
-  var day = +parts[2];
-  var suffix = 'th';
-  if (day % 100 < 11 || day % 100 > 13) {
-    if (day % 10 === 1) suffix = 'st';
-    else if (day % 10 === 2) suffix = 'nd';
-    else if (day % 10 === 3) suffix = 'rd';
+function fmtDate(v){
+  if(!v)return'';
+  var parts=v.split('-');
+  var days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var d=new Date(+parts[0],+parts[1]-1,+parts[2]);
+  var day=+parts[2];
+  var suffix='th';
+  if(day%100<11||day%100>13){
+    if(day%10===1)suffix='st';
+    else if(day%10===2)suffix='nd';
+    else if(day%10===3)suffix='rd';
   }
-  return days[d.getDay()] + ' ' + months[d.getMonth()] + ' ' + day + suffix + ', ' + parts[0];
+  return days[d.getDay()]+' '+months[d.getMonth()]+' '+day+suffix+', '+parts[0];
 }
 
-// ── Generate ──
-function generate() {
-  var date    = document.getElementById('o-date').value;
-  var mgr     = document.getElementById('o-manager').value || 'Manager';
-  var closer  = document.getElementById('s-closer').value || '';
-  var wthr    = document.getElementById('o-weather').value || '—';
-  var sales   = document.getElementById('s-sales').value || '—';
-  var avg     = document.getElementById('s-avg').value || '—';
-  var cvrs    = document.getElementById('s-covers').value || '—';
-  var resy    = document.getElementById('s-resy').value || '—';
-  var foh     = document.getElementById('s-foh').value || '';
-  var foodN   = document.getElementById('s-food').value || '';
-  var bev     = document.getElementById('s-bev').value || '';
-  var emp     = document.getElementById('s-emp').value || '';
-  var hire    = document.getElementById('s-hire').value || '';
-  var batch   = document.getElementById('s-batch').value || '';
-  var maint   = document.getElementById('s-maint').value || '';
-  var cashVar = document.getElementById('cl-cash-variance').value || '';
-  var clNotes = document.getElementById('cl-notes').value || '';
-  var signoff = closer || mgr;
-
-  var lines = [];
-
-  // Header
-  lines.push('Shift: ' + fmtDate(date));
-  lines.push('- Net Sales: $' + sales);
-  lines.push('- Check Average: $' + avg);
-  lines.push('- Covers: ' + cvrs + '  Resy: ' + resy);
-  lines.push('- Weather: ' + wthr);
-
-  // Narrative paragraph — placeholder replaced by exec summary after AI generates
+function generate(){
+  var date=document.getElementById('o-date').value;
+  var mgr=document.getElementById('o-manager').value||'Manager';
+  var closer=document.getElementById('s-closer').value||'';
+  var wthr=document.getElementById('o-weather').value||'—';
+  var sales=document.getElementById('s-sales').value||'—';
+  var avg=document.getElementById('s-avg').value||'—';
+  var cvrs=document.getElementById('s-covers').value||'—';
+  var resy=document.getElementById('s-resy').value||'—';
+  var foh=document.getElementById('s-foh').value||'';
+  var foodN=document.getElementById('s-food').value||'';
+  var bev=document.getElementById('s-bev').value||'';
+  var emp=document.getElementById('s-emp').value||'';
+  var hire=document.getElementById('s-hire').value||'';
+  var batch=document.getElementById('s-batch').value||'';
+  var maint=document.getElementById('s-maint').value||'';
+  var cashVar=document.getElementById('cl-cash-variance').value||'';
+  var clNotes=document.getElementById('cl-notes').value||'';
+  var signoff=closer||mgr;
+  var lines=[];
+  lines.push('Shift: '+fmtDate(date));
+  lines.push('- Net Sales: $'+sales);
+  lines.push('- Check Average: $'+avg);
+  lines.push('- Covers: '+cvrs+'  Resy: '+resy);
+  lines.push('- Weather: '+wthr);
   lines.push('');
   lines.push('{{NARRATIVE}}');
-
-  // Closing check — compact 4-line format matching actual email
   lines.push('');
   lines.push('Closing Check:');
   lines.push('');
-  lines.push('- Polishing area clean: ' + getV('cl-sw-polish'));
-  lines.push('- Perimeter walked: '     + getV('cl-perimeter'));
-  lines.push('- Doors Locked: '         + getV('cl-d-front'));
-  lines.push('- Liquor Cage Locked: '   + getV('cl-d-wine'));
-
-  // VIPs
+  lines.push('- Polishing area clean: '+getV('cl-sw-polish'));
+  lines.push('- Perimeter walked: '+getV('cl-perimeter'));
+  lines.push('- Doors Locked: '+getV('cl-d-front'));
+  lines.push('- Liquor Cage Locked: '+getV('cl-d-wine'));
   lines.push('');
   lines.push('VIPs: ');
-  if (vips.length) { vips.forEach(function(v) { lines.push(v); }); }
-  else { lines.push('N/A'); }
-
-  // FOH
+  if(vips.length){vips.forEach(function(v){lines.push(v);});}else{lines.push('N/A');}
   lines.push('');
   lines.push('FOH: ');
-  if (foh) lines.push(foh);
-
-  // Food
+  if(foh)lines.push(foh);
   lines.push('');
   lines.push('Food:');
-  if (foodN) lines.push(foodN);
-  openingSpecials.forEach(function(s) {
-    if (!s.name) return;
-    if (s.eightysixed) {
-      lines.push('-' + s.name + ': 86&#39;d');
-    } else if (s.sold) {
-      lines.push('-' + s.name + ': Sold ' + s.sold + ' out of ' + (s.count || '?'));
-    }
+  if(foodN)lines.push(foodN);
+  openingSpecials.forEach(function(s){
+    if(!s.name)return;
+    if(s.eightysixed){lines.push('-'+s.name+': 86\'d');}
+    else if(s.sold){lines.push('-'+s.name+': Sold '+s.sold+' out of '+(s.count||'?'));}
   });
-  shiftExtras.forEach(function(s) {
-    if (!s.name) return;
-    lines.push('-' + s.name + ': sold ' + (s.sold || '?') + ' out of ' + (s.avail || '?'));
+  shiftExtras.forEach(function(s){
+    if(!s.name)return;
+    lines.push('-'+s.name+': sold '+(s.sold||'?')+' out of '+(s.avail||'?'));
   });
-
-  // Beverage
   lines.push('');
   lines.push('Beverage: ');
-  if (bev) lines.push(bev);
-
-  // Employees
+  if(bev)lines.push(bev);
   lines.push('');
   lines.push('Employees:     ');
-  if (emp) lines.push(emp);
-
-  // Interviews
+  if(emp)lines.push(emp);
   lines.push('');
   lines.push('Interviews/New hires:');
-  if (hire) lines.push(hire);
-
-  // 86s
+  if(hire)lines.push(hire);
   lines.push('');
   lines.push("86's :");
   lines.push('');
-  if (eighties.filter(Boolean).length) {
-    eighties.forEach(function(e) { if (e) lines.push("86'd " + e); });
-  } else { lines.push('N/A'); }
-
-  // Batch
+  if(eighties.filter(Boolean).length){eighties.forEach(function(e){if(e)lines.push("86'd "+e);});}else{lines.push('N/A');}
   lines.push('');
   lines.push('Batch:');
-  if (batch) lines.push(batch);
-
-  // Maintenance
+  if(batch)lines.push(batch);
   lines.push('');
   lines.push('Maintenance/orders:');
-  if (maint) lines.push(maint);
-
-  // Cash variance if noted
-  if (cashVar && cashVar.toLowerCase() !== 'n/a' && cashVar !== '') {
-    lines.push('');
-    lines.push('Cash overage/underage: ' + cashVar);
-  }
-
-  // Closing notes if any
-  if (clNotes && clNotes.toLowerCase() !== 'n/a' && clNotes !== '') {
-    lines.push('');
-    lines.push(clNotes);
-  }
-
-  // Sign-off
-  lines.push('');
-  lines.push('');
+  if(maint)lines.push(maint);
+  if(cashVar&&cashVar.toLowerCase()!=='n/a'&&cashVar!==''){lines.push('');lines.push('Cash overage/underage: '+cashVar);}
+  if(clNotes&&clNotes.toLowerCase()!=='n/a'&&clNotes!==''){lines.push('');lines.push(clNotes);}
+  lines.push('');lines.push('');
   lines.push('RPI Purchase & Maintenance Log');
   lines.push('https://docs.google.com/spreadsheets/d/1KykcMECKFuFxw9688164cfa8CwPLFLHc0MTWFsCWgN0/edit?gid=0#gid=0');
   lines.push('');
   lines.push('Thank you,');
   lines.push('');
   lines.push(signoff);
-
-  document.getElementById('preview-box').textContent = lines.join('\n');
+  document.getElementById('preview-box').textContent=lines.join('\n');
   cfSaveShift();
 }
 
-function copyEmail() {
-  var txt = document.getElementById('preview-box').textContent;
-  // If AI summary hasn't loaded yet, replace placeholder with shift notes as fallback
-  if (txt.indexOf('{{NARRATIVE}}') !== -1) {
-    var fallback = shiftNotes.length ? shiftNotes.map(function(n){return n.text;}).join(' ') : '';
-    txt = txt.replace('\n{{NARRATIVE}}', fallback ? '\n' + fallback : '');
+function copyEmail(){
+  var txt=document.getElementById('preview-box').textContent;
+  if(txt.indexOf('{{NARRATIVE}}')!==-1){
+    var fallback=shiftNotes.length?shiftNotes.map(function(n){return n.text;}).join(' '):'';
+    txt=txt.replace('\n{{NARRATIVE}}',fallback?'\n'+fallback:'');
   }
-  navigator.clipboard.writeText(txt).then(function() {
-    var b = document.querySelector('.btn-primary');
-    var orig = b.textContent;
-    b.textContent = '✓ Copied!';
-    setTimeout(function() { b.textContent = orig; }, 2200);
+  navigator.clipboard.writeText(txt).then(function(){
+    var b=document.querySelector('.btn-primary');var orig=b.textContent;
+    b.textContent='✓ Copied!';setTimeout(function(){b.textContent=orig;},2200);
   });
 }
 
-function copyExec() {
-  var txt = document.getElementById('exec-box').innerText;
-  navigator.clipboard.writeText(txt).then(function() {
-    var b = document.getElementById('exec-copy-btn');
-    b.textContent = '✓ Copied!';
-    setTimeout(function() { b.textContent = 'Copy Summary'; }, 2200);
+function copyExec(){
+  var txt=document.getElementById('exec-box').innerText;
+  navigator.clipboard.writeText(txt).then(function(){
+    var b=document.getElementById('exec-copy-btn');
+    b.textContent='✓ Copied!';setTimeout(function(){b.textContent='Copy Summary';},2200);
   });
 }
 
-function buildContext() {
-  var date = document.getElementById('o-date').value;
-  var mgr  = document.getElementById('o-manager').value || 'the manager';
-  var opener = document.getElementById('o-manager') ? document.getElementById('o-manager').value : '';
-  var closer = document.getElementById('s-closer') ? document.getElementById('s-closer').value : '';
-  var wthr = document.getElementById('o-weather').value || '';
-  var sales = document.getElementById('s-sales').value || '';
-  var avg   = document.getElementById('s-avg').value || '';
-  var cvrs  = document.getElementById('s-covers').value || '';
-  var resy  = document.getElementById('s-resy').value || '';
-  var summ  = shiftNotes.map(function(n){ return n.text; }).join(' ');
-  var foh   = document.getElementById('s-foh').value || '';
-  var foodN = document.getElementById('s-food').value || '';
-  var bev   = document.getElementById('s-bev').value || '';
-  var emp   = document.getElementById('s-emp').value || '';
-  var hire  = document.getElementById('s-hire').value || '';
-  var maint = document.getElementById('s-maint').value || '';
-  var closing = [
-    'Bar clean: ' + getV('cl-bar-clean'),
-    'Bar stocked: ' + getV('cl-bar-stock'),
-    'Ice wells burnt: ' + getV('cl-bar-ice'),
-    'Side work done: ' + getV('cl-sw-dining'),
-    'Candles out: ' + getV('cl-candle-out'),
-    'Fireplace: ' + getV('cl-fire'),
-    'Lamps charging: ' + getV('cl-lamp-in'),
-    'Tips/safe: ' + getV('cl-sc-safe'),
-    'Bar bank $600: ' + getV('cl-sc-bank'),
-    'All doors locked: ' + getV('cl-d-front'),
-    'Cash variance: ' + (document.getElementById('cl-cash-variance').value || 'N/A')
+function buildContext(){
+  var date=document.getElementById('o-date').value;
+  var mgr=document.getElementById('o-manager').value||'the manager';
+  var opener=document.getElementById('o-manager').value;
+  var closer=document.getElementById('s-closer').value;
+  var wthr=document.getElementById('o-weather').value||'';
+  var sales=document.getElementById('s-sales').value||'';
+  var avg=document.getElementById('s-avg').value||'';
+  var cvrs=document.getElementById('s-covers').value||'';
+  var resy=document.getElementById('s-resy').value||'';
+  var summ=shiftNotes.map(function(n){return n.text;}).join(' ');
+  var foh=document.getElementById('s-foh').value||'';
+  var foodN=document.getElementById('s-food').value||'';
+  var bev=document.getElementById('s-bev').value||'';
+  var emp=document.getElementById('s-emp').value||'';
+  var hire=document.getElementById('s-hire').value||'';
+  var maint=document.getElementById('s-maint').value||'';
+  var closing=[
+    'Bar clean: '+getV('cl-bar-clean'),'Bar stocked: '+getV('cl-bar-stock'),
+    'Ice wells burnt: '+getV('cl-bar-ice'),'Side work done: '+getV('cl-sw-dining'),
+    'Candles out: '+getV('cl-candle-out'),'Fireplace: '+getV('cl-fire'),
+    'Lamps charging: '+getV('cl-lamp-in'),'Tips/safe: '+getV('cl-sc-safe'),
+    'Bar bank $600: '+getV('cl-sc-bank'),'All doors locked: '+getV('cl-d-front'),
+    'Cash variance: '+(document.getElementById('cl-cash-variance').value||'N/A')
   ].join('; ');
-  var specialsStr = openingSpecials.filter(function(s){return s.name;}).map(function(s){
-    return s.eightysixed ? s.name + ': 86\'d' : s.name + ': ' + (s.sold||'?') + '/' + (s.count||'?') + ' sold';
+  var specialsStr=openingSpecials.filter(function(s){return s.name;}).map(function(s){
+    return s.eightysixed?s.name+': 86\'d':s.name+': '+(s.sold||'?')+'/'+(s.count||'?')+' sold';
   }).concat(shiftExtras.filter(function(s){return s.name;}).map(function(s){
-    return s.name + ': ' + (s.sold||'?') + '/' + (s.avail||'?') + ' sold';
+    return s.name+': '+(s.sold||'?')+'/'+(s.avail||'?')+' sold';
   })).join('; ');
-  var eightiesStr = eighties.filter(Boolean).join('; ');
-  var vipStr = vips.join(', ') || 'none';
-
+  var eightiesStr=eighties.filter(Boolean).join('; ');
+  var vipStr=vips.join(', ')||'none';
   return [
-    'Date: ' + fmtDate(date),
-    opener ? 'Opening manager: ' + opener : '',
-    closer ? 'Closing manager: ' + closer : '',
-    'Manager: ' + mgr,
-    'Weather: ' + wthr,
-    'Net sales: ' + sales,
-    'Check average: ' + avg,
-    'Covers: ' + cvrs + ' (Resy: ' + resy + ')',
-    summ ? 'Shift narrative: ' + summ : '',
-    foh ? 'FOH notes: ' + foh : '',
-    specialsStr ? 'Food specials: ' + specialsStr : '',
-    foodN ? 'Food notes: ' + foodN : '',
-    bev ? 'Beverage: ' + bev : '',
-    eightiesStr ? "86'd: " + eightiesStr : '',
-    emp ? 'Employee notes: ' + emp : '',
-    hire ? 'Hiring: ' + hire : '',
-    maint ? 'Maintenance/orders: ' + maint : '',
-    'VIPs: ' + vipStr,
-    'Closing check: ' + closing
+    'Date: '+fmtDate(date),
+    opener?'Opening manager: '+opener:'',
+    closer?'Closing manager: '+closer:'',
+    'Manager: '+mgr,'Weather: '+wthr,'Net sales: '+sales,'Check average: '+avg,
+    'Covers: '+cvrs+' (Resy: '+resy+')',
+    summ?'Shift narrative: '+summ:'',
+    foh?'FOH notes: '+foh:'',
+    specialsStr?'Food specials: '+specialsStr:'',
+    foodN?'Food notes: '+foodN:'',
+    bev?'Beverage: '+bev:'',
+    eightiesStr?"86'd: "+eightiesStr:'',
+    emp?'Employee notes: '+emp:'',
+    hire?'Hiring: '+hire:'',
+    maint?'Maintenance/orders: '+maint:'',
+    'VIPs: '+vipStr,'Closing check: '+closing
   ].filter(Boolean).join('\n');
 }
 
-async function generateExec() {
-  var ctx = buildContext();
-  var box = document.getElementById('exec-box');
-  var loading = document.getElementById('exec-loading');
-  var copyBtn = document.getElementById('exec-copy-btn');
-  var regenBtn = document.getElementById('exec-regen-btn');
-
-  box.classList.add('loading');
-  loading.style.display = 'flex';
-  copyBtn.style.display = 'none';
-  regenBtn.style.display = 'none';
-  box.innerHTML = '<span style="color:var(--ink-faint);font-style:italic;font-size:15px">Writing summary…</span>';
-
-  try {
-    var resp = await fetch(CF_WORKER + '/summary', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        prompt: 'Write a one-paragraph executive summary for this shift report:\n\n' + ctx
-      })
-    });
-
-    var raw = await resp.text();
-    var data;
-    try { data = JSON.parse(raw); } catch(e) { throw new Error('Worker returned: ' + raw.substring(0, 100)); }
-    var text = data.content && data.content[0] && data.content[0].text
-      ? data.content[0].text.trim()
-      : ('API error: ' + JSON.stringify(data.error || data).substring(0, 120));
-
+async function generateExec(){
+  var ctx=buildContext();
+  var box=document.getElementById('exec-box');
+  var loading=document.getElementById('exec-loading');
+  var copyBtn=document.getElementById('exec-copy-btn');
+  var regenBtn=document.getElementById('exec-regen-btn');
+  box.classList.add('loading');loading.style.display='flex';
+  copyBtn.style.display='none';regenBtn.style.display='none';
+  box.innerHTML='<span style="color:var(--ink-faint);font-style:italic;font-size:15px">Writing summary…</span>';
+  try{
+    var resp=await fetch(CF_WORKER+'/summary',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:'Write a one-paragraph executive summary for this shift report:\n\n'+ctx})});
+    var raw=await resp.text();var data;
+    try{data=JSON.parse(raw);}catch(e){throw new Error('Worker returned: '+raw.substring(0,100));}
+    var text=data.content&&data.content[0]&&data.content[0].text?data.content[0].text.trim():('API error: '+JSON.stringify(data.error||data).substring(0,120));
+    box.classList.remove('loading');box.textContent=text;loading.style.display='none';
+    copyBtn.style.display='inline-flex';regenBtn.style.display='inline-flex';
+    var pb=document.getElementById('preview-box');
+    if(pb&&pb.textContent.indexOf('{{NARRATIVE}}')!==-1){pb.textContent=pb.textContent.replace('\n{{NARRATIVE}}','\n'+text);}
+  }catch(e){
     box.classList.remove('loading');
-    box.textContent = text;
-    loading.style.display = 'none';
-    copyBtn.style.display = 'inline-flex';
-    regenBtn.style.display = 'inline-flex';
-    // Inject summary into email preview replacing the placeholder
-    var pb = document.getElementById('preview-box');
-    if (pb && pb.textContent.indexOf('{{NARRATIVE}}') !== -1) {
-      pb.textContent = pb.textContent.replace('\n{{NARRATIVE}}', '\n' + text);
-    }
-  } catch(e) {
-    box.classList.remove('loading');
-    box.innerHTML = '<span style="color:var(--red-deep);font-size:14px">Unable to generate summary — deploy the updated Worker to Cloudflare and try again.</span>';
-    loading.style.display = 'none';
-    regenBtn.style.display = 'inline-flex';
-    // Remove placeholder from email on failure — use shift notes as fallback
-    var pb = document.getElementById('preview-box');
-    if (pb && pb.textContent.indexOf('{{NARRATIVE}}') !== -1) {
-      var fallback = shiftNotes.length ? shiftNotes.map(function(n){ return n.text; }).join('\n') : '';
-      pb.textContent = pb.textContent.replace('\n{{NARRATIVE}}', fallback ? '\n' + fallback : '');
+    box.innerHTML='<span style="color:var(--red-deep);font-size:14px">Unable to generate summary — deploy the updated Worker to Cloudflare and try again.</span>';
+    loading.style.display='none';regenBtn.style.display='inline-flex';
+    var pb=document.getElementById('preview-box');
+    if(pb&&pb.textContent.indexOf('{{NARRATIVE}}')!==-1){
+      var fallback=shiftNotes.length?shiftNotes.map(function(n){return n.text;}).join('\n'):'';
+      pb.textContent=pb.textContent.replace('\n{{NARRATIVE}}',fallback?'\n'+fallback:'');
     }
   }
 }
 
-// ── Cloudflare Sync ──
-var CF_WORKER = 'https://rpi-shift-api.amusementstandards.workers.dev';
+var CF_WORKER='https://rpi-shift-api.amusementstandards.workers.dev';
 
-async function cfSaveShift() {
-  var payload = collectShiftPayload();
-  try {
-    await fetch(CF_WORKER + '/shift', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    showSyncStatus('Shift saved ✓');
-  } catch(e) { showSyncStatus('Save failed — check connection'); }
+async function cfSaveShift(){
+  var payload=collectShiftPayload();
+  try{await fetch(CF_WORKER+'/shift',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});showSyncStatus('Shift saved ✓');}
+  catch(e){showSyncStatus('Save failed — check connection');}
 }
 
-async function cfLoadShift() {
-  try {
-    var resp = await fetch(CF_WORKER + '/shift');
-    var data = await resp.json();
-    if (data && Object.keys(data).length > 0) {
-      applyShiftPayload(data);
-      showSyncStatus('Last shift loaded ✓');
-    }
-  } catch(e) { console.log('No previous shift to load'); }
+async function cfLoadShift(){
+  try{
+    var resp=await fetch(CF_WORKER+'/shift');var data=await resp.json();
+    if(data&&Object.keys(data).length>0){applyShiftPayload(data);showSyncStatus('Last shift loaded ✓');}
+  }catch(e){console.log('No previous shift to load');}
 }
 
-async function cfPostNote(note) {
-  try {
-    await fetch(CF_WORKER + '/notes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(note)
-    });
-  } catch(e) { console.log('Note sync failed'); }
+async function cfPostNote(note){
+  try{await fetch(CF_WORKER+'/notes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(note)});}
+  catch(e){console.log('Note sync failed');}
 }
 
-async function cfLoadNotes() {
-  try {
-    var resp = await fetch(CF_WORKER + '/notes');
-    var notes = await resp.json();
-    if (notes && notes.length > 0) {
-      shiftNotes = notes;
-      renderShiftNotes();
-    }
-  } catch(e) { console.log('Notes load failed'); }
+async function cfLoadNotes(){
+  try{
+    var resp=await fetch(CF_WORKER+'/notes');var notes=await resp.json();
+    if(notes&&notes.length>0){shiftNotes=notes;renderShiftNotes();}
+  }catch(e){console.log('Notes load failed');}
 }
 
-async function cfClearNotes() {
-  try {
-    await fetch(CF_WORKER + '/notes', { method: 'DELETE' });
-    shiftNotes = [];
-    renderShiftNotes();
-    showSyncStatus('Notes cleared ✓');
-  } catch(e) { showSyncStatus('Clear failed'); }
+async function cfClearNotes(){
+  try{await fetch(CF_WORKER+'/notes',{method:'DELETE'});shiftNotes=[];renderShiftNotes();showSyncStatus('Notes cleared ✓');}
+  catch(e){showSyncStatus('Clear failed');}
 }
 
-function showSyncStatus(msg) {
-  var el = document.getElementById('sync-status');
-  if (el) {
-    el.textContent = msg;
-    el.style.opacity = '1';
-    setTimeout(function() { el.style.opacity = '0'; }, 3000);
-  }
+function showSyncStatus(msg){
+  var el=document.getElementById('sync-status');
+  if(el){el.textContent=msg;el.style.opacity='1';setTimeout(function(){el.style.opacity='0';},3000);}
 }
 
-function collectShiftPayload() {
-  return {
-    savedAt: new Date().toISOString(),
-    manager: document.getElementById('o-manager').value,
-    weather: document.getElementById('o-weather').value,
-    date: document.getElementById('o-date').value,
-    preshift: document.getElementById('o-preshift').value,
-    sales: document.getElementById('s-sales').value,
-    avg: document.getElementById('s-avg').value,
-    covers: document.getElementById('s-covers').value,
-    resy: document.getElementById('s-resy').value,
-    closer: document.getElementById('s-closer').value,
-    foh: document.getElementById('s-foh').value,
-    food: document.getElementById('s-food').value,
-    bev: document.getElementById('s-bev').value,
-    emp: document.getElementById('s-emp').value,
-    hire: document.getElementById('s-hire').value,
-    batch: document.getElementById('s-batch').value,
-    maint: document.getElementById('s-maint').value,
-    cashVariance: document.getElementById('cl-cash-variance').value,
-    clNotes: document.getElementById('cl-notes').value,
-    vips: vips,
-    shiftNotes: shiftNotes,
-    openingSpecials: openingSpecials,
-    shiftExtras: shiftExtras,
-    eighties: eighties,
-    toggles: state
+function collectShiftPayload(){
+  return{
+    savedAt:new Date().toISOString(),
+    manager:document.getElementById('o-manager').value,
+    weather:document.getElementById('o-weather').value,
+    date:document.getElementById('o-date').value,
+    preshift:document.getElementById('o-preshift').value,
+    sales:document.getElementById('s-sales').value,
+    avg:document.getElementById('s-avg').value,
+    covers:document.getElementById('s-covers').value,
+    resy:document.getElementById('s-resy').value,
+    closer:document.getElementById('s-closer').value,
+    foh:document.getElementById('s-foh').value,
+    food:document.getElementById('s-food').value,
+    bev:document.getElementById('s-bev').value,
+    emp:document.getElementById('s-emp').value,
+    hire:document.getElementById('s-hire').value,
+    batch:document.getElementById('s-batch').value,
+    maint:document.getElementById('s-maint').value,
+    cashVariance:document.getElementById('cl-cash-variance').value,
+    clNotes:document.getElementById('cl-notes').value,
+    vips:vips,shiftNotes:shiftNotes,openingSpecials:openingSpecials,
+    shiftExtras:shiftExtras,eighties:eighties,toggles:state
   };
 }
 
-function applyShiftPayload(d) {
-  var fields = [
-    ['s-foh', d.foh], ['s-food', d.food], ['s-bev', d.bev],
-    ['s-emp', d.emp], ['s-hire', d.hire], ['s-batch', d.batch],
-    ['s-maint', d.maint]
-  ];
-  fields.forEach(function(f) {
-    var el = document.getElementById(f[0]);
-    if (el && f[1]) el.value = f[1];
-  });
-  if (d.openingSpecials && d.openingSpecials.length) {
-    openingSpecials = d.openingSpecials.map(function(s) {
-      return { name: s.name, count: s.count, sold: '', eightysixed: false };
-    });
-    // Always ensure Steak Tartare is present
-    var hasTartare = openingSpecials.some(function(s) { return s.name === 'Steak Tartare'; });
-    if (!hasTartare) {
-      openingSpecials.push({ name: 'Steak Tartare', count: '', sold: '', eightysixed: false });
-    }
-    // Always ensure today's daily special is present
-    var todaySpecial = DAY_SPECIALS[new Date().getDay()];
-    if (todaySpecial) {
-      var hasToday = openingSpecials.some(function(s) { return s.name === todaySpecial; });
-      if (!hasToday) {
-        openingSpecials.unshift({ name: todaySpecial, count: '', sold: '', eightysixed: false });
-      }
-    }
-    renderOpeningSpecials();
-    renderShiftSpecials();
+function applyShiftPayload(d){
+  var fields=[['s-foh',d.foh],['s-food',d.food],['s-bev',d.bev],['s-emp',d.emp],['s-hire',d.hire],['s-batch',d.batch],['s-maint',d.maint]];
+  fields.forEach(function(f){var el=document.getElementById(f[0]);if(el&&f[1])el.value=f[1];});
+  if(d.openingSpecials&&d.openingSpecials.length){
+    openingSpecials=d.openingSpecials.map(function(s){return{name:s.name,count:s.count,sold:'',eightysixed:false};});
+    var hasTartare=openingSpecials.some(function(s){return s.name==='Steak Tartare';});
+    if(!hasTartare)openingSpecials.push({name:'Steak Tartare',count:'',sold:'',eightysixed:false});
+    var todaySpecial=DAY_SPECIALS[new Date().getDay()];
+    if(todaySpecial){var hasToday=openingSpecials.some(function(s){return s.name===todaySpecial;});if(!hasToday)openingSpecials.unshift({name:todaySpecial,count:'',sold:'',eightysixed:false});}
+    renderOpeningSpecials();renderShiftSpecials();
   }
-  if (d.eighties && d.eighties.length) { eighties = d.eighties; renderEighties(); }
-  if (d.vips && d.vips.length) { vips = d.vips; renderVips(); }
+  if(d.eighties&&d.eighties.length){eighties=d.eighties;renderEighties();}
+  if(d.vips&&d.vips.length){vips=d.vips;renderVips();}
 }
 
-// ── Opening Specials ──
-var openingSpecials = [];
+var openingSpecials=[];
 
-var DAY_SPECIALS = {
-  0: 'Lobster Frites',
-  1: 'Poulet en Croûte',
-  2: 'Oyster Rockefeller',
-  3: 'USDA Prime French Dip',
-  4: 'Southern Fried Quail',
-  5: 'Bouillabaisse Provençale',
-  6: 'Prime Short Rib Bourguignon'
-};
+var DAY_SPECIALS={0:'Lobster Frites',1:'Poulet en Cro\u00fbte',2:'Oyster Rockefeller',3:'USDA Prime French Dip',4:'Southern Fried Quail',5:'Bouillabaisse Proven\u00e7ale',6:'Prime Short Rib Bourguignon'};
 
-var COMMON_SPECIALS = [
-  'Poulet en Croûte',
-  'Oyster Rockefeller',
-  'USDA Prime French Dip',
-  'Southern Fried Quail',
-  'Bouillabaisse Provençale',
-  'Prime Short Rib Bourguignon',
-  'Lobster Frites',
-  'Steak Tartare'
-];
+var COMMON_SPECIALS=['Poulet en Cro\u00fbte','Oyster Rockefeller','USDA Prime French Dip','Southern Fried Quail','Bouillabaisse Proven\u00e7ale','Prime Short Rib Bourguignon','Lobster Frites','Steak Tartare'];
 
-function addOpeningSpecial(name, count) {
-  openingSpecials.push({ name: name || '', count: count || '' });
-  renderOpeningSpecials();
-  syncShiftSpecials();
+function addOpeningSpecial(name,count){
+  openingSpecials.push({name:name||'',count:count||''});
+  renderOpeningSpecials();syncShiftSpecials();
 }
 
-function renderOpeningSpecials() {
-  var el = document.getElementById('opening-specials-list');
-  if (!el) return;
-  if (openingSpecials.length === 0) {
-    el.innerHTML = '<div class="notes-empty" style="margin-bottom:8px">No specials added yet.</div>';
-    return;
-  }
-  el.innerHTML = openingSpecials.map(function(s, i) {
-    var opts = COMMON_SPECIALS.map(function(n) {
-      return '<option value="' + n + '"' + (s.name === n ? ' selected' : '') + '>' + n + '</option>';
-    }).join('');
-    return '<div class="special-row" style="grid-template-columns:1fr 90px 32px;margin-bottom:8px">' +
-      '<select oninput="openingSpecials[' + i + '].name=this.value;syncShiftSpecials()" style="font-size:14px">' +
-      '<option value="">— choose or type —</option>' + opts +
-      (s.name && !COMMON_SPECIALS.includes(s.name) ? '<option value="' + s.name + '" selected>' + s.name + '</option>' : '') +
-      '</select>' +
-      '<input type="number" placeholder="Qty" value="' + (s.count || '') + '" oninput="openingSpecials[' + i + '].count=this.value;syncShiftSpecials()">' +
-      '<button class="rm" onclick="openingSpecials.splice(' + i + ',1);renderOpeningSpecials();syncShiftSpecials()" aria-label="Remove">×</button>' +
+function renderOpeningSpecials(){
+  var el=document.getElementById('opening-specials-list');
+  if(!el)return;
+  if(openingSpecials.length===0){el.innerHTML='<div class="notes-empty" style="margin-bottom:8px">No specials added yet.</div>';return;}
+  el.innerHTML=openingSpecials.map(function(s,i){
+    var opts=COMMON_SPECIALS.map(function(n){return'<option value="'+n+'"'+(s.name===n?' selected':'')+'>'+n+'</option>';}).join('');
+    return'<div class="special-row" style="grid-template-columns:1fr 90px 32px;margin-bottom:8px">'+
+      '<select oninput="openingSpecials['+i+'].name=this.value;syncShiftSpecials()" style="font-size:14px">'+
+      '<option value="">— choose or type —</option>'+opts+
+      (s.name&&!COMMON_SPECIALS.includes(s.name)?'<option value="'+s.name+'" selected>'+s.name+'</option>':'')+
+      '</select>'+
+      '<input type="number" placeholder="Qty" value="'+(s.count||'')+'" oninput="openingSpecials['+i+'].count=this.value;syncShiftSpecials()">'+
+      '<button class="rm" onclick="openingSpecials.splice('+i+',1);renderOpeningSpecials();syncShiftSpecials()" aria-label="Remove">×</button>'+
       '</div>';
   }).join('');
 }
 
-// Shift-side specials (auto-populated + manual extras)
-var shiftExtras = []; // manually added extras on shift tab
+var shiftExtras=[];
 
-function syncShiftSpecials() {
-  renderShiftSpecials();
-}
+function syncShiftSpecials(){renderShiftSpecials();}
 
-function addShiftSpecial() {
-  shiftExtras.push({ name: '', avail: '', sold: '', eightysixed: false });
-  renderShiftSpecials();
-}
+function addShiftSpecial(){shiftExtras.push({name:'',avail:'',sold:'',eightysixed:false});renderShiftSpecials();}
 
-function renderShiftSpecials() {
-  var el = document.getElementById('shift-specials-list');
-  if (!el) return;
-
-  var isMobile = window.innerWidth < 640;
-  var specCols = isMobile ? '1fr 52px 52px 64px 24px' : '1fr 70px 70px 80px 32px';
-  var rows = '';
-
-  // Header
-  rows += '<div style="display:grid;grid-template-columns:' + specCols + ';gap:8px;margin-bottom:6px">' +
-    '<span style="font-size:10px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:var(--ink-faint)">Special</span>' +
-    '<span style="font-size:10px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:var(--ink-faint)">Avail.</span>' +
-    '<span style="font-size:10px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:var(--ink-faint)">Sold</span>' +
-    '<span style="font-size:10px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:var(--ink-faint)">Status</span>' +
+function renderShiftSpecials(){
+  var el=document.getElementById('shift-specials-list');
+  if(!el)return;
+  var isMobile=window.innerWidth<640;
+  var specCols=isMobile?'1fr 52px 52px 64px 24px':'1fr 70px 70px 80px 32px';
+  var rows='';
+  rows+='<div style="display:grid;grid-template-columns:'+specCols+';gap:8px;margin-bottom:6px">'+
+    '<span style="font-size:10px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:var(--ink-faint)">Special</span>'+
+    '<span style="font-size:10px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:var(--ink-faint)">Avail.</span>'+
+    '<span style="font-size:10px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:var(--ink-faint)">Sold</span>'+
+    '<span style="font-size:10px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:var(--ink-faint)">Status</span>'+
     '<span></span></div>';
-
-  // Rows from opening specials
-  openingSpecials.forEach(function(s, i) {
-    if (!s.name) return;
-    var sid = 'ss-sold-' + i;
-    var is86 = s.eightysixed || false;
-    rows += '<div style="display:grid;grid-template-columns:' + specCols + ';gap:8px;align-items:center;margin-bottom:8px">' +
-      '<div style="font-size:14px;color:var(--ink);padding:8px 0">' + s.name + '</div>' +
-      '<div style="font-size:14px;color:var(--ink-soft);padding:8px 0;text-align:center">' + (s.count || '—') + '</div>' +
-      '<input type="number" id="' + sid + '" placeholder="0" value="' + (s.sold || '') + '" oninput="openingSpecials[' + i + '].sold=this.value" ' + (is86 ? 'disabled style="opacity:0.4"' : '') + '>' +
-      '<button onclick="openingSpecials[' + i + '].eightysixed=!openingSpecials[' + i + '].eightysixed;renderShiftSpecials()" style="font-size:11px;font-weight:500;padding:5px 8px;border-radius:5px;border:0.5px solid ' + (is86 ? 'var(--red-deep)' : 'var(--border)') + ';background:' + (is86 ? 'var(--red-pale)' : '#fff') + ';color:' + (is86 ? 'var(--red-deep)' : 'var(--ink-soft)') + ';cursor:pointer">' + (is86 ? '86&#39;d ✓' : '86') + '</button>' +
-      '<div></div>' +
-      '</div>';
+  openingSpecials.forEach(function(s,i){
+    if(!s.name)return;
+    var is86=s.eightysixed||false;
+    rows+='<div style="display:grid;grid-template-columns:'+specCols+';gap:8px;align-items:center;margin-bottom:8px">'+
+      '<div style="font-size:14px;color:var(--ink);padding:8px 0">'+s.name+'</div>'+
+      '<div style="font-size:14px;color:var(--ink-soft);padding:8px 0;text-align:center">'+(s.count||'—')+'</div>'+
+      '<input type="number" placeholder="0" value="'+(s.sold||'')+'" oninput="openingSpecials['+i+'].sold=this.value" '+(is86?'disabled style="opacity:0.4"':'')+'>'+
+      '<button onclick="openingSpecials['+i+'].eightysixed=!openingSpecials['+i+'].eightysixed;renderShiftSpecials()" style="font-size:11px;font-weight:500;padding:5px 8px;border-radius:5px;border:0.5px solid '+(is86?'var(--red-deep)':'var(--border)')+';background:'+(is86?'var(--red-pale)':'#fff')+';color:'+(is86?'var(--red-deep)':'var(--ink-soft)')+';cursor:pointer">'+(is86?'86\'d ✓':'86')+'</button>'+
+      '<div></div></div>';
   });
-
-  // Extra manually added rows
-  shiftExtras.forEach(function(s, i) {
-    var opts = COMMON_SPECIALS.map(function(n) {
-      return '<option value="' + n + '"' + (s.name === n ? ' selected' : '') + '>' + n + '</option>';
-    }).join('');
-    rows += '<div style="display:grid;grid-template-columns:' + specCols + ';gap:8px;align-items:center;margin-bottom:8px">' +
-      '<select oninput="shiftExtras[' + i + '].name=this.value" style="font-size:13px"><option value="">— select —</option>' + opts + '</select>' +
-      '<input type="number" placeholder="Avail" value="' + (s.avail || '') + '" oninput="shiftExtras[' + i + '].avail=this.value">' +
-      '<input type="number" placeholder="Sold" value="' + (s.sold || '') + '" oninput="shiftExtras[' + i + '].sold=this.value">' +
-      '<button onclick="shiftExtras.splice(' + i + ',1);renderShiftSpecials()" style="font-size:11px;padding:5px 8px;border-radius:5px;border:0.5px solid var(--border);background:#fff;color:var(--ink-soft);cursor:pointer">Remove</button>' +
-      '<button class="rm" onclick="shiftExtras.splice(' + i + ',1);renderShiftSpecials()" aria-label="Remove">×</button>' +
-      '</div>';
+  shiftExtras.forEach(function(s,i){
+    var opts=COMMON_SPECIALS.map(function(n){return'<option value="'+n+'"'+(s.name===n?' selected':'')+'>'+n+'</option>';}).join('');
+    rows+='<div style="display:grid;grid-template-columns:'+specCols+';gap:8px;align-items:center;margin-bottom:8px">'+
+      '<select oninput="shiftExtras['+i+'].name=this.value" style="font-size:13px"><option value="">— select —</option>'+opts+'</select>'+
+      '<input type="number" placeholder="Avail" value="'+(s.avail||'')+'" oninput="shiftExtras['+i+'].avail=this.value">'+
+      '<input type="number" placeholder="Sold" value="'+(s.sold||'')+'" oninput="shiftExtras['+i+'].sold=this.value">'+
+      '<button onclick="shiftExtras.splice('+i+',1);renderShiftSpecials()" style="font-size:11px;padding:5px 8px;border-radius:5px;border:0.5px solid var(--border);background:#fff;color:var(--ink-soft);cursor:pointer">Remove</button>'+
+      '<button class="rm" onclick="shiftExtras.splice('+i+',1);renderShiftSpecials()" aria-label="Remove">×</button></div>';
   });
-
-  if (openingSpecials.filter(function(s){return s.name;}).length === 0 && shiftExtras.length === 0) {
-    rows += '<div class="notes-empty">No specials — add them on the Opening Checklist tab or use the button below.</div>';
+  if(openingSpecials.filter(function(s){return s.name;}).length===0&&shiftExtras.length===0){
+    rows+='<div class="notes-empty">No specials — add them on the Opening Checklist tab or use the button below.</div>';
   }
-
-  el.innerHTML = rows;
+  el.innerHTML=rows;
 }
 
-// ── Shift Notes ──
-var shiftNotes = [];
+var shiftNotes=[];
 
-function addShiftNote() {
-  var inp = document.getElementById('s-note-input');
-  var txt = inp.value.trim();
-  if (!txt) return;
-  var mgr = document.getElementById('o-manager').value || 'Manager';
-  // First name only
-  var firstName = mgr.split(' ')[0];
-  var now = new Date();
-  var h = now.getHours();
-  var m = String(now.getMinutes()).padStart(2,'0');
-  var ampm = h >= 12 ? 'PM' : 'AM';
-  h = h % 12 || 12;
-  var ts = h + ':' + m + ' ' + ampm;
-  var note = { ts: ts, who: firstName, text: txt };
-  shiftNotes.push(note);
-  inp.value = '';
-  renderShiftNotes();
-  cfPostNote(note);
-  // Auto-add today's special + Steak Tartare (runs every night)
-  // Only add defaults if carry-forward didn't already populate specials
-  if (openingSpecials.length === 0) {
-    var todaySpecial = DAY_SPECIALS[new Date().getDay()];
-    if (todaySpecial) {
-      openingSpecials.push({ name: todaySpecial, count: '', sold: '', eightysixed: false });
-    }
-    openingSpecials.push({ name: 'Steak Tartare', count: '', sold: '', eightysixed: false });
+function addShiftNote(){
+  var inp=document.getElementById('s-note-input');
+  var txt=inp.value.trim();if(!txt)return;
+  var mgr=document.getElementById('o-manager').value||'Manager';
+  var firstName=mgr.split(' ')[0];
+  var now=new Date();var h=now.getHours();var m=String(now.getMinutes()).padStart(2,'0');
+  var ampm=h>=12?'PM':'AM';h=h%12||12;
+  var ts=h+':'+m+' '+ampm;
+  var note={ts:ts,who:firstName,text:txt};
+  shiftNotes.push(note);inp.value='';renderShiftNotes();cfPostNote(note);
+  if(openingSpecials.length===0){
+    var todaySpecial=DAY_SPECIALS[new Date().getDay()];
+    if(todaySpecial)openingSpecials.push({name:todaySpecial,count:'',sold:'',eightysixed:false});
+    openingSpecials.push({name:'Steak Tartare',count:'',sold:'',eightysixed:false});
   }
-  renderOpeningSpecials();
-  renderShiftSpecials();
+  renderOpeningSpecials();renderShiftSpecials();
 }
 
-function removeShiftNote(i) {
-  shiftNotes.splice(i, 1);
-  renderShiftNotes();
-  // Auto-add today's special + Steak Tartare (runs every night)
-  // Only add defaults if carry-forward didn't already populate specials
-  if (openingSpecials.length === 0) {
-    var todaySpecial = DAY_SPECIALS[new Date().getDay()];
-    if (todaySpecial) {
-      openingSpecials.push({ name: todaySpecial, count: '', sold: '', eightysixed: false });
-    }
-    openingSpecials.push({ name: 'Steak Tartare', count: '', sold: '', eightysixed: false });
+function removeShiftNote(i){
+  shiftNotes.splice(i,1);renderShiftNotes();
+  if(openingSpecials.length===0){
+    var todaySpecial=DAY_SPECIALS[new Date().getDay()];
+    if(todaySpecial)openingSpecials.push({name:todaySpecial,count:'',sold:'',eightysixed:false});
+    openingSpecials.push({name:'Steak Tartare',count:'',sold:'',eightysixed:false});
   }
-  renderOpeningSpecials();
-  renderShiftSpecials();
+  renderOpeningSpecials();renderShiftSpecials();
 }
 
-function renderShiftNotes() {
-  var log = document.getElementById('shift-notes-log');
-  if (!log) return;
-  if (shiftNotes.length === 0) {
-    log.innerHTML = '<div class="notes-empty">No notes yet — post one above.</div>';
-    return;
-  }
-  log.innerHTML = shiftNotes.map(function(n, i) {
-    return '<div class="note-entry">' +
-      '<div class="note-meta">' + n.ts + ' · ' + n.who + '</div>' +
-      '<div class="note-text">' + n.text + '</div>' +
-      '<button class="note-del" onclick="removeShiftNote(' + i + ')" aria-label="Remove">×</button>' +
-      '</div>';
+function renderShiftNotes(){
+  var log=document.getElementById('shift-notes-log');if(!log)return;
+  if(shiftNotes.length===0){log.innerHTML='<div class="notes-empty">No notes yet — post one above.</div>';return;}
+  log.innerHTML=shiftNotes.map(function(n,i){
+    return'<div class="note-entry"><div class="note-meta">'+n.ts+' · '+n.who+'</div><div class="note-text">'+n.text+'</div><button class="note-del" onclick="removeShiftNote('+i+')" aria-label="Remove">×</button></div>';
   }).join('');
 }
 
-// ── Weather ──
-async function fetchWeather() {
-  var inp = document.getElementById('o-weather');
-  var btn = document.getElementById('wx-btn');
-  inp.value = 'Fetching...';
-  if (btn) btn.textContent = '...';
-  try {
-    // Get daily forecast for Rumson NJ
-    var ptResp = await fetch('https://api.weather.gov/points/40.3468,-74.0121');
-    var ptData = await ptResp.json();
-    var forecastUrl = ptData.properties.forecast;
-
-    var fResp = await fetch(forecastUrl);
-    var fData = await fResp.json();
-    var periods = fData.properties.periods;
-
-    // Find today daytime period and tonight period
-    var daytime = null, tonight = null;
-    for (var i = 0; i < periods.length; i++) {
-      if (periods[i].isDaytime && !daytime) daytime = periods[i];
-      if (!periods[i].isDaytime && !tonight) tonight = periods[i];
+async function fetchWeather(){
+  var inp=document.getElementById('o-weather');var btn=document.getElementById('wx-btn');
+  inp.value='Fetching...';if(btn)btn.textContent='...';
+  try{
+    var ptResp=await fetch('https://api.weather.gov/points/40.3468,-74.0121');
+    var ptData=await ptResp.json();var forecastUrl=ptData.properties.forecast;
+    var fResp=await fetch(forecastUrl);var fData=await fResp.json();var periods=fData.properties.periods;
+    var daytime=null,tonight=null;
+    for(var i=0;i<periods.length;i++){
+      if(periods[i].isDaytime&&!daytime)daytime=periods[i];
+      if(!periods[i].isDaytime&&!tonight)tonight=periods[i];
     }
-
-    var p = daytime || periods[0];
-    var hi = p.temperature + '°' + p.temperatureUnit;
-    var desc = p.shortForecast;
-    var wind = p.windSpeed + ' ' + p.windDirection;
-
-    // Tonight low
-    var loStr = '';
-    if (tonight) loStr = ', low ' + tonight.temperature + '°' + tonight.temperatureUnit;
-
-    var wxStr = desc + ' — High ' + hi + loStr + ', winds ' + wind;
-    inp.value = wxStr;
-    if (btn) btn.textContent = '✓ Done';
-    setTimeout(function() { if (btn) btn.textContent = '⟳ Auto-fill'; }, 2000);
-  } catch(e) {
-    inp.value = '';
-    inp.placeholder = 'Could not fetch — enter manually';
-    if (btn) btn.textContent = '⟳ Retry';
+    var p=daytime||periods[0];
+    var hi=p.temperature+'°'+p.temperatureUnit;
+    var desc=p.shortForecast;var wind=p.windSpeed+' '+p.windDirection;
+    var loStr=tonight?', low '+tonight.temperature+'°'+tonight.temperatureUnit:'';
+    inp.value=desc+' — High '+hi+loStr+', winds '+wind;
+    if(btn)btn.textContent='✓ Done';setTimeout(function(){if(btn)btn.textContent='⟳ Auto-fill';},2000);
+  }catch(e){
+    inp.value='';inp.placeholder='Could not fetch — enter manually';
+    if(btn)btn.textContent='⟳ Retry';
   }
 }
 
-// ── Init ──
-(function() {
-  var t = new Date();
-  var dd = String(t.getDate()).padStart(2,'0');
-  var mm = String(t.getMonth()+1).padStart(2,'0');
-  document.getElementById('o-date').value = t.getFullYear() + '-' + mm + '-' + dd;
-  document.getElementById('o-manager').value = 'Adam Brousell';
-  fetchWeather();
-  cfLoadShift();
-  cfLoadNotes();
-  renderShiftNotes();
-  // Auto-add today's special + Steak Tartare (runs every night)
-  // Only add defaults if carry-forward didn't already populate specials
-  if (openingSpecials.length === 0) {
-    var todaySpecial = DAY_SPECIALS[new Date().getDay()];
-    if (todaySpecial) {
-      openingSpecials.push({ name: todaySpecial, count: '', sold: '', eightysixed: false });
-    }
-    openingSpecials.push({ name: 'Steak Tartare', count: '', sold: '', eightysixed: false });
+(function(){
+  var t=new Date();
+  var dd=String(t.getDate()).padStart(2,'0');var mm=String(t.getMonth()+1).padStart(2,'0');
+  document.getElementById('o-date').value=t.getFullYear()+'-'+mm+'-'+dd;
+  document.getElementById('o-manager').value='Adam Brousell';
+  fetchWeather();cfLoadShift();cfLoadNotes();renderShiftNotes();
+  loadOpeningState();
+  if(openingSpecials.length===0){
+    var todaySpecial=DAY_SPECIALS[new Date().getDay()];
+    if(todaySpecial)openingSpecials.push({name:todaySpecial,count:'',sold:'',eightysixed:false});
+    openingSpecials.push({name:'Steak Tartare',count:'',sold:'',eightysixed:false});
   }
-  renderOpeningSpecials();
-  renderShiftSpecials();
+  renderOpeningSpecials();renderShiftSpecials();
 })();
 </script>
 </body>
