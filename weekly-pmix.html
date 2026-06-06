@@ -129,6 +129,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 <div class="action-row">
   <button class="parse-btn" onclick="parseAndRender()">Parse & render</button>
   <button class="clear-btn" onclick="clearAll()">Clear</button>
+  <button class="clear-btn" id="email-btn" onclick="exportEmail()" style="display:none;">✉ Export email</button>
   <span id="parse-status"></span>
 </div>
 
@@ -542,6 +543,7 @@ function parseAndRender() {
   document.getElementById('ai-btn').textContent = 'Generate summary ↗';
   document.getElementById('ai-btn').disabled = false;
   renderDashboard(thisData, prevData);
+  document.getElementById('email-btn').style.display = '';
 }
 
 function clearAll() {
@@ -551,6 +553,203 @@ function clearAll() {
   document.getElementById('dashboard').style.display='none';
   document.getElementById('week-label').textContent='No data loaded';
   currentThis=null; currentPrev=null;
+}
+
+function exportEmail() {
+  if (!currentThis) return;
+  const { items, dateRange } = currentThis;
+  const prevItems = currentPrev?.items || null;
+  const prevLookup = prevItems ? buildLookup(prevItems) : null;
+  const hasPrev = !!prevLookup;
+
+  const cats = {};
+  items.forEach(i => { const c = categorize(i.name); (cats[c]||(cats[c]=[])).push(i); });
+  const prevCats = {};
+  if (prevItems) prevItems.forEach(i => { const c = categorize(i.name); (prevCats[c]||(prevCats[c]=[])).push(i); });
+
+  const totalRev   = sumRev(items);
+  const prevTotalRev = prevItems ? sumRev(prevItems) : null;
+  const cocktailRev = sumRev(cats.cocktail);
+  const wineRev     = sumRev(cats.wine);
+  const foodRev     = sumRev(cats.food) + sumRev(cats.starter) + sumRev(cats.dessert);
+  const spiritRev   = sumRev(cats.spirit);
+  const prevCocktailRev = sumRev(prevCats.cocktail);
+  const prevWineRev     = sumRev(prevCats.wine);
+  const prevFoodRev     = sumRev(prevCats.food)+sumRev(prevCats.starter)+sumRev(prevCats.dessert);
+  const prevSpiritRev   = sumRev(prevCats.spirit);
+
+  const aiText = document.getElementById('ai-output').textContent;
+  const hasAI  = aiText && !aiText.startsWith('Hit "Generate') && !aiText.startsWith('Error');
+
+  const pct = (cur, prev) => {
+    if (!prev) return '';
+    const d = (cur - prev) / prev * 100;
+    const arrow = d > 2 ? '▲' : d < -2 ? '▼' : '—';
+    const color = d > 2 ? '#1a7a3a' : d < -2 ? '#b83030' : '#888';
+    return `<span style="font-size:11px;color:${color};margin-left:6px;">${arrow} ${Math.abs(Math.round(d))}%</span>`;
+  };
+
+  const top5 = (arr, byRev=false) => [...(arr||[])]
+    .sort((a,b) => byRev ? (b.qty*b.price)-(a.qty*a.price) : b.qty-a.qty)
+    .slice(0,5);
+
+  const rowStyle = 'padding:8px 12px;border-bottom:1px solid #ece9e2;font-size:13px;';
+  const hdrStyle = 'padding:6px 12px;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#9f9f9b;border-bottom:2px solid #ece9e2;';
+
+  function kpiBlock(label, val, sub, cur, prev) {
+    return `<td style="padding:12px 16px;text-align:center;border-right:1px solid #ece9e2;">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#9f9f9b;margin-bottom:4px;">${label}</div>
+      <div style="font-family:Georgia,serif;font-size:22px;color:#1a1a18;line-height:1;">${val}</div>
+      ${hasPrev && cur!==null ? pct(cur,prev) : ''}
+      <div style="font-size:11px;color:#9f9f9b;margin-top:3px;">${sub}</div>
+    </td>`;
+  }
+
+  function topTable(title, arr, color, showWow) {
+    const rows = top5(arr).map(item => {
+      const prevItem = showWow && prevLookup ? prevLookup[item.name.toLowerCase()] : null;
+      const d = prevItem ? (item.qty-prevItem.qty)/prevItem.qty*100 : null;
+      const dStr = d!==null ? pct(item.qty*item.price, prevItem.qty*prevItem.price) : '';
+      return `<tr>
+        <td style="${rowStyle}color:#1a1a18;">${item.name.replace(/^(GL:|HH:)\s*/i,'')}</td>
+        <td style="${rowStyle}text-align:right;color:#6b6b67;">${item.qty}</td>
+        <td style="${rowStyle}text-align:right;color:#6b6b67;">${fmt(item.qty*item.price)}${dStr}</td>
+      </tr>`;
+    }).join('');
+    return `<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:24px;border:1px solid #ece9e2;border-radius:6px;overflow:hidden;">
+      <tr><td colspan="3" style="padding:12px 14px;background:${color};"><span style="font-family:Georgia,serif;font-size:14px;color:#fff;">${title}</span></td></tr>
+      <tr>
+        <th style="${hdrStyle}text-align:left;">Item</th>
+        <th style="${hdrStyle}text-align:right;">Qty</th>
+        <th style="${hdrStyle}text-align:right;">Est. Rev${hasPrev?' · WoW':''}</th>
+      </tr>
+      ${rows}
+    </table>`;
+  }
+
+  // WoW movers table
+  let moversSection = '';
+  if (hasPrev) {
+    const movers = items.map(item => {
+      const prev = prevLookup[item.name.toLowerCase()];
+      if (!prev) return null;
+      const d = (item.qty-prev.qty)/prev.qty*100;
+      return Math.abs(d) > 15 ? { name: item.name, d, qty: item.qty, prevQty: prev.qty } : null;
+    }).filter(Boolean);
+    const gainers = movers.filter(i=>i.d>0).sort((a,b)=>b.d-a.d).slice(0,5);
+    const losers  = movers.filter(i=>i.d<0).sort((a,b)=>a.d-b.d).slice(0,5);
+
+    const moverRows = (list, isDown) => list.map(i => {
+      const color = isDown ? '#b83030' : '#1a7a3a';
+      const arrow = isDown ? '▼' : '▲';
+      return `<tr>
+        <td style="${rowStyle}color:#1a1a18;">${i.name.replace(/^(GL:|HH:)\s*/i,'')}</td>
+        <td style="${rowStyle}text-align:center;color:${color};font-weight:500;">${arrow} ${Math.abs(Math.round(i.d))}%</td>
+        <td style="${rowStyle}text-align:right;color:#6b6b67;">${i.prevQty} → ${i.qty}</td>
+      </tr>`;
+    }).join('');
+
+    if (gainers.length || losers.length) {
+      moversSection = `
+      <tr><td style="padding:24px 32px 0;">
+        <p style="font-family:Georgia,serif;font-size:16px;color:#1a1a18;margin:0 0 14px;">Week-over-week movers</p>
+        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:24px;border:1px solid #ece9e2;">
+          <tr>
+            <th style="${hdrStyle}text-align:left;">Item</th>
+            <th style="${hdrStyle}text-align:center;">Change</th>
+            <th style="${hdrStyle}text-align:right;">Qty (prev → this)</th>
+          </tr>
+          ${gainers.length ? `<tr><td colspan="3" style="padding:6px 12px;font-size:11px;font-weight:500;color:#1a7a3a;background:#f4faf6;">Top gainers</td></tr>${moverRows(gainers,false)}` : ''}
+          ${losers.length  ? `<tr><td colspan="3" style="padding:6px 12px;font-size:11px;font-weight:500;color:#b83030;background:#fdf4f4;">Top decliners</td></tr>${moverRows(losers,true)}` : ''}
+        </table>
+      </td></tr>`;
+    }
+  }
+
+  const weekLine = dateRange || 'Week ending';
+  const prevLine = currentPrev?.dateRange ? ` · prev: ${currentPrev.dateRange}` : '';
+
+  const html = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<title>River Pointe Inn — Product Mix ${weekLine}</title>
+</head>
+<body style="margin:0;padding:0;background:#f7f5f0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f7f5f0;padding:24px 0;">
+<tr><td align="center">
+<table width="640" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e8e4dc;max-width:640px;">
+
+  <!-- Header -->
+  <tr><td style="background:#1a1a18;padding:20px 32px;">
+    <span style="font-family:Georgia,serif;font-size:20px;color:#f0ede8;">River Pointe Inn</span>
+    <span style="font-family:Georgia,serif;font-size:17px;color:#6b6b67;font-style:italic;"> — product mix</span>
+    <div style="font-size:11px;color:#6b6b67;margin-top:4px;">${weekLine}${prevLine}</div>
+  </td></tr>
+
+  <!-- AI Summary -->
+  ${hasAI ? `<tr><td style="padding:24px 32px;border-bottom:1px solid #ece9e2;">
+    <p style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#9f9f9b;margin:0 0 12px;">GM Summary</p>
+    <p style="font-family:Georgia,serif;font-size:15px;line-height:1.75;color:#1a1a18;margin:0;">${aiText.replace(/\n\n/g,'</p><p style="font-family:Georgia,serif;font-size:15px;line-height:1.75;color:#1a1a18;margin:12px 0 0;">').replace(/\n/g,'<br>')}</p>
+  </td></tr>` : ''}
+
+  <!-- KPIs -->
+  <tr><td style="padding:20px 32px;border-bottom:1px solid #ece9e2;">
+    <p style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#9f9f9b;margin:0 0 12px;">Key metrics — this week</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid #ece9e2;border-radius:6px;overflow:hidden;">
+      <tr style="background:#faf8f4;">
+        ${kpiBlock('Est. revenue', fmt(totalRev), `${sumQty(items).toLocaleString()} items`, totalRev, prevTotalRev)}
+        ${kpiBlock('Cocktails', fmt(cocktailRev), `${sumQty(cats.cocktail)} drinks`, cocktailRev, prevCocktailRev)}
+        ${kpiBlock('Wine', fmt(wineRev), `${sumQty(cats.wine)} pours`, wineRev, prevWineRev)}
+        ${kpiBlock('Food', fmt(foodRev), `${sumQty(cats.food)+sumQty(cats.starter)} covers`, foodRev, prevFoodRev)}
+        <td style="padding:12px 16px;text-align:center;">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#9f9f9b;margin-bottom:4px;">Spirits</div>
+          <div style="font-family:Georgia,serif;font-size:22px;color:#1a1a18;line-height:1;">${fmt(spiritRev)}</div>
+          ${hasPrev ? pct(spiritRev, prevSpiritRev) : ''}
+          <div style="font-size:11px;color:#9f9f9b;margin-top:3px;">${sumQty(cats.spirit)} pours</div>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+
+  <!-- WoW movers -->
+  ${moversSection}
+
+  <!-- Top tables -->
+  <tr><td style="padding:24px 32px 0;">
+    <p style="font-family:Georgia,serif;font-size:16px;color:#1a1a18;margin:0 0 14px;">Top items by category</p>
+  </td></tr>
+  <tr><td style="padding:0 32px;">
+    ${topTable('Cocktails & martinis', cats.cocktail||[], '#2150a0', hasPrev)}
+  </td></tr>
+  <tr><td style="padding:0 32px;">
+    ${topTable('Wine by glass & bottle', cats.wine||[], '#5c2d6e', hasPrev)}
+  </td></tr>
+  <tr><td style="padding:0 32px;">
+    ${topTable('Entrees', cats.food||[], '#c0452a', hasPrev)}
+  </td></tr>
+  <tr><td style="padding:0 32px;">
+    ${topTable('Starters & raw bar', cats.starter||[], '#2a5f3c', hasPrev)}
+  </td></tr>
+  <tr><td style="padding:0 32px 24px;">
+    ${topTable('Spirits', cats.spirit||[], '#4a7a8a', hasPrev)}
+  </td></tr>
+
+  <!-- Footer -->
+  <tr><td style="background:#f7f5f0;padding:16px 32px;border-top:1px solid #ece9e2;">
+    <span style="font-size:11px;color:#9f9f9b;">River Pointe Inn · Rumson, NJ · Generated ${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})}</span>
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.document.title = `RPI Product Mix ${weekLine}`;
+
+  // Also copy to clipboard
+  navigator.clipboard.writeText(html).catch(()=>{});
 }
 
 document.querySelectorAll('.tab').forEach(btn => {
