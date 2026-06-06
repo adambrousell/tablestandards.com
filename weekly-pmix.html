@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>River Pointe Inn — Product Mix</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f7f5f0;
+  --surface: #ffffff;
+  --border: rgba(0,0,0,0.09);
+  --border-strong: rgba(0,0,0,0.16);
+  --text: #1a1a18;
+  --text-2: #6b6b67;
+  --text-3: #9f9f9b;
+  --accent: #2a5f3c;
+  --up: #1a7a3a;
+  --up-bg: #e8f5ed;
+  --down: #b83030;
+  --down-bg: #faeaea;
+  --neutral: #888780;
+  --r: 6px;
+}
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.5; }
+
+header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.logo { font-family: 'DM Serif Display', serif; font-size: 20px; }
+.logo span { font-style: italic; color: var(--text-2); font-size: 17px; }
+#week-label { font-size: 12px; color: var(--text-3); }
+
+.input-section { margin: 20px 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 700px) { .input-section { grid-template-columns: 1fr; } .input-section, #dashboard { margin-left: 16px; margin-right: 16px; } }
+.paste-card { background: var(--surface); border: 1.5px dashed var(--border-strong); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.paste-card.has-data { border-style: solid; border-color: var(--accent); }
+.paste-label { font-size: 12px; font-weight: 500; color: var(--text-2); display: flex; align-items: center; gap: 6px; }
+.paste-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; background: var(--up-bg); color: var(--up); font-weight: 500; display: none; }
+.paste-card.has-data .paste-badge { display: inline-block; }
+.paste-card textarea { width: 100%; height: 90px; border: 1px solid var(--border); border-radius: var(--r); padding: 8px 10px; font-family: 'DM Sans', sans-serif; font-size: 11px; color: var(--text); background: var(--bg); resize: vertical; outline: none; }
+.paste-card textarea:focus { border-color: var(--accent); }
+
+.action-row { margin: 0 32px 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.parse-btn { background: var(--accent); color: #fff; border: none; border-radius: var(--r); padding: 9px 22px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity 0.15s; }
+.parse-btn:hover { opacity: 0.88; }
+.clear-btn { background: transparent; color: var(--text-2); border: 1px solid var(--border-strong); border-radius: var(--r); padding: 9px 16px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; }
+#parse-status { font-size: 12px; color: var(--text-3); }
+
+#dashboard { display: none; margin: 0 32px 40px; }
+
+/* AI Summary */
+.ai-card { background: #1a1a18; border-radius: var(--r); padding: 20px 24px; margin-bottom: 20px; }
+.ai-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 12px; }
+.ai-card-title { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: #9f9f9b; }
+.ai-btn { background: transparent; border: 1px solid rgba(255,255,255,0.2); border-radius: var(--r); padding: 6px 14px; font-family: 'DM Sans', sans-serif; font-size: 12px; color: rgba(255,255,255,0.7); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.ai-btn:hover { border-color: rgba(255,255,255,0.45); color: #fff; }
+.ai-btn:disabled { opacity: 0.4; cursor: default; }
+#ai-output { font-family: 'DM Serif Display', serif; font-size: 15px; line-height: 1.75; color: #f0ede8; min-height: 20px; }
+#ai-output.loading { color: #666; font-family: 'DM Sans', sans-serif; font-size: 13px; font-style: italic; }
+.ai-covers-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08); }
+.ai-covers-label { font-size: 12px; color: #9f9f9b; white-space: nowrap; }
+.ai-covers-input { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); border-radius: 4px; padding: 5px 10px; font-family: 'DM Sans', sans-serif; font-size: 12px; color: #f0ede8; width: 80px; outline: none; }
+.ai-covers-input:focus { border-color: rgba(255,255,255,0.4); }
+
+/* KPIs */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(148px, 1fr)); gap: 10px; margin-bottom: 20px; }
+.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; }
+.kpi-label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+.kpi-val { font-family: 'DM Serif Display', serif; font-size: 26px; line-height: 1; color: var(--text); }
+.kpi-sub { font-size: 11px; color: var(--text-3); margin-top: 4px; }
+.kpi-delta { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 10px; margin-top: 5px; }
+.kpi-delta.up { background: var(--up-bg); color: var(--up); }
+.kpi-delta.down { background: var(--down-bg); color: var(--down); }
+.kpi-delta.flat { background: #f1efe8; color: var(--neutral); }
+
+/* Tabs */
+.tabs { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+.tab { font-family: 'DM Sans', sans-serif; font-size: 12px; padding: 7px 16px; border-radius: 20px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-2); cursor: pointer; transition: all 0.12s; font-weight: 500; }
+.tab:hover { background: var(--surface); }
+.tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.panels > div { display: none; }
+.panels > div.active { display: block; }
+
+/* Cards */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 16px 18px; margin-bottom: 14px; }
+.card:last-child { margin-bottom: 0; }
+.card-title { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); margin-bottom: 14px; }
+.card-title span { font-family: 'DM Serif Display', serif; font-size: 15px; text-transform: none; letter-spacing: 0; color: var(--text); margin-right: 8px; }
+
+/* Bar rows */
+.bar-row { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; font-size: 12px; }
+.bar-name { width: 180px; flex-shrink: 0; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-track { flex: 1; height: 14px; background: var(--bg); border-radius: 2px; overflow: hidden; position: relative; }
+.bar-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+.bar-fill-prev { position: absolute; top: 0; left: 0; height: 100%; border-radius: 2px; opacity: 0.25; }
+.bar-qty { width: 30px; text-align: right; color: var(--text-2); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.bar-rev { width: 54px; text-align: right; color: var(--text-3); flex-shrink: 0; font-size: 11px; font-variant-numeric: tabular-nums; }
+.bar-delta { width: 42px; text-align: right; flex-shrink: 0; font-size: 10px; font-weight: 500; }
+.bar-delta.up { color: var(--up); }
+.bar-delta.down { color: var(--down); }
+.bar-delta.flat { color: var(--neutral); }
+
+/* WoW section header */
+.wow-legend { display: flex; gap: 16px; font-size: 11px; color: var(--text-3); margin-bottom: 12px; align-items: center; flex-wrap: wrap; }
+.wow-swatch { display: inline-block; width: 28px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+
+/* Heatmap */
+.heatmap { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 5px; }
+.hm-cell { border-radius: 4px; padding: 8px 10px; }
+.hm-name { font-size: 11px; font-weight: 500; color: #fff; line-height: 1.3; }
+.hm-meta { font-size: 10px; color: rgba(255,255,255,0.75); margin-top: 2px; }
+.hm-delta { font-size: 10px; margin-top: 2px; font-weight: 500; }
+.hm-delta.up { color: #a0ffb8; }
+.hm-delta.down { color: #ffaaaa; }
+
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; color: var(--text-2); margin-bottom: 14px; }
+.leg-dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+.no-data { text-align: center; padding: 60px 20px; color: var(--text-3); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">River Pointe Inn <span>— product mix</span></div>
+  <div id="week-label">No data loaded</div>
+</header>
+
+<div class="input-section">
+  <div class="paste-card" id="card-this">
+    <div class="paste-label">
+      This week
+      <span class="paste-badge" id="badge-this">✓ loaded</span>
+    </div>
+    <textarea id="raw-this" placeholder="Paste this week's Toast product mix export..."></textarea>
+  </div>
+  <div class="paste-card" id="card-prev">
+    <div class="paste-label">
+      Last week <span style="color:var(--text-3);font-weight:400;">(optional — enables WoW comparison)</span>
+      <span class="paste-badge" id="badge-prev">✓ loaded</span>
+    </div>
+    <textarea id="raw-prev" placeholder="Paste last week's export for week-over-week deltas..."></textarea>
+  </div>
+</div>
+
+<div class="action-row">
+  <button class="parse-btn" onclick="parseAndRender()">Parse & render</button>
+  <button class="clear-btn" onclick="clearAll()">Clear</button>
+  <span id="parse-status"></span>
+</div>
+
+<div id="dashboard">
+
+  <div class="ai-card">
+    <div class="ai-card-header">
+      <span class="ai-card-title">GM summary</span>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <div class="ai-covers-row" style="margin:0;padding:0;border:none;">
+          <span class="ai-covers-label">Covers this week:</span>
+          <input class="ai-covers-input" type="number" id="covers-this" placeholder="e.g. 420">
+          <span class="ai-covers-label" style="margin-left:8px;">Last week:</span>
+          <input class="ai-covers-input" type="number" id="covers-prev" placeholder="e.g. 390">
+        </div>
+        <button class="ai-btn" id="ai-btn" onclick="generateSummary()">Generate summary ↗</button>
+      </div>
+    </div>
+    <div id="ai-output" style="color:#555;font-family:'DM Sans',sans-serif;font-size:13px;font-style:italic;">Hit "Generate summary" for an AI-written GM brief on this week's mix.</div>
+  </div>
+
+  <div class="kpi-grid" id="kpi-grid"></div>
+
+  <div class="tabs">
+    <button class="tab active" data-panel="overview">Overview</button>
+    <button class="tab" data-panel="wow">Week-over-week</button>
+    <button class="tab" data-panel="cocktails">Cocktails</button>
+    <button class="tab" data-panel="wine">Wine by glass</button>
+    <button class="tab" data-panel="spirits">Spirits</button>
+    <button class="tab" data-panel="food">Food</button>
+    <button class="tab" data-panel="heatmap">Revenue heatmap</button>
+  </div>
+
+  <div class="panels">
+    <div id="panel-overview" class="active"></div>
+    <div id="panel-wow"></div>
+    <div id="panel-cocktails"></div>
+    <div id="panel-wine"></div>
+    <div id="panel-spirits"></div>
+    <div id="panel-food"></div>
+    <div id="panel-heatmap"></div>
+  </div>
+</div>
+
+<script>
+const CAT_COLORS = {
+  cocktail: '#2150a0', wine: '#5c2d6e', food: '#c0452a',
+  starter: '#2a5f3c', dessert: '#b8942a', spirit: '#4a7a8a',
+  beer: '#7a5c2a', coffee: '#6b4e3d', na: '#888780',
+};
+
+let currentThis = null, currentPrev = null;
+
+function parsePaste(raw) {
+  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  const items = [];
+  let dateRange = '';
+  const dateMatch = raw.match(/Date range\s+([\w\s,\-–\/]+?\d{4})/i);
+  if (dateMatch) dateRange = dateMatch[1].trim();
+  for (const line of lines) {
+    const m = line.match(/^(.+?)\s+(\d+)\s+\$([0-9,.]+)\s*$/);
+    if (!m) continue;
+    const name = m[1].trim();
+    const qty = parseInt(m[2]);
+    const price = parseFloat(m[3].replace(',',''));
+    if (qty > 0 && price >= 0 && name.length > 1) items.push({ name, qty, price });
+  }
+  return { items, dateRange };
+}
+
+function categorize(name) {
+  const n = name.toLowerCase();
+  if (/espresso martini|salt air|filthy|metropolitan|jockey|river pointe|grasshopper|in fashion|saint joe|lychee|can't elope|pep in|bee sting|negroni|strawberry fields|colada|hh:|happy hour|martini happy/.test(n)) return 'cocktail';
+  if (/spritz|french 75|hugo|paper plane|mimosa/.test(n)) return 'cocktail';
+  if (/na almost|na pear|na espresso/.test(n)) return 'cocktail';
+  if (/gl:|cremant|brut|moet|drappier|folle blanche|albarino|ladoucette|drouhin|pouilly|peyrassol|moulin|cotes du rhone|guyon|pinot noir|haut.*art|routestock|chappellet/.test(n)) return 'wine';
+  if (/btl.*wine|wine by the bottle|btg bottle|sancerre|meursault|chablis|puligny|burgundy|bordeaux|cabernet|pride mountain|ridge|kistler|o'shaugh|aubert|turley|ducru|chauvin|smith haut|leon beyer|melville|chevillon|cathiard|camus|agrapart|sulauze|domaine pierre|francois de la|lauverjat|manarine|lafarge/.test(n)) return 'wine';
+  if (/vodka|belvedere|grey goose|ketel|tito\'s|hendrick|beefeater|bombay|botanist|fords gin|plymouth|tanqueray|absolut|monkey 47|asbury park gin/.test(n)) return 'spirit';
+  if (/ gin$| gin /.test(n) && !/begin|engine|origin/.test(n)) return 'spirit';
+  if (/tequila|mezcal|casamigos|don julio|fortaleza|g4 |lalo|pueblo viejo|casa dragon|del maguey/.test(n)) return 'spirit';
+  if (/whiskey|bourbon|rye |angels envy|blanton|buffalo trace|bulleit|dewars|high west|jack daniel|jameson|johnnie walker|laguavulin|macallan|maker\'s|michter|oban|sazerac|whistlepig|widow jane|woodford/.test(n)) return 'spirit';
+  if (/chartreuse|cognac|amaretto|sambuca|amaro|limoncello|bailey|campari|nonino|averna|port|dessert wine/.test(n)) return 'spirit';
+  if (/beer|pilsner|lager|kronenbourg|other half|athletic brewing|vliet|birdsmouth/.test(n)) return 'beer';
+  if (/espresso|cappuccino|macchiato|coffee|^tea|peppermint tea|chamomile|earl gray|green tea|black tea/.test(n)) return 'coffee';
+  if (/btl.*water|still water|sparkling water|coke|diet coke|sprite|ginger ale|club soda|ginger beer|shirley|lemonade|iced tea|apple juice|arnold palmer|pineapple juice|na bev/.test(n)) return 'na';
+  if (/wagyu burger|ratatouille|paillard|moules|tuna prov|halibut|loup|lasagna|au poivre|pork chop|steak frites|roast chicken|ny strip|porterhouse|pommes|haricot|peppers carmen|peas.*lard|duchess|poulet|oysters rock|french dip|quail|bouill|short rib|lobster frites|crispy fish|salmon burger|pan bagnat|chicken salad|omelette|eggs bene|hanger/.test(n)) return 'food';
+  if (/bread service|little gem|garden salad|asparagus|escargots|jambon|steak tartare|crepe|berries.*cream|caviar|crudo|shrimp cocktail|tuna tartare|ceviche|dune fox|swan point|sugar shack|love.*dozen|oyster/.test(n)) return 'starter';
+  if (/carrot cake|meringue|chocolate cake|cheesecake|raspberry tart|creme brulee|banana split|brownie|ice cream|sorbet|fromage/.test(n)) return 'dessert';
+  return 'food';
+}
+
+function fmt(n) { return n.toLocaleString('en-US', { style:'currency', currency:'USD', maximumFractionDigits:0 }); }
+function pct(n) { return (n >= 0 ? '+' : '') + Math.round(n) + '%'; }
+function deltaClass(v) { return v > 2 ? 'up' : v < -2 ? 'down' : 'flat'; }
+function deltaArrow(v) { return v > 2 ? '▲' : v < -2 ? '▼' : '—'; }
+
+function buildLookup(items) {
+  const m = {};
+  items.forEach(i => { m[i.name.toLowerCase()] = i; });
+  return m;
+}
+
+function getDelta(name, prevLookup) {
+  if (!prevLookup) return null;
+  const prev = prevLookup[name.toLowerCase()];
+  if (!prev) return null;
+  return prev.qty;
+}
+
+function makeBarSection(title, items, color, prevLookup, limit) {
+  const sorted = [...items].sort((a,b) => b.qty - a.qty).slice(0, limit || 25);
+  if (!sorted.length) return '';
+  const max = sorted[0].qty;
+  const prevMax = prevLookup ? Math.max(...sorted.map(i => { const p = prevLookup[i.name.toLowerCase()]; return p ? p.qty : 0; }), 1) : max;
+  const hasPrev = !!prevLookup;
+
+  let html = `<div class="card"><div class="card-title"><span>${title}</span> qty sold · est. revenue${hasPrev ? ' · WoW' : ''}</div>`;
+  if (hasPrev) html += `<div class="wow-legend"><span><span class="wow-swatch" style="background:${color};opacity:1;"></span>This week</span><span><span class="wow-swatch" style="background:${color};opacity:0.25;"></span>Last week</span></div>`;
+  sorted.forEach(item => {
+    const thisPct = Math.round(item.qty / max * 100);
+    const prevItem = prevLookup ? prevLookup[item.name.toLowerCase()] : null;
+    const prevPct = prevItem ? Math.round(prevItem.qty / max * 100) : 0;
+    const deltaVal = prevItem ? ((item.qty - prevItem.qty) / prevItem.qty * 100) : null;
+    const dc = deltaVal !== null ? deltaClass(deltaVal) : '';
+    const rev = fmt(item.qty * item.price);
+    html += `<div class="bar-row">
+      <span class="bar-name" title="${item.name}">${item.name.replace(/^(GL:|HH:)\s*/i,'')}</span>
+      <span class="bar-track">
+        ${hasPrev && prevPct ? `<span class="bar-fill-prev" style="width:${prevPct}%;background:${color};"></span>` : ''}
+        <span class="bar-fill" style="width:${thisPct}%;background:${color};"></span>
+      </span>
+      <span class="bar-qty">${item.qty}</span>
+      <span class="bar-rev">${rev}</span>
+      ${hasPrev ? `<span class="bar-delta ${dc}">${deltaVal !== null ? deltaArrow(deltaVal) + ' ' + Math.abs(Math.round(deltaVal)) + '%' : 'new'}</span>` : ''}
+    </div>`;
+  });
+  html += '</div>';
+  return html;
+}
+
+function renderDashboard(thisData, prevData) {
+  currentThis = thisData;
+  currentPrev = prevData;
+  const { items, dateRange } = thisData;
+  const prevItems = prevData ? prevData.items : null;
+  const prevLookup = prevItems ? buildLookup(prevItems) : null;
+  const hasPrev = !!prevLookup;
+
+  let weekLabel = dateRange || 'Week loaded';
+  if (prevData && prevData.dateRange) weekLabel += '  ·  prev: ' + prevData.dateRange;
+  document.getElementById('week-label').textContent = weekLabel;
+
+  const sumRev = arr => arr ? arr.reduce((s,i) => s + i.qty*i.price, 0) : 0;
+  const sumQty = arr => arr ? arr.reduce((s,i) => s + i.qty, 0) : 0;
+
+  const cats = {}, prevCats = {};
+  items.forEach(i => { const c = categorize(i.name); if (!cats[c]) cats[c] = []; cats[c].push(i); });
+  if (prevItems) prevItems.forEach(i => { const c = categorize(i.name); if (!prevCats[c]) prevCats[c] = []; prevCats[c].push(i); });
+
+  const totalRev = items.reduce((s,i) => s + i.qty*i.price, 0);
+  const prevTotalRev = prevItems ? prevItems.reduce((s,i) => s + i.qty*i.price, 0) : 0;
+  const totalQty = items.reduce((s,i) => s + i.qty, 0);
+  const prevTotalQty = prevItems ? prevItems.reduce((s,i) => s + i.qty, 0) : 0;
+
+  const cocktailRev = sumRev(cats.cocktail);
+  const wineRev = sumRev(cats.wine);
+  const foodRev = sumRev(cats.food) + sumRev(cats.starter) + sumRev(cats.dessert);
+  const spiritRev = sumRev(cats.spirit);
+
+  const prevCocktailRev = sumRev(prevCats.cocktail);
+  const prevWineRev = sumRev(prevCats.wine);
+  const prevFoodRev = sumRev(prevCats.food) + sumRev(prevCats.starter) + sumRev(prevCats.dessert);
+  const prevSpiritRev = sumRev(prevCats.spirit);
+
+  const topCocktail = [...(cats.cocktail||[])].sort((a,b)=>b.qty-a.qty)[0];
+  const topFood = [...(cats.food||[])].sort((a,b)=>b.qty-a.qty)[0];
+  const topPour = [...(cats.spirit||[])].sort((a,b)=>b.qty-a.qty)[0];
+
+  function kpiDelta(cur, prev) {
+    if (!hasPrev || !prev) return '';
+    const d = (cur - prev) / prev * 100;
+    const dc = deltaClass(d);
+    return `<div class="kpi-delta ${dc}">${deltaArrow(d)} ${Math.abs(Math.round(d))}% WoW</div>`;
+  }
+
+  const kpis = [
+    { label: 'Est. total revenue', val: fmt(totalRev), sub: `${totalQty.toLocaleString()} items sold`, delta: kpiDelta(totalRev, prevTotalRev) },
+    { label: 'Cocktail revenue', val: fmt(cocktailRev), sub: `${sumQty(cats.cocktail)} drinks`, delta: kpiDelta(cocktailRev, prevCocktailRev) },
+    { label: 'Wine revenue', val: fmt(wineRev), sub: `${sumQty(cats.wine)} pours/bottles`, delta: kpiDelta(wineRev, prevWineRev) },
+    { label: 'Food revenue', val: fmt(foodRev), sub: `${(sumQty(cats.food)||0)+(sumQty(cats.starter)||0)} covers`, delta: kpiDelta(foodRev, prevFoodRev) },
+    { label: 'Spirit revenue', val: fmt(spiritRev), sub: `${sumQty(cats.spirit)} pours`, delta: kpiDelta(spiritRev, prevSpiritRev) },
+    { label: 'Top cocktail', val: topCocktail ? topCocktail.name.replace(/^(HH:)\s*/i,'').split(' ').slice(0,3).join(' ') : '—', sub: topCocktail ? `${topCocktail.qty} sold` : '', delta: '' },
+    { label: 'Top food', val: topFood ? topFood.name.split(' ').slice(0,2).join(' ') : '—', sub: topFood ? `${topFood.qty} sold` : '', delta: '' },
+    { label: 'Top spirit', val: topPour ? topPour.name.split(' ').slice(0,2).join(' ') : '—', sub: topPour ? `${topPour.qty} pours` : '', delta: '' },
+  ];
+  document.getElementById('kpi-grid').innerHTML = kpis.map(k =>
+    `<div class="kpi"><div class="kpi-label">${k.label}</div><div class="kpi-val">${k.val}</div><div class="kpi-sub">${k.sub}</div>${k.delta}</div>`
+  ).join('');
+
+  const catOrder = [
+    { key:'cocktail', label:'Cocktails & martinis', color: CAT_COLORS.cocktail },
+    { key:'wine', label:'Wine (glass & bottle)', color: CAT_COLORS.wine },
+    { key:'food', label:'Entrees', color: CAT_COLORS.food },
+    { key:'starter', label:'Starters & raw bar', color: CAT_COLORS.starter },
+    { key:'dessert', label:'Desserts', color: CAT_COLORS.dessert },
+    { key:'spirit', label:'Spirits', color: CAT_COLORS.spirit },
+    { key:'beer', label:'Beer', color: CAT_COLORS.beer },
+    { key:'coffee', label:'Coffee & tea', color: CAT_COLORS.coffee },
+    { key:'na', label:'NA beverages', color: CAT_COLORS.na },
+  ];
+
+  const overviewRows = catOrder.map(c => ({
+    name: c.label, qty: sumQty(cats[c.key]), rev: sumRev(cats[c.key]),
+    prevQty: sumQty(prevCats[c.key]), color: c.color
+  })).filter(r => r.qty > 0).sort((a,b) => b.qty - a.qty);
+
+  const maxQ = overviewRows[0]?.qty || 1;
+  let ovHtml = `<div class="card"><div class="card-title"><span>All categories</span> qty sold · est. revenue${hasPrev ? ' · WoW' : ''}</div>`;
+  if (hasPrev) ovHtml += `<div class="wow-legend"><span><span class="wow-swatch" style="background:#1a1a18;opacity:1;"></span>This week</span><span><span class="wow-swatch" style="background:#1a1a18;opacity:0.2;"></span>Last week</span></div>`;
+  overviewRows.forEach(row => {
+    const thisPct = Math.round(row.qty / maxQ * 100);
+    const prevPct = row.prevQty ? Math.round(row.prevQty / maxQ * 100) : 0;
+    const d = (hasPrev && row.prevQty) ? ((row.qty - row.prevQty) / row.prevQty * 100) : null;
+    const dc = d !== null ? deltaClass(d) : '';
+    ovHtml += `<div class="bar-row">
+      <span class="bar-name">${row.name}</span>
+      <span class="bar-track">
+        ${hasPrev && prevPct ? `<span class="bar-fill-prev" style="width:${prevPct}%;background:${row.color};"></span>` : ''}
+        <span class="bar-fill" style="width:${thisPct}%;background:${row.color};"></span>
+      </span>
+      <span class="bar-qty">${row.qty}</span>
+      <span class="bar-rev">${fmt(row.rev)}</span>
+      ${hasPrev ? `<span class="bar-delta ${dc}">${d !== null ? deltaArrow(d)+' '+Math.abs(Math.round(d))+'%' : '—'}</span>` : ''}
+    </div>`;
+  });
+  ovHtml += '</div>';
+  document.getElementById('panel-overview').innerHTML = ovHtml;
+
+  // WoW panel — top movers
+  if (hasPrev) {
+    const movers = items.map(item => {
+      const prev = prevLookup[item.name.toLowerCase()];
+      if (!prev) return { name: item.name, delta: 999, isNew: true, qty: item.qty, prevQty: 0 };
+      const d = (item.qty - prev.qty) / prev.qty * 100;
+      return { name: item.name, delta: d, isNew: false, qty: item.qty, prevQty: prev.qty };
+    }).filter(i => Math.abs(i.delta) > 5 || i.isNew);
+
+    const gainers = movers.filter(i => i.delta > 0).sort((a,b) => b.delta - a.delta).slice(0,15);
+    const losers = movers.filter(i => i.delta < 0).sort((a,b) => a.delta - b.delta).slice(0,15);
+    const newItems = movers.filter(i => i.isNew).slice(0,10);
+    const disappeared = prevItems.filter(p => !buildLookup(items)[p.name.toLowerCase()]).slice(0,10);
+
+    function moverRows(list, isLosers) {
+      return list.map(i => {
+        const dc = isLosers ? 'down' : 'up';
+        const arrow = isLosers ? '▼' : (i.isNew ? '★' : '▲');
+        const prevStr = i.isNew ? 'new' : `was ${i.prevQty}`;
+        return `<div class="bar-row">
+          <span class="bar-name" style="width:220px;" title="${i.name}">${i.name.replace(/^(GL:|HH:)\s*/i,'')}</span>
+          <span class="bar-delta ${dc}" style="width:auto;font-size:12px;">${arrow} ${i.isNew ? 'new' : Math.abs(Math.round(i.delta))+'%'}</span>
+          <span class="bar-rev" style="width:auto;margin-left:8px;color:var(--text-3);">${i.qty} sold (${prevStr})</span>
+        </div>`;
+      }).join('');
+    }
+
+    let wowHtml = '';
+    if (gainers.length) wowHtml += `<div class="card"><div class="card-title"><span>Top gainers</span> items up most vs last week</div>${moverRows(gainers, false)}</div>`;
+    if (losers.length) wowHtml += `<div class="card"><div class="card-title"><span>Top decliners</span> items down most vs last week</div>${moverRows(losers, true)}</div>`;
+    if (newItems.length) wowHtml += `<div class="card"><div class="card-title"><span>New this week</span> not on last week's report</div>${moverRows(newItems, false)}</div>`;
+    if (disappeared.length) wowHtml += `<div class="card"><div class="card-title"><span>Missing this week</span> on last week's report, not this one</div>${disappeared.map(i => `<div class="bar-row"><span class="bar-name" style="width:220px;">${i.name.replace(/^(GL:|HH:)\s*/i,'')}</span><span style="font-size:11px;color:var(--text-3);">was ${i.qty} last week</span></div>`).join('')}</div>`;
+    document.getElementById('panel-wow').innerHTML = wowHtml || '<div class="no-data">No significant movers detected.</div>';
+  } else {
+    document.getElementById('panel-wow').innerHTML = '<div class="no-data">Paste last week\'s data above to see week-over-week movement.</div>';
+  }
+
+  document.getElementById('panel-cocktails').innerHTML = makeBarSection('House cocktails & martinis', cats.cocktail||[], CAT_COLORS.cocktail, prevLookup);
+  document.getElementById('panel-wine').innerHTML = makeBarSection('Wine by the glass & bottle', cats.wine||[], CAT_COLORS.wine, prevLookup);
+
+  const spiritSubs = [
+    { label:'Vodka & gin', re:/vodka|belvedere|grey goose|ketel|tito|hendrick|beefeater|bombay|botanist|fords|plymouth|tanqueray|absolut|monkey|asbury park gin/ },
+    { label:'Whiskey', re:/whiskey|bourbon|rye|angels envy|blanton|buffalo trace|bulleit|dewars|high west|jack daniel|jameson|johnnie walker|laguavulin|macallan|maker|michter|oban|sazerac|whistlepig|widow jane|woodford/ },
+    { label:'Tequila & mezcal', re:/tequila|mezcal|casamigos|don julio|fortaleza|g4|lalo|pueblo viejo|casa dragon|del maguey/ },
+    { label:'Aperitifs & cordials', re:/chartreuse|cognac|amaretto|sambuca|amaro|limoncello|bailey|campari|nonino|averna|port|dessert wine/ },
+  ];
+  let spiritHtml = '';
+  spiritSubs.forEach(sub => {
+    const filtered = (cats.spirit||[]).filter(i => sub.re.test(i.name.toLowerCase()));
+    if (filtered.length) spiritHtml += makeBarSection(sub.label, filtered, CAT_COLORS.spirit, prevLookup);
+  });
+  document.getElementById('panel-spirits').innerHTML = spiritHtml || '<div class="no-data">No spirit data.</div>';
+
+  document.getElementById('panel-food').innerHTML =
+    makeBarSection('Entrees & sides', cats.food||[], CAT_COLORS.food, prevLookup) +
+    makeBarSection('Starters & raw bar', cats.starter||[], CAT_COLORS.starter, prevLookup) +
+    makeBarSection('Desserts', cats.dessert||[], CAT_COLORS.dessert, prevLookup);
+
+  const hmItems = items.map(i => ({ ...i, rev:i.qty*i.price, cat:categorize(i.name) })).sort((a,b)=>b.rev-a.rev).slice(0,50);
+  const maxRev = hmItems[0]?.rev || 1;
+  const legendHtml = Object.entries(CAT_COLORS).map(([k,v]) => `<span><span class="leg-dot" style="background:${v}"></span>${k}</span>`).join('');
+  let hmHtml = `<div class="card"><div class="card-title"><span>Revenue heatmap</span> top 50 items</div><div class="legend">${legendHtml}</div><div class="heatmap">`;
+  hmItems.forEach(item => {
+    const opacity = (0.25 + (item.rev / maxRev) * 0.75).toFixed(2);
+    const prevItem = prevLookup ? prevLookup[item.name.toLowerCase()] : null;
+    const d = prevItem ? (item.qty - prevItem.qty) / prevItem.qty * 100 : null;
+    const dc = d !== null ? deltaClass(d) : '';
+    hmHtml += `<div class="hm-cell" style="background:${CAT_COLORS[item.cat]};opacity:${opacity};">
+      <div class="hm-name">${item.name.replace(/^(GL:|HH:)\s*/i,'')}</div>
+      <div class="hm-meta">${item.qty} sold · ${fmt(item.rev)}</div>
+      ${d !== null ? `<div class="hm-delta ${dc}">${deltaArrow(d)} ${Math.abs(Math.round(d))}%</div>` : ''}
+    </div>`;
+  });
+  hmHtml += '</div></div>';
+  document.getElementById('panel-heatmap').innerHTML = hmHtml;
+
+  document.getElementById('dashboard').style.display = 'block';
+}
+
+async function generateSummary() {
+  if (!currentThis) return;
+  const btn = document.getElementById('ai-btn');
+  const out = document.getElementById('ai-output');
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+  out.className = 'loading';
+  out.textContent = 'Analyzing the mix...';
+
+  const { items, dateRange } = currentThis;
+  const prevItems = currentPrev ? currentPrev.items : null;
+  const hasPrev = !!prevItems;
+  const prevLookup = prevItems ? buildLookup(prevItems) : null;
+
+  const sumRev = arr => arr ? arr.reduce((s,i)=>s+i.qty*i.price,0) : 0;
+  const sumQty = arr => arr ? arr.reduce((s,i)=>s+i.qty,0) : 0;
+  const cats = {}, prevCats = {};
+  items.forEach(i => { const c=categorize(i.name); if(!cats[c])cats[c]=[]; cats[c].push(i); });
+  if (prevItems) prevItems.forEach(i => { const c=categorize(i.name); if(!prevCats[c])prevCats[c]=[]; prevCats[c].push(i); });
+
+  const coversThis = parseInt(document.getElementById('covers-this').value) || null;
+  const coversPrev = parseInt(document.getElementById('covers-prev').value) || null;
+
+  const topCocktails = [...(cats.cocktail||[])].sort((a,b)=>b.qty-a.qty).slice(0,5).map(i=>`${i.name} (${i.qty})`).join(', ');
+  const topWine = [...(cats.wine||[])].sort((a,b)=>b.qty-a.qty).slice(0,5).map(i=>`${i.name} (${i.qty})`).join(', ');
+  const topFood = [...(cats.food||[])].sort((a,b)=>b.qty-a.qty).slice(0,5).map(i=>`${i.name} (${i.qty})`).join(', ');
+  const topSpirits = [...(cats.spirit||[])].sort((a,b)=>b.qty-a.qty).slice(0,5).map(i=>`${i.name} (${i.qty})`).join(', ');
+
+  let wowText = '';
+  if (hasPrev) {
+    const movers = items.map(item => {
+      const prev = prevLookup[item.name.toLowerCase()];
+      if (!prev) return null;
+      const d = (item.qty - prev.qty) / prev.qty * 100;
+      return Math.abs(d) > 10 ? `${item.name}: ${d > 0 ? '+' : ''}${Math.round(d)}% (${prev.qty} → ${item.qty})` : null;
+    }).filter(Boolean).slice(0,12).join('; ');
+    const prevTotal = prevItems.reduce((s,i)=>s+i.qty*i.price,0);
+    const thisTotal = items.reduce((s,i)=>s+i.qty*i.price,0);
+    const revD = ((thisTotal-prevTotal)/prevTotal*100).toFixed(1);
+    wowText = `\n\nWeek-over-week: total est. revenue ${revD > 0 ? 'up' : 'down'} ${Math.abs(revD)}% vs last week (${currentPrev.dateRange||'prior week'}). Notable movers: ${movers || 'no major shifts'}.`;
+  }
+
+  const coversText = coversThis ? `\nCovers this week: ${coversThis}${coversPrev ? `, last week: ${coversPrev}` : ''}.` : '';
+
+  const prompt = `You are writing a weekly GM product mix summary for River Pointe Inn, a fine-dining French-American bistro in Rumson, NJ owned by the Rallo family. The GM is Adam. Keep it sharp, professional, and useful — like a Monday morning brief you'd actually send to ownership. 2-3 paragraphs. No bullet points. Mention specific items and numbers. Flag anything worth attention — surges, declines, opportunities, or anomalies.
+
+Week: ${dateRange || 'current week'}${coversText}
+Top cocktails: ${topCocktails}
+Top wine by glass: ${topWine}
+Top entrees: ${topFood}
+Top spirit pours: ${topSpirits}
+Cocktail revenue: ~${fmt(sumRev(cats.cocktail))}, wine: ~${fmt(sumRev(cats.wine))}, food: ~${fmt(sumRev(cats.food)+sumRev(cats.starter)+sumRev(cats.dessert))}, spirits: ~${fmt(sumRev(cats.spirit))}${wowText}
+
+Write the GM summary now.`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await resp.json();
+    const text = data.content?.find(b => b.type === 'text')?.text || 'No response.';
+    out.className = '';
+    out.textContent = text;
+  } catch(e) {
+    out.className = '';
+    out.textContent = 'Error generating summary. Check your connection and try again.';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Regenerate ↗';
+}
+
+function parseAndRender() {
+  const rawThis = document.getElementById('raw-this').value.trim();
+  const rawPrev = document.getElementById('raw-prev').value.trim();
+  if (!rawThis) { document.getElementById('parse-status').textContent = 'Paste this week\'s data first.'; return; }
+
+  const thisData = parsePaste(rawThis);
+  if (!thisData.items.length) { document.getElementById('parse-status').textContent = 'Could not parse any items. Paste the full Toast product mix text.'; return; }
+
+  document.getElementById('card-this').classList.add('has-data');
+  let prevData = null;
+  if (rawPrev) {
+    prevData = parsePaste(rawPrev);
+    if (prevData.items.length) document.getElementById('card-prev').classList.add('has-data');
+  }
+
+  const status = `Parsed ${thisData.items.length} items this week${prevData ? `, ${prevData.items.length} last week — WoW enabled` : ''}.`;
+  document.getElementById('parse-status').textContent = status;
+  document.getElementById('ai-output').textContent = 'Hit "Generate summary" for an AI-written GM brief on this week\'s mix.';
+  document.getElementById('ai-output').className = '';
+  document.getElementById('ai-btn').textContent = 'Generate summary ↗';
+  document.getElementById('ai-btn').disabled = false;
+  renderDashboard(thisData, prevData);
+}
+
+function clearAll() {
+  ['raw-this','raw-prev'].forEach(id => document.getElementById(id).value = '');
+  ['card-this','card-prev'].forEach(id => document.getElementById(id).classList.remove('has-data'));
+  document.getElementById('parse-status').textContent = '';
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('week-label').textContent = 'No data loaded';
+  currentThis = null; currentPrev = null;
+}
+
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panels > div').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.panel).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
