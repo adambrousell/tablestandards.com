@@ -138,14 +138,16 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <div class="ai-card-header">
       <span class="ai-card-title">GM Summary</span>
       <div class="covers-row">
-        <span class="covers-label">Covers this week:</span>
+        <span class="covers-label">API key:</span>
+        <input class="covers-input" type="password" id="api-key-input" placeholder="sk-ant-..." style="width:160px;" oninput="localStorage.setItem('rpi_anthropic_key',this.value)">
+        <span class="covers-label" style="margin-left:8px;">Covers this week:</span>
         <input class="covers-input" type="number" id="covers-this" placeholder="e.g. 420">
         <span class="covers-label">Last week:</span>
         <input class="covers-input" type="number" id="covers-prev" placeholder="e.g. 390">
         <button class="ai-btn" id="ai-btn" onclick="generateSummary()">Generate summary ↗</button>
       </div>
     </div>
-    <div id="ai-output" style="color:#555;font-family:'DM Sans',sans-serif;font-size:13px;font-style:italic;">Hit "Generate summary" for an AI-written GM brief on this week's mix.</div>
+    <div id="ai-output" style="color:#555;font-family:'DM Sans',sans-serif;font-size:13px;font-style:italic;">Enter your Anthropic API key, then hit "Generate summary."</div>
   </div>
 
   <div class="kpi-grid" id="kpi-grid"></div>
@@ -275,7 +277,11 @@ function buildLookup(items) {
 function lookupPrev(name, prevLookup) {
   if (!prevLookup) return null;
   const key = name.toLowerCase().replace(/^(gl:|hh:)\s*/i,'').replace(/\s+/g,' ').trim();
-  return prevLookup[key] || prevLookup[name.toLowerCase().replace(/\s+/g,' ').trim()] || null;
+  const result = prevLookup[key] || prevLookup[name.toLowerCase().replace(/\s+/g,' ').trim()] || null;
+  if (!result && window._debugWoW) {
+    console.log(`[WoW no match] "${name}" → key: "${key}"`);
+  }
+  return result;
 }
 const sumRev = arr => (arr||[]).reduce((s,i)=>s+i.qty*i.price, 0);
 const sumQty = arr => (arr||[]).reduce((s,i)=>s+i.qty, 0);
@@ -296,16 +302,17 @@ function makeBarSection(title, items, color, prevLookup, limit) {
     const d = prevItem ? (item.qty - prevItem.qty) / prevItem.qty * 100 : null;
     const dc = d !== null ? deltaClass(d) : '';
     const rev = fmt(item.qty * item.price);
-    const deltaTitle = prevItem ? `was ${prevItem.qty} last week` : '';
+    const deltaTitle = prevItem ? `prev: ${prevItem.qty}` : 'no match in prev week';
+    const prevQtyLabel = prevItem ? `<span style="font-size:10px;color:var(--text-3);margin-left:3px;">(${prevItem.qty})</span>` : `<span style="font-size:10px;color:#ccc;margin-left:3px;">(—)</span>`;
     html += `<div class="bar-row">
       <span class="bar-name" title="${item.name}">${item.name.replace(/^(GL:|HH:)\s*/i,'')}</span>
       <span class="bar-track">
         <span class="bar-line" style="width:${thisPct}%;background:${color};"></span>
         ${hasPrev ? `<span class="bar-line" style="width:${prevPct||2}%;background:${color};opacity:0.3;"></span>` : ''}
       </span>
-      <span class="bar-qty">${item.qty}</span>
+      <span class="bar-qty">${item.qty}${hasPrev ? prevQtyLabel : ''}</span>
       <span class="bar-rev">${rev}</span>
-      ${hasPrev ? `<span class="bar-delta ${dc}" title="${deltaTitle}">${d!==null ? deltaArrow(d)+' '+Math.abs(Math.round(d))+'%' : 'new'}</span>` : ''}
+      ${hasPrev ? `<span class="bar-delta ${dc}" title="${deltaTitle}">${d!==null ? deltaArrow(d)+' '+Math.abs(Math.round(d))+'%' : '<span style="color:#ccc">—</span>'}</span>` : ''}
     </div>`;
   });
   html += '</div>';
@@ -319,6 +326,11 @@ function renderDashboard(thisData, prevData) {
   const prevItems = prevData ? prevData.items : null;
   const prevLookup = prevItems ? buildLookup(prevItems) : null;
   const hasPrev = !!prevLookup;
+  if (hasPrev) {
+    window._debugWoW = true;
+    console.log('[WoW] prev keys sample:', Object.keys(prevLookup).filter(k=>k.length>3).slice(0,30));
+    console.log('[WoW] this week items sample:', items.slice(0,10).map(i=>i.name));
+  }
 
   let weekLabel = dateRange || 'Week loaded';
   if (prevData?.dateRange) weekLabel += '  ·  prev: ' + prevData.dateRange;
@@ -540,20 +552,32 @@ Category revenue — cocktails: ${fmt(sumRev(cats.cocktail))}, wine: ${fmt(sumRe
 Write the GM summary now.`;
 
   try {
+    const apiKey = document.getElementById('api-key-input').value.trim();
+    if (!apiKey) {
+      out.className = ''; out.textContent = 'Enter your Anthropic API key above to generate the summary.';
+      btn.disabled = false; btn.textContent = 'Generate summary ↗';
+      return;
+    }
+    localStorage.setItem('rpi_anthropic_key', apiKey);
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method:'POST',
       headers:{
         'Content-Type':'application/json',
+        'x-api-key': apiKey,
         'anthropic-version':'2023-06-01',
         'anthropic-dangerous-direct-browser-access':'true'
       },
       body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1000, messages:[{role:'user',content:prompt}] })
     });
     const data = await resp.json();
-    const text = data.content?.find(b=>b.type==='text')?.text || 'No response.';
-    out.className = ''; out.textContent = text;
+    if (data.error) {
+      out.className = ''; out.textContent = `API error: ${data.error.message}`;
+    } else {
+      const text = data.content?.find(b=>b.type==='text')?.text || 'No response from API.';
+      out.className = ''; out.textContent = text;
+    }
   } catch(e) {
-    out.className = ''; out.textContent = 'Error generating summary. Check your connection.';
+    out.className = ''; out.textContent = `Error: ${e.message}`;
   }
   btn.disabled = false; btn.textContent = 'Regenerate ↗';
 }
@@ -795,6 +819,10 @@ document.querySelectorAll('.tab').forEach(btn => {
     document.getElementById('panel-'+btn.dataset.panel).classList.add('active');
   });
 });
+
+// Restore saved API key
+const savedKey = localStorage.getItem('rpi_anthropic_key');
+if (savedKey) document.getElementById('api-key-input').value = savedKey;
 </script>
 </body>
 </html>
