@@ -522,6 +522,116 @@ function toggleHmGroup(id) {
   if (el.classList.toggle('collapsed')) { tog.textContent = '▶'; } else { tog.textContent = '▼'; }
 }
 
+// ── Holiday / seasonal context ──────────────────────────────────────────────
+function parseWeekDates(dateRange) {
+  // Handles "May 25, 2026 - May 31, 2026" or "May 18, 2026 – May 24, 2026"
+  if (!dateRange) return [];
+  const months = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+  const dates = [];
+  const parts = dateRange.split(/[-–]/);
+  parts.forEach(p => {
+    const m = p.trim().match(/([A-Za-z]+)\s+(\d+),?\s*(\d{4})?/);
+    if (m) {
+      const mon = months[m[1].toLowerCase().slice(0,3)];
+      const day = parseInt(m[2]);
+      const year = m[3] ? parseInt(m[3]) : new Date().getFullYear();
+      if (mon !== undefined) dates.push(new Date(year, mon, day));
+    }
+  });
+  // fill in all days of the week
+  if (dates.length === 2) {
+    const all = [];
+    const d = new Date(dates[0]);
+    while (d <= dates[1]) { all.push(new Date(d)); d.setDate(d.getDate()+1); }
+    return all;
+  }
+  return dates;
+}
+
+function getHolidaysInWeek(dates) {
+  const flags = [];
+  dates.forEach(d => {
+    const mon = d.getMonth(); // 0-indexed
+    const day = d.getDate();
+    const dow = d.getDay(); // 0=Sun
+    const year = d.getFullYear();
+
+    // Fixed holidays
+    if (mon===0 && day===1)  flags.push("New Year's Day");
+    if (mon===6 && day===4)  flags.push("Fourth of July");
+    if (mon===10 && day===11) flags.push("Veterans Day");
+    if (mon===11 && day===25) flags.push("Christmas Day");
+    if (mon===11 && day===24) flags.push("Christmas Eve");
+    if (mon===11 && day===31) flags.push("New Year's Eve");
+    if (mon===10 && day===31) flags.push("Halloween");
+    if (mon===1 && day===14)  flags.push("Valentine's Day");
+    if (mon===2 && day===17)  flags.push("St. Patrick's Day");
+
+    // Thanksgiving: 4th Thursday of November
+    if (mon===10 && dow===4) {
+      const nth = Math.ceil(day/7);
+      if (nth===4) flags.push("Thanksgiving");
+      if (nth===3 && day+7>30) flags.push("Thanksgiving week");
+    }
+    // Thanksgiving Eve (Wed before)
+    if (mon===10 && dow===3 && day>=21 && day<=27) flags.push("Thanksgiving Eve");
+
+    // Memorial Day: last Monday of May
+    if (mon===4 && dow===1 && day>=25) flags.push("Memorial Day");
+    // Memorial Day weekend: Fri–Mon of that weekend
+    if (mon===4 && day>=23 && day<=27) {
+      // find last Monday of May for this year
+      const lastMon = new Date(year,4,31);
+      while (lastMon.getDay()!==1) lastMon.setDate(lastMon.getDate()-1);
+      const diff = (lastMon - d) / 86400000;
+      if (diff >= 0 && diff <= 3) flags.push("Memorial Day weekend");
+    }
+
+    // Labor Day: first Monday of September
+    if (mon===8 && dow===1 && day<=7) flags.push("Labor Day");
+    if (mon===8 && day<=7 && dow>=5) flags.push("Labor Day weekend");
+
+    // Mother's Day: 2nd Sunday of May
+    if (mon===4 && dow===0 && day>=8 && day<=14) flags.push("Mother's Day");
+    // Father's Day: 3rd Sunday of June
+    if (mon===5 && dow===0 && day>=15 && day<=21) flags.push("Father's Day");
+
+    // Easter: approximate (within a day)
+    const easter = getEaster(year);
+    if (Math.abs(d - easter) < 86400000*2) flags.push("Easter weekend");
+
+    // New Year's Eve/Day week
+    if (mon===11 && day>=26) flags.push("holiday week (Christmas–NYE)");
+    if (mon===0 && day<=2)   flags.push("New Year's holiday");
+  });
+  return [...new Set(flags)];
+}
+
+function getEaster(year) {
+  // Anonymous Gregorian algorithm
+  const a=year%19,b=Math.floor(year/100),c=year%100;
+  const d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25);
+  const g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30;
+  const i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7;
+  const m=Math.floor((a+11*h+22*l)/451);
+  const month=Math.floor((h+l-7*m+114)/31)-1;
+  const day=((h+l-7*m+114)%31)+1;
+  return new Date(year, month, day);
+}
+
+function getHolidayContext(thisRange, prevRange) {
+  const thisDates = parseWeekDates(thisRange);
+  const prevDates = parseWeekDates(prevRange);
+  const thisHolidays = getHolidaysInWeek(thisDates);
+  const prevHolidays = getHolidaysInWeek(prevDates);
+  let ctx = '';
+  if (thisHolidays.length) ctx += `Holiday/seasonal context — this week: ${thisHolidays.join(', ')}.\n`;
+  if (prevHolidays.length) ctx += `Prior week context: ${prevHolidays.join(', ')} — this likely inflated or depressed prior week numbers and should inform your WoW interpretation.\n`;
+  if (!ctx) return '';
+  return ctx + '\n';
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 async function generateSummary() {
   if (!currentThis) return;
   const btn = document.getElementById('ai-btn');
@@ -557,10 +667,10 @@ async function generateSummary() {
     wowText = `\n\nWoW: revenue ${rd>0?'up':'down'} ${Math.abs(rd)}% vs ${currentPrev.dateRange||'last week'}. Movers: ${movers||'no major shifts'}.`;
   }
 
-  const prompt = `You are writing a weekly GM product mix brief for River Pointe Inn, a fine-dining French-American bistro in Rumson, NJ (Rallo family). The GM is Adam. Sharp, professional, useful — like a Monday morning brief for ownership. 2-3 paragraphs. No bullet points. Name specific items and numbers. Flag anything notable — surges, declines, mix shifts, anomalies, opportunities.
+  const prompt = `You are writing a weekly GM product mix brief for River Pointe Inn, a fine-dining French-American bistro in Rumson, NJ (Rallo family). The GM is Adam. Sharp, professional, useful — like a Monday morning brief for ownership. 2-3 paragraphs. No bullet points. Name specific items and numbers. Flag anything notable — surges, declines, mix shifts, anomalies, opportunities. When a holiday or seasonal event affected either week, factor that into your reading of the numbers — don't just note it, actually use it to explain what you see.
 
 Week: ${dateRange||'current week'}${coversText}
-Est. revenue this week only: ~${fmt(sumRev(items))}
+${getHolidayContext(dateRange, currentPrev?.dateRange)}Est. revenue this week only: ~${fmt(sumRev(items))}
 Top cocktails: ${top(cats.cocktail)}
 Top wine BTG: ${top(cats.wine)}
 Top entrees: ${top(cats.food)}
