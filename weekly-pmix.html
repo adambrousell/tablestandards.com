@@ -191,17 +191,22 @@ const SKIP_NAMES = new Set([
   'tequila & mezcal','whiskey','aperitifs, cognac, brandy, cordials',
   'dessert wines & fortified wine','beer','coffee & tea','raw bar & starters',
   'entrees & sides','dessert','add on\'s','private events','hors d\'oeuvres',
-  'open items','gift card','total',
-  // numeric-prefix bucket rows like "2000's", "90-100's", "200's" etc
+  'open items','gift card','total','location(s)','product mix',
 ]);
 
 function isSkipRow(name) {
   const n = name.toLowerCase().trim();
   if (SKIP_NAMES.has(n)) return true;
   // Toast bucket headers: "2000's - btg bottles", "300's", "400's" etc
-  if (/^\d+[\w\s']*-?\s*(btg|bottles?)?$/.test(n)) return true;
-  // Menu hierarchy markers
-  if (/^menu hierarchy/.test(n)) return true;
+  if (/^\d[\d\-'s]*\s*(-\s*.+)?$/.test(n)) return true;
+  // "Location(s) 132 E River Road..." rows
+  if (/^location/i.test(n)) return true;
+  // "Total 4,345 $26.35" — category total rows with large round qty
+  if (/^total\b/i.test(n)) return true;
+  // Menu hierarchy / column header rows
+  if (/^menu\b|^menus?\s+item|^qty sold|^avg price|^item cogs/i.test(n)) return true;
+  // "Questions or feedback?" junk header
+  if (/questions or feedback|data delay|near real-time/i.test(n)) return true;
   return false;
 }
 
@@ -215,13 +220,15 @@ function parsePaste(raw) {
   if (dateMatch) dateRange = dateMatch[1].trim();
 
   for (const line of lines) {
-    // Match: Name  Qty  $Price  (optional trailing stuff like "Item COGS")
-    const m = line.match(/^(.+?)\s{2,}(\d+)\s+\$([0-9,.]+)/);
+    // Toast format: "Item Name  123  $45.67" — qty and price at end
+    // qty may be comma-formatted (2,027), price always has $
+    // Use greedy name match then pull last two numeric tokens before end
+    const m = line.match(/^(.+?)\s+([\d,]+)\s+\$([0-9,.]+)\s*$/);
     if (!m) continue;
     const name = m[1].trim();
-    const qty = parseInt(m[2]);
+    const qty = parseInt(m[2].replace(',', ''));
     const price = parseFloat(m[3].replace(',', ''));
-    if (qty <= 0 || price < 0 || name.length < 2) continue;
+    if (isNaN(qty) || qty <= 0 || isNaN(price) || price < 0 || name.length < 2) continue;
     if (isSkipRow(name)) continue;
     items.push({ name, qty, price });
   }
@@ -533,7 +540,12 @@ function parseAndRender() {
   const rawPrev = document.getElementById('raw-prev').value.trim();
   if (!rawThis) { document.getElementById('parse-status').textContent = 'Paste this week\'s data first.'; return; }
   const thisData = parsePaste(rawThis);
-  if (!thisData.items.length) { document.getElementById('parse-status').textContent = 'Could not parse items — paste the full Toast product mix text.'; return; }
+  if (!thisData.items.length) {
+    // Try to give a useful hint
+    const lineCount = document.getElementById('raw-this').value.split('\n').filter(l=>l.trim()).length;
+    document.getElementById('parse-status').textContent = `Could not parse items (${lineCount} lines read). Make sure you paste the full Toast product mix text including item rows.`;
+    return;
+  }
   document.getElementById('card-this').classList.add('has-data');
   let prevData = null;
   if (rawPrev) { prevData = parsePaste(rawPrev); if (prevData.items.length) document.getElementById('card-prev').classList.add('has-data'); }
