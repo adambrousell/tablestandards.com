@@ -260,7 +260,23 @@ function categorize(name) {
 function fmt(n) { return n.toLocaleString('en-US', { style:'currency', currency:'USD', maximumFractionDigits:0 }); }
 function deltaClass(v) { return v > 2 ? 'up' : v < -2 ? 'down' : 'flat'; }
 function deltaArrow(v) { return v > 2 ? '▲' : v < -2 ? '▼' : '—'; }
-function buildLookup(items) { const m = {}; items.forEach(i => { m[i.name.toLowerCase()] = i; }); return m; }
+function buildLookup(items) {
+  const m = {};
+  // normalize: collapse whitespace, lowercase, strip leading GL:/HH: prefixes
+  items.forEach(i => {
+    const key = i.name.toLowerCase().replace(/^(gl:|hh:)\s*/i,'').replace(/\s+/g,' ').trim();
+    m[key] = i;
+    // also store original key in case prefix matters elsewhere
+    m[i.name.toLowerCase().replace(/\s+/g,' ').trim()] = i;
+  });
+  return m;
+}
+
+function lookupPrev(name, prevLookup) {
+  if (!prevLookup) return null;
+  const key = name.toLowerCase().replace(/^(gl:|hh:)\s*/i,'').replace(/\s+/g,' ').trim();
+  return prevLookup[key] || prevLookup[name.toLowerCase().replace(/\s+/g,' ').trim()] || null;
+}
 const sumRev = arr => (arr||[]).reduce((s,i)=>s+i.qty*i.price, 0);
 const sumQty = arr => (arr||[]).reduce((s,i)=>s+i.qty, 0);
 
@@ -274,12 +290,13 @@ function makeBarSection(title, items, color, prevLookup, limit) {
   if (hasPrev) html += `<div class="wow-legend"><span><span class="wow-swatch" style="background:${color};opacity:1;"></span>This week</span><span><span class="wow-swatch" style="background:${color};opacity:0.3;"></span>Last week</span></div>`;
 
   sorted.forEach(item => {
-    const thisPct = Math.round(item.qty / maxQty * 100);
-    const prevItem = prevLookup ? prevLookup[item.name.toLowerCase()] : null;
-    const prevPct = prevItem ? Math.round(prevItem.qty / maxQty * 100) : 0;
+    const thisPct = Math.max(3, Math.round(item.qty / maxQty * 100));
+    const prevItem = prevLookup ? lookupPrev(item.name, prevLookup) : null;
+    const prevPct = prevItem ? Math.max(3, Math.round(prevItem.qty / maxQty * 100)) : 0;
     const d = prevItem ? (item.qty - prevItem.qty) / prevItem.qty * 100 : null;
     const dc = d !== null ? deltaClass(d) : '';
     const rev = fmt(item.qty * item.price);
+    const deltaTitle = prevItem ? `was ${prevItem.qty} last week` : '';
     html += `<div class="bar-row">
       <span class="bar-name" title="${item.name}">${item.name.replace(/^(GL:|HH:)\s*/i,'')}</span>
       <span class="bar-track">
@@ -288,7 +305,7 @@ function makeBarSection(title, items, color, prevLookup, limit) {
       </span>
       <span class="bar-qty">${item.qty}</span>
       <span class="bar-rev">${rev}</span>
-      ${hasPrev ? `<span class="bar-delta ${dc}">${d!==null ? deltaArrow(d)+' '+Math.abs(Math.round(d))+'%' : 'new'}</span>` : ''}
+      ${hasPrev ? `<span class="bar-delta ${dc}" title="${deltaTitle}">${d!==null ? deltaArrow(d)+' '+Math.abs(Math.round(d))+'%' : 'new'}</span>` : ''}
     </div>`;
   });
   html += '</div>';
@@ -361,9 +378,9 @@ function renderDashboard(thisData, prevData) {
   let ovHtml = `<div class="card"><div class="card-title"><span>All categories</span> est. revenue · qty sold${hasPrev?' · WoW':''}</div>`;
   if (hasPrev) ovHtml += `<div class="wow-legend"><span><span class="wow-swatch" style="background:#444;"></span>This week</span><span><span class="wow-swatch" style="background:#ccc;"></span>Last week</span></div>`;
   overviewRows.forEach(row => {
-    const thisPct = Math.round(row.rev / maxRev * 100);
+    const thisPct = Math.max(3, Math.round(row.rev / maxRev * 100));
     const prevRev = sumRev(prevCats[row.key]);
-    const prevPct = prevRev ? Math.round(prevRev / maxRev * 100) : 0;
+    const prevPct = prevRev ? Math.max(3, Math.round(prevRev / maxRev * 100)) : 0;
     const d = (hasPrev && prevRev) ? (row.rev - prevRev) / prevRev * 100 : null;
     const dc = d !== null ? deltaClass(d) : '';
     ovHtml += `<div class="bar-row">
@@ -383,7 +400,7 @@ function renderDashboard(thisData, prevData) {
   // WoW movers panel
   if (hasPrev) {
     const movers = items.map(item => {
-      const prev = prevLookup[item.name.toLowerCase()];
+      const prev = lookupPrev(item.name, prevLookup);
       if (!prev) return { name:item.name, delta:999, isNew:true, qty:item.qty, prevQty:0 };
       const d = (item.qty-prev.qty)/prev.qty*100;
       return { name:item.name, delta:d, isNew:false, qty:item.qty, prevQty:prev.qty };
@@ -452,7 +469,7 @@ function renderDashboard(thisData, prevData) {
       <div class="hm-grid" id="${id}">`;
     grp.forEach(item => {
       const opacity = (0.3 + (item.rev/maxRev)*0.7).toFixed(2);
-      const prevItem = prevLookup ? prevLookup[item.name.toLowerCase()] : null;
+      const prevItem = prevLookup ? lookupPrev(item.name, prevLookup) : null;
       const d = prevItem ? (item.qty-prevItem.qty)/prevItem.qty*100 : null;
       const dc = d!==null ? deltaClass(d) : '';
       hmHtml += `<div class="hm-cell" style="background:${CAT_COLORS[key]};opacity:${opacity};">
@@ -499,7 +516,7 @@ async function generateSummary() {
   let wowText = '';
   if (hasPrev) {
     const movers = items.map(item=>{
-      const prev=prevLookup[item.name.toLowerCase()];
+      const prev=lookupPrev(item.name, prevLookup);
       if(!prev)return null;
       const d=(item.qty-prev.qty)/prev.qty*100;
       return Math.abs(d)>15?`${item.name}: ${d>0?'+':''}${Math.round(d)}% (${prev.qty}→${item.qty})`:null;
@@ -524,7 +541,12 @@ Write the GM summary now.`;
 
   try {
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
       body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1000, messages:[{role:'user',content:prompt}] })
     });
     const data = await resp.json();
