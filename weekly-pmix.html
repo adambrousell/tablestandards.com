@@ -262,22 +262,35 @@ function categorize(name) {
 function fmt(n) { return n.toLocaleString('en-US', { style:'currency', currency:'USD', maximumFractionDigits:0 }); }
 function deltaClass(v) { return v > 2 ? 'up' : v < -2 ? 'down' : 'flat'; }
 function deltaArrow(v) { return v > 2 ? '▲' : v < -2 ? '▼' : '—'; }
+function normalizeKey(name) {
+  return name.toLowerCase()
+    .replace(/^(gl:|hh:)\s*/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function isStaffOrComp(name) {
+  return /[-–]\s*(staff|comp|void|comped|employee|mgr|manager)/i.test(name);
+}
+
 function buildLookup(items) {
   const m = {};
-  // normalize: collapse whitespace, lowercase, strip leading GL:/HH: prefixes
   items.forEach(i => {
-    const key = i.name.toLowerCase().replace(/^(gl:|hh:)\s*/i,'').replace(/\s+/g,' ').trim();
-    m[key] = i;
-    // also store original key in case prefix matters elsewhere
-    m[i.name.toLowerCase().replace(/\s+/g,' ').trim()] = i;
+    if (isStaffOrComp(i.name)) return; // never match staff rows
+    const key = normalizeKey(i.name);
+    // If duplicate key, keep the higher-priced entry (the real menu item, not staff)
+    if (!m[key] || i.price > m[key].price) {
+      m[key] = i;
+    }
   });
   return m;
 }
 
 function lookupPrev(name, prevLookup) {
   if (!prevLookup) return null;
-  const key = name.toLowerCase().replace(/^(gl:|hh:)\s*/i,'').replace(/\s+/g,' ').trim();
-  const result = prevLookup[key] || prevLookup[name.toLowerCase().replace(/\s+/g,' ').trim()] || null;
+  if (isStaffOrComp(name)) return null; // never compare staff rows
+  const key = normalizeKey(name);
+  const result = prevLookup[key] || null;
   if (!result && window._debugWoW) {
     console.log(`[WoW no match] "${name}" → key: "${key}"`);
   }
@@ -412,12 +425,16 @@ function renderDashboard(thisData, prevData) {
 
   // WoW movers panel
   if (hasPrev) {
-    const movers = items.map(item => {
-      const prev = lookupPrev(item.name, prevLookup);
-      if (!prev) return { name:item.name, delta:999, isNew:true, qty:item.qty, prevQty:0 };
-      const d = (item.qty-prev.qty)/prev.qty*100;
-      return { name:item.name, delta:d, isNew:false, qty:item.qty, prevQty:prev.qty };
-    }).filter(i=>Math.abs(i.delta)>10||i.isNew);
+    const movers = items
+      .filter(item => !isStaffOrComp(item.name))
+      .map(item => {
+        const prev = lookupPrev(item.name, prevLookup);
+        if (!prev) return { name:item.name, delta:999, isNew:true, qty:item.qty, prevQty:0 };
+        const d = (item.qty-prev.qty)/prev.qty*100;
+        return { name:item.name, delta:d, isNew:false, qty:item.qty, prevQty:prev.qty };
+      })
+      // Only show genuine movers — require prev qty ≥ 3 to avoid noise from low-volume items
+      .filter(i => i.isNew ? i.qty >= 3 : (Math.abs(i.delta) > 15 && (!i.prevQty || i.prevQty >= 3)));
 
     const gainers   = movers.filter(i=>i.delta>0&&!i.isNew).sort((a,b)=>b.delta-a.delta).slice(0,15);
     const newItems  = movers.filter(i=>i.isNew).sort((a,b)=>b.qty-a.qty).slice(0,15);
