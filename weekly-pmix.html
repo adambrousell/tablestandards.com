@@ -75,11 +75,11 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .card-title { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); margin-bottom: 14px; }
 .card-title span { font-family: 'DM Serif Display', serif; font-size: 15px; text-transform: none; letter-spacing: 0; color: var(--text); margin-right: 8px; }
 
-/* Bar rows — FIX: both bars use flexbox sizing, no absolute positioning */
-.bar-row { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; font-size: 12px; }
-.bar-name { width: 180px; flex-shrink: 0; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bar-track { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; justify-content: center; }
-.bar-line { height: 7px; border-radius: 2px; transition: width 0.4s ease; min-width: 2px; }
+/* Bar rows */
+.bar-row { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; font-size: 12px; min-width: 0; }
+.bar-name { width: 160px; flex-shrink: 0; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-track { flex: 1; min-width: 0; max-width: 420px; display: flex; flex-direction: column; gap: 2px; justify-content: center; overflow: hidden; }
+.bar-line { height: 7px; border-radius: 2px; transition: width 0.4s ease; min-width: 2px; box-sizing: border-box; }
 .bar-qty { width: 30px; text-align: right; color: var(--text-2); flex-shrink: 0; font-variant-numeric: tabular-nums; }
 .bar-rev { width: 58px; text-align: right; color: var(--text-3); flex-shrink: 0; font-size: 11px; font-variant-numeric: tabular-nums; }
 .bar-delta { width: 46px; text-align: right; flex-shrink: 0; font-size: 10px; font-weight: 500; }
@@ -267,19 +267,19 @@ const sumQty = arr => (arr||[]).reduce((s,i)=>s+i.qty, 0);
 function makeBarSection(title, items, color, prevLookup, limit) {
   const sorted = [...items].sort((a,b)=>b.qty-a.qty).slice(0, limit||30);
   if (!sorted.length) return '';
-  const max = Math.max(...sorted.map(i=>i.qty), 1);
+  const maxQty = Math.max(...sorted.map(i=>i.qty), 1);
   const hasPrev = !!prevLookup;
 
   let html = `<div class="card"><div class="card-title"><span>${title}</span> qty sold · est. revenue${hasPrev?' · WoW':''}</div>`;
   if (hasPrev) html += `<div class="wow-legend"><span><span class="wow-swatch" style="background:${color};opacity:1;"></span>This week</span><span><span class="wow-swatch" style="background:${color};opacity:0.3;"></span>Last week</span></div>`;
 
   sorted.forEach(item => {
-    const thisPct = Math.round(item.qty/max*100);
+    const thisPct = Math.round(item.qty / maxQty * 100);
     const prevItem = prevLookup ? prevLookup[item.name.toLowerCase()] : null;
-    const prevPct = prevItem ? Math.round(prevItem.qty/max*100) : 0;
-    const d = prevItem ? (item.qty-prevItem.qty)/prevItem.qty*100 : null;
-    const dc = d!==null ? deltaClass(d) : '';
-    const rev = fmt(item.qty*item.price);
+    const prevPct = prevItem ? Math.round(prevItem.qty / maxQty * 100) : 0;
+    const d = prevItem ? (item.qty - prevItem.qty) / prevItem.qty * 100 : null;
+    const dc = d !== null ? deltaClass(d) : '';
+    const rev = fmt(item.qty * item.price);
     html += `<div class="bar-row">
       <span class="bar-name" title="${item.name}">${item.name.replace(/^(GL:|HH:)\s*/i,'')}</span>
       <span class="bar-track">
@@ -355,24 +355,25 @@ function renderDashboard(thisData, prevData) {
   const overviewRows = catOrder.map(key => ({
     key, name:CAT_LABELS[key], qty:sumQty(cats[key]), rev:sumRev(cats[key]),
     prevQty:sumQty(prevCats[key]), color:CAT_COLORS[key]
-  })).filter(r=>r.qty>0).sort((a,b)=>b.qty-a.qty);
+  })).filter(r=>r.qty>0).sort((a,b)=>b.rev-a.rev);
 
-  const maxQ = overviewRows[0]?.qty || 1;
-  let ovHtml = `<div class="card"><div class="card-title"><span>All categories</span> qty sold · est. revenue${hasPrev?' · WoW':''}</div>`;
+  const maxRev = overviewRows[0]?.rev || 1;
+  let ovHtml = `<div class="card"><div class="card-title"><span>All categories</span> est. revenue · qty sold${hasPrev?' · WoW':''}</div>`;
   if (hasPrev) ovHtml += `<div class="wow-legend"><span><span class="wow-swatch" style="background:#444;"></span>This week</span><span><span class="wow-swatch" style="background:#ccc;"></span>Last week</span></div>`;
   overviewRows.forEach(row => {
-    const thisPct = Math.round(row.qty/maxQ*100);
-    const prevPct = row.prevQty ? Math.round(row.prevQty/maxQ*100) : 0;
-    const d = (hasPrev && row.prevQty) ? (row.qty-row.prevQty)/row.prevQty*100 : null;
-    const dc = d!==null ? deltaClass(d) : '';
+    const thisPct = Math.round(row.rev / maxRev * 100);
+    const prevRev = sumRev(prevCats[row.key]);
+    const prevPct = prevRev ? Math.round(prevRev / maxRev * 100) : 0;
+    const d = (hasPrev && prevRev) ? (row.rev - prevRev) / prevRev * 100 : null;
+    const dc = d !== null ? deltaClass(d) : '';
     ovHtml += `<div class="bar-row">
       <span class="bar-name">${row.name}</span>
       <span class="bar-track">
         <span class="bar-line" style="width:${thisPct}%;background:${row.color};"></span>
         ${hasPrev?`<span class="bar-line" style="width:${prevPct||2}%;background:${row.color};opacity:0.3;"></span>`:''}
       </span>
-      <span class="bar-qty">${row.qty}</span>
-      <span class="bar-rev">${fmt(row.rev)}</span>
+      <span class="bar-rev" style="width:68px;">${fmt(row.rev)}</span>
+      <span class="bar-qty" style="width:38px;color:var(--text-3);">${row.qty}</span>
       ${hasPrev?`<span class="bar-delta ${dc}">${d!==null?deltaArrow(d)+' '+Math.abs(Math.round(d))+'%':'—'}</span>`:''}
     </div>`;
   });
