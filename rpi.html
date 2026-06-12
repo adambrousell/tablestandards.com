@@ -1066,7 +1066,7 @@ function applyShiftPayload(d){
     openingSpecials=d.openingSpecials.map(function(s){return{name:s.name,count:s.count,sold:s.sold||'',eightysixed:s.eightysixed||false};});
     var hasTartare=openingSpecials.some(function(s){return s.name==='Steak Tartare';});
     if(!hasTartare)openingSpecials.push({name:'Steak Tartare',count:'',sold:'',eightysixed:false});
-    var todaySpecial=DAY_SPECIALS[new Date().getDay()];
+    var todaySpecial=DAY_SPECIALS[serviceDay()];
     if(todaySpecial){var hasToday=openingSpecials.some(function(s){return s.name===todaySpecial;});if(!hasToday)openingSpecials.unshift({name:todaySpecial,count:'',sold:'',eightysixed:false});}
     renderOpeningSpecials();renderShiftSpecials();
   }
@@ -1088,6 +1088,11 @@ function applyShiftPayload(d){
 }
 
 var openingSpecials=[];
+
+// Returns the day-of-week index for the current SERVICE day.
+// Midnight–1:59am still belongs to the previous night (same 2am boundary
+// used by openingStorageKey), so yesterday's special doesn't flip at midnight.
+function serviceDay(){return new Date(Date.now()-2*60*60*1000).getDay();}
 
 var DAY_SPECIALS={0:'Lobster Frites',1:'Poulet en Croûte',2:'Oyster Rockefeller',3:'USDA Prime French Dip',4:'Southern Fried Quail',5:'Bouillabaisse Provençale',6:'Prime Short Rib Bourguignon'};
 
@@ -1171,7 +1176,7 @@ function addShiftNote(){
   var note={ts:ts,who:firstName,text:txt};
   shiftNotes.push(note);inp.value='';renderShiftNotes();cfPostNote(note);
   if(openingSpecials.length===0){
-    var todaySpecial=DAY_SPECIALS[new Date().getDay()];
+    var todaySpecial=DAY_SPECIALS[serviceDay()];
     if(todaySpecial)openingSpecials.push({name:todaySpecial,count:'',sold:'',eightysixed:false});
     openingSpecials.push({name:'Steak Tartare',count:'',sold:'',eightysixed:false});
   }
@@ -1181,7 +1186,7 @@ function addShiftNote(){
 function removeShiftNote(i){
   shiftNotes.splice(i,1);renderShiftNotes();
   if(openingSpecials.length===0){
-    var todaySpecial=DAY_SPECIALS[new Date().getDay()];
+    var todaySpecial=DAY_SPECIALS[serviceDay()];
     if(todaySpecial)openingSpecials.push({name:todaySpecial,count:'',sold:'',eightysixed:false});
     openingSpecials.push({name:'Steak Tartare',count:'',sold:'',eightysixed:false});
   }
@@ -1228,7 +1233,7 @@ async function fetchWeather(){
   fetchWeather();cfLoadShift();cfLoadNotes();renderShiftNotes();
   loadOpeningState();
   if(openingSpecials.length===0){
-    var todaySpecial=DAY_SPECIALS[new Date().getDay()];
+    var todaySpecial=DAY_SPECIALS[serviceDay()];
     if(todaySpecial)openingSpecials.push({name:todaySpecial,count:'',sold:'',eightysixed:false});
     openingSpecials.push({name:'Steak Tartare',count:'',sold:'',eightysixed:false});
   }
