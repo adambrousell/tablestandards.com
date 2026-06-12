@@ -998,25 +998,31 @@ function draftKey(){
 function saveDraft(){
   try{localStorage.setItem(draftKey(),JSON.stringify(collectShiftPayload()));}catch(e){}
 }
+// Shared field-restore used by both loadDraft and cfLoadShift
+function applyFields(d){
+  var fields=[['s-foh',d.foh],['s-food',d.food],['s-bev',d.bev],['s-emp',d.emp],
+              ['s-hire',d.hire],['s-batch',d.batch],['s-maint',d.maint],
+              ['cl-cash-variance',d.cashVariance],['cl-notes',d.clNotes],
+              ['o-preshift',d.preshift],['s-sales',d.sales],['s-avg',d.avg],
+              ['s-covers',d.covers],['s-resy',d.resy]];
+  fields.forEach(function(f){var el=document.getElementById(f[0]);if(el&&f[1]!==undefined&&f[1]!==null&&f[1]!=='')el.value=f[1];});
+  if(d.closer){var cl=document.getElementById('s-closer');if(cl&&d.closer)cl.value=d.closer;}
+  if(d.vips&&d.vips.length){vips=d.vips;renderVips();}
+  if(d.eighties&&d.eighties.length){eighties=d.eighties;renderEighties();}
+  if(d.shiftNotes&&d.shiftNotes.length){shiftNotes=d.shiftNotes;renderShiftNotes();}
+  if(d.openingSpecials&&d.openingSpecials.length){
+    openingSpecials=d.openingSpecials;renderOpeningSpecials();renderShiftSpecials();
+  }
+  if(d.shiftExtras&&d.shiftExtras.length){shiftExtras=d.shiftExtras;renderShiftSpecials();}
+}
+function draftTimestamp(){
+  try{var raw=localStorage.getItem(draftKey());if(!raw)return null;return JSON.parse(raw).savedAt||null;}catch(e){return null;}
+}
 function loadDraft(){
   try{
     var raw=localStorage.getItem(draftKey());
     if(!raw)return false;
-    var d=JSON.parse(raw);
-    var fields=[['s-foh',d.foh],['s-food',d.food],['s-bev',d.bev],['s-emp',d.emp],
-                ['s-hire',d.hire],['s-batch',d.batch],['s-maint',d.maint],
-                ['cl-cash-variance',d.cashVariance],['cl-notes',d.clNotes],
-                ['o-preshift',d.preshift],['s-sales',d.sales],['s-avg',d.avg],
-                ['s-covers',d.covers],['s-resy',d.resy]];
-    fields.forEach(function(f){var el=document.getElementById(f[0]);if(el&&f[1])el.value=f[1];});
-    if(d.closer){var cl=document.getElementById('s-closer');if(cl)cl.value=d.closer;}
-    if(d.vips&&d.vips.length){vips=d.vips;renderVips();}
-    if(d.eighties&&d.eighties.length){eighties=d.eighties;renderEighties();}
-    if(d.shiftNotes&&d.shiftNotes.length){shiftNotes=d.shiftNotes;renderShiftNotes();}
-    if(d.openingSpecials&&d.openingSpecials.length){
-      openingSpecials=d.openingSpecials;renderOpeningSpecials();renderShiftSpecials();
-    }
-    if(d.shiftExtras&&d.shiftExtras.length){shiftExtras=d.shiftExtras;renderShiftSpecials();}
+    applyFields(JSON.parse(raw));
     return true;
   }catch(e){return false;}
 }
@@ -1034,9 +1040,19 @@ async function cfSaveShift(){
 async function cfLoadShift(){
   try{
     var resp=await fetch(CF_WORKER+'/shift');var data=await resp.json();
-    // KV only fills gaps — never overwrites what loadDraft() already restored
-    if(data&&Object.keys(data).length>0){applyShiftPayload(data);}
-  }catch(e){console.log('No previous shift to load');}
+    if(!data||!Object.keys(data).length)return;
+    var kvTime=data.savedAt?new Date(data.savedAt).getTime():0;
+    var localTs=draftTimestamp();
+    var localTime=localTs?new Date(localTs).getTime():0;
+    if(kvTime>localTime){
+      // Another device saved more recently — KV wins, apply everything and update local draft
+      applyFields(data);
+      applyShiftPayload(data);
+      saveDraft();
+      showSyncStatus('Synced from latest save ✓');
+    }
+    // local is newer or equal — don't touch anything, KV is just backup
+  }catch(e){console.log('No shift data to load');}
 }
 
 async function cfPostNote(note){
@@ -1099,8 +1115,7 @@ function collectShiftPayload(){
 
 // ─── APPLY PAYLOAD: MERGE VIPs + NOTES, DON'T OVERWRITE ─────────────────────
 function applyShiftPayload(d){
-  var fields=[['s-foh',d.foh],['s-food',d.food],['s-bev',d.bev],['s-emp',d.emp],['s-hire',d.hire],['s-batch',d.batch],['s-maint',d.maint]];
-  fields.forEach(function(f){var el=document.getElementById(f[0]);if(el&&f[1]&&!el.value)el.value=f[1];});
+  // Note/VIP merge only — full field restore is done by applyFields() via cfLoadShift
   if(d.openingSpecials&&d.openingSpecials.length){
     openingSpecials=d.openingSpecials.map(function(s){return{name:s.name,count:s.count,sold:s.sold||'',eightysixed:s.eightysixed||false};});
     var hasTartare=openingSpecials.some(function(s){return s.name==='Steak Tartare';});
