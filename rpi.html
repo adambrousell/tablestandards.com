@@ -987,8 +987,46 @@ async function generateExec(){
 
 var CF_WORKER='https://rpi-shift-api.amusementstandards.workers.dev';
 
+// ── LOCAL DRAFT ──────────────────────────────────────────────────────────────
+// Saves on every keystroke so a hard refresh restores edits from localStorage
+// immediately, before KV responds. KV is the shared/backup layer.
+// Draft key is date-scoped with the same 2am service-day boundary.
+function draftKey(){
+  var t=new Date(Date.now()-2*60*60*1000);
+  return'rpi_draft_'+t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+}
+function saveDraft(){
+  try{localStorage.setItem(draftKey(),JSON.stringify(collectShiftPayload()));}catch(e){}
+}
+function loadDraft(){
+  try{
+    var raw=localStorage.getItem(draftKey());
+    if(!raw)return false;
+    var d=JSON.parse(raw);
+    var fields=[['s-foh',d.foh],['s-food',d.food],['s-bev',d.bev],['s-emp',d.emp],
+                ['s-hire',d.hire],['s-batch',d.batch],['s-maint',d.maint],
+                ['cl-cash-variance',d.cashVariance],['cl-notes',d.clNotes],
+                ['o-preshift',d.preshift],['s-sales',d.sales],['s-avg',d.avg],
+                ['s-covers',d.covers],['s-resy',d.resy]];
+    fields.forEach(function(f){var el=document.getElementById(f[0]);if(el&&f[1])el.value=f[1];});
+    if(d.closer){var cl=document.getElementById('s-closer');if(cl)cl.value=d.closer;}
+    if(d.vips&&d.vips.length){vips=d.vips;renderVips();}
+    if(d.eighties&&d.eighties.length){eighties=d.eighties;renderEighties();}
+    if(d.shiftNotes&&d.shiftNotes.length){shiftNotes=d.shiftNotes;renderShiftNotes();}
+    if(d.openingSpecials&&d.openingSpecials.length){
+      openingSpecials=d.openingSpecials;renderOpeningSpecials();renderShiftSpecials();
+    }
+    if(d.shiftExtras&&d.shiftExtras.length){shiftExtras=d.shiftExtras;renderShiftSpecials();}
+    return true;
+  }catch(e){return false;}
+}
+// Auto-save on any input or change anywhere in the form
+document.addEventListener('input',function(){saveDraft();});
+document.addEventListener('change',function(){saveDraft();});
+
 async function cfSaveShift(){
   var payload=collectShiftPayload();
+  saveDraft();
   try{await fetch(CF_WORKER+'/shift',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});showSyncStatus('Shift saved ✓');}
   catch(e){showSyncStatus('Save failed — check connection');}
 }
@@ -996,7 +1034,8 @@ async function cfSaveShift(){
 async function cfLoadShift(){
   try{
     var resp=await fetch(CF_WORKER+'/shift');var data=await resp.json();
-    if(data&&Object.keys(data).length>0){applyShiftPayload(data);showSyncStatus('Last shift loaded ✓');}
+    // KV only fills gaps — never overwrites what loadDraft() already restored
+    if(data&&Object.keys(data).length>0){applyShiftPayload(data);}
   }catch(e){console.log('No previous shift to load');}
 }
 
@@ -1061,7 +1100,7 @@ function collectShiftPayload(){
 // ─── APPLY PAYLOAD: MERGE VIPs + NOTES, DON'T OVERWRITE ─────────────────────
 function applyShiftPayload(d){
   var fields=[['s-foh',d.foh],['s-food',d.food],['s-bev',d.bev],['s-emp',d.emp],['s-hire',d.hire],['s-batch',d.batch],['s-maint',d.maint]];
-  fields.forEach(function(f){var el=document.getElementById(f[0]);if(el&&f[1])el.value=f[1];});
+  fields.forEach(function(f){var el=document.getElementById(f[0]);if(el&&f[1]&&!el.value)el.value=f[1];});
   if(d.openingSpecials&&d.openingSpecials.length){
     openingSpecials=d.openingSpecials.map(function(s){return{name:s.name,count:s.count,sold:s.sold||'',eightysixed:s.eightysixed||false};});
     var hasTartare=openingSpecials.some(function(s){return s.name==='Steak Tartare';});
@@ -1230,6 +1269,8 @@ async function fetchWeather(){
   var dd=String(t.getDate()).padStart(2,'0');var mm=String(t.getMonth()+1).padStart(2,'0');
   document.getElementById('o-date').value=t.getFullYear()+'-'+mm+'-'+dd;
   document.getElementById('o-manager').value='Adam Brousell';
+  // Load order: localStorage draft first (instant), then KV fills any remaining gaps
+  loadDraft();
   fetchWeather();cfLoadShift();cfLoadNotes();renderShiftNotes();
   loadOpeningState();
   if(openingSpecials.length===0){
