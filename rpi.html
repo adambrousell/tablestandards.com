@@ -746,8 +746,8 @@ function tog(btn){
   pair.querySelectorAll('.tog').forEach(function(b){b.classList.remove('on');});
   btn.classList.add('on');
   state[k]=btn.classList.contains('yes')?'YES':'NO';
-  saveOpeningState();
-  saveDraft(); // also push to KV so phone/laptop stay in sync
+  saveOpeningState(); // localStorage (instant, this device)
+  cfSaveShift();      // KV (shared, all devices) — toggles now sync cross-device
 }
 
 function getV(k){return state[k]||'—';}
