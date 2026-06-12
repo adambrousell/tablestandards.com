@@ -299,7 +299,6 @@
             <div class="field-label">Date</div>
             <input type="date" id="o-date">
           </div>
-          <!-- CHANGED: was "Manager on duty" text input, now "Opening Manager" select -->
           <div class="field">
             <div class="field-label">Opening Manager</div>
             <select id="o-manager">
@@ -698,9 +697,11 @@ var state = {};
 var vips = [];
 var eighties = [];
 
-// Opening checklist carryforward — persists until midnight via date-keyed localStorage
+// ─── DAY BOUNDARY AT 2AM ────────────────────────────────────────────────────
+// Subtract 2 hours so midnight–1:59am still belongs to the previous service day.
+// The checklist state won't clear until 2:00am the following morning.
 function openingStorageKey(){
-  var t=new Date();
+  var t=new Date(Date.now()-2*60*60*1000);
   var mm=String(t.getMonth()+1).padStart(2,'0');
   var dd=String(t.getDate()).padStart(2,'0');
   return'rpi_opening_'+t.getFullYear()+'-'+mm+'-'+dd;
@@ -1004,10 +1005,20 @@ async function cfPostNote(note){
   catch(e){console.log('Note sync failed');}
 }
 
+// ─── NOTES: MERGE NOT REPLACE ───────────────────────────────────────────────
+// Deduplicates by ts+who+text fingerprint so Kelly's additions are preserved
+// when you pull, and your additions aren't wiped when she pulls.
 async function cfLoadNotes(){
   try{
     var resp=await fetch(CF_WORKER+'/notes');var notes=await resp.json();
-    if(notes&&notes.length>0){shiftNotes=notes;renderShiftNotes();}
+    if(notes&&notes.length>0){
+      var existing=shiftNotes.map(function(n){return n.ts+'|'+n.who+'|'+n.text;});
+      notes.forEach(function(n){
+        var fp=n.ts+'|'+n.who+'|'+n.text;
+        if(existing.indexOf(fp)===-1){shiftNotes.push(n);existing.push(fp);}
+      });
+      renderShiftNotes();
+    }
   }catch(e){console.log('Notes load failed');}
 }
 
@@ -1047,11 +1058,12 @@ function collectShiftPayload(){
   };
 }
 
+// ─── APPLY PAYLOAD: MERGE VIPs + NOTES, DON'T OVERWRITE ─────────────────────
 function applyShiftPayload(d){
   var fields=[['s-foh',d.foh],['s-food',d.food],['s-bev',d.bev],['s-emp',d.emp],['s-hire',d.hire],['s-batch',d.batch],['s-maint',d.maint]];
   fields.forEach(function(f){var el=document.getElementById(f[0]);if(el&&f[1])el.value=f[1];});
   if(d.openingSpecials&&d.openingSpecials.length){
-    openingSpecials=d.openingSpecials.map(function(s){return{name:s.name,count:s.count,sold:'',eightysixed:false};});
+    openingSpecials=d.openingSpecials.map(function(s){return{name:s.name,count:s.count,sold:s.sold||'',eightysixed:s.eightysixed||false};});
     var hasTartare=openingSpecials.some(function(s){return s.name==='Steak Tartare';});
     if(!hasTartare)openingSpecials.push({name:'Steak Tartare',count:'',sold:'',eightysixed:false});
     var todaySpecial=DAY_SPECIALS[new Date().getDay()];
@@ -1059,14 +1071,27 @@ function applyShiftPayload(d){
     renderOpeningSpecials();renderShiftSpecials();
   }
   if(d.eighties&&d.eighties.length){eighties=d.eighties;renderEighties();}
-  if(d.vips&&d.vips.length){vips=d.vips;renderVips();}
+  // Merge VIPs — dedupe by name so Kelly's additions stack with yours
+  if(d.vips&&d.vips.length){
+    d.vips.forEach(function(v){if(vips.indexOf(v)===-1)vips.push(v);});
+    renderVips();
+  }
+  // Merge shift notes — dedupe by fingerprint so nobody's notes get wiped
+  if(d.shiftNotes&&d.shiftNotes.length){
+    var existing=shiftNotes.map(function(n){return n.ts+'|'+n.who+'|'+n.text;});
+    d.shiftNotes.forEach(function(n){
+      var fp=n.ts+'|'+n.who+'|'+n.text;
+      if(existing.indexOf(fp)===-1){shiftNotes.push(n);existing.push(fp);}
+    });
+    renderShiftNotes();
+  }
 }
 
 var openingSpecials=[];
 
-var DAY_SPECIALS={0:'Lobster Frites',1:'Poulet en Cro\u00fbte',2:'Oyster Rockefeller',3:'USDA Prime French Dip',4:'Southern Fried Quail',5:'Bouillabaisse Proven\u00e7ale',6:'Prime Short Rib Bourguignon'};
+var DAY_SPECIALS={0:'Lobster Frites',1:'Poulet en Croûte',2:'Oyster Rockefeller',3:'USDA Prime French Dip',4:'Southern Fried Quail',5:'Bouillabaisse Provençale',6:'Prime Short Rib Bourguignon'};
 
-var COMMON_SPECIALS=['Poulet en Cro\u00fbte','Oyster Rockefeller','USDA Prime French Dip','Southern Fried Quail','Bouillabaisse Proven\u00e7ale','Prime Short Rib Bourguignon','Lobster Frites','Steak Tartare'];
+var COMMON_SPECIALS=['Poulet en Croûte','Oyster Rockefeller','USDA Prime French Dip','Southern Fried Quail','Bouillabaisse Provençale','Prime Short Rib Bourguignon','Lobster Frites','Steak Tartare'];
 
 function addOpeningSpecial(name,count){
   openingSpecials.push({name:name||'',count:count||''});
@@ -1208,6 +1233,10 @@ async function fetchWeather(){
     openingSpecials.push({name:'Steak Tartare',count:'',sold:'',eightysixed:false});
   }
   renderOpeningSpecials();renderShiftSpecials();
+  // ─── AUTO-POLL: pull new notes every 60s ──────────────────────────────────
+  // Keeps Kelly's additions visible on your screen without manual refresh,
+  // and vice versa. Uses the merge logic above — no notes are overwritten.
+  setInterval(function(){cfLoadNotes();},60000);
 })();
 </script>
 </body>
