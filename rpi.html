@@ -747,6 +747,7 @@ function tog(btn){
   btn.classList.add('on');
   state[k]=btn.classList.contains('yes')?'YES':'NO';
   saveOpeningState();
+  saveDraft(); // also push to KV so phone/laptop stay in sync
 }
 
 function getV(k){return state[k]||'—';}
@@ -1014,6 +1015,19 @@ function applyFields(d){
     openingSpecials=d.openingSpecials;renderOpeningSpecials();renderShiftSpecials();
   }
   if(d.shiftExtras&&d.shiftExtras.length){shiftExtras=d.shiftExtras;renderShiftSpecials();}
+  // Restore toggle state (YES/NO buttons) from saved payload
+  if(d.toggles&&Object.keys(d.toggles).length){
+    Object.keys(d.toggles).forEach(function(k){
+      var val=d.toggles[k];
+      state[k]=val;
+      document.querySelectorAll('.tog[data-k="'+k+'"]').forEach(function(btn){
+        btn.classList.remove('on');
+        if((val==='YES'&&btn.classList.contains('yes'))||(val==='NO'&&btn.classList.contains('no'))||(val==='Done'&&btn.classList.contains('yes'))||(val==='N/A'&&btn.classList.contains('no'))){
+          btn.classList.add('on');
+        }
+      });
+    });
+  }
 }
 function draftTimestamp(){
   try{var raw=localStorage.getItem(draftKey());if(!raw)return null;return JSON.parse(raw).savedAt||null;}catch(e){return null;}
