@@ -171,6 +171,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <button class="tab" data-panel="wine">Wine by glass</button>
     <button class="tab" data-panel="spirits">Spirits</button>
     <button class="tab" data-panel="food">Food</button>
+    <button class="tab" data-panel="winedinner">Events & WD</button>
     <button class="tab" data-panel="heatmap">Revenue heatmap</button>
   </div>
 
@@ -181,6 +182,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <div id="panel-wine"></div>
     <div id="panel-spirits"></div>
     <div id="panel-food"></div>
+    <div id="panel-winedinner"></div>
     <div id="panel-heatmap"></div>
   </div>
 </div>
@@ -190,12 +192,14 @@ const CAT_COLORS = {
   cocktail:'#2150a0', wine:'#5c2d6e', food:'#c0452a',
   starter:'#2a5f3c', dessert:'#b8942a', spirit:'#4a7a8a',
   beer:'#7a5c2a', coffee:'#6b4e3d', na:'#888780',
+  events:'#7a3060',
 };
 
 const CAT_LABELS = {
   cocktail:'Cocktails & martinis', wine:'Wine (glass & bottle)', food:'Entrees & sides',
   starter:'Starters & raw bar', dessert:'Desserts', spirit:'Spirits',
   beer:'Beer', coffee:'Coffee & tea', na:'NA beverages',
+  events:'Private Events & Wine Dinner',
 };
 
 // Known Toast subtotal / header rows to exclude from item-level sums
@@ -282,7 +286,9 @@ function categorize(name) {
   if (/wagyu burger|ratatouille|paillard|moules frites|tuna prov|halibut|loup de mar|lasagna|au poivre|pork chop|steak frites|roast chicken for|ny strip|porterhouse|pommes frites|pommes duchess|haricot vert|peppers carmen|peas.*lard|poulet en croute|oysters rockefeller|french dip|southern fried quail|bouillabaise|short rib|lobster frites|crispy fish|salmon burger|pan bagnat|chicken salad sandwich|omelette|eggs benedict|hanger steak|kids tenders|kids cheeseburger|chicken fingers.*staff|wagyu burger.*staff|side donuts|salmon\b|branzino|red snapper|snapper|french onion lasagna|prime short rib|chicken au poivre|corn & lardons|corn.*lardons/.test(n)) return 'food';
   if (/bread service|little gem|garden salad|asparagus mimosa|escargots|^jambon|steak tartare|crepe aux|berries.*cream|caviar.*donut|crudo tasting|shrimp cocktail|tuna tartare|ceviche|dune fox|swan point|sugar shack|love.*dozen|barnegat|violet sky|salad de tomates|eggplant|peaches|^p\. /.test(n)) return 'starter';
   if (/carrot cake|meringue cake|chocolate cake|cheesecake|raspberry tart|creme brulee|banana split|brownie sundae|banana chip ice|brown butter ice|chocolate ice|strawberry ice|vanilla ice|mint ice|lemon sorbet|fromage/.test(n)) return 'dessert';
-  if (/^p\.(bread|jambon|berries|garden|hanger|duchess|haricot|au poivre|escargots|eggplant|little gem|chicken|branzino|potato|ny strip)|private event adult|private event child|event decor|hanger add on|crudo\b|wd bread|wd crab|wd gnudi|wd monkfish|wd new york|wd mousse|parfait|lunch oyster|wine dinner/.test(n)) return 'food';
+  if (/^wd\s|wine dinner|^wd bread|^wd crab|^wd gnudi|^wd monkfish|^wd new york|^wd mousse/.test(n)) return 'events';
+  if (/^p\.|private event adult|private event child|event decor/.test(n)) return 'events';
+  if (/^p\.(bread|jambon|berries|garden|hanger|duchess|haricot|au poivre|escargots|eggplant|little gem|chicken|branzino|potato|ny strip)|hanger add on|crudo\b|parfait|lunch oyster/.test(n)) return 'food';
   if (/open drink|open food|open item|case peyrassol|six pack guyon|custom cake/.test(n)) return 'food';
   return 'food';
 }
@@ -387,11 +393,13 @@ function renderDashboard(thisData, prevData) {
   const wineRev     = sumRev(cats.wine);
   const foodRev     = sumRev(cats.food) + sumRev(cats.starter) + sumRev(cats.dessert);
   const spiritRev   = sumRev(cats.spirit);
+  const eventsRev   = sumRev(cats.events);
 
   const prevCocktailRev = sumRev(prevCats.cocktail);
   const prevWineRev     = sumRev(prevCats.wine);
   const prevFoodRev     = sumRev(prevCats.food)+sumRev(prevCats.starter)+sumRev(prevCats.dessert);
   const prevSpiritRev   = sumRev(prevCats.spirit);
+  const prevEventsRev   = sumRev(prevCats.events);
 
   const topCocktail = [...(cats.cocktail||[])].filter(i=>!isStaffOrComp(i.name)).sort((a,b)=>b.qty-a.qty)[0];
   const topFood     = [...(cats.food||[])].filter(i=>!isStaffOrComp(i.name)).sort((a,b)=>b.qty-a.qty)[0];
@@ -411,6 +419,7 @@ function renderDashboard(thisData, prevData) {
     { label:'Wine revenue', val:fmt(wineRev), sub:`${sumQty(cats.wine)} pours/bottles`, delta:kpiDelta(wineRev, prevWineRev) },
     { label:'Food revenue', val:fmt(foodRev), sub:`${sumQty(cats.food)+sumQty(cats.starter)} covers`, delta:kpiDelta(foodRev, prevFoodRev) },
     { label:'Spirit revenue', val:fmt(spiritRev), sub:`${sumQty(cats.spirit)} pours`, delta:kpiDelta(spiritRev, prevSpiritRev) },
+    ...(eventsRev > 0 ? [{ label:'Events & wine dinner', val:fmt(eventsRev), sub:`${sumQty(cats.events)} items`, delta:kpiDelta(eventsRev, prevEventsRev) }] : []),
     { label:'Top cocktail', val:topCocktail?topCocktail.name.replace(/^HH:\s*/i,'').split(' ').slice(0,3).join(' '):'—', sub:topCocktail?`${topCocktail.qty} sold`:'', delta:'' },
     { label:'Top food', val:topFood?topFood.name.split(' ').slice(0,2).join(' '):'—', sub:topFood?`${topFood.qty} sold`:'', delta:'' },
     { label:'Top spirit', val:topPour?topPour.name.split(' ').slice(0,2).join(' '):'—', sub:topPour?`${topPour.qty} pours`:'', delta:'' },
@@ -420,7 +429,7 @@ function renderDashboard(thisData, prevData) {
   ).join('');
 
   // Overview
-  const catOrder = ['food','starter','na','cocktail','spirit','wine','coffee','dessert','beer'];
+  const catOrder = ['food','starter','events','na','cocktail','spirit','wine','coffee','dessert','beer'];
   const overviewRows = catOrder.map(key => ({
     key, name:CAT_LABELS[key], qty:sumQty(cats[key]), rev:sumRev(cats[key]),
     prevQty:sumQty(prevCats[key]), color:CAT_COLORS[key]
@@ -507,8 +516,12 @@ function renderDashboard(thisData, prevData) {
     makeBarSection('Starters & raw bar', cats.starter||[], CAT_COLORS.starter, prevLookup) +
     makeBarSection('Desserts', cats.dessert||[], CAT_COLORS.dessert, prevLookup);
 
+  document.getElementById('panel-winedinner').innerHTML = (cats.events||[]).length
+    ? makeBarSection('Private Events & Wine Dinner', cats.events||[], CAT_COLORS.events, prevLookup)
+    : '<div class="no-data">No event items found this week.</div>';
+
   // Heatmap
-  const catOrderHM = ['food','starter','cocktail','wine','spirit','dessert','beer','coffee','na'];
+  const catOrderHM = ['food','starter','events','cocktail','wine','spirit','dessert','beer','coffee','na'];
   let hmHtml = `<div class="card"><div class="card-title"><span>Revenue heatmap</span> all items by category — click header to collapse</div>`;
   catOrderHM.forEach(key => {
     const grp = [...(cats[key]||[])].filter(i=>!isStaffOrComp(i.name)).map(i=>({...i, rev:i.qty*i.price})).sort((a,b)=>b.rev-a.rev);
@@ -656,6 +669,8 @@ async function generateSummary() {
 
   const thisRevNet = netRev(items, discountThis);
   const top = (arr,n=5) => [...(arr||[])].filter(i=>!isStaffOrComp(i.name)).sort((a,b)=>b.qty-a.qty).slice(0,n).map(i=>`${i.name} (${i.qty})`).join(', ');
+  const wineDinnerRevAI = sumRev(cats.events);
+  const wineDinnerTopAI = top(cats.events, 3);
 
   let wowText = '';
   if (hasPrev) {
@@ -678,7 +693,7 @@ Top cocktails: ${top(cats.cocktail)}
 Top wine BTG: ${top(cats.wine)}
 Top entrees: ${top(cats.food)}
 Top spirits: ${top(cats.spirit)}
-Category revenue — cocktails: ${fmt(sumRev(cats.cocktail))}, wine: ${fmt(sumRev(cats.wine))}, food+starters: ${fmt(sumRev(cats.food)+sumRev(cats.starter)+sumRev(cats.dessert))}, spirits: ${fmt(sumRev(cats.spirit))}${wowText}
+Category revenue — cocktails: ${fmt(sumRev(cats.cocktail))}, wine: ${fmt(sumRev(cats.wine))}, food+starters: ${fmt(sumRev(cats.food)+sumRev(cats.starter)+sumRev(cats.dessert))}, spirits: ${fmt(sumRev(cats.spirit))}${wineDinnerRevAI>0?`, wine dinner: ${fmt(wineDinnerRevAI)} (top items: ${wineDinnerTopAI})`:''}${wowText}
 
 Write the GM summary now.`;
 
@@ -882,6 +897,7 @@ function exportEmail() {
   <tr><td style="padding:0 32px;">${topTable('Wine by glass & bottle', cats.wine||[], '#5c2d6e')}</td></tr>
   <tr><td style="padding:0 32px;">${topTable('Entrees', cats.food||[], '#c0452a')}</td></tr>
   <tr><td style="padding:0 32px;">${topTable('Starters & raw bar', cats.starter||[], '#2a5f3c')}</td></tr>
+  ${(cats.events||[]).length ? `<tr><td style="padding:0 32px;">${topTable('Private Events & Wine Dinner', cats.events||[], '#7a3060')}</td></tr>` : ''}
   <tr><td style="padding:0 32px 24px;">${topTable('Spirits', cats.spirit||[], '#4a7a8a')}</td></tr>
   <tr><td style="background:#f7f5f0;padding:16px 32px;border-top:1px solid #ece9e2;">
     <span style="font-size:11px;color:#9f9f9b;">River Pointe Inn · Rumson, NJ · Generated ${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})}</span>
