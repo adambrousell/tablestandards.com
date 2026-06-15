@@ -463,13 +463,14 @@ function renderDashboard(thisData, prevData) {
   if (hasPrev) {
     const movers = items
       .filter(item => !isStaffOrComp(item.name))
+      .filter(item => categorize(item.name) !== 'events')  // exclude WD/private event SKUs
       .map(item => {
         const prev = lookupPrev(item.name, prevLookup);
         if (!prev) return { name:item.name, delta:999, isNew:true, qty:item.qty, prevQty:0 };
         const d = (item.qty-prev.qty)/prev.qty*100;
         return { name:item.name, delta:d, isNew:false, qty:item.qty, prevQty:prev.qty };
       })
-      .filter(i => i.isNew ? i.qty >= 3 : (Math.abs(i.delta) > 15 && (!i.prevQty || i.prevQty >= 3)));
+      .filter(i => i.isNew ? i.qty >= 5 : (Math.abs(i.delta) > 15 && i.qty >= 3 && i.prevQty >= 3));
 
     const gainers   = movers.filter(i=>i.delta>0&&!i.isNew).sort((a,b)=>b.delta-a.delta).slice(0,15);
     const newItems  = movers.filter(i=>i.isNew).sort((a,b)=>b.qty-a.qty).slice(0,15);
@@ -831,7 +832,7 @@ function exportEmail() {
 
   let moversSection = '';
   if (hasPrev) {
-    const movers = items.filter(i=>!isStaffOrComp(i.name)).map(item => {
+    const movers = items.filter(i=>!isStaffOrComp(i.name)).filter(i=>categorize(i.name)!=='events').map(item => {
       const prev = lookupPrev(item.name, prevLookup);
       if (!prev) return null;
       const d = (item.qty-prev.qty)/prev.qty*100;
