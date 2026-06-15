@@ -89,6 +89,11 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .wow-legend { display: flex; gap: 16px; font-size: 11px; color: var(--text-3); margin-bottom: 12px; flex-wrap: wrap; }
 .wow-swatch { display: inline-block; width: 22px; height: 7px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
 
+/* Discount row */
+.discount-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); }
+.discount-label { font-size: 12px; color: #9f9f9b; white-space: nowrap; }
+.discount-note { font-size: 11px; color: #666; }
+
 /* Heatmap */
 .hm-cat-section { margin-bottom: 18px; }
 .hm-cat-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer; user-select: none; }
@@ -147,7 +152,14 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
         <button class="ai-btn" id="ai-btn" onclick="generateSummary()">Generate summary ↗</button>
       </div>
     </div>
-    <div id="ai-output" style="color:#555;font-family:'DM Sans',sans-serif;font-size:13px;font-style:italic;">Enter your Anthropic API key, then hit "Generate summary."</div>
+    <div class="discount-row">
+      <span class="discount-label">Toast discounts (from Sales Summary):</span>
+      <input class="covers-input" type="number" id="discount-this" placeholder="e.g. 5788" style="width:100px;" oninput="applyDiscount()">
+      <span class="covers-label">Last week:</span>
+      <input class="covers-input" type="number" id="discount-prev" placeholder="e.g. 4200" style="width:100px;" oninput="applyDiscount()">
+      <span class="discount-note">Subtracts comps/voids from est. revenue · excludes gift cards automatically</span>
+    </div>
+    <div id="ai-output" style="color:#555;font-family:'DM Sans',sans-serif;font-size:13px;font-style:italic;margin-top:14px;">Enter your Anthropic API key, then hit "Generate summary."</div>
   </div>
 
   <div class="kpi-grid" id="kpi-grid"></div>
@@ -193,26 +205,40 @@ const SKIP_NAMES = new Set([
   'tequila & mezcal','whiskey','aperitifs, cognac, brandy, cordials',
   'dessert wines & fortified wine','beer','coffee & tea','raw bar & starters',
   'entrees & sides','dessert','add on\'s','private events','hors d\'oeuvres',
-  'open items','gift card','total','location(s)','product mix',
+  'open items','gift card','total','location(s)','product mix','retail',
 ]);
+
+// Gift card / non-revenue row patterns
+const GIFT_CARD_RE = /^gift\s*card|^add value\s*\(\$\)|^gift\s*card\s*\d/i;
 
 function isSkipRow(name) {
   const n = name.toLowerCase().trim();
   if (SKIP_NAMES.has(n)) return true;
+  // Gift cards are liabilities, not revenue
+  if (GIFT_CARD_RE.test(n)) return true;
   // Toast bucket headers: "2000's - btg bottles", "300's", "400's" etc
   if (/^\d[\d\-'s]*\s*(-\s*.+)?$/.test(n)) return true;
   // "Location(s) 132 E River Road..." rows
   if (/^location/i.test(n)) return true;
-  // "Total 4,345 $26.35" — category total rows with large round qty
+  // "Total 4,345 $26.35" — category total rows
   if (/^total\b/i.test(n)) return true;
   // Menu hierarchy / column header rows
   if (/^menu\b|^menus?\s+item|^qty sold|^avg price|^item cogs/i.test(n)) return true;
   // "Questions or feedback?" junk header
   if (/questions or feedback|data delay|near real-time/i.test(n)) return true;
+  // Retail case/pack rows — large-format retail not part of menu rev
+  if (/^case\s+|^6\s*pack\s+/i.test(n)) return true;
   return false;
 }
 
 let currentThis = null, currentPrev = null;
+let discountThis = 0, discountPrev = 0;
+
+function applyDiscount() {
+  discountThis = parseFloat(document.getElementById('discount-this').value) || 0;
+  discountPrev = parseFloat(document.getElementById('discount-prev').value) || 0;
+  if (currentThis) renderDashboard(currentThis, currentPrev);
+}
 
 function parsePaste(raw) {
   const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
@@ -222,9 +248,6 @@ function parsePaste(raw) {
   if (dateMatch) dateRange = dateMatch[1].trim();
 
   for (const line of lines) {
-    // Toast format: "Item Name  123  $45.67" — qty and price at end
-    // qty may be comma-formatted (2,027), price always has $
-    // Use greedy name match then pull last two numeric tokens before end
     const m = line.match(/^(.+?)\s+([\d,]+)\s+\$([0-9,.]+)\s*$/);
     if (!m) continue;
     const name = m[1].trim();
@@ -239,23 +262,28 @@ function parsePaste(raw) {
 
 function categorize(name) {
   const n = name.toLowerCase();
-  if (/espresso martini|salt air|filthy|metropolitan|jockey club|river pointe|grasshopper|in fashion|saint joe|lychee|can't elope|pep in your|bee sting|negroni|strawberry fields|colada|hh:|martini happy hour/.test(n)) return 'cocktail';
-  if (/aperol spritz|hugo spritz|french 75|paper plane|mimosa/.test(n)) return 'cocktail';
+  if (/espresso martini|salt air|filthy|metropolitan|jockey club|river pointe|grasshopper|in fashion|saint joe|lychee|can't elope|pep in your|bee sting|negroni|strawberry fields|colada|hh:|martini happy hour|ancho problem|rhubarb/.test(n)) return 'cocktail';
+  if (/aperol spritz|hugo spritz|french 75|paper plane|mimosa|bloody mary|lemon drop|mojito|moscow mule/.test(n)) return 'cocktail';
   if (/na almost|na pear|na espresso/.test(n)) return 'cocktail';
-  if (/^gl:|cremant|brut ros|moet|drappier|folle blanche|albarino|ladoucette|drouhin.*secondes|pouilly|peyrassol|moulin.*vent|cotes du rh|guyon 2022|routestock|chappellet mountain/.test(n)) return 'wine';
+  if (/^gl:|cremant|brut ros|moet|drappier|folle blanche|albarino|ladoucette|drouhin.*secondes|pouilly|peyrassol|moulin.*vent|cotes du rh|guyon 2022|routestock|chappellet mountain|haut l'artigue/.test(n)) return 'wine';
   if (/wine by the bottle|btg bottle|sancerre|meursault|chablis|puligny|cabernet sauv|pride mountain|ridge.*lytton|kistler|o'shaugh|aubert.*carneros|turley|ducru|chauvin 2019|smith haut lafitte|leon beyer|melville|chevillon|cathiard|camus-bruchon|agrapart|sulauze|domaine pierre martin|francois de la roche|lauverjat|manarine|lafarge|domaine guyon|drouhin.*cotes de beaune|joseph drouhin|o'shaughnessy|maître de chai|le petit ducru|le petite smith/.test(n)) return 'wine';
-  if (/\b(vodka|belvedere|grey goose|ketel one|tito's|hendrick|beefeater|bombay sapphire|botanist|fords gin|plymouth gin|tanqueray|absolut|monkey 47|asbury park gin)\b/.test(n)) return 'spirit';
-  if (/\bcasamigos|don julio|fortaleza|lalo\b|pueblo viejo|casa dragones|del maguey/.test(n)) return 'spirit';
-  if (/\bangels envy|blanton|buffalo trace|bulleit|dewars|high west|jack daniel|jameson|johnnie walker|laguavulin|macallan|maker's mark|michter|oban 14|sazerac rye|whistlepig|widow jane|woodford reserve\b/.test(n)) return 'spirit';
-  if (/chartreuse|cognac park|lazzaroni amaretto|molinari sambuca|nonino amaro|averna amaro|limoncello|bailey's|campari|taylor fladgate|port/.test(n)) return 'spirit';
+  // Bottle bins by number prefix
+  if (/^\d{3,4}[:\s]|^b\d{3}[:\s]|^2\d{3}[:\s]/.test(n)) return 'wine';
+  if (/latour pauillac somm|baron patrick laducette|blasson d'issan|hundred acre|fortunate son|domaine de montille|jean et s.*bastien dauvissat|stéphane aviron|henri billiot|banyuls|d'oliveiras|taylor fladgate|chateau d'yquem|domaine dominique guyon|bourgogne|chinon|lestang|domaine de pallus|giacometti|patrimonio|brio by ch|rauzan|saint-joseph|brecheras|pallus|chantegrive|meyer-fonn|paul blanck|hermann j wiemer|domaine michel lafarge|petit chablis l\. michel|drouhin-vaudon|chablis.*dauvissat/.test(n)) return 'wine';
+  if (/\b(vodka|belvedere|grey goose|ketel one|tito's|tito\b|hendrick|beefeater|bombay sapphire|botanist|fords gin|plymouth gin|tanqueray|absolut|monkey 47|asbury park gin|wodka)\b/.test(n)) return 'spirit';
+  if (/\bcasamigos|don julio|fortaleza|lalo\b|pueblo viejo|casa dragones|del maguey|clase azul|g4 blanco|g4 reposado/.test(n)) return 'spirit';
+  if (/\bangels envy|blanton|buffalo trace|bulleit|dewars|high west|jack daniel|jameson|johnnie walker|laguavulin|macallan|maker's mark|maker's mark|michter|oban 14|sazerac rye|whistlepig|widow jane|woodford reserve|basil hayden|four roses|penelope toasted\b/.test(n)) return 'spirit';
+  if (/chartreuse|cognac park|lazzaroni amaretto|molinari sambuca|nonino amaro|averna amaro|limoncello|bailey's|campari|taylor fladgate|port|braulio|frangelico|rum|havana club|captain morgan/.test(n)) return 'spirit';
   if (/beer done|vliet|birdsmouth|kronenbourg|other half forever|athletic brewing/.test(n)) return 'beer';
+  // "Lunch" as a beer (Maine Beer Co.)
+  if (/^lunch\s*\d*\s*\$/.test(n) || n === 'lunch') return 'beer';
   if (/\bespresso\b|\bcappuccino\b|\bmacchiato\b|\bcoffee\b|peppermint tea|chamomile tea|earl gr[ae]y|green tea|black tea/.test(n)) return 'coffee';
-  if (/btl.*still water|btl.*sparkling water|\bcoke\b|diet coke|sprite|ginger ale|club soda|ginger beer|shirley temple|lemonade|iced tea|apple juice|arnold palmer|pineapple juice/.test(n)) return 'na';
-  if (/wagyu burger|ratatouille|paillard|moules frites|tuna prov|halibut|loup de mar|lasagna|au poivre|pork chop|steak frites|roast chicken for|ny strip|porterhouse|pommes frites|pommes duchess|haricot vert|peppers carmen|peas.*lard|poulet en croute|oysters rockefeller|french dip|southern fried quail|bouillabaise|short rib|lobster frites|crispy fish|salmon burger|pan bagnat|chicken salad sandwich|omelette|eggs benedict|hanger steak|kids tenders|kids cheeseburger|chicken fingers.*staff|wagyu burger.*staff|side donuts|lunch oyster/.test(n)) return 'food';
-  if (/bread service|little gem|garden salad|asparagus mimosa|escargots|^jambon|steak tartare|crepe aux|berries.*cream|caviar.*donut|crudo tasting|shrimp cocktail|tuna tartare|ceviche|dune fox|swan point|sugar shack|love.*dozen|^p\. /.test(n)) return 'starter';
+  if (/btl.*still water|btl.*sparkling water|\bcoke\b|diet coke|sprite|ginger ale|club soda|ginger beer|shirley temple|lemonade|iced tea|apple juice|arnold palmer|pineapple juice|cranberry juice|fresh oj|milk/.test(n)) return 'na';
+  if (/wagyu burger|ratatouille|paillard|moules frites|tuna prov|halibut|loup de mar|lasagna|au poivre|pork chop|steak frites|roast chicken for|ny strip|porterhouse|pommes frites|pommes duchess|haricot vert|peppers carmen|peas.*lard|poulet en croute|oysters rockefeller|french dip|southern fried quail|bouillabaise|short rib|lobster frites|crispy fish|salmon burger|pan bagnat|chicken salad sandwich|omelette|eggs benedict|hanger steak|kids tenders|kids cheeseburger|chicken fingers.*staff|wagyu burger.*staff|side donuts|salmon\b|branzino|red snapper|snapper|french onion lasagna|prime short rib|chicken au poivre|corn & lardons|corn.*lardons/.test(n)) return 'food';
+  if (/bread service|little gem|garden salad|asparagus mimosa|escargots|^jambon|steak tartare|crepe aux|berries.*cream|caviar.*donut|crudo tasting|shrimp cocktail|tuna tartare|ceviche|dune fox|swan point|sugar shack|love.*dozen|barnegat|violet sky|salad de tomates|eggplant|peaches|^p\. /.test(n)) return 'starter';
   if (/carrot cake|meringue cake|chocolate cake|cheesecake|raspberry tart|creme brulee|banana split|brownie sundae|banana chip ice|brown butter ice|chocolate ice|strawberry ice|vanilla ice|mint ice|lemon sorbet|fromage/.test(n)) return 'dessert';
-  // Private event items
-  if (/^p\.(bread|jambon|berries|garden|hanger|duchess|haricot|au poivre)|private event adult|hanger add on/.test(n)) return 'food';
+  if (/^p\.(bread|jambon|berries|garden|hanger|duchess|haricot|au poivre|escargots|eggplant|little gem|chicken|branzino|potato|ny strip)|private event adult|private event child|event decor|hanger add on|crudo\b|wd bread|wd crab|wd gnudi|wd monkfish|wd new york|wd mousse|parfait|lunch oyster|wine dinner/.test(n)) return 'food';
+  if (/open drink|open food|open item|case peyrassol|six pack guyon|custom cake/.test(n)) return 'food';
   return 'food';
 }
 
@@ -276,9 +304,8 @@ function isStaffOrComp(name) {
 function buildLookup(items) {
   const m = {};
   items.forEach(i => {
-    if (isStaffOrComp(i.name)) return; // never match staff rows
+    if (isStaffOrComp(i.name)) return;
     const key = normalizeKey(i.name);
-    // If duplicate key, keep the higher-priced entry (the real menu item, not staff)
     if (!m[key] || i.price > m[key].price) {
       m[key] = i;
     }
@@ -288,16 +315,20 @@ function buildLookup(items) {
 
 function lookupPrev(name, prevLookup) {
   if (!prevLookup) return null;
-  if (isStaffOrComp(name)) return null; // never compare staff rows
+  if (isStaffOrComp(name)) return null;
   const key = normalizeKey(name);
-  const result = prevLookup[key] || null;
-  if (!result && window._debugWoW) {
-    console.log(`[WoW no match] "${name}" → key: "${key}"`);
-  }
-  return result;
+  return prevLookup[key] || null;
 }
+
 const sumRev = arr => (arr||[]).reduce((s,i)=>s+i.qty*i.price, 0);
 const sumQty = arr => (arr||[]).reduce((s,i)=>s+i.qty, 0);
+
+// Net revenue = sum of items minus staff comps minus Toast discounts
+function netRev(items, discount) {
+  const gross = sumRev(items);
+  const staffComps = (items||[]).filter(i=>isStaffOrComp(i.name)).reduce((s,i)=>s+i.qty*i.price, 0);
+  return gross - staffComps - (discount || 0);
+}
 
 function makeBarSection(title, items, color, prevLookup, limit) {
   const sorted = [...items].sort((a,b)=>b.qty-a.qty).slice(0, limit||30);
@@ -339,11 +370,6 @@ function renderDashboard(thisData, prevData) {
   const prevItems = prevData ? prevData.items : null;
   const prevLookup = prevItems ? buildLookup(prevItems) : null;
   const hasPrev = !!prevLookup;
-  if (hasPrev) {
-    window._debugWoW = true;
-    console.log('[WoW] prev keys sample:', Object.keys(prevLookup).filter(k=>k.length>3).slice(0,30));
-    console.log('[WoW] this week items sample:', items.slice(0,10).map(i=>i.name));
-  }
 
   let weekLabel = dateRange || 'Week loaded';
   if (prevData?.dateRange) weekLabel += '  ·  prev: ' + prevData.dateRange;
@@ -353,10 +379,9 @@ function renderDashboard(thisData, prevData) {
   items.forEach(i => { const c=categorize(i.name); (cats[c]||(cats[c]=[])).push(i); });
   if (prevItems) prevItems.forEach(i => { const c=categorize(i.name); (prevCats[c]||(prevCats[c]=[])).push(i); });
 
-  // This week only
-  const totalRev = sumRev(items);
-  const totalQty = sumQty(items);
-  const prevTotalRev = prevItems ? sumRev(prevItems) : 0;
+  // Use net revenue (gift cards already excluded by parser; subtract staff comps + manual discount)
+  const totalRev     = netRev(items, discountThis);
+  const prevTotalRev = prevItems ? netRev(prevItems, discountPrev) : 0;
 
   const cocktailRev = sumRev(cats.cocktail);
   const wineRev     = sumRev(cats.wine);
@@ -368,9 +393,11 @@ function renderDashboard(thisData, prevData) {
   const prevFoodRev     = sumRev(prevCats.food)+sumRev(prevCats.starter)+sumRev(prevCats.dessert);
   const prevSpiritRev   = sumRev(prevCats.spirit);
 
-  const topCocktail = [...(cats.cocktail||[])].sort((a,b)=>b.qty-a.qty)[0];
-  const topFood     = [...(cats.food||[])].sort((a,b)=>b.qty-a.qty)[0];
+  const topCocktail = [...(cats.cocktail||[])].filter(i=>!isStaffOrComp(i.name)).sort((a,b)=>b.qty-a.qty)[0];
+  const topFood     = [...(cats.food||[])].filter(i=>!isStaffOrComp(i.name)).sort((a,b)=>b.qty-a.qty)[0];
   const topPour     = [...(cats.spirit||[])].sort((a,b)=>b.qty-a.qty)[0];
+
+  const discountNote = discountThis > 0 ? `<div class="kpi-sub" style="color:#b83030;">−${fmt(discountThis)} discounts applied</div>` : '';
 
   function kpiDelta(cur, prev) {
     if (!hasPrev || !prev) return '';
@@ -379,7 +406,7 @@ function renderDashboard(thisData, prevData) {
   }
 
   const kpis = [
-    { label:'Est. revenue (this week)', val:fmt(totalRev), sub:`${totalQty.toLocaleString()} line items`, delta:kpiDelta(totalRev, prevTotalRev) },
+    { label:'Est. revenue (this week)', val:fmt(totalRev), sub:`${items.length.toLocaleString()} line items`, delta:kpiDelta(totalRev, prevTotalRev), extra: discountNote },
     { label:'Cocktail revenue', val:fmt(cocktailRev), sub:`${sumQty(cats.cocktail)} drinks`, delta:kpiDelta(cocktailRev, prevCocktailRev) },
     { label:'Wine revenue', val:fmt(wineRev), sub:`${sumQty(cats.wine)} pours/bottles`, delta:kpiDelta(wineRev, prevWineRev) },
     { label:'Food revenue', val:fmt(foodRev), sub:`${sumQty(cats.food)+sumQty(cats.starter)} covers`, delta:kpiDelta(foodRev, prevFoodRev) },
@@ -389,7 +416,7 @@ function renderDashboard(thisData, prevData) {
     { label:'Top spirit', val:topPour?topPour.name.split(' ').slice(0,2).join(' '):'—', sub:topPour?`${topPour.qty} pours`:'', delta:'' },
   ];
   document.getElementById('kpi-grid').innerHTML = kpis.map(k =>
-    `<div class="kpi"><div class="kpi-label">${k.label}</div><div class="kpi-val">${k.val}</div><div class="kpi-sub">${k.sub}</div>${k.delta}</div>`
+    `<div class="kpi"><div class="kpi-label">${k.label}</div><div class="kpi-val">${k.val}</div><div class="kpi-sub">${k.sub}</div>${k.delta||''}${k.extra||''}</div>`
   ).join('');
 
   // Overview
@@ -433,13 +460,12 @@ function renderDashboard(thisData, prevData) {
         const d = (item.qty-prev.qty)/prev.qty*100;
         return { name:item.name, delta:d, isNew:false, qty:item.qty, prevQty:prev.qty };
       })
-      // Only show genuine movers — require prev qty ≥ 3 to avoid noise from low-volume items
       .filter(i => i.isNew ? i.qty >= 3 : (Math.abs(i.delta) > 15 && (!i.prevQty || i.prevQty >= 3)));
 
     const gainers   = movers.filter(i=>i.delta>0&&!i.isNew).sort((a,b)=>b.delta-a.delta).slice(0,15);
     const newItems  = movers.filter(i=>i.isNew).sort((a,b)=>b.qty-a.qty).slice(0,15);
     const losers    = movers.filter(i=>i.delta<0).sort((a,b)=>a.delta-b.delta).slice(0,15);
-    const gone      = prevItems.filter(p=>!buildLookup(items)[p.name.toLowerCase()]).sort((a,b)=>b.qty-a.qty).slice(0,10);
+    const gone      = prevItems.filter(p=>!buildLookup(items)[normalizeKey(p.name)]).sort((a,b)=>b.qty-a.qty).slice(0,10);
 
     function mRow(i, isDown) {
       const dc = isDown ? 'down' : 'up';
@@ -463,10 +489,11 @@ function renderDashboard(thisData, prevData) {
   document.getElementById('panel-wine').innerHTML = makeBarSection('Wine by the glass & bottle', cats.wine||[], CAT_COLORS.wine, prevLookup);
 
   const spiritSubs = [
-    { label:'Vodka & gin', re:/vodka|belvedere|grey goose|ketel|tito|hendrick|beefeater|bombay|botanist|fords|plymouth|tanqueray|absolut|monkey|asbury park gin/ },
-    { label:'Whiskey', re:/whiskey|bourbon|rye|angels envy|blanton|buffalo trace|bulleit|dewars|high west|jack daniel|jameson|johnnie walker|laguavulin|macallan|maker|michter|oban|sazerac|whistlepig|widow jane|woodford/ },
-    { label:'Tequila & mezcal', re:/casamigos|don julio|fortaleza|g4|lalo|pueblo viejo|casa drag|del maguey/ },
-    { label:'Aperitifs & cordials', re:/chartreuse|cognac|amaretto|sambuca|amaro|limoncello|bailey|campari|nonino|averna|port/ },
+    { label:'Vodka & gin', re:/vodka|belvedere|grey goose|ketel|tito|hendrick|beefeater|bombay|botanist|fords|plymouth|tanqueray|absolut|monkey|asbury park gin|wodka/ },
+    { label:'Whiskey', re:/whiskey|bourbon|rye|angels envy|blanton|buffalo trace|bulleit|dewars|high west|jack daniel|jameson|johnnie walker|laguavulin|macallan|maker|michter|oban|sazerac|whistlepig|widow jane|woodford|basil hayden|four roses|penelope/ },
+    { label:'Tequila & mezcal', re:/casamigos|don julio|fortaleza|g4|lalo|pueblo viejo|casa drag|del maguey|clase azul/ },
+    { label:'Rum', re:/rum|havana club|captain morgan/ },
+    { label:'Aperitifs & cordials', re:/chartreuse|cognac|amaretto|sambuca|amaro|limoncello|bailey|campari|nonino|averna|port|braulio|frangelico/ },
   ];
   let spiritHtml = '';
   spiritSubs.forEach(sub => {
@@ -476,18 +503,18 @@ function renderDashboard(thisData, prevData) {
   document.getElementById('panel-spirits').innerHTML = spiritHtml || '<div class="no-data">No spirit data.</div>';
 
   document.getElementById('panel-food').innerHTML =
-    makeBarSection('Entrees & sides', cats.food||[], CAT_COLORS.food, prevLookup) +
+    makeBarSection('Entrees & sides', (cats.food||[]).filter(i=>!isStaffOrComp(i.name)), CAT_COLORS.food, prevLookup) +
     makeBarSection('Starters & raw bar', cats.starter||[], CAT_COLORS.starter, prevLookup) +
     makeBarSection('Desserts', cats.dessert||[], CAT_COLORS.dessert, prevLookup);
 
-  // Heatmap — grouped by category, each group collapsible, all items shown
+  // Heatmap
   const catOrderHM = ['food','starter','cocktail','wine','spirit','dessert','beer','coffee','na'];
   let hmHtml = `<div class="card"><div class="card-title"><span>Revenue heatmap</span> all items by category — click header to collapse</div>`;
   catOrderHM.forEach(key => {
-    const grp = [...(cats[key]||[])].map(i=>({...i, rev:i.qty*i.price})).sort((a,b)=>b.rev-a.rev);
+    const grp = [...(cats[key]||[])].filter(i=>!isStaffOrComp(i.name)).map(i=>({...i, rev:i.qty*i.price})).sort((a,b)=>b.rev-a.rev);
     if (!grp.length) return;
     const grpRev = grp.reduce((s,i)=>s+i.rev,0);
-    const maxRev = grp[0].rev;
+    const maxR = grp[0].rev;
     const id = 'hmg-'+key;
     hmHtml += `<div class="hm-cat-section">
       <div class="hm-cat-header" onclick="toggleHmGroup('${id}')">
@@ -498,7 +525,7 @@ function renderDashboard(thisData, prevData) {
       </div>
       <div class="hm-grid" id="${id}">`;
     grp.forEach(item => {
-      const opacity = (0.3 + (item.rev/maxRev)*0.7).toFixed(2);
+      const opacity = (0.3 + (item.rev/maxR)*0.7).toFixed(2);
       const prevItem = prevLookup ? lookupPrev(item.name, prevLookup) : null;
       const d = prevItem ? (item.qty-prevItem.qty)/prevItem.qty*100 : null;
       const dc = d!==null ? deltaClass(d) : '';
@@ -524,7 +551,6 @@ function toggleHmGroup(id) {
 
 // ── Holiday / seasonal context ──────────────────────────────────────────────
 function parseWeekDates(dateRange) {
-  // Handles "May 25, 2026 - May 31, 2026" or "May 18, 2026 – May 24, 2026"
   if (!dateRange) return [];
   const months = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
   const dates = [];
@@ -538,7 +564,6 @@ function parseWeekDates(dateRange) {
       if (mon !== undefined) dates.push(new Date(year, mon, day));
     }
   });
-  // fill in all days of the week
   if (dates.length === 2) {
     const all = [];
     const d = new Date(dates[0]);
@@ -551,12 +576,10 @@ function parseWeekDates(dateRange) {
 function getHolidaysInWeek(dates) {
   const flags = [];
   dates.forEach(d => {
-    const mon = d.getMonth(); // 0-indexed
+    const mon = d.getMonth();
     const day = d.getDate();
-    const dow = d.getDay(); // 0=Sun
+    const dow = d.getDay();
     const year = d.getFullYear();
-
-    // Fixed holidays
     if (mon===0 && day===1)  flags.push("New Year's Day");
     if (mon===6 && day===4)  flags.push("Fourth of July");
     if (mon===10 && day===11) flags.push("Veterans Day");
@@ -566,41 +589,25 @@ function getHolidaysInWeek(dates) {
     if (mon===10 && day===31) flags.push("Halloween");
     if (mon===1 && day===14)  flags.push("Valentine's Day");
     if (mon===2 && day===17)  flags.push("St. Patrick's Day");
-
-    // Thanksgiving: 4th Thursday of November
     if (mon===10 && dow===4) {
       const nth = Math.ceil(day/7);
       if (nth===4) flags.push("Thanksgiving");
       if (nth===3 && day+7>30) flags.push("Thanksgiving week");
     }
-    // Thanksgiving Eve (Wed before)
     if (mon===10 && dow===3 && day>=21 && day<=27) flags.push("Thanksgiving Eve");
-
-    // Memorial Day: last Monday of May
     if (mon===4 && dow===1 && day>=25) flags.push("Memorial Day");
-    // Memorial Day weekend: Fri–Mon of that weekend
     if (mon===4 && day>=23 && day<=27) {
-      // find last Monday of May for this year
       const lastMon = new Date(year,4,31);
       while (lastMon.getDay()!==1) lastMon.setDate(lastMon.getDate()-1);
       const diff = (lastMon - d) / 86400000;
       if (diff >= 0 && diff <= 3) flags.push("Memorial Day weekend");
     }
-
-    // Labor Day: first Monday of September
     if (mon===8 && dow===1 && day<=7) flags.push("Labor Day");
     if (mon===8 && day<=7 && dow>=5) flags.push("Labor Day weekend");
-
-    // Mother's Day: 2nd Sunday of May
     if (mon===4 && dow===0 && day>=8 && day<=14) flags.push("Mother's Day");
-    // Father's Day: 3rd Sunday of June
     if (mon===5 && dow===0 && day>=15 && day<=21) flags.push("Father's Day");
-
-    // Easter: approximate (within a day)
     const easter = getEaster(year);
     if (Math.abs(d - easter) < 86400000*2) flags.push("Easter weekend");
-
-    // New Year's Eve/Day week
     if (mon===11 && day>=26) flags.push("holiday week (Christmas–NYE)");
     if (mon===0 && day<=2)   flags.push("New Year's holiday");
   });
@@ -608,7 +615,6 @@ function getHolidaysInWeek(dates) {
 }
 
 function getEaster(year) {
-  // Anonymous Gregorian algorithm
   const a=year%19,b=Math.floor(year/100),c=year%100;
   const d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25);
   const g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30;
@@ -620,17 +626,14 @@ function getEaster(year) {
 }
 
 function getHolidayContext(thisRange, prevRange) {
-  const thisDates = parseWeekDates(thisRange);
-  const prevDates = parseWeekDates(prevRange);
-  const thisHolidays = getHolidaysInWeek(thisDates);
-  const prevHolidays = getHolidaysInWeek(prevDates);
+  const thisHolidays = getHolidaysInWeek(parseWeekDates(thisRange));
+  const prevHolidays = getHolidaysInWeek(parseWeekDates(prevRange));
   let ctx = '';
   if (thisHolidays.length) ctx += `Holiday/seasonal context — this week: ${thisHolidays.join(', ')}.\n`;
   if (prevHolidays.length) ctx += `Prior week context: ${prevHolidays.join(', ')} — this likely inflated or depressed prior week numbers and should inform your WoW interpretation.\n`;
   if (!ctx) return '';
   return ctx + '\n';
 }
-// ────────────────────────────────────────────────────────────────────────────
 
 async function generateSummary() {
   if (!currentThis) return;
@@ -651,7 +654,8 @@ async function generateSummary() {
   const coversPrev = parseInt(document.getElementById('covers-prev').value)||null;
   const coversText = coversThis?`\nCovers this week: ${coversThis}${coversPrev?`, last week: ${coversPrev}`:''}.`:'';
 
-  const top = (arr,n=5) => [...(arr||[])].sort((a,b)=>b.qty-a.qty).slice(0,n).map(i=>`${i.name} (${i.qty})`).join(', ');
+  const thisRevNet = netRev(items, discountThis);
+  const top = (arr,n=5) => [...(arr||[])].filter(i=>!isStaffOrComp(i.name)).sort((a,b)=>b.qty-a.qty).slice(0,n).map(i=>`${i.name} (${i.qty})`).join(', ');
 
   let wowText = '';
   if (hasPrev) {
@@ -661,16 +665,15 @@ async function generateSummary() {
       const d=(item.qty-prev.qty)/prev.qty*100;
       return Math.abs(d)>15?`${item.name}: ${d>0?'+':''}${Math.round(d)}% (${prev.qty}→${item.qty})`:null;
     }).filter(Boolean).slice(0,10).join('; ');
-    const prevRev = sumRev(prevItems);
-    const thisRev = sumRev(items);
-    const rd = ((thisRev-prevRev)/prevRev*100).toFixed(1);
-    wowText = `\n\nWoW: revenue ${rd>0?'up':'down'} ${Math.abs(rd)}% vs ${currentPrev.dateRange||'last week'}. Movers: ${movers||'no major shifts'}.`;
+    const prevRevNet = netRev(prevItems, discountPrev);
+    const rd = ((thisRevNet-prevRevNet)/prevRevNet*100).toFixed(1);
+    wowText = `\n\nWoW: net revenue ${rd>0?'up':'down'} ${Math.abs(rd)}% vs ${currentPrev.dateRange||'last week'} (after discounts). Movers: ${movers||'no major shifts'}.`;
   }
 
   const prompt = `You are writing a weekly GM product mix brief for River Pointe Inn, a fine-dining French-American bistro in Rumson, NJ (Rallo family). The GM is Adam. Sharp, professional, useful — like a Monday morning brief for ownership. 2-3 paragraphs. No bullet points. Name specific items and numbers. Flag anything notable — surges, declines, mix shifts, anomalies, opportunities. When a holiday or seasonal event affected either week, factor that into your reading of the numbers — don't just note it, actually use it to explain what you see.
 
 Week: ${dateRange||'current week'}${coversText}
-${getHolidayContext(dateRange, currentPrev?.dateRange)}Est. revenue this week only: ~${fmt(sumRev(items))}
+${getHolidayContext(dateRange, currentPrev?.dateRange)}Est. net revenue this week: ~${fmt(thisRevNet)}${discountThis>0?' (after '+fmt(discountThis)+' in Toast discounts)':''}
 Top cocktails: ${top(cats.cocktail)}
 Top wine BTG: ${top(cats.wine)}
 Top entrees: ${top(cats.food)}
@@ -695,7 +698,7 @@ Write the GM summary now.`;
         'anthropic-version':'2023-06-01',
         'anthropic-dangerous-direct-browser-access':'true'
       },
-      body: JSON.stringify({ model:'claude-sonnet-4-5', max_tokens:1000, messages:[{role:'user',content:prompt}] })
+      body: JSON.stringify({ model:'claude-sonnet-4-6', max_tokens:1000, messages:[{role:'user',content:prompt}] })
     });
     const data = await resp.json();
     if (data.error) {
@@ -716,7 +719,6 @@ function parseAndRender() {
   if (!rawThis) { document.getElementById('parse-status').textContent = 'Paste this week\'s data first.'; return; }
   const thisData = parsePaste(rawThis);
   if (!thisData.items.length) {
-    // Try to give a useful hint
     const lineCount = document.getElementById('raw-this').value.split('\n').filter(l=>l.trim()).length;
     document.getElementById('parse-status').textContent = `Could not parse items (${lineCount} lines read). Make sure you paste the full Toast product mix text including item rows.`;
     return;
@@ -729,6 +731,8 @@ function parseAndRender() {
   document.getElementById('ai-output').className = '';
   document.getElementById('ai-btn').textContent = 'Generate summary ↗';
   document.getElementById('ai-btn').disabled = false;
+  discountThis = parseFloat(document.getElementById('discount-this').value) || 0;
+  discountPrev = parseFloat(document.getElementById('discount-prev').value) || 0;
   renderDashboard(thisData, prevData);
   document.getElementById('email-btn').style.display = '';
 }
@@ -739,7 +743,7 @@ function clearAll() {
   document.getElementById('parse-status').textContent='';
   document.getElementById('dashboard').style.display='none';
   document.getElementById('week-label').textContent='No data loaded';
-  currentThis=null; currentPrev=null;
+  currentThis=null; currentPrev=null; discountThis=0; discountPrev=0;
 }
 
 function exportEmail() {
@@ -754,19 +758,19 @@ function exportEmail() {
   const prevCats = {};
   if (prevItems) prevItems.forEach(i => { const c = categorize(i.name); (prevCats[c]||(prevCats[c]=[])).push(i); });
 
-  const totalRev   = sumRev(items);
-  const prevTotalRev = prevItems ? sumRev(prevItems) : null;
-  const cocktailRev = sumRev(cats.cocktail);
-  const wineRev     = sumRev(cats.wine);
-  const foodRev     = sumRev(cats.food) + sumRev(cats.starter) + sumRev(cats.dessert);
-  const spiritRev   = sumRev(cats.spirit);
+  const totalRev     = netRev(items, discountThis);
+  const prevTotalRev = prevItems ? netRev(prevItems, discountPrev) : null;
+  const cocktailRev  = sumRev(cats.cocktail);
+  const wineRev      = sumRev(cats.wine);
+  const foodRev      = sumRev(cats.food) + sumRev(cats.starter) + sumRev(cats.dessert);
+  const spiritRev    = sumRev(cats.spirit);
   const prevCocktailRev = sumRev(prevCats.cocktail);
   const prevWineRev     = sumRev(prevCats.wine);
   const prevFoodRev     = sumRev(prevCats.food)+sumRev(prevCats.starter)+sumRev(prevCats.dessert);
   const prevSpiritRev   = sumRev(prevCats.spirit);
 
   const aiText = document.getElementById('ai-output').textContent;
-  const hasAI  = aiText && !aiText.startsWith('Hit "Generate') && !aiText.startsWith('Error');
+  const hasAI  = aiText && !aiText.startsWith('Hit "Generate') && !aiText.startsWith('Error') && !aiText.startsWith('Enter your');
 
   const pct = (cur, prev) => {
     if (!prev) return '';
@@ -776,10 +780,7 @@ function exportEmail() {
     return `<span style="font-size:11px;color:${color};margin-left:6px;">${arrow} ${Math.abs(Math.round(d))}%</span>`;
   };
 
-  const top5 = (arr, byRev=false) => [...(arr||[])]
-    .sort((a,b) => byRev ? (b.qty*b.price)-(a.qty*a.price) : b.qty-a.qty)
-    .slice(0,5);
-
+  const top5 = (arr) => [...(arr||[])].filter(i=>!isStaffOrComp(i.name)).sort((a,b)=>b.qty-a.qty).slice(0,5);
   const rowStyle = 'padding:8px 12px;border-bottom:1px solid #ece9e2;font-size:13px;';
   const hdrStyle = 'padding:6px 12px;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#9f9f9b;border-bottom:2px solid #ece9e2;';
 
@@ -792,11 +793,10 @@ function exportEmail() {
     </td>`;
   }
 
-  function topTable(title, arr, color, showWow) {
+  function topTable(title, arr, color) {
     const rows = top5(arr).map(item => {
-      const prevItem = showWow && prevLookup ? prevLookup[item.name.toLowerCase()] : null;
-      const d = prevItem ? (item.qty-prevItem.qty)/prevItem.qty*100 : null;
-      const dStr = d!==null ? pct(item.qty*item.price, prevItem.qty*prevItem.price) : '';
+      const prevItem = hasPrev && prevLookup ? lookupPrev(item.name, prevLookup) : null;
+      const dStr = prevItem ? pct(item.qty*item.price, prevItem.qty*prevItem.price) : '';
       return `<tr>
         <td style="${rowStyle}color:#1a1a18;">${item.name.replace(/^(GL:|HH:)\s*/i,'')}</td>
         <td style="${rowStyle}text-align:right;color:#6b6b67;">${item.qty}</td>
@@ -814,18 +814,16 @@ function exportEmail() {
     </table>`;
   }
 
-  // WoW movers table
   let moversSection = '';
   if (hasPrev) {
-    const movers = items.map(item => {
-      const prev = prevLookup[item.name.toLowerCase()];
+    const movers = items.filter(i=>!isStaffOrComp(i.name)).map(item => {
+      const prev = lookupPrev(item.name, prevLookup);
       if (!prev) return null;
       const d = (item.qty-prev.qty)/prev.qty*100;
       return Math.abs(d) > 15 ? { name: item.name, d, qty: item.qty, prevQty: prev.qty } : null;
     }).filter(Boolean);
     const gainers = movers.filter(i=>i.d>0).sort((a,b)=>b.d-a.d).slice(0,5);
     const losers  = movers.filter(i=>i.d<0).sort((a,b)=>a.d-b.d).slice(0,5);
-
     const moverRows = (list, isDown) => list.map(i => {
       const color = isDown ? '#b83030' : '#1a7a3a';
       const arrow = isDown ? '▼' : '▲';
@@ -835,17 +833,11 @@ function exportEmail() {
         <td style="${rowStyle}text-align:right;color:#6b6b67;">${i.prevQty} → ${i.qty}</td>
       </tr>`;
     }).join('');
-
     if (gainers.length || losers.length) {
-      moversSection = `
-      <tr><td style="padding:24px 32px 0;">
+      moversSection = `<tr><td style="padding:24px 32px 0;">
         <p style="font-family:Georgia,serif;font-size:16px;color:#1a1a18;margin:0 0 14px;">Week-over-week movers</p>
         <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:24px;border:1px solid #ece9e2;">
-          <tr>
-            <th style="${hdrStyle}text-align:left;">Item</th>
-            <th style="${hdrStyle}text-align:center;">Change</th>
-            <th style="${hdrStyle}text-align:right;">Qty (prev → this)</th>
-          </tr>
+          <tr><th style="${hdrStyle}text-align:left;">Item</th><th style="${hdrStyle}text-align:center;">Change</th><th style="${hdrStyle}text-align:right;">Qty (prev → this)</th></tr>
           ${gainers.length ? `<tr><td colspan="3" style="padding:6px 12px;font-size:11px;font-weight:500;color:#1a7a3a;background:#f4faf6;">Top gainers</td></tr>${moverRows(gainers,false)}` : ''}
           ${losers.length  ? `<tr><td colspan="3" style="padding:6px 12px;font-size:11px;font-weight:500;color:#b83030;background:#fdf4f4;">Top decliners</td></tr>${moverRows(losers,true)}` : ''}
         </table>
@@ -856,86 +848,49 @@ function exportEmail() {
   const weekLine = dateRange || 'Week ending';
   const prevLine = currentPrev?.dateRange ? ` · prev: ${currentPrev.dateRange}` : '';
 
-  const html = `<!DOCTYPE html>
-<html><head><meta charset="UTF-8">
-<title>River Pointe Inn — Product Mix ${weekLine}</title>
-</head>
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>River Pointe Inn — Product Mix ${weekLine}</title></head>
 <body style="margin:0;padding:0;background:#f7f5f0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f7f5f0;padding:24px 0;">
-<tr><td align="center">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f7f5f0;padding:24px 0;"><tr><td align="center">
 <table width="640" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;border:1px solid #e8e4dc;max-width:640px;">
-
-  <!-- Header -->
   <tr><td style="background:#1a1a18;padding:20px 32px;">
     <span style="font-family:Georgia,serif;font-size:20px;color:#f0ede8;">River Pointe Inn</span>
     <span style="font-family:Georgia,serif;font-size:17px;color:#6b6b67;font-style:italic;"> — product mix</span>
     <div style="font-size:11px;color:#6b6b67;margin-top:4px;">${weekLine}${prevLine}</div>
   </td></tr>
-
-  <!-- AI Summary -->
   ${hasAI ? `<tr><td style="padding:24px 32px;border-bottom:1px solid #ece9e2;">
     <p style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#9f9f9b;margin:0 0 12px;">GM Summary</p>
     <p style="font-family:Georgia,serif;font-size:15px;line-height:1.75;color:#1a1a18;margin:0;">${aiText.replace(/\n\n/g,'</p><p style="font-family:Georgia,serif;font-size:15px;line-height:1.75;color:#1a1a18;margin:12px 0 0;">').replace(/\n/g,'<br>')}</p>
   </td></tr>` : ''}
-
-  <!-- KPIs -->
   <tr><td style="padding:20px 32px;border-bottom:1px solid #ece9e2;">
-    <p style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#9f9f9b;margin:0 0 12px;">Key metrics — this week</p>
-    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid #ece9e2;border-radius:6px;overflow:hidden;">
-      <tr style="background:#faf8f4;">
-        ${kpiBlock('Est. revenue', fmt(totalRev), `${sumQty(items).toLocaleString()} items`, totalRev, prevTotalRev)}
-        ${kpiBlock('Cocktails', fmt(cocktailRev), `${sumQty(cats.cocktail)} drinks`, cocktailRev, prevCocktailRev)}
-        ${kpiBlock('Wine', fmt(wineRev), `${sumQty(cats.wine)} pours`, wineRev, prevWineRev)}
-        ${kpiBlock('Food', fmt(foodRev), `${sumQty(cats.food)+sumQty(cats.starter)} covers`, foodRev, prevFoodRev)}
-        <td style="padding:12px 16px;text-align:center;">
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#9f9f9b;margin-bottom:4px;">Spirits</div>
-          <div style="font-family:Georgia,serif;font-size:22px;color:#1a1a18;line-height:1;">${fmt(spiritRev)}</div>
-          ${hasPrev ? pct(spiritRev, prevSpiritRev) : ''}
-          <div style="font-size:11px;color:#9f9f9b;margin-top:3px;">${sumQty(cats.spirit)} pours</div>
-        </td>
-      </tr>
-    </table>
+    <p style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#9f9f9b;margin:0 0 12px;">Key metrics — this week${discountThis>0?' (net of discounts)':''}</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid #ece9e2;border-radius:6px;overflow:hidden;"><tr style="background:#faf8f4;">
+      ${kpiBlock('Est. net revenue', fmt(totalRev), `${items.length} items`, totalRev, prevTotalRev)}
+      ${kpiBlock('Cocktails', fmt(cocktailRev), `${sumQty(cats.cocktail)} drinks`, cocktailRev, prevCocktailRev)}
+      ${kpiBlock('Wine', fmt(wineRev), `${sumQty(cats.wine)} pours`, wineRev, prevWineRev)}
+      ${kpiBlock('Food', fmt(foodRev), `${sumQty(cats.food)+sumQty(cats.starter)} covers`, foodRev, prevFoodRev)}
+      <td style="padding:12px 16px;text-align:center;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#9f9f9b;margin-bottom:4px;">Spirits</div>
+        <div style="font-family:Georgia,serif;font-size:22px;color:#1a1a18;line-height:1;">${fmt(spiritRev)}</div>
+        ${hasPrev ? pct(spiritRev, prevSpiritRev) : ''}
+        <div style="font-size:11px;color:#9f9f9b;margin-top:3px;">${sumQty(cats.spirit)} pours</div>
+      </td>
+    </tr></table>
   </td></tr>
-
-  <!-- WoW movers -->
   ${moversSection}
-
-  <!-- Top tables -->
-  <tr><td style="padding:24px 32px 0;">
-    <p style="font-family:Georgia,serif;font-size:16px;color:#1a1a18;margin:0 0 14px;">Top items by category</p>
-  </td></tr>
-  <tr><td style="padding:0 32px;">
-    ${topTable('Cocktails & martinis', cats.cocktail||[], '#2150a0', hasPrev)}
-  </td></tr>
-  <tr><td style="padding:0 32px;">
-    ${topTable('Wine by glass & bottle', cats.wine||[], '#5c2d6e', hasPrev)}
-  </td></tr>
-  <tr><td style="padding:0 32px;">
-    ${topTable('Entrees', cats.food||[], '#c0452a', hasPrev)}
-  </td></tr>
-  <tr><td style="padding:0 32px;">
-    ${topTable('Starters & raw bar', cats.starter||[], '#2a5f3c', hasPrev)}
-  </td></tr>
-  <tr><td style="padding:0 32px 24px;">
-    ${topTable('Spirits', cats.spirit||[], '#4a7a8a', hasPrev)}
-  </td></tr>
-
-  <!-- Footer -->
+  <tr><td style="padding:24px 32px 0;"><p style="font-family:Georgia,serif;font-size:16px;color:#1a1a18;margin:0 0 14px;">Top items by category</p></td></tr>
+  <tr><td style="padding:0 32px;">${topTable('Cocktails & martinis', cats.cocktail||[], '#2150a0')}</td></tr>
+  <tr><td style="padding:0 32px;">${topTable('Wine by glass & bottle', cats.wine||[], '#5c2d6e')}</td></tr>
+  <tr><td style="padding:0 32px;">${topTable('Entrees', cats.food||[], '#c0452a')}</td></tr>
+  <tr><td style="padding:0 32px;">${topTable('Starters & raw bar', cats.starter||[], '#2a5f3c')}</td></tr>
+  <tr><td style="padding:0 32px 24px;">${topTable('Spirits', cats.spirit||[], '#4a7a8a')}</td></tr>
   <tr><td style="background:#f7f5f0;padding:16px 32px;border-top:1px solid #ece9e2;">
     <span style="font-size:11px;color:#9f9f9b;">River Pointe Inn · Rumson, NJ · Generated ${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})}</span>
   </td></tr>
-
-</table>
-</td></tr>
-</table>
-</body></html>`;
+</table></td></tr></table></body></html>`;
 
   const win = window.open('', '_blank');
   win.document.write(html);
   win.document.close();
-  win.document.title = `RPI Product Mix ${weekLine}`;
-
-  // Also copy to clipboard
   navigator.clipboard.writeText(html).catch(()=>{});
 }
 
@@ -948,7 +903,6 @@ document.querySelectorAll('.tab').forEach(btn => {
   });
 });
 
-// Restore saved API key
 const savedKey = localStorage.getItem('rpi_anthropic_key');
 if (savedKey) document.getElementById('api-key-input').value = savedKey;
 </script>
