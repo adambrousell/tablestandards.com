@@ -683,7 +683,7 @@
 // ════════════════════════════════════════════════════════════
 // STATE
 // ════════════════════════════════════════════════════════════
-var toggleState  = {};   // k → 'YES'|'NO'|'Done'|'N/A'
+var toggleState  = {};
 var vips         = [];
 var eighties     = [];
 var shiftNotes   = [];
@@ -710,7 +710,6 @@ var COMMON_SPECIALS = [
 
 // ════════════════════════════════════════════════════════════
 // SERVICE-DAY BOUNDARY (2 AM)
-// Midnight–1:59 AM still belongs to the previous service day.
 // ════════════════════════════════════════════════════════════
 function serviceDate() {
   var t = new Date(Date.now() - 2 * 60 * 60 * 1000);
@@ -724,17 +723,13 @@ function serviceDay() {
 }
 
 // ════════════════════════════════════════════════════════════
-// STORAGE KEYS  (all scoped to current service date)
+// STORAGE KEYS
 // ════════════════════════════════════════════════════════════
 function toggleKey() { return 'rpi_toggles_' + serviceDate(); }
 function draftKey()  { return 'rpi_draft_'   + serviceDate(); }
 
 // ════════════════════════════════════════════════════════════
 // TOGGLE LOGIC
-// Toggles are stored in their OWN date-keyed bucket, completely
-// separate from the shift draft. This means:
-//   - They reset automatically the next service day.
-//   - They are NOT restored from a stale yesterday draft.
 // ════════════════════════════════════════════════════════════
 function saveToggles() {
   try { localStorage.setItem(toggleKey(), JSON.stringify(toggleState)); } catch(e) {}
@@ -771,12 +766,10 @@ function tog(btn) {
   var pair = btn.closest('.toggle-pair');
   pair.querySelectorAll('.tog').forEach(function(b) { b.classList.remove('on'); });
   btn.classList.add('on');
-  var val = btn.classList.contains('yes') ? btn.textContent.trim() : btn.textContent.trim();
-  // Map button text back to canonical values
   if (btn.classList.contains('yes')) {
-    toggleState[k] = btn.textContent.trim(); // 'YES' or 'Done'
+    toggleState[k] = btn.textContent.trim();
   } else {
-    toggleState[k] = btn.textContent.trim(); // 'NO' or 'N/A'
+    toggleState[k] = btn.textContent.trim();
   }
   saveToggles();
   cfSaveShift();
@@ -785,11 +778,12 @@ function tog(btn) {
 function getV(k) { return toggleState[k] || '—'; }
 
 // ════════════════════════════════════════════════════════════
-// DRAFT SAVE / LOAD  (shift text fields, NOT toggles)
+// DRAFT SAVE / LOAD
 // ════════════════════════════════════════════════════════════
 function collectShiftPayload() {
   return {
     savedAt:      new Date().toISOString(),
+    serviceDate:  serviceDate(),
     date:         document.getElementById('o-date').value,
     manager:      document.getElementById('o-manager').value,
     weather:      document.getElementById('o-weather').value,
@@ -813,7 +807,6 @@ function collectShiftPayload() {
     openingSpecials: openingSpecials,
     shiftExtras:  shiftExtras,
     eighties:     eighties
-    // NOTE: toggles are NOT in the draft — they live in their own date-keyed bucket
   };
 }
 
@@ -821,8 +814,6 @@ function saveDraft() {
   try { localStorage.setItem(draftKey(), JSON.stringify(collectShiftPayload())); } catch(e) {}
 }
 
-// Restore text fields + arrays from a payload object.
-// Toggles are intentionally excluded — they come from loadToggles() only.
 function applyFields(d) {
   var fields = [
     ['o-preshift', d.preshift], ['s-sales', d.sales], ['s-avg', d.avg],
@@ -845,14 +836,19 @@ function applyFields(d) {
   }
   if (d.vips && d.vips.length) { vips = d.vips; renderVips(); }
   if (d.eighties && d.eighties.length) { eighties = d.eighties; renderEighties(); }
+
+  // ── FIX: only merge notes that belong to today's service date ──
   if (d.shiftNotes && d.shiftNotes.length) {
+    var today = serviceDate();
     var existing = shiftNotes.map(function(n) { return n.ts + '|' + n.who + '|' + n.text; });
     d.shiftNotes.forEach(function(n) {
+      if (n.date && n.date !== today) return;   // drop stale notes
       var fp = n.ts + '|' + n.who + '|' + n.text;
       if (existing.indexOf(fp) === -1) { shiftNotes.push(n); existing.push(fp); }
     });
     renderShiftNotes();
   }
+
   if (d.openingSpecials && d.openingSpecials.length) {
     openingSpecials = d.openingSpecials;
     renderOpeningSpecials();
@@ -870,7 +866,6 @@ function loadDraft() {
   } catch(e) { return false; }
 }
 
-// Auto-save text fields on any change
 document.addEventListener('input',  saveDraft);
 document.addEventListener('change', saveDraft);
 
@@ -896,6 +891,8 @@ async function cfLoadShift() {
     var resp = await fetch(CF_WORKER + '/shift');
     var data = await resp.json();
     if (!data || !Object.keys(data).length) return;
+    // ── FIX: reject KV shift data from a different service date ──
+    if (data.serviceDate && data.serviceDate !== serviceDate()) return;
     var kvTime    = data.savedAt ? new Date(data.savedAt).getTime() : 0;
     var localRaw  = localStorage.getItem(draftKey());
     var localTime = localRaw ? new Date(JSON.parse(localRaw).savedAt || 0).getTime() : 0;
@@ -907,23 +904,29 @@ async function cfLoadShift() {
   } catch(e) { console.log('KV load skipped:', e); }
 }
 
+// ── FIX: stamp notes with serviceDate so stale ones can be filtered ──
 async function cfPostNote(note) {
   try {
     await fetch(CF_WORKER + '/notes', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(note)
+      body: JSON.stringify(Object.assign({}, note, { date: serviceDate() }))
     });
   } catch(e) {}
 }
 
+// ── FIX: filter out notes from previous service dates on load ──
 async function cfLoadNotes() {
   try {
     var resp  = await fetch(CF_WORKER + '/notes');
     var notes = await resp.json();
     if (!notes || !notes.length) return;
+    var today = serviceDate();
     var existing = shiftNotes.map(function(n) { return n.ts + '|' + n.who + '|' + n.text; });
     notes.forEach(function(n) {
+      // Notes without a date stamp are legacy; allow them through only on the same calendar day
+      // Notes with a date stamp must match today's service date
+      if (n.date && n.date !== today) return;
       var fp = n.ts + '|' + n.who + '|' + n.text;
       if (existing.indexOf(fp) === -1) { shiftNotes.push(n); existing.push(fp); }
     });
@@ -1099,13 +1102,13 @@ function addShiftNote() {
   var h = now.getHours(), m = String(now.getMinutes()).padStart(2,'0');
   var ampm = h >= 12 ? 'PM' : 'AM';
   h = h % 12 || 12;
-  var note = { ts: h + ':' + m + ' ' + ampm, who: who, text: txt };
+  // ── FIX: stamp note with today's service date ──
+  var note = { ts: h + ':' + m + ' ' + ampm, who: who, text: txt, date: serviceDate() };
   shiftNotes.push(note);
   inp.value = '';
   renderShiftNotes();
   cfPostNote(note);
   saveDraft();
-  // Seed specials if not yet added
   if (!openingSpecials.length) {
     var ds = DAY_SPECIALS[serviceDay()];
     if (ds) openingSpecials.push({ name: ds, count: '', sold: '', eightysixed: false });
@@ -1405,20 +1408,15 @@ async function generateExec() {
 // INIT
 // ════════════════════════════════════════════════════════════
 (function init() {
-  // Set today's date
   var t  = new Date();
   var dd = String(t.getDate()).padStart(2,'0');
   var mm = String(t.getMonth() + 1).padStart(2,'0');
   document.getElementById('o-date').value    = t.getFullYear() + '-' + mm + '-' + dd;
   document.getElementById('o-manager').value = 'Adam Brousell';
 
-  // 1. Restore toggles from their own date-keyed bucket (resets at 2 AM boundary automatically)
   loadToggles();
-
-  // 2. Restore text fields/arrays from draft (also date-keyed — stale draft = no restore)
   loadDraft();
 
-  // 3. Seed specials if still empty after draft load
   if (!openingSpecials.length) {
     var ds = DAY_SPECIALS[serviceDay()];
     if (ds) openingSpecials.push({ name: ds, count: '', sold: '', eightysixed: false });
@@ -1429,12 +1427,10 @@ async function generateExec() {
   renderShiftNotes();
   renderEighties();
 
-  // 4. Async: fetch weather + sync KV
   fetchWeather();
   cfLoadShift();
   cfLoadNotes();
 
-  // 5. Auto-poll notes every 60s
   setInterval(cfLoadNotes, 60000);
 })();
 </script>
