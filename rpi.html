@@ -198,8 +198,198 @@
   .note-del:hover { color: var(--red-deep); }
   .notes-empty { font-size: 13px; color: var(--ink-faint); font-style: italic; padding: 6px 0; }
 
-  /* ── PREVIEW ── */
-  .preview-box { font-family: 'DM Mono', monospace; font-size: 13px; line-height: 1.75; background: #fff; color: var(--ink); border: 1px solid var(--border); border-radius: 8px; padding: 24px 28px; white-space: pre-wrap; max-height: 520px; overflow-y: auto; }
+  /* ── EMAIL PREVIEW ── */
+  .email-preview-wrap {
+    background: #f0ece6;
+    border-radius: 8px;
+    padding: 20px;
+  }
+  .email-chrome {
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 2px 12px rgba(26,22,18,0.12), 0 1px 3px rgba(26,22,18,0.08);
+    overflow: hidden;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+  .email-chrome-bar {
+    background: #f3f2f1;
+    border-bottom: 1px solid #e0dcd8;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .email-chrome-dots { display: flex; gap: 5px; }
+  .email-chrome-dots span { width: 10px; height: 10px; border-radius: 50%; }
+  .email-chrome-dots span:nth-child(1) { background: #ff5f57; }
+  .email-chrome-dots span:nth-child(2) { background: #febc2e; }
+  .email-chrome-dots span:nth-child(3) { background: #28c840; }
+  .email-chrome-subject {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    letter-spacing: 0.02em;
+    flex: 1;
+    text-align: center;
+  }
+  .email-body {
+    padding: 32px 40px 36px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: #1a1612;
+    line-height: 1.7;
+  }
+  .email-subject-line {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: 0.02em;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .email-section {
+    margin-bottom: 18px;
+  }
+  .email-section-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 4px;
+  }
+  .email-section-content {
+    font-size: 14px;
+    color: var(--ink);
+    line-height: 1.7;
+  }
+  .email-kv-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 2px 16px;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  .email-kv-label {
+    color: var(--ink-soft);
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .email-kv-value {
+    color: var(--ink);
+    font-size: 13px;
+  }
+  .email-divider {
+    height: 1px;
+    background: var(--border-light);
+    margin: 16px 0;
+  }
+  .email-narrative {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    color: var(--ink);
+    line-height: 1.8;
+    margin-bottom: 18px;
+    border-left: 3px solid var(--gold-light);
+    padding-left: 14px;
+    font-style: italic;
+  }
+  .email-bullet-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .email-bullet-list li {
+    font-size: 14px;
+    color: var(--ink);
+    padding: 2px 0 2px 14px;
+    position: relative;
+  }
+  .email-bullet-list li::before {
+    content: '–';
+    position: absolute;
+    left: 0;
+    color: var(--gold);
+  }
+  .email-86-pill {
+    display: inline-block;
+    background: var(--red-pale);
+    color: var(--red-deep);
+    border: 1px solid #e8b8b8;
+    border-radius: 4px;
+    padding: 1px 7px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .email-vip-pill {
+    display: inline-block;
+    background: var(--gold-pale);
+    color: var(--gold);
+    border: 1px solid #e0c98a;
+    border-radius: 100px;
+    padding: 2px 10px;
+    font-size: 12px;
+    margin: 2px 3px 2px 0;
+  }
+  .email-check-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 20px;
+  }
+  .email-check-item {
+    font-size: 13px;
+    color: var(--ink-soft);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .email-check-item .chk-yes { color: var(--green-deep); font-weight: 600; }
+  .email-check-item .chk-no  { color: var(--red-deep);   font-weight: 600; }
+  .email-check-item .chk-na  { color: var(--ink-faint); }
+  .email-log-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #1a5276;
+    text-decoration: none;
+    border-bottom: 1px solid #aed6f1;
+    padding-bottom: 1px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .email-log-link:hover { color: var(--gold); border-color: var(--gold); }
+  .email-signoff {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-light);
+  }
+  .email-signoff-phrase {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 16px;
+    color: var(--ink-soft);
+    margin-bottom: 4px;
+  }
+  .email-signoff-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: 0.01em;
+  }
+  .email-empty-hint {
+    font-size: 14px;
+    color: var(--ink-faint);
+    font-style: italic;
+    text-align: center;
+    padding: 32px 0;
+  }
 
   /* ── BUTTONS ── */
   .btn-primary { display: inline-flex; align-items: center; gap: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; padding: 11px 24px; background: var(--ink); color: var(--cream); border: none; border-radius: 7px; cursor: pointer; transition: background 0.15s; touch-action: manipulation; }
@@ -239,7 +429,8 @@
     .site-header .brand { font-size: 17px; }
     .prog-label { display: none; }
     .field-label { font-size: 10px; }
-    .preview-box { font-size: 11.5px; padding: 16px; }
+    .email-body { padding: 20px 18px 24px; }
+    .email-check-grid { grid-template-columns: 1fr; }
     .grid-2.close-grid { grid-template-columns: 1fr; }
   }
 
@@ -344,7 +535,7 @@
         <div class="check-row"><div class="check-info"><div class="check-name">Check tables 26–29 are in a straight line</div></div><div class="toggle-pair"><button class="tog yes" data-k="tables" onclick="tog(this)">YES</button><button class="tog no" data-k="tables" onclick="tog(this)">NO</button></div></div>
         <div class="check-row"><div class="check-info"><div class="check-name">2 Fête d'Or in front ice bucket</div></div><div class="toggle-pair"><button class="tog yes" data-k="fete" onclick="tog(this)">YES</button><button class="tog no" data-k="fete" onclick="tog(this)">NO</button></div></div>
         <div class="check-row"><div class="check-info"><div class="check-name">Blow down back patio and out front</div></div><div class="toggle-pair"><button class="tog yes" data-k="blowdown" onclick="tog(this)">YES</button><button class="tog no" data-k="blowdown" onclick="tog(this)">NO</button></div></div>
-        <div class="check-row"><div class="check-info"><div class="check-name">Perimeter walk</div><div class="check-sub">Check trash · garbage gate closed · wipe front chairs</div></div><div class="toggle-pair"><button class="tog yes" data-k="perimeter" onclick="tog(this)">YES</button><button class="tog no" data-k="perimeter" onclick="tog(this)">NO</button></div></div>
+        <div class="check-row"><div class="check-info"><div class="check-name">Perimeter walk</div><div class="check-sub">Check trash · garbage gate closed · wipe front chairs</div></div><div class="toggle-pair"><button class="tog yes" data-k="perimeter-open" onclick="tog(this)">YES</button><button class="tog no" data-k="perimeter-open" onclick="tog(this)">NO</button></div></div>
         <div class="check-row"><div class="check-info"><div class="check-name">Atmosphere set (10 min before open)</div><div class="check-sub">Lights dimmed · lamps on · candles lit · music at 60</div></div><div class="toggle-pair"><button class="tog yes" data-k="atmosphere" onclick="tog(this)">YES</button><button class="tog no" data-k="atmosphere" onclick="tog(this)">NO</button></div></div>
         <div class="check-row"><div class="check-info"><div class="check-name">Confirm bar set-up and bar wiped down</div></div><div class="toggle-pair"><button class="tog yes" data-k="bar-setup" onclick="tog(this)">YES</button><button class="tog no" data-k="bar-setup" onclick="tog(this)">NO</button></div></div>
         <div class="check-row"><div class="check-info"><div class="check-name">Confirm service station set up</div></div><div class="toggle-pair"><button class="tog yes" data-k="station" onclick="tog(this)">YES</button><button class="tog no" data-k="station" onclick="tog(this)">NO</button></div></div>
@@ -664,14 +855,30 @@
     <div class="section">
       <div class="section-head">
         <div class="section-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
-        <div class="section-title">Full Email</div>
+        <div class="section-title">Email Preview</div>
       </div>
-      <div class="section-body">
-        <div id="preview-box" class="preview-box">Generate your report to preview it here.</div>
-        <div class="btn-row">
-          <button class="btn-primary" onclick="copyEmail()">Copy Full Email</button>
-          <button class="btn-secondary" onclick="generate()">↻ Regenerate</button>
-          <button class="btn-secondary" onclick="goTab(1)">← Edit</button>
+      <div class="section-body" style="padding:0">
+        <div class="email-preview-wrap">
+          <div class="email-chrome">
+            <div class="email-chrome-bar">
+              <div class="email-chrome-dots">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="email-chrome-subject" id="email-chrome-subject">River Pointe — End of Night</div>
+            </div>
+            <div class="email-body" id="email-body-render">
+              <div class="email-empty-hint">
+                Complete your shift report and click<br><strong>Generate Email Preview</strong> to see it here.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:16px 20px">
+          <div class="btn-row" style="margin-top:0">
+            <button class="btn-primary" onclick="copyEmailPlain()">Copy as Plain Text</button>
+            <button class="btn-secondary" onclick="generate()">↻ Regenerate</button>
+            <button class="btn-secondary" onclick="goTab(1)">← Edit</button>
+          </div>
         </div>
       </div>
     </div>
@@ -689,6 +896,7 @@ var eighties     = [];
 var shiftNotes   = [];
 var openingSpecials = [];
 var shiftExtras  = [];
+var _plainTextEmail = '';
 
 var CF_WORKER = 'https://rpi-shift-api.amusementstandards.workers.dev';
 
@@ -777,6 +985,13 @@ function tog(btn) {
 
 function getV(k) { return toggleState[k] || '—'; }
 
+function chkBadge(v) {
+  if (v === 'YES' || v === 'Done') return '<span class="chk-yes">✓</span>';
+  if (v === 'NO')  return '<span class="chk-no">✗</span>';
+  if (v === 'N/A') return '<span class="chk-na">N/A</span>';
+  return '<span class="chk-na">—</span>';
+}
+
 // ════════════════════════════════════════════════════════════
 // DRAFT SAVE / LOAD
 // ════════════════════════════════════════════════════════════
@@ -837,12 +1052,11 @@ function applyFields(d) {
   if (d.vips && d.vips.length) { vips = d.vips; renderVips(); }
   if (d.eighties && d.eighties.length) { eighties = d.eighties; renderEighties(); }
 
-  // ── FIX: only merge notes that belong to today's service date ──
   if (d.shiftNotes && d.shiftNotes.length) {
     var today = serviceDate();
     var existing = shiftNotes.map(function(n) { return n.ts + '|' + n.who + '|' + n.text; });
     d.shiftNotes.forEach(function(n) {
-      if (n.date && n.date !== today) return;   // drop stale notes
+      if (n.date && n.date !== today) return;
       var fp = n.ts + '|' + n.who + '|' + n.text;
       if (existing.indexOf(fp) === -1) { shiftNotes.push(n); existing.push(fp); }
     });
@@ -891,7 +1105,6 @@ async function cfLoadShift() {
     var resp = await fetch(CF_WORKER + '/shift');
     var data = await resp.json();
     if (!data || !Object.keys(data).length) return;
-    // ── FIX: reject KV shift data from a different service date ──
     if (data.serviceDate && data.serviceDate !== serviceDate()) return;
     var kvTime    = data.savedAt ? new Date(data.savedAt).getTime() : 0;
     var localRaw  = localStorage.getItem(draftKey());
@@ -904,7 +1117,6 @@ async function cfLoadShift() {
   } catch(e) { console.log('KV load skipped:', e); }
 }
 
-// ── FIX: stamp notes with serviceDate so stale ones can be filtered ──
 async function cfPostNote(note) {
   try {
     await fetch(CF_WORKER + '/notes', {
@@ -915,7 +1127,6 @@ async function cfPostNote(note) {
   } catch(e) {}
 }
 
-// ── FIX: filter out notes from previous service dates on load ──
 async function cfLoadNotes() {
   try {
     var resp  = await fetch(CF_WORKER + '/notes');
@@ -924,8 +1135,6 @@ async function cfLoadNotes() {
     var today = serviceDate();
     var existing = shiftNotes.map(function(n) { return n.ts + '|' + n.who + '|' + n.text; });
     notes.forEach(function(n) {
-      // Notes without a date stamp are legacy; allow them through only on the same calendar day
-      // Notes with a date stamp must match today's service date
       if (n.date && n.date !== today) return;
       var fp = n.ts + '|' + n.who + '|' + n.text;
       if (existing.indexOf(fp) === -1) { shiftNotes.push(n); existing.push(fp); }
@@ -1102,7 +1311,6 @@ function addShiftNote() {
   var h = now.getHours(), m = String(now.getMinutes()).padStart(2,'0');
   var ampm = h >= 12 ? 'PM' : 'AM';
   h = h % 12 || 12;
-  // ── FIX: stamp note with today's service date ──
   var note = { ts: h + ':' + m + ' ' + ampm, who: who, text: txt, date: serviceDate() };
   shiftNotes.push(note);
   inp.value = '';
@@ -1190,8 +1398,12 @@ function fmtDate(v) {
   return days[d.getDay()] + ' ' + months[d.getMonth()] + ' ' + day + sfx + ', ' + parts[0];
 }
 
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
 // ════════════════════════════════════════════════════════════
-// EMAIL GENERATION
+// EMAIL GENERATION — HTML RENDER
 // ════════════════════════════════════════════════════════════
 function generate() {
   var date    = document.getElementById('o-date').value;
@@ -1212,15 +1424,205 @@ function generate() {
   var cashVar = document.getElementById('cl-cash-variance').value || '';
   var clNotes = document.getElementById('cl-notes').value || '';
   var signoff = closer || mgr;
+  var fmtD    = fmtDate(date);
 
+  // Update chrome bar subject
+  document.getElementById('email-chrome-subject').textContent = 'River Pointe — End of Night' + (fmtD ? ' · ' + fmtD : '');
+
+  // Build HTML sections
+  var html = [];
+
+  // Subject / title
+  html.push('<div class="email-subject-line">River Pointe End of Night' + (fmtD ? ' — ' + esc(fmtD) : '') + '</div>');
+
+  // Narrative placeholder (filled by AI exec summary later)
+  html.push('<div class="email-narrative" id="email-narrative-inject">Narrative summary will appear here after the AI summary is generated above.</div>');
+
+  // Numbers
+  html.push('<div class="email-section">');
+  html.push('<div class="email-kv-grid">');
+  html.push('<span class="email-kv-label">Net Sales</span><span class="email-kv-value"><strong>' + esc(sales) + '</strong></span>');
+  html.push('<span class="email-kv-label">Check Average</span><span class="email-kv-value">' + esc(avg) + '</span>');
+  html.push('<span class="email-kv-label">Covers</span><span class="email-kv-value">' + esc(cvrs) + ' &nbsp;<span style="color:var(--ink-faint);font-size:12px">Resy: ' + esc(resy) + '</span></span>');
+  html.push('<span class="email-kv-label">Weather</span><span class="email-kv-value">' + esc(wthr) + '</span>');
+  html.push('</div>');
+  html.push('</div>');
+
+  // Closing check
+  html.push('<div class="email-divider"></div>');
+  html.push('<div class="email-section">');
+  html.push('<div class="email-section-label">Closing Check</div>');
+  html.push('<div class="email-check-grid">');
+  var checks = [
+    ['Polishing area', 'cl-sw-polish'],
+    ['Perimeter walked', 'cl-perimeter'],
+    ['Front door locked', 'cl-d-front'],
+    ['Liquor cage locked', 'cl-d-wine'],
+    ['Bar bank $600', 'cl-sc-bank'],
+    ['Cash in safe', 'cl-sc-safe'],
+    ['Candles out', 'cl-candle-out'],
+    ['Lamps charging', 'cl-lamp-in'],
+  ];
+  checks.forEach(function(c) {
+    var v = getV(c[1]);
+    html.push('<div class="email-check-item">' + chkBadge(v) + ' <span>' + c[0] + '</span></div>');
+  });
+  html.push('</div>');
+  html.push('</div>');
+
+  // VIPs
+  html.push('<div class="email-divider"></div>');
+  html.push('<div class="email-section">');
+  html.push('<div class="email-section-label">VIPs</div>');
+  if (vips.length) {
+    html.push('<div>' + vips.map(function(v) { return '<span class="email-vip-pill">' + esc(v) + '</span>'; }).join('') + '</div>');
+  } else {
+    html.push('<div class="email-section-content" style="color:var(--ink-faint)">None noted</div>');
+  }
+  html.push('</div>');
+
+  // FOH
+  if (foh) {
+    html.push('<div class="email-divider"></div>');
+    html.push('<div class="email-section">');
+    html.push('<div class="email-section-label">FOH</div>');
+    html.push('<div class="email-section-content">' + esc(foh).replace(/\n/g,'<br>') + '</div>');
+    html.push('</div>');
+  }
+
+  // Food / Specials
+  html.push('<div class="email-divider"></div>');
+  html.push('<div class="email-section">');
+  html.push('<div class="email-section-label">Food</div>');
+  var specialLines = [];
+  openingSpecials.forEach(function(s) {
+    if (!s.name) return;
+    if (s.eightysixed) {
+      specialLines.push('<li>' + esc(s.name) + '<span class="email-86-pill">86\'d</span></li>');
+    } else if (s.sold || s.count) {
+      specialLines.push('<li>' + esc(s.name) + ' — sold ' + esc(s.sold || '?') + ' of ' + esc(s.count || '?') + '</li>');
+    } else {
+      specialLines.push('<li>' + esc(s.name) + '</li>');
+    }
+  });
+  shiftExtras.forEach(function(s) {
+    if (!s.name) return;
+    specialLines.push('<li>' + esc(s.name) + ' — sold ' + esc(s.sold || '?') + ' of ' + esc(s.avail || '?') + '</li>');
+  });
+  if (specialLines.length) {
+    html.push('<ul class="email-bullet-list">' + specialLines.join('') + '</ul>');
+  }
+  if (foodN) {
+    html.push('<div class="email-section-content" style="margin-top:' + (specialLines.length ? '8px' : '0') + '">' + esc(foodN).replace(/\n/g,'<br>') + '</div>');
+  }
+  if (!specialLines.length && !foodN) {
+    html.push('<div class="email-section-content" style="color:var(--ink-faint)">No notes</div>');
+  }
+  html.push('</div>');
+
+  // Beverage
+  if (bev) {
+    html.push('<div class="email-divider"></div>');
+    html.push('<div class="email-section">');
+    html.push('<div class="email-section-label">Beverage</div>');
+    html.push('<div class="email-section-content">' + esc(bev).replace(/\n/g,'<br>') + '</div>');
+    html.push('</div>');
+  }
+
+  // 86'd
+  var e86 = eighties.filter(Boolean);
+  if (e86.length) {
+    html.push('<div class="email-divider"></div>');
+    html.push('<div class="email-section">');
+    html.push('<div class="email-section-label">86\'d Items</div>');
+    html.push('<ul class="email-bullet-list">');
+    e86.forEach(function(e) { html.push('<li>' + esc(e) + '</li>'); });
+    html.push('</ul>');
+    html.push('</div>');
+  }
+
+  // Employees
+  if (emp) {
+    html.push('<div class="email-divider"></div>');
+    html.push('<div class="email-section">');
+    html.push('<div class="email-section-label">Employees</div>');
+    html.push('<div class="email-section-content">' + esc(emp).replace(/\n/g,'<br>') + '</div>');
+    html.push('</div>');
+  }
+
+  // Interviews
+  if (hire) {
+    html.push('<div class="email-divider"></div>');
+    html.push('<div class="email-section">');
+    html.push('<div class="email-section-label">Interviews / New Hires</div>');
+    html.push('<div class="email-section-content">' + esc(hire).replace(/\n/g,'<br>') + '</div>');
+    html.push('</div>');
+  }
+
+  // Batch
+  if (batch) {
+    html.push('<div class="email-divider"></div>');
+    html.push('<div class="email-section">');
+    html.push('<div class="email-section-label">Batch</div>');
+    html.push('<div class="email-section-content">' + esc(batch).replace(/\n/g,'<br>') + '</div>');
+    html.push('</div>');
+  }
+
+  // Maintenance / Orders
+  html.push('<div class="email-divider"></div>');
+  html.push('<div class="email-section">');
+  html.push('<div class="email-section-label">Maintenance / Orders</div>');
+  html.push('<div class="email-section-content">' + (maint ? esc(maint).replace(/\n/g,'<br>') : '<span style="color:var(--ink-faint)">All good.</span>') + '</div>');
+  html.push('</div>');
+
+  // Cash variance
+  if (cashVar && cashVar.toLowerCase() !== 'n/a' && cashVar !== '') {
+    html.push('<div class="email-divider"></div>');
+    html.push('<div class="email-section">');
+    html.push('<div class="email-section-label">Cash Overage / Underage</div>');
+    html.push('<div class="email-section-content">' + esc(cashVar) + '</div>');
+    html.push('</div>');
+  }
+
+  // Closing notes
+  if (clNotes && clNotes.toLowerCase() !== 'n/a' && clNotes !== '') {
+    html.push('<div class="email-divider"></div>');
+    html.push('<div class="email-section">');
+    html.push('<div class="email-section-label">Closing Notes</div>');
+    html.push('<div class="email-section-content">' + esc(clNotes).replace(/\n/g,'<br>') + '</div>');
+    html.push('</div>');
+  }
+
+  // Log link
+  html.push('<div class="email-divider"></div>');
+  html.push('<div class="email-section">');
+  html.push('<a href="https://docs.google.com/spreadsheets/d/1KykcMECKFuFxw9688164cfa8CwPLFLHc0MTWFsCWgN0/edit?gid=0#gid=0" target="_blank" class="email-log-link">');
+  html.push('<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>');
+  html.push('RPI Purchase &amp; Maintenance Log</a>');
+  html.push('</div>');
+
+  // Sign-off
+  html.push('<div class="email-signoff">');
+  html.push('<div class="email-signoff-phrase">Melius semper,</div>');
+  html.push('<div class="email-signoff-name">' + esc(signoff) + '</div>');
+  html.push('</div>');
+
+  document.getElementById('email-body-render').innerHTML = html.join('');
+
+  // Build plain text version for clipboard
+  buildPlainText(date, mgr, closer, wthr, sales, avg, cvrs, resy, foh, foodN, bev, emp, hire, batch, maint, cashVar, clNotes, signoff);
+
+  cfSaveShift();
+}
+
+function buildPlainText(date, mgr, closer, wthr, sales, avg, cvrs, resy, foh, foodN, bev, emp, hire, batch, maint, cashVar, clNotes, signoff) {
+  var fmtD = fmtDate(date);
   var L = [];
-  L.push('Shift: ' + fmtDate(date));
-  L.push('- Net Sales: ' + sales);
-  L.push('- Check Average: ' + avg);
-  L.push('- Covers: ' + cvrs + '  Resy: ' + resy);
-  L.push('- Weather: ' + wthr);
-  L.push('');
-  L.push('{{NARRATIVE}}');
+  L.push('Shift: ' + fmtD);
+  L.push('- Net Sales: ' + (sales || '—'));
+  L.push('- Check Average: ' + (avg || '—'));
+  L.push('- Covers: ' + (cvrs || '—') + '  Resy: ' + (resy || '—'));
+  L.push('- Weather: ' + (wthr || '—'));
   L.push('');
   L.push('Closing Check:');
   L.push('- Polishing area clean: ' + getV('cl-sw-polish'));
@@ -1275,19 +1677,15 @@ function generate() {
   L.push('RPI Purchase & Maintenance Log');
   L.push('https://docs.google.com/spreadsheets/d/1KykcMECKFuFxw9688164cfa8CwPLFLHc0MTWFsCWgN0/edit?gid=0#gid=0');
   L.push('');
-  L.push('Thank you,');
+  L.push('Melius semper,');
   L.push('');
   L.push(signoff);
-  document.getElementById('preview-box').textContent = L.join('\n');
-  cfSaveShift();
+  _plainTextEmail = L.join('\n');
 }
 
-function copyEmail() {
-  var txt = document.getElementById('preview-box').textContent;
-  if (txt.indexOf('{{NARRATIVE}}') !== -1) {
-    var fallback = shiftNotes.length ? shiftNotes.map(function(n) { return n.text; }).join(' ') : '';
-    txt = txt.replace('\n{{NARRATIVE}}', fallback ? '\n' + fallback : '');
-  }
+function copyEmailPlain() {
+  var txt = _plainTextEmail;
+  if (!txt) { alert('Generate the email first.'); return; }
   navigator.clipboard.writeText(txt).then(function() {
     var b = document.querySelector('#panel-2 .btn-primary');
     if (!b) return;
@@ -1387,19 +1785,17 @@ async function generateExec() {
     box.textContent = text;
     loading.style.display = 'none';
     copyBtn.style.display = regenBtn.style.display = 'inline-flex';
-    var pb = document.getElementById('preview-box');
-    if (pb && pb.textContent.indexOf('{{NARRATIVE}}') !== -1) {
-      pb.textContent = pb.textContent.replace('\n{{NARRATIVE}}', '\n' + text);
-    }
+    // Inject into email preview narrative
+    var narrativeEl = document.getElementById('email-narrative-inject');
+    if (narrativeEl) narrativeEl.textContent = text;
   } catch(e) {
     box.classList.remove('loading');
     box.innerHTML = '<span style="color:var(--red-deep);font-size:14px">Unable to generate summary — check Worker deployment and try again.</span>';
     loading.style.display = 'none';
     regenBtn.style.display = 'inline-flex';
-    var pb = document.getElementById('preview-box');
-    if (pb && pb.textContent.indexOf('{{NARRATIVE}}') !== -1) {
-      var fallback = shiftNotes.length ? shiftNotes.map(function(n) { return n.text; }).join('\n') : '';
-      pb.textContent = pb.textContent.replace('\n{{NARRATIVE}}', fallback ? '\n' + fallback : '');
+    var narrativeEl = document.getElementById('email-narrative-inject');
+    if (narrativeEl && shiftNotes.length) {
+      narrativeEl.textContent = shiftNotes.map(function(n) { return n.text; }).join(' ');
     }
   }
 }
