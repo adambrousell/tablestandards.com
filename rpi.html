@@ -481,7 +481,8 @@
               <option value="">— select —</option>
               <option value="Adam Brousell">Adam Brousell</option>
               <option value="Kelly Carrillo">Kelly Carrillo</option>
-              <option value="Caitlin Sinno">Caitlin Sinno</option>
+              <option value="Jake Rallo">Jake Rallo</option>
+              <option value="John Gorga">John Gorga</option>
             </select>
           </div>
           <div class="field">
@@ -606,7 +607,8 @@
             <option value="">— select —</option>
             <option value="Adam Brousell">Adam Brousell</option>
             <option value="Kelly Carrillo">Kelly Carrillo</option>
-            <option value="Caitlin Sinno">Caitlin Sinno</option>
+            <option value="Jake Rallo">Jake Rallo</option>
+              <option value="John Gorga">John Gorga</option>
           </select>
         </div>
         <div class="field" style="margin-top:14px">
@@ -1048,10 +1050,7 @@ function applyFields(d) {
     var el = document.getElementById(f[0]);
     if (el && f[1] !== undefined && f[1] !== null && f[1] !== '') el.value = f[1];
   });
-  if (d.weather) {
-    var wx = document.getElementById('o-weather');
-    if (wx && !wx.value) wx.value = d.weather;
-  }
+  // Weather is always fetched fresh — never restored from draft
   if (d.closer) {
     var cl = document.getElementById('s-closer');
     if (cl) cl.value = d.closer;
@@ -2056,10 +2055,8 @@ async function generateExec() {
 // INIT
 // ════════════════════════════════════════════════════════════
 (function init() {
-  var t  = new Date();
-  var dd = String(t.getDate()).padStart(2,'0');
-  var mm = String(t.getMonth() + 1).padStart(2,'0');
-  document.getElementById('o-date').value    = t.getFullYear() + '-' + mm + '-' + dd;
+  // Use serviceDate() so date respects the 4AM rollover boundary
+  document.getElementById('o-date').value    = serviceDate();
   document.getElementById('o-manager').value = 'Adam Brousell';
 
   loadToggles();
@@ -2075,8 +2072,8 @@ async function generateExec() {
   renderShiftNotes();
   renderEighties();
 
-  fetchWeather();
-  cfLoadShift();
+  // Always fetch fresh weather last so it overwrites any stale draft value
+  cfLoadShift().then(function() { fetchWeather(); });
   cfLoadNotes();
 
   setInterval(cfLoadNotes, 60000);
