@@ -1690,6 +1690,193 @@ function buildPlainText(date, mgr, closer, wthr, sales, avg, cvrs, resy, foh, fo
   _plainTextEmail = L.join('\n');
 }
 
+function buildOutlookHTML() {
+  // Build a table-based email safe for Outlook — no CSS grid, no CSS vars, no flexbox
+  var date    = document.getElementById('o-date').value;
+  var mgr     = document.getElementById('o-manager').value || 'Manager';
+  var closer  = document.getElementById('s-closer').value || '';
+  var wthr    = document.getElementById('o-weather').value || '—';
+  var sales   = document.getElementById('s-sales').value || '—';
+  var avg     = document.getElementById('s-avg').value || '—';
+  var cvrs    = document.getElementById('s-covers').value || '—';
+  var resy    = document.getElementById('s-resy').value || '—';
+  var foh     = document.getElementById('s-foh').value || '';
+  var foodN   = document.getElementById('s-food').value || '';
+  var bev     = document.getElementById('s-bev').value || '';
+  var emp     = document.getElementById('s-emp').value || '';
+  var hire    = document.getElementById('s-hire').value || '';
+  var batch   = document.getElementById('s-batch').value || '';
+  var maint   = document.getElementById('s-maint').value || '';
+  var cashVar = document.getElementById('cl-cash-variance').value || '';
+  var clNotes = document.getElementById('cl-notes').value || '';
+  var signoff = closer || mgr;
+  var fmtD    = fmtDate(date);
+
+  var execSummary = document.getElementById('exec-box') ? document.getElementById('exec-box').innerText : '';
+  if (execSummary && execSummary.indexOf('Generate') !== -1) execSummary = '';
+
+  function row(label, val) {
+    return '<tr><td style="font-family:Arial,sans-serif;font-size:13px;color:#7a6e68;padding:2px 16px 2px 0;white-space:nowrap;vertical-align:top;">' + label + '</td><td style="font-family:Arial,sans-serif;font-size:13px;color:#1a1612;padding:2px 0;vertical-align:top;">' + (val||'—') + '</td></tr>';
+  }
+  function sectionLabel(txt) {
+    return '<p style="font-family:Arial,sans-serif;font-size:10px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#b8ada7;margin:0 0 6px 0;">' + txt + '</p>';
+  }
+  function divider() {
+    return '<hr style="border:none;border-top:1px solid #ede8e2;margin:16px 0;">';
+  }
+  function bodyText(txt) {
+    if (!txt) return '';
+    return '<p style="font-family:Arial,sans-serif;font-size:14px;color:#1a1612;line-height:1.7;margin:0;">' + txt.replace(/\n/g,'<br>') + '</p>';
+  }
+  function checkRow(label, key) {
+    var v = getV(key);
+    var color = (v==='YES'||v==='Done') ? '#1e3d2a' : (v==='NO' ? '#6b2323' : '#b8ada7');
+    var mark  = (v==='YES'||v==='Done') ? '✓' : (v==='NO' ? '✗' : '—');
+    return '<tr><td style="font-family:Arial,sans-serif;font-size:13px;color:' + color + ';font-weight:bold;padding:1px 10px 1px 0;width:20px;">' + mark + '</td><td style="font-family:Arial,sans-serif;font-size:13px;color:#3d3530;padding:1px 0;">' + label + '</td></tr>';
+  }
+
+  var H = [];
+  H.push('<div style="max-width:600px;padding:0;">');
+
+  // Subject
+  H.push('<p style="font-family:Georgia,serif;font-size:20px;font-weight:bold;color:#1a1612;margin:0 0 16px 0;padding-bottom:14px;border-bottom:2px solid #c9a96e;">River Pointe End of Night' + (fmtD ? ' — ' + fmtD : '') + '</p>');
+
+  // AI Narrative
+  if (execSummary) {
+    H.push('<p style="font-family:Georgia,serif;font-size:15px;font-style:italic;color:#1a1612;line-height:1.8;margin:0 0 18px 0;padding-left:14px;border-left:3px solid #c9a96e;">' + execSummary + '</p>');
+  }
+
+  // Numbers
+  H.push('<table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:4px;">');
+  H.push(row('Net Sales', '<strong>' + sales + '</strong>'));
+  H.push(row('Check Average', avg));
+  H.push(row('Covers', cvrs + ' &nbsp;<span style="color:#b8ada7;font-size:12px;">Resy: ' + resy + '</span>'));
+  H.push(row('Weather', wthr));
+  H.push('</table>');
+
+  // Closing check
+  H.push(divider());
+  H.push(sectionLabel('Closing Check'));
+  H.push('<table cellpadding="0" cellspacing="0" border="0">');
+  H.push(checkRow('Polishing area clean', 'cl-sw-polish'));
+  H.push(checkRow('Perimeter walked', 'cl-perimeter'));
+  H.push(checkRow('Front door locked', 'cl-d-front'));
+  H.push(checkRow('Liquor cage locked', 'cl-d-wine'));
+  H.push(checkRow('Bar bank $600', 'cl-sc-bank'));
+  H.push(checkRow('Cash in safe', 'cl-sc-safe'));
+  H.push(checkRow('Candles out', 'cl-candle-out'));
+  H.push(checkRow('Lamps charging', 'cl-lamp-in'));
+  H.push('</table>');
+
+  // VIPs
+  if (vips.length) {
+    H.push(divider());
+    H.push(sectionLabel('VIPs'));
+    H.push('<p style="margin:0;">');
+    vips.forEach(function(v) {
+      H.push('<span style="display:inline-block;background:#f5edd8;border:1px solid #e0c98a;border-radius:100px;padding:2px 10px;font-family:Arial,sans-serif;font-size:12px;color:#8a6d3b;margin:2px 4px 2px 0;">' + v + '</span>');
+    });
+    H.push('</p>');
+  }
+
+  // FOH
+  if (foh) {
+    H.push(divider());
+    H.push(sectionLabel('FOH'));
+    H.push(bodyText(foh));
+  }
+
+  // Food
+  var hasFood = openingSpecials.filter(function(s){return s.name;}).length || shiftExtras.filter(function(s){return s.name;}).length || foodN;
+  if (hasFood) {
+    H.push(divider());
+    H.push(sectionLabel('Food'));
+    openingSpecials.forEach(function(s) {
+      if (!s.name) return;
+      if (s.eightysixed) {
+        H.push('<p style="font-family:Arial,sans-serif;font-size:14px;color:#1a1612;margin:2px 0;">' + s.name + ' <span style="display:inline-block;background:#f9eded;color:#6b2323;border:1px solid #e8b8b8;border-radius:4px;padding:0 5px;font-size:11px;font-weight:bold;">86'd</span></p>');
+      } else if (s.sold || s.count) {
+        H.push('<p style="font-family:Arial,sans-serif;font-size:14px;color:#1a1612;margin:2px 0;">' + s.name + ' — sold ' + (s.sold||'?') + ' of ' + (s.count||'?') + '</p>');
+      }
+    });
+    shiftExtras.forEach(function(s) {
+      if (!s.name) return;
+      H.push('<p style="font-family:Arial,sans-serif;font-size:14px;color:#1a1612;margin:2px 0;">' + s.name + ' — sold ' + (s.sold||'?') + ' of ' + (s.avail||'?') + '</p>');
+    });
+    if (foodN) { H.push('<p style="font-family:Arial,sans-serif;font-size:14px;color:#1a1612;line-height:1.7;margin:6px 0 0 0;">' + foodN.replace(/\n/g,'<br>') + '</p>'); }
+  }
+
+  // Beverage
+  if (bev) {
+    H.push(divider());
+    H.push(sectionLabel('Beverage'));
+    H.push(bodyText(bev));
+  }
+
+  // 86'd
+  var e86 = eighties.filter(Boolean);
+  if (e86.length) {
+    H.push(divider());
+    H.push(sectionLabel("86\'d Items"));
+    e86.forEach(function(e) {
+      H.push('<p style="font-family:Arial,sans-serif;font-size:14px;color:#1a1612;margin:2px 0;">– ' + e + '</p>');
+    });
+  }
+
+  // Employees
+  if (emp) {
+    H.push(divider());
+    H.push(sectionLabel('Employees'));
+    H.push(bodyText(emp));
+  }
+
+  // Interviews
+  if (hire) {
+    H.push(divider());
+    H.push(sectionLabel('Interviews / New Hires'));
+    H.push(bodyText(hire));
+  }
+
+  // Batch
+  if (batch) {
+    H.push(divider());
+    H.push(sectionLabel('Batch'));
+    H.push(bodyText(batch));
+  }
+
+  // Maintenance
+  H.push(divider());
+  H.push(sectionLabel('Maintenance / Orders'));
+  H.push(bodyText(maint || 'All good.'));
+
+  // Cash variance
+  if (cashVar && cashVar.toLowerCase() !== 'n/a' && cashVar !== '') {
+    H.push(divider());
+    H.push(sectionLabel('Cash Overage / Underage'));
+    H.push(bodyText(cashVar));
+  }
+
+  // Closing notes
+  if (clNotes && clNotes.toLowerCase() !== 'n/a' && clNotes !== '') {
+    H.push(divider());
+    H.push(sectionLabel('Closing Notes'));
+    H.push(bodyText(clNotes));
+  }
+
+  // Log link
+  H.push(divider());
+  H.push('<p style="margin:0;"><a href="https://docs.google.com/spreadsheets/d/1KykcMECKFuFxw9688164cfa8CwPLFLHc0MTWFsCWgN0/edit?gid=0#gid=0" style="font-family:Arial,sans-serif;font-size:13px;color:#1a5276;text-decoration:underline;">RPI Purchase &amp; Maintenance Log</a></p>');
+
+  // Sign-off
+  H.push('<div style="margin-top:28px;padding-top:20px;border-top:1px solid #ede8e2;">');
+  H.push('<p style="font-family:Georgia,serif;font-style:italic;font-size:16px;color:#7a6e68;margin:0 0 4px 0;">Melius semper,</p>');
+  H.push('<p style="font-family:Georgia,serif;font-size:18px;font-weight:bold;color:#1a1612;margin:0;">' + signoff + '</p>');
+  H.push('</div>');
+  H.push('</div>');
+
+  return H.join('\n');
+}
+
 function copyEmailPlain() {
   var emailBody = document.getElementById('email-body-render');
   if (!emailBody || emailBody.querySelector('.email-empty-hint')) {
@@ -1697,68 +1884,49 @@ function copyEmailPlain() {
     return;
   }
 
-  // Build self-contained HTML for clipboard — inline all fonts/styles so Outlook renders it
-  var htmlForClipboard = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-<style>
-  body { font-family: 'Josefin Sans', Arial, sans-serif; font-size: 14px; color: #1a1612; line-height: 1.7; margin: 0; padding: 0; background: #fff; }
-  .wrap { max-width: 600px; padding: 32px 40px; }
-  .subject { font-family: 'Playfair Display', Georgia, serif; font-size: 20px; font-weight: 700; color: #1a1612; padding-bottom: 14px; margin-bottom: 20px; border-bottom: 1px solid #ede8e2; }
-  .narrative { font-family: 'Playfair Display', Georgia, serif; font-size: 15px; font-style: italic; color: #1a1612; line-height: 1.8; margin-bottom: 18px; padding-left: 14px; border-left: 3px solid #c9a96e; }
-  .kv-table { border-collapse: collapse; margin-bottom: 4px; }
-  .kv-table td { padding: 2px 12px 2px 0; font-size: 13px; vertical-align: top; }
-  .kv-label { color: #7a6e68; white-space: nowrap; }
-  .kv-value { color: #1a1612; }
-  .divider { border: none; border-top: 1px solid #ede8e2; margin: 16px 0; }
-  .section-label { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #b8ada7; margin-bottom: 6px; }
-  .content { font-size: 14px; color: #1a1612; line-height: 1.7; }
-  .check-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 20px; }
-  .check-item { font-size: 13px; color: #7a6e68; }
-  .chk-yes { color: #1e3d2a; font-weight: 700; }
-  .chk-no { color: #6b2323; font-weight: 700; }
-  .vip-pill { display: inline-block; background: #f5edd8; border: 1px solid #e0c98a; border-radius: 100px; padding: 2px 10px; font-size: 12px; color: #8a6d3b; margin: 2px 3px 2px 0; }
-  .badge-86 { display: inline-block; background: #f9eded; color: #6b2323; border: 1px solid #e8b8b8; border-radius: 4px; padding: 1px 6px; font-size: 11px; font-weight: 700; margin-left: 6px; }
-  ul { list-style: none; padding: 0; margin: 0; }
-  ul li { padding: 2px 0 2px 14px; position: relative; }
-  ul li::before { content: "–"; position: absolute; left: 0; color: #c9a96e; }
-  .log-link { color: #1a5276; text-decoration: underline; font-size: 13px; }
-  .signoff { margin-top: 28px; padding-top: 20px; border-top: 1px solid #ede8e2; }
-  .signoff-phrase { font-family: 'Playfair Display', Georgia, serif; font-style: italic; font-size: 16px; color: #7a6e68; margin-bottom: 4px; }
-  .signoff-name { font-family: 'Playfair Display', Georgia, serif; font-size: 18px; font-weight: 700; color: #1a1612; }
-</style></head><body><div class="wrap">` + emailBody.innerHTML + `</div></body></html>`;
+  var outlookHTML = buildOutlookHTML();
 
-  // Replace CSS variable-based inline styles with real values for clipboard
-  htmlForClipboard = htmlForClipboard
-    .replace(/var\(--ink\)/g, '#1a1612')
-    .replace(/var\(--ink-soft\)/g, '#7a6e68')
-    .replace(/var\(--ink-faint\)/g, '#b8ada7')
-    .replace(/var\(--gold\)/g, '#8a6d3b')
-    .replace(/var\(--gold-light\)/g, '#c9a96e')
-    .replace(/var\(--gold-pale\)/g, '#f5edd8')
-    .replace(/var\(--green-deep\)/g, '#1e3d2a')
-    .replace(/var\(--green-pale\)/g, '#e8f2ec')
-    .replace(/var\(--red-deep\)/g, '#6b2323')
-    .replace(/var\(--red-pale\)/g, '#f9eded')
-    .replace(/var\(--border-light\)/g, '#ede8e2')
-    .replace(/var\(--cream\)/g, '#faf8f5')
-    .replace(/var\(--cream-warm\)/g, '#f3efe9');
+  // Use a hidden contenteditable div — execCommand copy is the most Outlook-compatible method
+  var staging = document.getElementById('outlook-staging');
+  if (!staging) {
+    staging = document.createElement('div');
+    staging.id = 'outlook-staging';
+    staging.contentEditable = 'true';
+    staging.style.cssText = 'position:fixed;left:-9999px;top:0;width:600px;opacity:0;pointer-events:none;';
+    document.body.appendChild(staging);
+  }
 
-  var plainText = _plainTextEmail || emailBody.innerText;
+  staging.innerHTML = outlookHTML;
 
-  // Try rich HTML copy first (Chrome/Edge support ClipboardItem)
-  if (window.ClipboardItem) {
-    var htmlBlob = new Blob([htmlForClipboard], { type: 'text/html' });
-    var textBlob = new Blob([plainText], { type: 'text/plain' });
-    navigator.clipboard.write([new ClipboardItem({ 'text/html': htmlBlob, 'text/plain': textBlob })])
-      .then(function() { showCopySuccess(); })
-      .catch(function() {
-        // Fall back to plain text
-        navigator.clipboard.writeText(plainText).then(showCopySuccess).catch(function() {
-          alert('Copy failed — select all text in the preview and use Ctrl+C manually.');
-        });
-      });
+  // Select all content in the staging div
+  staging.focus();
+  var range = document.createRange();
+  range.selectNodeContents(staging);
+  var sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+
+  var success = false;
+  try {
+    success = document.execCommand('copy');
+  } catch(e) {}
+
+  sel.removeAllRanges();
+  staging.blur();
+
+  if (success) {
+    showCopySuccess();
   } else {
-    // Firefox fallback — plain text only
-    navigator.clipboard.writeText(plainText).then(showCopySuccess);
+    // Modern API fallback
+    if (window.ClipboardItem) {
+      var htmlBlob = new Blob([outlookHTML], { type: 'text/html' });
+      var textBlob = new Blob([_plainTextEmail || ''], { type: 'text/plain' });
+      navigator.clipboard.write([new ClipboardItem({ 'text/html': htmlBlob, 'text/plain': textBlob })])
+        .then(showCopySuccess)
+        .catch(function() { alert('Copy failed — please use Ctrl+A on the preview then Ctrl+C.'); });
+    } else {
+      alert('Copy failed — please use Ctrl+A on the preview then Ctrl+C.');
+    }
   }
 }
 
