@@ -574,8 +574,35 @@
         <div class="check-row"><div class="check-info"><div class="check-name">Uniform check completed</div></div><div class="toggle-pair"><button class="tog yes" data-k="uniform" onclick="tog(this)">YES</button><button class="tog no" data-k="uniform" onclick="tog(this)">NO</button></div></div>
         <div class="check-row"><div class="check-info"><div class="check-name">F&amp;B changes reviewed with staff</div></div><div class="toggle-pair"><button class="tog yes" data-k="fb-review" onclick="tog(this)">YES</button><button class="tog no" data-k="fb-review" onclick="tog(this)">NO</button></div></div>
         <div class="divider"></div>
+
+        <!-- ── PRE-SHIFT MEETING LOG ── -->
+        <div class="field-label" style="margin-bottom:8px">Pre-Shift Meeting Log</div>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <input type="text" id="ps-note-input" placeholder="Add a talking point, announcement, or item discussed…" style="flex:1" onkeydown="if(event.key==='Enter'){addPreShiftNote();event.preventDefault()}">
+          <button class="tag-add-btn" onclick="addPreShiftNote()">+ Log</button>
+        </div>
+        <div id="ps-notes-log" style="display:flex;flex-direction:column;gap:6px;min-height:32px;margin-bottom:12px"></div>
+
+        <!-- ── AI SUMMARY ── -->
+        <div id="ps-summary-wrap" style="display:none;margin-bottom:12px;">
+          <div style="background:var(--gold-pale);border:1px solid #e0c98a;border-left:3px solid var(--gold);border-radius:0 6px 6px 0;padding:10px 14px;">
+            <div style="font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;">AI Meeting Summary</div>
+            <div id="ps-summary-text" style="font-family:'Playfair Display',serif;font-size:15px;font-style:italic;color:var(--ink);line-height:1.75;"></div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <button class="btn-secondary" id="ps-summarize-btn" onclick="summarizePreShift()" style="padding:7px 16px;font-size:12px;display:none;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            AI Summarize Meeting
+          </button>
+          <button class="btn-secondary" onclick="clearPreShiftNotes()" style="padding:7px 16px;font-size:12px;color:var(--red-deep);border-color:var(--red-deep);display:none;" id="ps-clear-btn">Clear</button>
+          <span id="ps-summarize-status" style="font-size:11px;color:var(--ink-soft);font-family:'DM Mono',monospace;"></span>
+        </div>
+
+        <div class="divider"></div>
         <div class="field">
-          <div class="field-label">Pre-shift notes</div>
+          <div class="field-label">Additional Pre-shift notes</div>
           <textarea id="o-preshift" placeholder="Staff announcements, items to communicate, special instructions…"></textarea>
         </div>
       </div>
@@ -919,6 +946,8 @@ var toggleState  = {};
 var vips         = [];
 var eighties     = [];
 var shiftNotes   = [];
+var preShiftNotes = [];
+var preShiftSummary = '';
 var openingSpecials = [];
 var shiftExtras  = [];
 var _plainTextEmail = '';
@@ -1042,6 +1071,8 @@ function collectShiftPayload() {
     maint:        document.getElementById('s-maint').value,
     cashVariance: document.getElementById('cl-cash-variance').value,
     clNotes:      document.getElementById('cl-notes').value,
+    preShiftNotes: preShiftNotes,
+    preShiftSummary: preShiftSummary,
     vips:         vips,
     shiftNotes:   shiftNotes,
     openingSpecials: openingSpecials,
@@ -1071,6 +1102,8 @@ function applyFields(d) {
     var cl = document.getElementById('s-closer');
     if (cl) cl.value = d.closer;
   }
+  if (d.preShiftNotes && d.preShiftNotes.length) { preShiftNotes = d.preShiftNotes; renderPreShiftNotes(); }
+  if (d.preShiftSummary) { preShiftSummary = d.preShiftSummary; showPreShiftSummary(preShiftSummary); }
   if (d.vips && d.vips.length) { vips = d.vips; renderVips(); }
   if (d.eighties && d.eighties.length) { eighties = d.eighties; renderEighties(); }
 
@@ -1761,6 +1794,19 @@ function buildOutlookHTML() {
     H.push('<p style="font-family:Georgia,serif;font-size:15px;font-style:italic;color:#1a1612;line-height:1.8;margin:0 0 18px 0;padding-left:14px;border-left:3px solid #c9a96e;">' + execSummary + '</p>');
   }
 
+  // Pre-Shift Summary
+  if (preShiftSummary) {
+    H.push(divider());
+    H.push(sectionLabel('Pre-Shift Meeting'));
+    H.push('<p style="font-family:Georgia,serif;font-size:14px;font-style:italic;color:#1a1612;line-height:1.7;margin:0;">' + preShiftSummary + '</p>');
+  } else if (preShiftNotes.length) {
+    H.push(divider());
+    H.push(sectionLabel('Pre-Shift Meeting'));
+    preShiftNotes.forEach(function(n) {
+      H.push('<p style="font-family:Arial,sans-serif;font-size:13px;color:#3d3530;margin:2px 0;padding-left:12px;border-left:2px solid #c9a96e;">' + n.text + '</p>');
+    });
+  }
+
   // Numbers
   H.push('<table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:4px;">');
   H.push(row('Net Sales', '<strong>' + sales + '</strong>'));
@@ -1942,6 +1988,120 @@ function copyEmailPlain() {
     } else {
       alert('Copy failed — please use Ctrl+A on the preview then Ctrl+C.');
     }
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// PRE-SHIFT MEETING LOG
+// ════════════════════════════════════════════════════════════
+function addPreShiftNote() {
+  var inp = document.getElementById('ps-note-input');
+  var txt = inp.value.trim();
+  if (!txt) return;
+  var now = new Date();
+  var h = now.getHours(), m = String(now.getMinutes()).padStart(2,'0');
+  var ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  var note = { ts: h + ':' + m + ' ' + ampm, text: txt };
+  preShiftNotes.push(note);
+  inp.value = '';
+  renderPreShiftNotes();
+  saveDraft();
+}
+
+function renderPreShiftNotes() {
+  var log = document.getElementById('ps-notes-log');
+  var sumBtn = document.getElementById('ps-summarize-btn');
+  var clrBtn = document.getElementById('ps-clear-btn');
+  if (!log) return;
+  if (!preShiftNotes.length) {
+    log.innerHTML = '<div class="notes-empty">No meeting notes yet — log items above.</div>';
+    if (sumBtn) sumBtn.style.display = 'none';
+    if (clrBtn) clrBtn.style.display = 'none';
+    return;
+  }
+  log.innerHTML = preShiftNotes.map(function(n, i) {
+    return '<div class="note-entry" style="border-left-color:var(--gold)">' +
+      '<div class="note-meta">' + n.ts + '</div>' +
+      '<div class="note-text">' + n.text + '</div>' +
+      '<button class="note-del" onclick="removePreShiftNote(' + i + ')" aria-label="Remove">×</button>' +
+    '</div>';
+  }).join('');
+  if (sumBtn) sumBtn.style.display = 'inline-flex';
+  if (clrBtn) clrBtn.style.display = 'inline-flex';
+}
+
+function removePreShiftNote(i) {
+  preShiftNotes.splice(i, 1);
+  renderPreShiftNotes();
+  saveDraft();
+}
+
+function clearPreShiftNotes() {
+  if (!confirm('Clear all pre-shift meeting notes?')) return;
+  preShiftNotes = [];
+  preShiftSummary = '';
+  var wrap = document.getElementById('ps-summary-wrap');
+  if (wrap) wrap.style.display = 'none';
+  renderPreShiftNotes();
+  saveDraft();
+}
+
+function showPreShiftSummary(text) {
+  var wrap = document.getElementById('ps-summary-wrap');
+  var el   = document.getElementById('ps-summary-text');
+  if (!wrap || !el) return;
+  el.textContent = text;
+  wrap.style.display = 'block';
+}
+
+async function summarizePreShift() {
+  if (!preShiftNotes.length) return;
+  var btn    = document.getElementById('ps-summarize-btn');
+  var status = document.getElementById('ps-summarize-status');
+  var wrap   = document.getElementById('ps-summary-wrap');
+  var el     = document.getElementById('ps-summary-text');
+
+  btn.disabled = true;
+  btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 0.7s linear infinite;margin-right:4px"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Summarizing…';
+  if (status) status.textContent = '';
+
+  var date    = document.getElementById('o-date').value;
+  var manager = document.getElementById('o-manager').value || 'Manager';
+  var notes   = preShiftNotes.map(function(n) { return n.ts + ': ' + n.text; }).join('\n');
+
+    var prompt = [
+    'You are writing a brief professional pre-shift meeting summary for River Pointe Inn, a fine dining bistro in Rumson NJ.',
+    'The opening manager is ' + manager + '.',
+    'Here are the logged talking points from the pre-shift meeting:',
+    notes,
+    'Write a concise 2-3 sentence summary in past tense capturing what was covered. Write it as if reporting to ownership. Be specific and professional. Do not add anything not mentioned.'
+  ].join('\n\n');
+
+  try {
+    var resp = await fetch(CF_WORKER + '/summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: prompt })
+    });
+    var data = await resp.json();
+    var text = (data.content && data.content[0] && data.content[0].text)
+      ? data.content[0].text.trim()
+      : null;
+
+    if (text) {
+      preShiftSummary = text;
+      showPreShiftSummary(text);
+      if (status) status.textContent = 'Summary generated ✓';
+      saveDraft();
+    } else {
+      if (status) status.textContent = 'Error — try again';
+    }
+  } catch(e) {
+    if (status) status.textContent = 'Failed: ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>AI Summarize Meeting';
   }
 }
 
@@ -2164,6 +2324,7 @@ async function generateExec() {
   renderOpeningSpecials();
   renderShiftSpecials();
   renderShiftNotes();
+  renderPreShiftNotes();
   renderEighties();
 
   // Always fetch fresh weather last so it overwrites any stale draft value
