@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RPI Steps of Service — Manager Scorecard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500;600&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #fff;
+    color: #1a1a1a;
+    font-size: 11px;
+  }
+
+  @media print {
+    body { font-size: 10px; }
+    .page { page-break-after: always; }
+    .no-print { display: none; }
+  }
+
+  .no-print {
+    text-align: center;
+    padding: 16px;
+    background: #f5f5f5;
+    font-size: 12px;
+    color: #555;
+  }
+  .no-print button {
+    margin-left: 12px;
+    padding: 6px 16px;
+    background: #1a1a1a;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+
+  .page {
+    width: 4in;
+    min-height: 6in;
+    margin: 16px auto;
+    border: 1.5px solid #1a1a1a;
+    padding: 18px 16px 14px;
+    position: relative;
+  }
+
+  .card-header {
+    border-bottom: 1.5px solid #1a1a1a;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+  }
+
+  .eyebrow {
+    font-size: 8px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 3px;
+  }
+
+  .card-title {
+    font-family: 'EB Garamond', serif;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -.01em;
+  }
+
+  .card-sub {
+    font-size: 9px;
+    color: #555;
+    margin-top: 4px;
+  }
+
+  .field-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .field {
+    flex: 1;
+  }
+
+  .field label {
+    font-size: 8px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #888;
+    display: block;
+    margin-bottom: 3px;
+  }
+
+  .field .line {
+    border-bottom: 1px solid #bbb;
+    height: 18px;
+  }
+
+  .section-label {
+    font-size: 8px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 6px;
+    margin-top: 12px;
+  }
+
+  .criteria-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .criteria-table tr {
+    border-bottom: 0.5px solid #e0e0e0;
+  }
+
+  .criteria-table tr:last-child {
+    border-bottom: none;
+  }
+
+  .criteria-table td {
+    padding: 5px 0;
+    vertical-align: middle;
+    line-height: 1.35;
+  }
+
+  .criteria-table td.pts {
+    width: 28px;
+    text-align: right;
+    font-weight: 600;
+    color: #1a1a1a;
+    font-size: 12px;
+    font-family: 'EB Garamond', serif;
+    white-space: nowrap;
+  }
+
+  .criteria-table td.check {
+    width: 22px;
+    text-align: center;
+  }
+
+  .check-box {
+    width: 14px;
+    height: 14px;
+    border: 1px solid #1a1a1a;
+    display: inline-block;
+    border-radius: 2px;
+  }
+
+  .criteria-table td.desc {
+    font-size: 10px;
+    color: #222;
+    padding-right: 6px;
+  }
+
+  .total-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    border-top: 1.5px solid #1a1a1a;
+    padding-top: 8px;
+    margin-top: 10px;
+  }
+
+  .total-label {
+    font-size: 8px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #888;
+  }
+
+  .total-score {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+
+  .score-blank {
+    font-family: 'EB Garamond', serif;
+    font-size: 22px;
+    font-weight: 600;
+    border-bottom: 1.5px solid #1a1a1a;
+    min-width: 40px;
+    display: inline-block;
+  }
+
+  .score-denom {
+    font-size: 10px;
+    color: #888;
+  }
+
+  .notes-area {
+    margin-top: 12px;
+  }
+
+  .notes-lines {
+    margin-top: 4px;
+  }
+
+  .notes-line {
+    border-bottom: 0.5px solid #ccc;
+    height: 16px;
+    margin-bottom: 2px;
+  }
+
+  .footer {
+    position: absolute;
+    bottom: 10px;
+    left: 16px;
+    right: 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 7.5px;
+    color: #bbb;
+    letter-spacing: .05em;
+  }
+</style>
+</head>
+<body>
+
+<div class="no-print">
+  Manager scorecard — print 2-up or as index cards.
+  <button onclick="window.print()">Print</button>
+</div>
+
+<!-- CARD 1 -->
+<div class="page">
+  <div class="card-header">
+    <div class="eyebrow">River Pointe Inn · Weekend Competition</div>
+    <div class="card-title">Steps of Service<br>Scorecard</div>
+    <div class="card-sub">Manager use only · One card per server per service</div>
+  </div>
+
+  <div class="field-row">
+    <div class="field"><label>Server</label><div class="line"></div></div>
+    <div class="field"><label>Section</label><div class="line"></div></div>
+  </div>
+  <div class="field-row">
+    <div class="field"><label>Date</label><div class="line"></div></div>
+    <div class="field"><label>Service</label><div class="line"></div></div>
+  </div>
+
+  <div class="section-label">Scoring criteria</div>
+
+  <table class="criteria-table">
+    <tr>
+      <td class="check"><div class="check-box"></div></td>
+      <td class="desc">Greeted within 90 sec of seating</td>
+      <td class="pts">2</td>
+    </tr>
+    <tr>
+      <td class="check"><div class="check-box"></div></td>
+      <td class="desc">Water poured before guest asks</td>
+      <td class="pts">2</td>
+    </tr>
+    <tr>
+      <td class="check"><div class="check-box"></div></td>
+      <td class="desc">Specials with personal recommendation</td>
+      <td class="pts">3</td>
+    </tr>
+    <tr>
+      <td class="check"><div class="check-box"></div></td>
+      <td class="desc">Allergy check unprompted</td>
+      <td class="pts">3</td>
+    </tr>
+    <tr>
+      <td class="check"><div class="check-box"></div></td>
+      <td class="desc">Food auctioned correctly at table</td>
+      <td class="pts">2</td>
+    </tr>
+    <tr>
+      <td class="check"><div class="check-box"></div></td>
+      <td class="desc">Dessert/digestif offered verbally</td>
+      <td class="pts">3</td>
+    </tr>
+    <tr>
+      <td class="check"><div class="check-box"></div></td>
+      <td class="desc">Positive Resy rating in section</td>
+      <td class="pts">5</td>
+    </tr>
+  </table>
+
+  <div class="total-row">
+    <div class="total-label">Service total</div>
+    <div class="total-score">
+      <span class="score-blank"></span>
+      <span class="score-denom">/ 20</span>
+    </div>
+  </div>
+
+  <div class="notes-area">
+    <div class="section-label">Notes</div>
+    <div class="notes-lines">
+      <div class="notes-line"></div>
+      <div class="notes-line"></div>
+      <div class="notes-line"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>River Pointe Inn</span>
+    <span>Fri Jun 27 – Sun Jun 29, 2025</span>
+  </div>
+</div>
+
+<!-- CARD 2 (blank dupe for back-to-back printing) -->
+<div class="page">
+  <div class="card-header">
+    <div class="eyebrow">River Pointe Inn · Weekend Competition</div>
+    <div class="card-title">Steps of Service<br>Scorecard</div>
+    <div class="card-sub">Manager use only · One card per server per service</div>
+  </div>
+
+  <div class="field-row">
+    <div class="field"><label>Server</label><div class="line"></div></div>
+    <div class="field"><label>Section</label><div class="line"></div></div>
+  </div>
+  <div class="field-row">
+    <div class="field"><label>Date</label><div class="line"></div></div>
+    <div class="field"><label>Service</label><div class="line"></div></div>
+  </div>
+
+  <div class="section-label">Scoring criteria</div>
+
+  <table class="criteria-table">
+    <tr>
+      <td class="check"><div class="check-box"></div></td>
+      <td class="desc">Greeted within 90 sec of seating</td>
+      <td class="pts">2</td>
+    </tr>
+    <tr>
+      <td class="check"><div class="check-box"></div></td>
+      <td class="desc">Water poured before guest asks</td>
+      <td class="pts">2</td>
+    </tr>
+    <tr>
+      <td class="check"><div class="check-box"></div></td>
+      <td class="desc">Specials with personal recommendation</td>
+      <td class="pts">3</td>
+    </tr>
+    <tr>
+      <td class="check"><div class="check-box"></div></td>
+      <td class="desc">Allergy check unprompted</td>
+      <td class="pts">3</td>
+    </tr>
+    <tr>
+      <td class="check"><div class="check-box"></div></td>
+      <td class="desc">Food auctioned correctly at table</td>
+      <td class="pts">2</td>
+    </tr>
+    <tr>
+      <td class="check"><div class="check-box"></div></td>
+      <td class="desc">Dessert/digestif offered verbally</td>
+      <td class="pts">3</td>
+    </tr>
+    <tr>
+      <td class="check"><div class="check-box"></div></td>
+      <td class="desc">Positive Resy rating in section</td>
+      <td class="pts">5</td>
+    </tr>
+  </table>
+
+  <div class="total-row">
+    <div class="total-label">Service total</div>
+    <div class="total-score">
+      <span class="score-blank"></span>
+      <span class="score-denom">/ 20</span>
+    </div>
+  </div>
+
+  <div class="notes-area">
+    <div class="section-label">Notes</div>
+    <div class="notes-lines">
+      <div class="notes-line"></div>
+      <div class="notes-line"></div>
+      <div class="notes-line"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>River Pointe Inn</span>
+    <span>Fri Jun 27 – Sun Jun 29, 2025</span>
+  </div>
+</div>
+
+</body>
+</html>
