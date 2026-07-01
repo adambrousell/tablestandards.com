@@ -784,6 +784,7 @@ function importFromSheet(){
     if(hasLocCols){
       // Add item once per location that has qty > 0
       let addedAny=false;
+      const itemIsBTG=isBTG(name);
       Object.entries(locColMap).forEach(([loc,ci])=>{
         const locQty=parseFloat((row[ci]||'0').replace(/[^0-9.]/g,''))||0;
         if(locQty>0){
@@ -792,18 +793,26 @@ function importFromSheet(){
           const hasBinNum=bin.startsWith('#');
           const isWine=(cat||'').toUpperCase()==='WINE';
           if(isWineRoom&&(!hasBinNum||!isWine)) return;
-          items.push({id:r+'_'+loc,name,bin,qty,category:cat,bpc,isBBin:isBB,location:loc,sheetRow:r+1,btg:isBTG(name)});
+          items.push({id:r+'_'+loc,name,bin,qty,category:cat,bpc,isBBin:isBB,location:loc,sheetRow:r+1,btg:itemIsBTG});
           addedAny=true;
         }
       });
+      // BTG wines always get added to liquor-cage so they show there for counting
+      if(itemIsBTG&&!items.some(i=>i.id===r+'_liquor-cage')){
+        items.push({id:r+'_liquor-cage',name,bin,qty,category:cat,bpc,isBBin:false,location:'liquor-cage',sheetRow:r+1,btg:true});
+        addedAny=true;
+      }
       // If no location col had qty, fall back to inference
       if(!addedAny){
         const loc=inferLoc(name,cat,bin,isBB);
         const isWineRoom=loc==='red-wine'||loc==='white-wine';
         const hasBinNum=bin.startsWith('#');
         const isWine=(cat||'').toUpperCase()==='WINE';
-        if(!isWineRoom||( hasBinNum&&isWine)){
-          items.push({id:r,name,bin,qty,category:cat,bpc,isBBin:isBB,location:loc,sheetRow:r+1,btg:isBTG(name)});
+        if(!isWineRoom||(hasBinNum&&isWine)){
+          items.push({id:r,name,bin,qty,category:cat,bpc,isBBin:isBB,location:loc,sheetRow:r+1,btg:itemIsBTG});
+        }
+        if(itemIsBTG&&!items.some(i=>String(i.id)===String(r)+'_liquor-cage')){
+          items.push({id:r+'_liquor-cage',name,bin,qty,category:cat,bpc,isBBin:false,location:'liquor-cage',sheetRow:r+1,btg:true});
         }
       }
     } else {
@@ -871,13 +880,27 @@ function resetPicker(){document.getElementById('cmap').classList.remove('on');do
 function setPStatus(id,cls,msg){const el=document.getElementById(id);if(!el)return;el.className='pstatus '+cls;el.textContent=msg;}
 
 const BTG_WINES = [
-  'pierre sparr','clotilde davenne cremant','drappier carte','moet imp','moet imperial','moët',
-  'jean aubron','lestang','sancerre 1573','pazo das bruxas','pazo bruxas','petites secondes chardonnay',
+  // Sparkling
+  'pierre sparr',
+  'clotilde davenne',
+  'drappier carte',
+  'moet imp','moet imperial','moët','imperial brut','imperial rose',
+  // White
+  'jean aubron','gros plant',
+  'lestang','sancerre 1573',
+  'pazo das bruxas','pazo bruxas','familia torres','bruxas',
+  'petites secondes chardonnay','petit secondes chardonnay','domaine drouhin petit',
   'pouilly fuisse','pouilly-fuisse','marie antoinette','famille vincent',
+  // Rose
   'peyrassol',
-  'aviron','moulin a vent','moulin-a-vent','clovis cotes du rhone','clovis côtes',
-  'guyon','hautes cotes de nuits','petites secondes pinot','drouhin petit secondes',
-  'haut-l-artigue','haut l-artigue','haut lartigue','routestock','chappellet mountain'
+  // Red
+  'aviron','moulin a vent','moulin-a-vent','stephane aviron',
+  'clovis cotes du rhone','clovis côtes du rhone','clovis 2023','clovis 2024','clovis 2025',
+  'guyon','hautes cotes de nuits','dames de vergy',
+  'petites secondes pinot','maison drouhin petit secondes','drouhin petit secondes 2023',
+  'haut-l-artigue','haut l-artigue','haut lartigue','chateau haut-l','artigue',
+  'routestock',
+  'chappellet mountain'
 ];
 function isBTG(name){
   const n=name.toLowerCase();
