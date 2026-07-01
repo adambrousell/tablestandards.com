@@ -912,17 +912,22 @@ function inferLoc(n,c,b,isBB){
   return 'red-wine';
 }
 function parseBin(bin){
-  if(!bin||bin==='\u2014') return {prefix:'',num:Infinity,str:bin||''};
-  const s=bin.replace(/^#+/,''); // strip leading #
-  const m=s.match(/^([A-Za-z]*)([0-9]*)(.*)/);
-  return {prefix:(m[1]||'').toUpperCase(),num:m[2]?parseInt(m[2]):Infinity,str:bin};
+  if(!bin||bin==='—') return {num:Infinity,isB:false,str:bin||''};
+  // Strip # and optional B prefix — sort purely by number
+  const s=bin.replace(/^#+/,'');
+  const isB=/^B/i.test(s);
+  const numStr=s.replace(/^[A-Za-z]*/,'');
+  const num=numStr?parseInt(numStr):Infinity;
+  return {num,isB,str:bin};
 }
 function sortBin(a,b){
   if(!a.bin&&!b.bin)return a.name.localeCompare(b.name);
   if(!a.bin)return 1;if(!b.bin)return -1;
   const pa=parseBin(a.bin),pb=parseBin(b.bin);
-  if(pa.prefix!==pb.prefix)return pa.prefix.localeCompare(pb.prefix);
-  return pa.num-pb.num;
+  // Sort by number first — B bins interleave with regular bins numerically
+  if(pa.num!==pb.num)return pa.num-pb.num;
+  // Same number: non-B before B (e.g. #523 before #B523)
+  return pa.isB?1:-1;
 }
 
 function selectLocation(lid){
