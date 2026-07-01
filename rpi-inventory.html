@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -73,7 +73,7 @@
   .btn-s{background:transparent;color:var(--slate);border:1.5px solid var(--divider);padding:10px 20px;border-radius:var(--radius);font-family:'Inter',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;}
   .btn-s:hover{border-color:var(--gold);color:var(--gold);}
   #count-panel{display:none;flex:1;flex-direction:column;}
-  .stats-bar{background:var(--ink);padding:10px 24px;display:flex;gap:28px;align-items:center;}
+  .stats-bar{background:var(--ink);background:var(--ink);padding:10px 24px;display:flex;gap:28px;align-items:center;}
   .si{display:flex;align-items:center;gap:6px;}
   .sn{font-family:'Courier Prime',monospace;font-size:16px;font-weight:700;color:var(--gold);}
   .sl{color:rgba(255,255,255,.4);font-size:10px;text-transform:uppercase;letter-spacing:.08em;}
@@ -82,7 +82,7 @@
   .sync-badge.synced{color:#7fd87f;border-color:rgba(127,216,127,.3);}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
   .sync-badge.syncing{color:var(--gold);animation:pulse 1.2s infinite;}
-  .tb{background:#fff;border-bottom:1px solid var(--divider);padding:12px 24px;display:flex;align-items:center;gap:12px;}
+  .tb{background:#fff;border-bottom:1px solid var(--divider);padding:10px 24px;display:flex;align-items:center;gap:12px;margin:0;}
   .lbadge{display:flex;align-items:center;gap:7px;font-family:'Playfair Display',serif;font-size:17px;font-weight:600;color:var(--ink);flex:1;}
   .lbdot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
   .swrap{position:relative;flex:0 0 300px;}
@@ -99,9 +99,9 @@
   .utog{display:flex;border:1.5px solid var(--divider);border-radius:var(--radius);overflow:hidden;}
   .ubtn{padding:7px 14px;background:none;border:none;cursor:pointer;font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:var(--slate);transition:all .15s;}
   .ubtn.active{background:var(--burgundy);color:#fff;}
-  .aiwrap{padding:20px 24px 0;}
-  .sticky-top{position:sticky;top:56px;z-index:100;background:var(--cream);}
-  .aicard{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);border-top:3px solid var(--gold);padding:20px 24px;display:none;}
+  .aiwrap{padding:0;}
+  .sticky-top{position:sticky;top:56px;z-index:100;background:var(--cream);box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+  .aicard{background:#fff;border-radius:0;box-shadow:none;border-top:3px solid var(--gold);border-bottom:1px solid var(--divider);padding:20px 24px;display:none;}
   .aicard.on{display:block;}
   .aihdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;}
   .ainame{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:var(--ink);line-height:1.2;}
@@ -493,8 +493,10 @@
       <div class="pcnt" id="ocnt">0 / 0</div>
     </div>
     <div class="sdiv"></div>
-    <button class="loc-btn" onclick="showSetup()"><span style="font-size:12px">&#9881;</span> Setup / Load Sheet</button>
-    <button class="loc-btn" id="loc-unlisted" onclick="selectLocation('unlisted')"><span style="font-size:12px">+</span> Unlisted Items</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:0 8px">
+      <button class="loc-btn" onclick="showSetup()" style="justify-content:center"><span style="font-size:12px">&#9881;</span> Setup</button>
+      <button class="loc-btn" id="loc-unlisted" onclick="selectLocation('unlisted')" style="justify-content:center"><span style="font-size:12px">+</span> Unlisted</button>
+    </div>
   </nav>
   <main class="main-content" style="overflow-y:auto;height:100%;">
     <div id="setup-panel">
@@ -530,14 +532,13 @@
     </div>
 
     <div id="count-panel">
+      <div class="sticky-top">
       <div class="stats-bar">
         <div class="si"><span class="sn" id="st-counted">0</span><span class="sl">Counted</span></div>
         <div class="si"><span class="sn" id="st-skipped">0</span><span class="sl">Skipped</span></div>
         <div class="si"><span class="sn" id="st-rem">0</span><span class="sl">Remaining</span></div>
         <div class="sync-badge" id="sbadge" onclick="showExport()"><span id="sbi">&#8679;</span><span id="sbt">Sync to Sheets</span></div>
       </div>
-      <div class="sticky-top">
-      <div class="sticky-top">
       <div class="tb">
         <div class="lbadge"><span class="lbdot" id="lbdot"></span><span id="lbname">Red Wine Room</span></div>
         <div class="swrap">
