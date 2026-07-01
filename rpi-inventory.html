@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1147,27 +1147,33 @@ function renderTbl(){
   const wrap=document.getElementById('itwrap');const its=ST.litems;
   if(!its.length){wrap.innerHTML='<div class="empty-state"><div style="font-size:36px;opacity:.3">&#128230;</div><div>No items in this location</div></div>';return;}
   const mkT=(rows,showCatHeaders)=>{
-    if(!rows.length)return'';
-    let t='<table class="itable"><thead><tr><th>Bin</th><th>Item</th><th>Category</th><th>QB Qty</th><th>Your Count</th><th>Status</th><th></th></tr></thead><tbody>';
+    if(!rows.length)return document.createDocumentFragment();
+    const frag=document.createDocumentFragment();
+    const tbl=document.createElement('table');tbl.className='itable';
+    const thead=document.createElement('thead');
+    thead.innerHTML='<tr><th>Bin</th><th>Item</th><th>Category</th><th>QB Qty</th><th>Your Count</th><th>Status</th><th></th></tr>';
+    tbl.appendChild(thead);
     if(showCatHeaders){
-      // Group by category, sorted alphabetically
       const groups={};
-      rows.forEach(it=>{
-        const cat=it.category||'Other';
-        if(!groups[cat])groups[cat]=[];
-        groups[cat].push(it);
-      });
+      rows.forEach(it=>{const cat=it.category||'Other';if(!groups[cat])groups[cat]=[];groups[cat].push(it);});
       Object.keys(groups).sort().forEach(cat=>{
-        t+='<tr><td colspan="7" style="background:var(--ink);color:var(--gold);font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;padding:7px 12px">'+cat+'</td></tr>';
-        groups[cat].sort(sortBin).forEach(it=>{t+=mkRow(it);});
+        const tbody=document.createElement('tbody');
+        const hdr=document.createElement('tr');
+        hdr.innerHTML='<td colspan="7" style="background:var(--ink);color:var(--gold);font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;padding:7px 12px">'+cat+'</td>';
+        tbody.appendChild(hdr);
+        groups[cat].sort(sortBin).forEach(it=>{tbody.appendChild(mkRow(it));});
+        tbl.appendChild(tbody);
       });
     } else {
-      rows.forEach(it=>{t+=mkRow(it);});
+      const tbody=document.createElement('tbody');
+      rows.forEach(it=>{tbody.appendChild(mkRow(it));});
+      tbl.appendChild(tbody);
     }
-    return t+'</tbody></table><br>';
+    frag.appendChild(tbl);
+    return frag;
   };
   const nonWine=['liquor-cage','bar','walls','bar-prep'].includes(ST.loc);
-  wrap.innerHTML=mkT(its,nonWine);
+  wrap.innerHTML='';wrap.appendChild(mkT(its,nonWine));
   // Auto-scroll to first pending item
   setTimeout(()=>{
     const firstPending=wrap.querySelector('.pill.pp')?.closest('tr');
@@ -1175,14 +1181,30 @@ function renderTbl(){
   },100);
 }
 function renderTbl2(){if(ST.loc)renderTbl();}
-function renderTblRow(id){const el=document.getElementById('row-'+id);const it=ST.items.find(i=>i.id===id);if(el&&it)el.outerHTML=mkRow(it);}
+function renderTblRow(id){const el=document.getElementById('row-'+id);const it=ST.items.find(i=>i.id===id);if(el&&it)el.parentNode.replaceChild(mkRow(it),el);}
 function mkRow(it){
   const sv=ST.counts[it.id];const isA=ST.litems[ST.ai]?.id===it.id;const st=sv?.status||'pending';
   let pill=st==='counted'&&sv?.synced?'<span class="pill psy">\u2713 Synced</span>':st==='counted'?'<span class="pill pk">Counted</span>':st==='skipped'?'<span class="pill psk">Skipped</span>':'<span class="pill pp">Pending</span>';
   const cd=sv?.countBottles!=null?'<span class="tdc">'+sv.countBottles+'</span>':'<span class="tdc e">\u2014</span>';
   const isBRow=it.isBBin;
   const bStyle=isBRow?'background:#e8ffb0;':it.btg?'background:#fff9ed;border-left:3px solid var(--gold);':'';
-  return '<tr class="'+(isA?'ra ':'')+( st==='counted'?'rk':'')+'" id="row-'+it.id+'" style="'+bStyle+';cursor:pointer" onclick="selRow(\\"'+it.id+'\\")"><td class="tdb">'+(it.bin||'\u2014')+'</td><td class="tdn">'+it.name+(it.btg?' <span style="font-size:9px;font-weight:700;letter-spacing:.06em;background:var(--gold);color:#fff;padding:1px 6px;border-radius:10px;vertical-align:middle">BTG</span>':'')+'</td><td>'+(it.category||'\u2014')+'</td><td>'+it.qty+'</td><td>'+cd+'</td><td>'+pill+'</td><td><button class="rsbtn" onclick="selRow('+it.id+')">Select</button></td></tr>';
+  const tr=document.createElement('tr');
+  tr.className=(isA?'ra ':'')+( st==='counted'?'rk':'');
+  tr.id='row-'+it.id;
+  tr.style.cssText=bStyle+';cursor:pointer';
+  tr.onclick=function(){selRow(it.id);};
+  const binTd=document.createElement('td');binTd.className='tdb';binTd.textContent=it.bin||'\u2014';
+  const nameTd=document.createElement('td');nameTd.className='tdn';nameTd.innerHTML=it.name+(it.btg?'<span style="font-size:9px;font-weight:700;letter-spacing:.06em;background:var(--gold);color:#fff;padding:1px 6px;border-radius:10px;vertical-align:middle;margin-left:5px">BTG</span>':'');
+  const catTd=document.createElement('td');catTd.textContent=it.category||'\u2014';
+  const qtyTd=document.createElement('td');qtyTd.textContent=it.qty;
+  const cntTd=document.createElement('td');cntTd.innerHTML=cd;
+  const pilTd=document.createElement('td');pilTd.innerHTML=pill;
+  const btnTd=document.createElement('td');
+  const btn=document.createElement('button');btn.className='rsbtn';btn.textContent='Select';
+  btn.onclick=function(e){e.stopPropagation();selRow(it.id);};
+  btnTd.appendChild(btn);
+  [binTd,nameTd,catTd,qtyTd,cntTd,pilTd,btnTd].forEach(function(td){tr.appendChild(td);});
+  return tr;
 }
 function hlRow(id){document.querySelectorAll('.itable tr.ra').forEach(r=>r.classList.remove('ra'));const el=document.getElementById('row-'+id);if(el){el.classList.add('ra');el.scrollIntoView({block:'nearest',behavior:'smooth'});}}
 function selRow(id){const idx=ST.litems.findIndex(i=>String(i.id)===String(id));if(idx>=0)showItem(idx);}
