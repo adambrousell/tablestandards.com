@@ -494,6 +494,7 @@
     </div>
     <div class="sdiv"></div>
     <button class="loc-btn" onclick="showSetup()"><span style="font-size:12px">&#9881;</span> Setup / Load Sheet</button>
+    <button class="loc-btn" id="loc-unlisted" onclick="selectLocation('unlisted')"><span style="font-size:12px">+</span> Unlisted Items</button>
   </nav>
   <main class="main-content" style="overflow-y:auto;height:100%;">
     <div id="setup-panel">
@@ -550,27 +551,7 @@
           <button class="ubtn" id="u-24pk" onclick="setCaseSize(24)">24-Pack</button>
         </div>
       </div>
-            <!-- Unlisted Items Table -->
-      <div id="unlisted-wrap" style="padding:12px 24px 0">
-        <div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);border-top:3px solid var(--slate);overflow:hidden;margin-bottom:12px">
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--parchment);border-bottom:1px solid var(--divider)">
-            <span style="font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--slate)">Unlisted Items</span>
-            <button onclick="addUnlisted()" style="display:flex;align-items:center;gap:5px;background:var(--ink);color:#fff;border:none;border-radius:var(--radius);padding:5px 12px;font-family:Inter,sans-serif;font-size:11px;font-weight:600;cursor:pointer">+ Add Item</button>
-          </div>
-          <div style="display:grid;grid-template-columns:2fr 1fr 1fr 70px 70px 60px 32px;gap:8px;padding:6px 12px;background:var(--ink)">
-            <span style="font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5)">Item Name</span>
-            <span style="font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5)">Category</span>
-            <span style="font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5)">Location</span>
-            <span style="font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5)">Cases</span>
-            <span style="font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5)">Loose</span>
-            <span style="font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5)">Total</span>
-            <span></span>
-          </div>
-          <div id="unlisted-list" style="padding:0">
-            <div id="unlisted-empty" style="padding:12px 16px;font-size:12px;color:var(--slate-lt);font-style:italic">No unlisted items — click Add Item to log something not in the QB sheet.</div>
-          </div>
-        </div>
-      </div>
+      
       <div class="aiwrap">
         <div class="aicard" id="aicard">
           <div class="aihdr">
@@ -638,6 +619,29 @@
       </div>
       <div id="ep-table"></div>
     </div>
+  <div id="unlisted-page" style="display:none;padding:24px;overflow-y:auto;flex:1">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div style="font-size:18px;font-weight:700;color:var(--ink)">Unlisted Items</div>
+        <div style="font-size:12px;color:var(--slate);margin-top:2px">Items not in the QB sheet. Included in export/CSV but not written to Google Sheets.</div>
+      </div>
+      <button onclick="addUnlisted()" style="display:flex;align-items:center;gap:6px;background:var(--ink);color:#fff;border:none;border-radius:var(--radius);padding:8px 16px;font-family:Inter,sans-serif;font-size:12px;font-weight:600;cursor:pointer">+ Add Item</button>
+    </div>
+    <div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden">
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr 80px 80px 70px 36px;gap:8px;padding:8px 16px;background:var(--ink)">
+        <span style="font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5)">Item Name</span>
+        <span style="font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5)">Category</span>
+        <span style="font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5)">Location</span>
+        <span style="font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5)">Cases</span>
+        <span style="font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5)">Loose</span>
+        <span style="font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5)">Total</span>
+        <span></span>
+      </div>
+      <div id="unlisted-list">
+        <div id="unlisted-empty" style="padding:16px;font-size:13px;color:var(--slate-lt);font-style:italic">No unlisted items yet — click + Add Item above.</div>
+      </div>
+    </div>
+  </div>
   </main>
 </div>
 
@@ -949,7 +953,7 @@ function isBTG(name){
   const n=name.toLowerCase();
   return BTG_WINES.some(w=>n.includes(w));
 }
-const LOCS={'red-wine':{label:'Red Wine Room',color:'#c0392b'},'white-wine':{label:'White Wine Room',color:'#d4a84b'},'liquor-cage':{label:'Liquor Cage',color:'#5aad5a'},'bar':{label:'Bar',color:'#5b8fd4'},'walls':{label:'Walls',color:'#8b6914'},'bar-prep':{label:'Bar Prep',color:'#2d6a8a'}};
+const LOCS={'red-wine':{label:'Red Wine Room',color:'#c0392b'},'white-wine':{label:'White Wine Room',color:'#d4a84b'},'liquor-cage':{label:'Liquor Cage',color:'#5aad5a'},'bar':{label:'Bar',color:'#5b8fd4'},'walls':{label:'Walls',color:'#8b6914'},'bar-prep':{label:'Bar Prep',color:'#2d6a8a'},'unlisted':{label:'Unlisted Items',color:'#888'}};
 let ST={items:[],loc:null,litems:[],ai:0,counts:{}};
 let unlistedItems=[];
 
@@ -1020,6 +1024,7 @@ function sortBin(a,b){
 }
 
 function selectLocation(lid){
+  if(lid==='unlisted'){showUnlistedPage();return;}
   if(!ST.items.length){showToast('Load inventory data first');return;}
   ST.loc=lid;ST.ai=0;startCounting();
   Object.keys(LOCS).forEach(id=>document.getElementById('loc-'+id).classList.toggle('active',id===lid));
@@ -1384,6 +1389,21 @@ function renderUnlisted(){
   });
 }
 const LOCS_LABELS={'red-wine':'Red Wine','white-wine':'White Wine','liquor-cage':'Liq Cage','bar':'Bar','walls':'Walls','bar-prep':'Bar Prep'};
+
+function showUnlistedPage(){
+  // Highlight sidebar button
+  document.querySelectorAll('.loc-btn').forEach(b=>b.classList.remove('active'));
+  const btn=document.getElementById('loc-unlisted');if(btn)btn.classList.add('active');
+  ST.loc='unlisted';
+  // Hide count panel, show unlisted panel
+  document.getElementById('cnt-panel').style.display='none';
+  document.getElementById('unlisted-page').style.display='block';
+  renderUnlisted();
+}
+function hidUnlistedPage(){
+  document.getElementById('cnt-panel').style.display='';
+  document.getElementById('unlisted-page').style.display='none';
+}
 
 let _tt=null;
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('show'),3000);}
