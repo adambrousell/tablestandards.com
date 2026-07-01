@@ -398,7 +398,7 @@ function b64url(buf){return btoa(String.fromCharCode(...new Uint8Array(buf))).re
 async function pkce(){const v=b64url(crypto.getRandomValues(new Uint8Array(48)));const h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(v));return{v,c:b64url(h)};}
 
 async function startGoogleAuth(){
-  if(GOOGLE_CLIENT_ID===979120444534-cadp6rk65o9v7ki4ddecq8747c7dsc2m.apps.googleusercontent.com){
+  if(GOOGLE_CLIENT_ID==='YOUR_GOOGLE_CLIENT_ID_HERE'){
     document.getElementById('gcb-help').style.display='block';
     showToast('Set your Google Client ID first \u2014 see instructions above');
     return;
