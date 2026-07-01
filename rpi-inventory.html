@@ -82,7 +82,7 @@
   .sync-badge.synced{color:#7fd87f;border-color:rgba(127,216,127,.3);}
   @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
   .sync-badge.syncing{color:var(--gold);animation:pulse 1.2s infinite;}
-  .tb{background:#fff;border-bottom:1px solid var(--divider);padding:12px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:56px;z-index:100;}
+  .tb{background:#fff;border-bottom:1px solid var(--divider);padding:12px 24px;display:flex;align-items:center;gap:12px;}
   .lbadge{display:flex;align-items:center;gap:7px;font-family:'Playfair Display',serif;font-size:17px;font-weight:600;color:var(--ink);flex:1;}
   .lbdot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
   .swrap{position:relative;flex:0 0 300px;}
@@ -100,7 +100,8 @@
   .ubtn{padding:7px 14px;background:none;border:none;cursor:pointer;font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:var(--slate);transition:all .15s;}
   .ubtn.active{background:var(--burgundy);color:#fff;}
   .aiwrap{padding:20px 24px 0;}
-  .aicard{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);border-top:3px solid var(--gold);padding:20px 24px;display:none;position:sticky;top:56px;z-index:50;}
+  .sticky-top{position:sticky;top:56px;z-index:100;background:var(--cream);}
+  .aicard{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);border-top:3px solid var(--gold);padding:20px 24px;display:none;}
   .aicard.on{display:block;}
   .aihdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;}
   .ainame{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:var(--ink);line-height:1.2;}
@@ -534,6 +535,8 @@
         <div class="si"><span class="sn" id="st-rem">0</span><span class="sl">Remaining</span></div>
         <div class="sync-badge" id="sbadge" onclick="showExport()"><span id="sbi">&#8679;</span><span id="sbt">Sync to Sheets</span></div>
       </div>
+      <div class="sticky-top">
+      <div class="sticky-top">
       <div class="tb">
         <div class="lbadge"><span class="lbdot" id="lbdot"></span><span id="lbname">Red Wine Room</span></div>
         <div class="swrap">
@@ -547,7 +550,7 @@
           <button class="ubtn" id="u-24pk" onclick="setCaseSize(24)">24-Pack</button>
         </div>
       </div>
-      <!-- Unlisted Items Table -->
+            <!-- Unlisted Items Table -->
       <div id="unlisted-wrap" style="padding:12px 24px 0">
         <div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);border-top:3px solid var(--slate);overflow:hidden;margin-bottom:12px">
           <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--parchment);border-bottom:1px solid var(--divider)">
@@ -614,6 +617,7 @@
           <div style="font-size:14px;color:var(--slate-lt);margin-top:8px">Search for an item or use Next to count in shelf order</div>
         </div>
       </div>
+      </div><!-- /sticky-top -->
       <div class="itwrap" id="itwrap"></div>
     </div>
 
