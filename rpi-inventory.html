@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -787,10 +787,11 @@ function importFromSheet(){
       Object.entries(locColMap).forEach(([loc,ci])=>{
         const locQty=parseFloat((row[ci]||'0').replace(/[^0-9.]/g,''))||0;
         if(locQty>0){
-          // Wine rooms only get # bin items
+          // Wine rooms only get WINE category items with # bin
           const isWineRoom=loc==='red-wine'||loc==='white-wine';
-          const hasBinNum=bin.startsWith('#')||bin==='';
-          if(isWineRoom&&!hasBinNum) return;
+          const hasBinNum=bin.startsWith('#');
+          const isWine=(cat||'').toUpperCase()==='WINE';
+          if(isWineRoom&&(!hasBinNum||!isWine)) return;
           items.push({id:r+'_'+loc,name,bin,qty,category:cat,bpc,isBBin:isBB,location:loc,sheetRow:r+1});
           addedAny=true;
         }
@@ -929,8 +930,7 @@ function selectLocation(lid){
   ST.loc=lid;ST.ai=0;startCounting();
   Object.keys(LOCS).forEach(id=>document.getElementById('loc-'+id).classList.toggle('active',id===lid));
   let items=ST.items.filter(it=>it.location===lid);
-  if(lid==='red-wine')items=[...items.filter(it=>!it.isBBin).sort(sortBin),...items.filter(it=>it.isBBin).sort(sortBin)];
-  else items=items.sort(sortBin);
+  items=items.sort(sortBin);
   ST.litems=items;
   document.getElementById('lbname').textContent=LOCS[lid].label;
   document.getElementById('lbdot').style.background=LOCS[lid].color;
@@ -944,6 +944,7 @@ function showItem(idx){
   idx=Math.max(0,Math.min(its.length-1,idx));ST.ai=idx;
   const it=its[idx];
   document.getElementById('aicard').classList.add('on');
+  document.getElementById('aicard').style.borderTopColor=it.isBBin?'#84cc16':'var(--gold)';
   document.getElementById('nohint').style.display='none';
   document.getElementById('ainame').textContent=it.name;
   let mh='';
@@ -1052,16 +1053,13 @@ function closeSDD(){document.getElementById('sdd').classList.remove('open');}
 function renderTbl(){
   const wrap=document.getElementById('itwrap');const its=ST.litems;
   if(!its.length){wrap.innerHTML='<div class="empty-state"><div style="font-size:36px;opacity:.3">&#128230;</div><div>No items in this location</div></div>';return;}
-  const aI=ST.loc==='red-wine'?its.filter(i=>!i.isBBin):its;
-  const bI=ST.loc==='red-wine'?its.filter(i=>i.isBBin):[];
-  const mkT=(rows,lbl)=>{
+  const mkT=(rows)=>{
     if(!rows.length)return'';
-    let t=lbl?'<div class="seclbl">'+lbl+'</div>':'';
-    t+='<table class="itable"><thead><tr><th>Bin</th><th>Item</th><th>Category</th><th>QB Qty</th><th>Your Count</th><th>Status</th><th></th></tr></thead><tbody>';
+    let t='<table class="itable"><thead><tr><th>Bin</th><th>Item</th><th>Category</th><th>QB Qty</th><th>Your Count</th><th>Status</th><th></th></tr></thead><tbody>';
     rows.forEach(it=>{t+=mkRow(it);});
     return t+'</tbody></table><br>';
   };
-  wrap.innerHTML=mkT(aI,'')+(bI.length?mkT(bI,'B Section \u2014 Bottom Shelf'):'');
+  wrap.innerHTML=mkT(its);
 }
 function renderTbl2(){if(ST.loc)renderTbl();}
 function renderTblRow(id){const el=document.getElementById('row-'+id);const it=ST.items.find(i=>i.id===id);if(el&&it)el.outerHTML=mkRow(it);}
@@ -1069,7 +1067,9 @@ function mkRow(it){
   const sv=ST.counts[it.id];const isA=ST.litems[ST.ai]?.id===it.id;const st=sv?.status||'pending';
   let pill=st==='counted'&&sv?.synced?'<span class="pill psy">\u2713 Synced</span>':st==='counted'?'<span class="pill pk">Counted</span>':st==='skipped'?'<span class="pill psk">Skipped</span>':'<span class="pill pp">Pending</span>';
   const cd=sv?.countBottles!=null?'<span class="tdc">'+sv.countBottles+'</span>':'<span class="tdc e">\u2014</span>';
-  return '<tr class="'+(isA?'ra ':'')+( st==='counted'?'rk':'')+'" id="row-'+it.id+'"><td class="tdb">'+(it.bin||'\u2014')+'</td><td class="tdn">'+it.name+'</td><td>'+(it.category||'\u2014')+'</td><td>'+it.qty+'</td><td>'+cd+'</td><td>'+pill+'</td><td><button class="rsbtn" onclick="selRow('+it.id+')">Select</button></td></tr>';
+  const isBRow=it.isBBin;
+  const bStyle=isBRow?'background:#e8ffb0;':'';
+  return '<tr class="'+(isA?'ra ':'')+( st==='counted'?'rk':'')+'" id="row-'+it.id+'" style="'+bStyle+'"><td class="tdb">'+(it.bin||'\u2014')+'</td><td class="tdn">'+it.name+'</td><td>'+(it.category||'\u2014')+'</td><td>'+it.qty+'</td><td>'+cd+'</td><td>'+pill+'</td><td><button class="rsbtn" onclick="selRow('+it.id+')">Select</button></td></tr>';
 }
 function hlRow(id){document.querySelectorAll('.itable tr.ra').forEach(r=>r.classList.remove('ra'));const el=document.getElementById('row-'+id);if(el){el.classList.add('ra');el.scrollIntoView({block:'nearest',behavior:'smooth'});}}
 function selRow(id){const idx=ST.litems.findIndex(i=>i.id===id);if(idx>=0)showItem(idx);}
