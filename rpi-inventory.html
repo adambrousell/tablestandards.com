@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -716,13 +716,14 @@ function buildColDrops(h){
   });
 }
 function trySet(id,val){const s=document.getElementById(id);if(s.value===-1||s.value==='-1')s.value=val;}
-let descColIndex = -1; // global: tracks which column has WINE/LIQUOR/BEER
+let descColIndex = -1;
+let qtyOnHandColIndex = -1; // Qty on Hand column — shown as QB qty
 function applyDefaultMappings(headers){
-  // Force override — ignore auto-detect, use exact column names
   const find=(name)=>headers.findIndex(h=>h.trim().toLowerCase()===name.toLowerCase());
   const productIdx=find('product');
   const physIdx=find('physical count');
   const descIdx=find('description');
+  const qohIdx=find('qty on hand');
   const mn=document.getElementById('mn');
   const mq=document.getElementById('mq');
   const mb=document.getElementById('mb');
@@ -732,8 +733,8 @@ function applyDefaultMappings(headers){
     const fallback=headers.findIndex(h=>{const l=h.toLowerCase();return l.includes('physical')||l.includes('count');});
     if(fallback>=0) mq.value=fallback;
   }
-  // Store description column index for category extraction
   descColIndex=descIdx;
+  qtyOnHandColIndex=qohIdx>=0?qohIdx:parseInt(mq.value); // fallback to physical count col
 }
 
 function importFromSheet(){
@@ -748,19 +749,20 @@ function importFromSheet(){
   for(let r=dataStart;r<rows.length;r++){
     const row=rows[r];
     const rawName=(row[nc]||'').trim();if(!rawName)continue;
-    const qty=parseFloat((row[qc]||'0').replace(/[^0-9.\-]/g,''))||0;
+    const qohCol=qtyOnHandColIndex>=0?qtyOnHandColIndex:qc;
+    const qty=parseFloat((row[qohCol]||'0').replace(/[^0-9.\-]/g,''))||0;
     if(qty<=0){sk++;continue;}
     // Extract bin from name: #0010 prefix (wine) or Type - Brand pattern (liquor)
-    let bin=bc>=0?(row[bc]||'').trim():'';
+    // Always extract bin from name — ignore dedicated bin column
+    let bin='';
     let name=rawName;
-    if(!bin){
-      const wmatch=rawName.match(/^#(\d+)\s+(.+)$/);
-      if(wmatch){
-        bin='#'+String(parseInt(wmatch[1],10));name=wmatch[2].trim();
-      } else {
-        const lmatch=rawName.match(/^([^\-]+?)\s+-\s+(.+)$/);
-        if(lmatch){bin=lmatch[1].trim();}
-      }
+    const wmatch=rawName.match(/^#(\d+)\s+(.+)$/);
+    if(wmatch){
+      bin='#'+String(parseInt(wmatch[1],10));
+      name=wmatch[2].trim();
+    } else {
+      const lmatch=rawName.match(/^([^\-]+?)\s+-\s+(.+)$/);
+      if(lmatch){bin=lmatch[1].trim();}
     }
     const cat=descColIndex>=0?(row[descColIndex]||'').trim():'';
     const bpc=12;
