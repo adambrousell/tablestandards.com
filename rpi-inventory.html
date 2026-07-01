@@ -426,6 +426,7 @@ async function handleCallback(){
       if(d.refresh_token)localStorage.setItem('rpi_rt',d.refresh_token);
       setGS('connected','Google connected');
       document.getElementById('spick').classList.add('on');
+      document.getElementById('gcbox').style.display='none';
       showToast('\u2713 Google Sheets connected');
       return true;
     }else{setGS('err','Auth failed');showToast('Auth failed: '+(d.error_description||d.error));return false;}
@@ -587,7 +588,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
   const authed=await handleCallback();
   if(!authed&&localStorage.getItem('rpi_rt')){
     const ok=await refreshToken();
-    if(ok){setGS('connected','Google connected');document.getElementById('spick').classList.add('on');}
+    if(ok){setGS('connected','Google connected');document.getElementById('spick').classList.add('on');document.getElementById('gcbox').style.display='none';}
   }
   showSetup();
 });
