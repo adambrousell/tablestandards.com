@@ -953,7 +953,7 @@ function showItem(idx){
   document.getElementById('ai-myunit').textContent=ST.unit==='bottles'?'bottles':ST.unit==='6pk'?'6-packs':ST.unit==='24pk'?'24-packs':'12-packs';
   updCaseDet(it);
   document.getElementById('npos').textContent=(idx+1)+' / '+its.length;
-  if(ST.unit==='bottles')document.getElementById('ci-cases').focus();else cin.focus();hlRow(it.id);
+  hlRow(it.id);document.getElementById('sinput').focus();
 }
 function hideItem(){document.getElementById('aicard').classList.remove('on');document.getElementById('nohint').style.display='block';}
 function updCaseDet(it){
