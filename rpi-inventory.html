@@ -797,7 +797,15 @@ function importFromSheet(){
         }
       });
       // If no location col had qty, fall back to inference
-      if(!addedAny) items.push({id:r,name,bin,qty,category:cat,bpc,isBBin:isBB,location:inferLoc(name,cat,bin,isBB),sheetRow:r+1});
+      if(!addedAny){
+        const loc=inferLoc(name,cat,bin,isBB);
+        const isWineRoom=loc==='red-wine'||loc==='white-wine';
+        const hasBinNum=bin.startsWith('#');
+        const isWine=(cat||'').toUpperCase()==='WINE';
+        if(!isWineRoom||( hasBinNum&&isWine)){
+          items.push({id:r,name,bin,qty,category:cat,bpc,isBBin:isBB,location:loc,sheetRow:r+1});
+        }
+      }
     } else {
       items.push({id:r,name,bin,qty,category:cat,bpc,isBBin:isBB,location:inferLoc(name,cat,bin,isBB),sheetRow:r+1});
     }
