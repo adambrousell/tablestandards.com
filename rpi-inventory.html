@@ -859,7 +859,19 @@ async function writeBack(){
   const log=document.getElementById('wb-log');log.innerHTML='';
   document.getElementById('btn-wb').disabled=true;
   const col=c2l(sm.qci);
-  const ranges=toSync.map(it=>({range:sm.tab+'!'+col+it.sheetRow,values:[[ST.counts[it.id].countBottles]]}));
+  // Sum counts across all locations for the same sheetRow
+  const sheetRowTotals={};
+  toSync.forEach(function(it){
+    const btl=ST.counts[it.id]?.countBottles||0;
+    sheetRowTotals[it.sheetRow]=(sheetRowTotals[it.sheetRow]||0)+btl;
+  });
+  // Deduplicate — one range per sheetRow
+  const seenRows=new Set();
+  const uniqueItems=toSync.filter(function(it){
+    if(seenRows.has(it.sheetRow))return false;
+    seenRows.add(it.sheetRow);return true;
+  });
+  const ranges=uniqueItems.map(it=>({range:sm.tab+'!'+col+it.sheetRow,values:[[Math.round(sheetRowTotals[it.sheetRow]*10)/10]]}));
   let done=0;const total=ranges.length;updBar(0,total);let errs=[];
   for(let i=0;i<ranges.length;i+=20){
     const br=ranges.slice(i,i+20);const bi=toSync.slice(i,i+20);
@@ -876,12 +888,12 @@ async function writeBack(){
   renderExportTable();
 }
 
-async function writeBackSingle(item){
+async function writeBackSingle(item,overrideTotal){
   if(!gToken||!item.sheetRow||sm.qci<0)return;
   const wi=document.getElementById('wbi');
   wi.className='wbi on writing';document.getElementById('wbi-icon').textContent='\u27F3';document.getElementById('wbi-msg').textContent='Syncing\u2026';
   try{
-    await shBatch([{range:sm.tab+'!'+c2l(sm.qci)+item.sheetRow,values:[[ST.counts[item.id].countBottles]]}]);
+    await shBatch([{range:sm.tab+'!'+c2l(sm.qci)+item.sheetRow,values:[[(overrideTotal!==undefined?overrideTotal:ST.counts[item.id].countBottles)]]}]);
     ST.counts[item.id].synced=true;
     wi.className='wbi on';document.getElementById('wbi-icon').textContent='\u2713';document.getElementById('wbi-msg').textContent='Synced to Google Sheets';
     setSBadge('synced','\u2713 Saved');
@@ -1088,7 +1100,18 @@ function onCI(){
   if(btl>0){const v=btl-it.qty;document.getElementById('ai-var').textContent=(v>0?'+':'')+v.toFixed(1);document.getElementById('ai-var').style.color=v<0?'var(--danger)':v>0?'var(--success)':'var(--slate-lt)';}
   else{document.getElementById('ai-var').textContent='\u2014';document.getElementById('ai-var').style.color='var(--slate-lt)';}
 }
-async function saveCount(){
+async function getTotalForSheetRow(sheetRow){
+  // Sum all counts across all locations for the same sheetRow
+  let total=0;
+  ST.items.forEach(function(item){
+    if(item.sheetRow===sheetRow){
+      const c=ST.counts[item.id];
+      if(c&&c.status==='counted') total+=c.countBottles||0;
+    }
+  });
+  return Math.round(total*10)/10;
+}
+function saveCount(){
   const its=ST.litems;if(!its.length)return;
   const it=its[ST.ai];
   const btlCheck=getCountBottles();
@@ -1097,8 +1120,10 @@ async function saveCount(){
   const bpc=getCaseSize();
   ST.counts[it.id]={countBottles:btl,countRaw:btl,bpc:getCaseSize(),status:'counted',synced:false};
   updateStats();renderTblRow(it.id);updateOP();
-  showToast('\u2713 '+it.name+' \u2014 '+btl+' bottles');
-  if(gToken&&it.sheetRow&&sm.qci>=0)writeBackSingle(it);
+  // Sum all location counts for this sheet row
+  const totalBtl=getTotalForSheetRow(it.sheetRow);
+  showToast('\u2713 '+it.name+' \u2014 '+btl+' btl here / '+totalBtl+' total');
+  if(gToken&&it.sheetRow&&sm.qci>=0)writeBackSingle(it,totalBtl);
   navItem(1);
 }
 function skipItem(){
