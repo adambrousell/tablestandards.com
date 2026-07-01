@@ -1080,13 +1080,28 @@ function closeSDD(){document.getElementById('sdd').classList.remove('open');}
 function renderTbl(){
   const wrap=document.getElementById('itwrap');const its=ST.litems;
   if(!its.length){wrap.innerHTML='<div class="empty-state"><div style="font-size:36px;opacity:.3">&#128230;</div><div>No items in this location</div></div>';return;}
-  const mkT=(rows)=>{
+  const mkT=(rows,showCatHeaders)=>{
     if(!rows.length)return'';
     let t='<table class="itable"><thead><tr><th>Bin</th><th>Item</th><th>Category</th><th>QB Qty</th><th>Your Count</th><th>Status</th><th></th></tr></thead><tbody>';
-    rows.forEach(it=>{t+=mkRow(it);});
+    if(showCatHeaders){
+      // Group by category, sorted alphabetically
+      const groups={};
+      rows.forEach(it=>{
+        const cat=it.category||'Other';
+        if(!groups[cat])groups[cat]=[];
+        groups[cat].push(it);
+      });
+      Object.keys(groups).sort().forEach(cat=>{
+        t+='<tr><td colspan="7" style="background:var(--ink);color:var(--gold);font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;padding:7px 12px">'+cat+'</td></tr>';
+        groups[cat].sort(sortBin).forEach(it=>{t+=mkRow(it);});
+      });
+    } else {
+      rows.forEach(it=>{t+=mkRow(it);});
+    }
     return t+'</tbody></table><br>';
   };
-  wrap.innerHTML=mkT(its);
+  const nonWine=['liquor-cage','bar','walls','bar-prep'].includes(ST.loc);
+  wrap.innerHTML=mkT(its,nonWine);
   // Auto-scroll to first pending item
   setTimeout(()=>{
     const firstPending=wrap.querySelector('.pill.pp')?.closest('tr');
