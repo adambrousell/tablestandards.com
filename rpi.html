@@ -513,18 +513,14 @@
           </div>
           <div class="sid-hint">Paste the full URL or just the ID:<br><code>https://docs.google.com/spreadsheets/d/<strong>[ID]</strong>/edit</code></div>
         </div>
-        <div class="cmap" id="cmap">
-          <div class="cmap-title">Map columns &mdash; confirm which column is which:</div>
-          <div class="cmap-grid">
-            <div class="cmapi"><label>Item Name *</label><select id="mn"></select></div>
-            <div class="cmapi"><label>Physical Count * (will be written back)</label><select id="mq"></select></div>
-            <div class="cmapi"><label>Bin #</label><select id="mb"></select></div>
-          </div>
-          <div class="pstatus" id="ps-sheet"></div>
-          <div class="brow">
-            <button class="btn-p" onclick="importFromSheet()">Import Items</button>
-            <button class="btn-s" onclick="resetPicker()">Different Sheet</button>
-          </div>
+        <div id="cmap" style="display:none">
+          <select id="mn" style="display:none"></select>
+          <select id="mq" style="display:none"></select>
+          <select id="mb" style="display:none"></select>
+        </div>
+        <div class="pstatus" id="ps-sheet"></div>
+        <div class="brow" id="import-actions" style="display:none">
+          <button class="btn-s" onclick="resetPicker()">Different Sheet</button>
         </div>
       </div>
     </div>
@@ -695,7 +691,7 @@ async function loadFromSheets(){
   try{
     const meta=await shGet('https://sheets.googleapis.com/v4/spreadsheets/'+sm.id+'?fields=sheets.properties.title');
     sm.tab=meta.sheets[0].properties.title;
-    const data=await shGet('https://sheets.googleapis.com/v4/spreadsheets/'+sm.id+'/values/'+encodeURIComponent(sm.tab)+'!A1:Z1000');
+    const data=await shGet('https://sheets.googleapis.com/v4/spreadsheets/'+sm.id+'/values/'+encodeURIComponent(sm.tab)+'!A1:Z2000');
     const rows=data.values||[];
     if(!rows.length){setPStatus('ps-sheet','err','Sheet appears empty.');return;}
     // Headers on row 5 (index 4), data from row 6 (index 5)
@@ -703,7 +699,7 @@ async function loadFromSheets(){
     buildColDrops(sm.headers);
     applyDefaultMappings(sm.headers);
     // Auto-import with defaults — no mapper interaction needed
-    setPStatus('ps-sheet','info','\u2713 Loaded "'+sm.tab+'" \u2014 '+(rows.length-1)+' rows. Importing…');
+    setPStatus('ps-sheet','info','\u2713 Loaded "'+sm.tab+'" \u2014 '+(rows.length-(rows.indexOf(sm.headers)+1))+' data rows. Importing…');
     setTimeout(importFromSheet, 200);
   }catch(e){console.error(e);setPStatus('ps-sheet','err','Error loading sheet: '+e.message);}
 }
@@ -773,7 +769,8 @@ function importFromSheet(){
   }
   if(!items.length){setPStatus('ps-sheet','err','All items had 0 Qty ('+sk+' skipped).');return;}
   ST.items=items;ST.counts={};updateOP();
-  setPStatus('ps-sheet','ok','\u2713 '+items.length+' items imported ('+sk+' zero-balance skipped). Counts will update column "'+sm.headers[qc]+'".');
+  setPStatus('ps-sheet','ok','\u2713 '+items.length+' items ready. Starting count\u2026');
+  document.getElementById('import-actions').style.display='flex';
   setTimeout(startCounting,500);
 }
 
