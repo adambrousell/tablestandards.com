@@ -179,100 +179,290 @@
   .empty-state{text-align:center;padding:60px 20px;color:var(--slate-lt);}
   ::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--divider);border-radius:3px;}
 
-  /* ── MOBILE ── */
   @media (max-width: 768px) {
-    .app-shell { grid-template-columns: 1fr; }
-
-    /* Sidebar becomes a horizontal scrollable tab bar */
-    .sidebar {
-      position: sticky; top: 56px; height: auto;
-      display: flex; flex-direction: row; flex-wrap: nowrap;
-      overflow-x: auto; overflow-y: hidden;
-      padding: 8px 8px; gap: 4px;
-      z-index: 150; -webkit-overflow-scrolling: touch;
+    /* Kill the side-by-side grid — go single column */
+    .app-shell {
+      display: block;
     }
-    .sidebar::-webkit-scrollbar { display: none; }
+
+    /* Sidebar: compact 2x2 button grid */
+    .sidebar {
+      position: static;
+      height: auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      padding: 10px 12px;
+    }
     .slbl, .sdiv, .pwrap { display: none; }
     .loc-btn {
-      flex: 0 0 auto; padding: 7px 14px;
-      border-left: none; border-bottom: 3px solid transparent;
-      border-radius: var(--radius); font-size: 12px;
-      white-space: nowrap;
+      border-left: none;
+      border-bottom: 3px solid transparent;
+      border-radius: var(--radius);
+      padding: 10px 8px;
+      font-size: 12px;
+      justify-content: center;
+      background: rgba(255,255,255,0.06);
     }
-    .loc-btn.active { border-left: none; border-bottom-color: var(--gold); background: rgba(184,144,58,.15); }
+    .loc-btn.active {
+      border-left: none;
+      border-bottom-color: var(--gold);
+      background: rgba(184,144,58,0.15);
+      color: var(--gold);
+    }
+    /* Hide the setup/load sheet button in grid — keep it but full width */
+    .sidebar .loc-btn:last-child {
+      grid-column: 1 / -1;
+      justify-content: center;
+    }
 
     /* Header */
-    .site-header { padding: 10px 14px; }
+    .site-header { padding: 10px 14px; gap: 8px; }
     .brand-mark { font-size: 17px; }
     .brand-sub { display: none; }
     .inventory-date { display: none; }
     .google-status { font-size: 10px; padding: 4px 8px; }
-    .btn-hdr { font-size: 11px; padding: 6px 12px; }
+    .btn-hdr { font-size: 11px; padding: 6px 12px; white-space: nowrap; }
 
-    /* Setup */
-    #setup-panel { margin: 16px auto; padding: 0 12px; }
-    .scard { padding: 20px 16px; }
+    /* Setup panel */
+    #setup-panel { margin: 12px auto; padding: 0 12px; width: 100%; }
+    .scard { padding: 18px 14px; }
     .stitle { font-size: 18px; }
+    .ssub { font-size: 11px; }
     .cmap-grid { grid-template-columns: 1fr; }
+    .srow { flex-direction: column; }
+    .sid-input { width: 100%; }
 
     /* Stats bar */
-    .stats-bar { padding: 8px 12px; gap: 16px; flex-wrap: wrap; }
-    .sn { font-size: 18px; }
-    .sync-badge { margin-left: 0; }
+    .stats-bar { padding: 8px 12px; gap: 14px; }
+    .sn { font-size: 16px; }
+    .sl { font-size: 9px; }
+    .sync-badge { margin-left: auto; font-size: 10px; }
 
-    /* Toolbar */
-    .tb { flex-wrap: wrap; gap: 8px; padding: 10px 12px; top: calc(56px + 48px); }
+    /* Count toolbar */
+    .tb {
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 10px 12px;
+      position: static; /* no sticky on mobile — avoids double-sticky issues */
+    }
     .lbadge { font-size: 15px; flex: 1 1 100%; order: 0; }
-    .swrap { flex: 1 1 calc(100% - 140px); order: 1; }
+    .swrap { flex: 1 1 0; order: 1; min-width: 0; }
     .utog { order: 2; flex-shrink: 0; }
-    .ubtn { padding: 6px 9px; font-size: 11px; }
+    .ubtn { padding: 7px 8px; font-size: 11px; }
 
-    /* Active item card */
-    .aiwrap { padding: 12px 12px 0; }
-    .aicard { padding: 14px 14px; }
+    /* Search dropdown full width */
+    .sdd { position: fixed; left: 8px; right: 8px; top: auto; max-height: 45vh; z-index: 400; }
+
+    /* Item card */
+    .aiwrap { padding: 10px 12px 0; }
+    .aicard { padding: 14px 12px; }
     .ainame { font-size: 16px; }
-    .qrow { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .aimeta { gap: 4px; }
+    .atag { font-size: 9px; padding: 2px 6px; }
+
+    /* QB/Count/Variance blocks */
+    .qrow { grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 12px; }
+    .qblk { padding: 8px 10px; }
+    .qlbl { font-size: 8px; }
     .qval { font-size: 18px; }
 
-    /* Count input — cases + loose layout stacks on mobile */
-    .cirow { flex-wrap: wrap; gap: 8px; }
-    #cirow-bottles { flex-direction: column; align-items: stretch; }
+    /* Count input — bottles mode stacks vertically */
+    #cirow-bottles {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+    }
+    #cirow-bottles .ci-group {
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+    }
+    #cirow-bottles .ci-label {
+      white-space: nowrap;
+      min-width: 100px;
+      text-align: right;
+      font-size: 9px;
+    }
+    #cirow-bottles .ci { font-size: 24px; padding: 10px 12px; flex: 1; }
     #cirow-bottles .ci-plus,
-    #cirow-bottles .ci-equals { padding-top: 0; text-align: center; font-size: 18px; }
+    #cirow-bottles .ci-equals { display: none; }
+    .ci-total { font-size: 24px !important; padding: 10px 12px; flex: 1; }
+
+    /* Pack mode input */
+    #cirow-packs { flex-wrap: wrap; gap: 8px; }
+    #cirow-packs .ci { font-size: 28px; }
+
+    /* Save/Skip buttons full width on mobile */
+    .btn-save { flex: 1; padding: 14px; font-size: 15px; }
+    .btn-skip { padding: 14px 16px; font-size: 13px; }
+
+    /* Action buttons row */
+    .cirow { gap: 8px; }
+
+    /* Nav buttons */
+    .ainav { gap: 6px; margin-top: 12px; padding-top: 12px; }
+    .nbtn { flex: 1; text-align: center; padding: 10px 8px; }
+    .npos { font-size: 10px; }
+
+    /* Case detail hint */
+    .cdet { font-size: 10px; }
+
+    /* Sync indicator */
+    .wbi { font-size: 10px; }
+
+    /* Hide item table on mobile — nav handles everything */
+    .itwrap { display: none; }
+
+    /* Export panel */
+    #export-panel { padding: 14px 12px; }
+    .ephdr { flex-direction: column; gap: 10px; align-items: flex-start; }
+    .epact { flex-wrap: wrap; gap: 8px; }
+    .etable { font-size: 11px; }
+    .etable th, .etable td { padding: 6px 8px; }
+    .wbpanel { padding: 14px 12px; }
+    .wblog { font-size: 10px; max-height: 100px; }
+  }
+
+  @media (max-width: 390px) {
+    .qrow { grid-template-columns: 1fr 1fr; }
+    .qblk:last-child { grid-column: 1 / -1; }
+    .ubtn { padding: 6px 5px; font-size: 10px; }
+  }
+
+
+  
+  /* ── MOBILE ── */
+  @media (max-width: 768px) {
+
+    /* Kill the sidebar grid */
+    .app-shell { display: block; }
+
+    /* Header */
+    .site-header { padding: 10px 14px; }
+    .brand-mark { font-size: 16px; }
+    .brand-sub { display: none; }
+    .inventory-date { display: none; }
+    .google-status { font-size: 10px; padding: 4px 8px; }
+    .btn-hdr { font-size: 11px; padding: 6px 10px; white-space: nowrap; }
+
+    /* Sidebar → 2×2 location grid */
+    .sidebar {
+      position: static;
+      height: auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      padding: 8px 10px;
+      background: var(--ink);
+    }
+    .slbl { display: none; }
+    .sdiv { display: none; }
+    .pwrap { display: none; }
+    .loc-btn {
+      border-left: none;
+      border-radius: var(--radius);
+      padding: 10px 8px;
+      font-size: 13px;
+      text-align: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.07);
+      border: 1.5px solid transparent;
+    }
+    .loc-btn.active {
+      border-left: none;
+      border-color: var(--gold);
+      background: rgba(184,144,58,0.18);
+      color: var(--gold);
+    }
+
+    /* Setup */
+    #setup-panel { margin: 12px auto; padding: 0 10px; max-width: 100%; }
+    .scard { padding: 16px 14px; }
+    .stitle { font-size: 17px; }
+    .ssub { font-size: 12px; }
+    .cmap-grid { grid-template-columns: 1fr; }
+    .srow { flex-direction: column; }
+    .sid-input { width: 100%; }
+    .brow { flex-wrap: wrap; }
+    .btn-p, .btn-s { width: 100%; text-align: center; }
+
+    /* Stats bar — no scroll, all visible */
+    .stats-bar {
+      padding: 8px 12px;
+      gap: 0;
+      flex-wrap: nowrap;
+      justify-content: space-between;
+    }
+    .si { flex-direction: column; align-items: center; gap: 2px; }
+    .sn { font-size: 22px; }
+    .sl { font-size: 9px; }
+    .sync-badge { font-size: 10px; padding: 4px 8px; }
+
+    /* Toolbar — all visible, no scroll */
+    .tb { flex-wrap: wrap; gap: 8px; padding: 10px 12px; position: static; }
+    .lbadge { flex: 1 1 100%; font-size: 16px; order: 0; }
+    .swrap { flex: 1 1 100%; order: 1; }
+    .utog { order: 2; width: 100%; display: flex; }
+    .ubtn { flex: 1; padding: 8px 4px; font-size: 11px; text-align: center; }
+
+    /* Active item card */
+    .aiwrap { padding: 10px 10px 0; }
+    .aicard { padding: 14px 12px; }
+    .ainame { font-size: 16px; }
+    .aimeta { flex-wrap: wrap; gap: 4px; }
+
+    /* QB / Count / Variance blocks */
+    .qrow { grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 12px; }
+    .qblk { padding: 8px 6px; }
+    .qval { font-size: 18px; }
+    .qlbl { font-size: 8px; }
+    .qunit { font-size: 9px; }
+
+    /* Bottles mode input — stacked rows */
+    #cirow-bottles { flex-direction: column; gap: 8px; }
     #cirow-bottles .ci-group { flex-direction: row; align-items: center; gap: 8px; }
-    #cirow-bottles .ci-label { white-space: nowrap; min-width: 90px; font-size: 9px; }
-    #cirow-bottles .ci { font-size: 22px; padding: 10px 12px; }
-    .ci-total { font-size: 22px !important; padding: 10px 12px; }
-    .btn-save { flex: 1; padding: 13px 16px; }
-    .btn-skip { padding: 13px 14px; }
+    #cirow-bottles .ci-label { min-width: 90px; font-size: 9px; white-space: nowrap; }
+    #cirow-bottles .ci { font-size: 22px; padding: 10px; flex: 1; }
+    #cirow-bottles .ci-plus,
+    #cirow-bottles .ci-equals { display: none; }
+    .ci-total { font-size: 22px !important; padding: 10px; }
+    #cirow-bottles .btn-save,
+    #cirow-bottles .btn-skip { width: 100%; padding: 13px; }
+
+    /* Pack mode input */
+    #cirow-packs { flex-wrap: wrap; gap: 8px; }
+    #cirow-packs .ci { font-size: 28px; padding: 12px; flex: 1 1 100%; }
+    #cirow-packs .btn-save { flex: 1; padding: 13px; }
+    #cirow-packs .btn-skip { padding: 13px 14px; }
 
     /* Nav */
     .ainav { gap: 8px; }
-    .nbtn { padding: 8px 16px; flex: 1; text-align: center; }
-    .npos { font-size: 10px; }
+    .nbtn { flex: 1; text-align: center; padding: 10px; }
 
-    /* Item table — hide on mobile, not useful while counting */
+    /* Hide item table */
     .itwrap { display: none; }
 
+    /* Case detail hint */
+    .cdet { font-size: 11px; }
+    .wbi { font-size: 11px; }
+
     /* Export */
-    #export-panel { padding: 16px 12px; }
-    .ephdr { flex-direction: column; gap: 12px; align-items: flex-start; }
-    .epact { flex-wrap: wrap; }
-    .etable { font-size: 11px; }
-    .etable th, .etable td { padding: 6px 8px; }
+    #export-panel { padding: 12px 10px; }
+    .ephdr { flex-direction: column; gap: 10px; align-items: flex-start; }
+    .epact { flex-wrap: wrap; gap: 8px; }
+    .epact .btn-p, .epact .btn-s { flex: 1 1 calc(50% - 4px); text-align: center; }
+    .etable { font-size: 10px; }
+    .etable th, .etable td { padding: 5px 6px; }
 
-    /* Progress bar in sidebar — show as toast on mobile instead */
-    .pbg, .pfill, .pcnt, .plbl { display: none; }
+    /* Search dropdown */
+    .sdd { position: fixed; left: 10px; right: 10px; top: auto; max-height: 40vh; z-index: 500; }
+
+    /* No horizontal overflow anywhere */
+    body { overflow-x: hidden; }
+    * { max-width: 100%; }
   }
 
-  @media (max-width: 420px) {
-    .qrow { grid-template-columns: 1fr 1fr; }
-    .qblk:last-child { grid-column: 1 / -1; }
-    .utog { width: 100%; }
-    .ubtn { flex: 1; padding: 6px 4px; font-size: 10px; }
-    .site-header { padding: 8px 10px; }
-    .brand-mark { font-size: 15px; }
-  }
 </style>
 </head>
 <body>
