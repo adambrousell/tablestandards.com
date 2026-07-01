@@ -513,18 +513,14 @@
           </div>
           <div class="sid-hint">Paste the full URL or just the ID:<br><code>https://docs.google.com/spreadsheets/d/<strong>[ID]</strong>/edit</code></div>
         </div>
-        <div class="cmap" id="cmap">
-          <div class="cmap-title">Map columns &mdash; confirm which column is which:</div>
-          <div class="cmap-grid">
-            <div class="cmapi"><label>Item Name *</label><select id="mn"></select></div>
-            <div class="cmapi"><label>Physical Count * (will be written back)</label><select id="mq"></select></div>
-            <div class="cmapi"><label>Bin #</label><select id="mb"></select></div>
-          </div>
-          <div class="pstatus" id="ps-sheet"></div>
-          <div class="brow">
-            <button class="btn-p" onclick="importFromSheet()">Import Items</button>
-            <button class="btn-s" onclick="resetPicker()">Different Sheet</button>
-          </div>
+        <div id="cmap" style="display:none">
+          <select id="mn" style="display:none"></select>
+          <select id="mq" style="display:none"></select>
+          <select id="mb" style="display:none"></select>
+        </div>
+        <div class="pstatus" id="ps-sheet"></div>
+        <div class="brow" id="import-actions" style="display:none">
+          <button class="btn-s" onclick="resetPicker()">Different Sheet</button>
         </div>
       </div>
     </div>
@@ -695,14 +691,16 @@ async function loadFromSheets(){
   try{
     const meta=await shGet('https://sheets.googleapis.com/v4/spreadsheets/'+sm.id+'?fields=sheets.properties.title');
     sm.tab=meta.sheets[0].properties.title;
-    const data=await shGet('https://sheets.googleapis.com/v4/spreadsheets/'+sm.id+'/values/'+encodeURIComponent(sm.tab)+'!A1:Z1000');
+    const data=await shGet('https://sheets.googleapis.com/v4/spreadsheets/'+sm.id+'/values/'+encodeURIComponent(sm.tab)+'!A1:Z2000');
     const rows=data.values||[];
     if(!rows.length){setPStatus('ps-sheet','err','Sheet appears empty.');return;}
     // Headers on row 5 (index 4), data from row 6 (index 5)
     sm.headers=rows[4]||rows[0];sm.rows=rows;
     buildColDrops(sm.headers);
-    document.getElementById('cmap').classList.add('on');
-    setPStatus('ps-sheet','ok','\u2713 Loaded "'+sm.tab+'" \u2014 '+(rows.length-1)+' rows. Map columns below then click Import.');
+    applyDefaultMappings(sm.headers);
+    // Auto-import with defaults — no mapper interaction needed
+    setPStatus('ps-sheet','info','\u2713 Loaded "'+sm.tab+'" \u2014 '+(rows.length-(rows.indexOf(sm.headers)+1))+' data rows. Importing…');
+    setTimeout(importFromSheet, 200);
   }catch(e){console.error(e);setPStatus('ps-sheet','err','Error loading sheet: '+e.message);}
 }
 
@@ -718,6 +716,25 @@ function buildColDrops(h){
   });
 }
 function trySet(id,val){const s=document.getElementById(id);if(s.value===-1||s.value==='-1')s.value=val;}
+let descColIndex = -1; // global: tracks which column has WINE/LIQUOR/BEER
+function applyDefaultMappings(headers){
+  // Force override — ignore auto-detect, use exact column names
+  const find=(name)=>headers.findIndex(h=>h.trim().toLowerCase()===name.toLowerCase());
+  const productIdx=find('product');
+  const physIdx=find('physical count');
+  const descIdx=find('description');
+  const mn=document.getElementById('mn');
+  const mq=document.getElementById('mq');
+  const mb=document.getElementById('mb');
+  if(productIdx>=0){ mn.value=productIdx; mb.value=productIdx; }
+  if(physIdx>=0){ mq.value=physIdx; }
+  else {
+    const fallback=headers.findIndex(h=>{const l=h.toLowerCase();return l.includes('physical')||l.includes('count');});
+    if(fallback>=0) mq.value=fallback;
+  }
+  // Store description column index for category extraction
+  descColIndex=descIdx;
+}
 
 function importFromSheet(){
   const nc=parseInt(document.getElementById('mn').value);
@@ -739,20 +756,21 @@ function importFromSheet(){
     if(!bin){
       const wmatch=rawName.match(/^#(\d+)\s+(.+)$/);
       if(wmatch){
-        bin='#'+wmatch[1];name=wmatch[2].trim();
+        bin='#'+String(parseInt(wmatch[1],10));name=wmatch[2].trim();
       } else {
         const lmatch=rawName.match(/^([^\-]+?)\s+-\s+(.+)$/);
         if(lmatch){bin=lmatch[1].trim();}
       }
     }
-    const cat='';
+    const cat=descColIndex>=0?(row[descColIndex]||'').trim():'';
     const bpc=12;
     const isBB=bin.toUpperCase().startsWith('B');
     items.push({id:r,name,bin,qty,category:cat,bpc,isBBin:isBB,location:inferLoc(name,cat,bin,isBB),sheetRow:r+1});
   }
   if(!items.length){setPStatus('ps-sheet','err','All items had 0 Qty ('+sk+' skipped).');return;}
   ST.items=items;ST.counts={};updateOP();
-  setPStatus('ps-sheet','ok','\u2713 '+items.length+' items imported ('+sk+' zero-balance skipped). Counts will update column "'+sm.headers[qc]+'".');
+  setPStatus('ps-sheet','ok','\u2713 '+items.length+' items ready. Starting count\u2026');
+  document.getElementById('import-actions').style.display='flex';
   setTimeout(startCounting,500);
 }
 
