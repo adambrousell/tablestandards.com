@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -903,13 +903,18 @@ function inferLoc(n,c,b,isBB){
   if(isBB)return 'red-wine';
   return 'red-wine';
 }
+function parseBin(bin){
+  if(!bin||bin==='\u2014') return {prefix:'',num:Infinity,str:bin||''};
+  const s=bin.replace(/^#+/,''); // strip leading #
+  const m=s.match(/^([A-Za-z]*)([0-9]*)(.*)/);
+  return {prefix:(m[1]||'').toUpperCase(),num:m[2]?parseInt(m[2]):Infinity,str:bin};
+}
 function sortBin(a,b){
   if(!a.bin&&!b.bin)return a.name.localeCompare(b.name);
   if(!a.bin)return 1;if(!b.bin)return -1;
-  const ma=a.bin.toUpperCase().match(/^([A-Za-z]*)(\d*)(.*)$/);
-  const mb=b.bin.toUpperCase().match(/^([A-Za-z]*)(\d*)(.*)$/);
-  if(ma&&mb){if(ma[1]!==mb[1])return ma[1].localeCompare(mb[1]);return(parseInt(ma[2])||0)-(parseInt(mb[2])||0);}
-  return a.bin.localeCompare(b.bin);
+  const pa=parseBin(a.bin),pb=parseBin(b.bin);
+  if(pa.prefix!==pb.prefix)return pa.prefix.localeCompare(pb.prefix);
+  return pa.num-pb.num;
 }
 
 function selectLocation(lid){
