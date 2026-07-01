@@ -547,6 +547,27 @@
           <button class="ubtn" id="u-24pk" onclick="setCaseSize(24)">24-Pack</button>
         </div>
       </div>
+      <!-- Unlisted Items Table -->
+      <div id="unlisted-wrap" style="padding:12px 24px 0">
+        <div style="background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);border-top:3px solid var(--slate);overflow:hidden;margin-bottom:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--parchment);border-bottom:1px solid var(--divider)">
+            <span style="font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--slate)">Unlisted Items</span>
+            <button onclick="addUnlisted()" style="display:flex;align-items:center;gap:5px;background:var(--ink);color:#fff;border:none;border-radius:var(--radius);padding:5px 12px;font-family:Inter,sans-serif;font-size:11px;font-weight:600;cursor:pointer">+ Add Item</button>
+          </div>
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr 70px 70px 60px 32px;gap:8px;padding:6px 12px;background:var(--ink)">
+            <span style="font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5)">Item Name</span>
+            <span style="font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5)">Category</span>
+            <span style="font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5)">Location</span>
+            <span style="font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5)">Cases</span>
+            <span style="font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5)">Loose</span>
+            <span style="font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5)">Total</span>
+            <span></span>
+          </div>
+          <div id="unlisted-list" style="padding:0">
+            <div id="unlisted-empty" style="padding:12px 16px;font-size:12px;color:var(--slate-lt);font-style:italic">No unlisted items — click Add Item to log something not in the QB sheet.</div>
+          </div>
+        </div>
+      </div>
       <div class="aiwrap">
         <div class="aicard" id="aicard">
           <div class="aihdr">
@@ -776,7 +797,9 @@ function importFromSheet(){
       const lmatch=rawName.match(/^([^\-]+?)\s+-\s+(.+)$/);
       if(lmatch){bin=lmatch[1].trim();}
     }
-    const cat=descColIndex>=0?(row[descColIndex]||'').trim():'';
+    let cat=descColIndex>=0?(row[descColIndex]||'').trim():'';
+    // Normalize category typos
+    if(/^bar sup/i.test(cat)) cat='BAR SUPPLIES';
     const bpc=12;
     const isBB=/^#B/i.test(bin);
     // Use sheet location columns if detected, else infer
@@ -912,6 +935,7 @@ function isBTG(name){
 }
 const LOCS={'red-wine':{label:'Red Wine Room',color:'#c0392b'},'white-wine':{label:'White Wine Room',color:'#d4a84b'},'liquor-cage':{label:'Liquor Cage',color:'#5aad5a'},'bar':{label:'Bar',color:'#5b8fd4'},'walls':{label:'Walls',color:'#8b6914'},'bar-prep':{label:'Bar Prep',color:'#2d6a8a'}};
 let ST={items:[],loc:null,litems:[],ai:0,counts:{}};
+let unlistedItems=[];
 
 document.addEventListener('DOMContentLoaded',async()=>{
   document.getElementById('inv-date').textContent=new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
@@ -931,6 +955,7 @@ function showExport(){
   if(!ST.items.length){showToast('Load inventory data first');return;}
   document.getElementById('setup-panel').style.display='none';document.getElementById('count-panel').style.display='none';document.getElementById('export-panel').style.display='block';document.getElementById('wbpanel').classList.remove('on');
   const cnt=ST.items.filter(it=>ST.counts[it.id]?.status==='counted').length;
+  const unlistedCnt=unlistedItems.filter(u=>u.name&&u.total>0).length;
   const sk=ST.items.filter(it=>ST.counts[it.id]?.status==='skipped').length;
   document.getElementById('ep-sum').textContent=cnt+' counted \u00B7 '+sk+' skipped \u00B7 '+(ST.items.length-cnt-sk)+' not started \u00B7 '+new Date().toLocaleDateString();
   document.getElementById('btn-wb').style.display=(gToken&&sm.id&&sm.qci>=0&&cnt>0)?'inline-flex':'none';
@@ -1191,6 +1216,16 @@ function renderExportTable(){
     });
   });
   h+='</tbody></table>';
+  // Add unlisted items section
+  const validUnlisted=unlistedItems.filter(u=>u.name&&u.total>0);
+  if(validUnlisted.length){
+    h+='<div style="margin-top:20px"><div style="font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--slate);margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--divider)">Unlisted Items</div>';
+    h+='<table class="etable"><thead><tr><th>Name</th><th>Category</th><th>Location</th><th>Cases</th><th>Loose</th><th>Total Bottles</th></tr></thead><tbody>';
+    validUnlisted.forEach(u=>{
+      h+='<tr><td>'+u.name+' <span style="background:#fce8e8;color:var(--danger);font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;vertical-align:middle">UNLISTED</span></td><td>'+u.category+'</td><td>'+(LOCS_LABELS[u.location]||u.location)+'</td><td>'+(u.cases||0)+'</td><td>'+(u.loose||0)+'</td><td style="font-weight:700;color:var(--success)">'+u.total+'</td></tr>';
+    });
+    h+='</tbody></table></div>';
+  }
   document.getElementById('ep-table').innerHTML=h;
 }
 
@@ -1205,8 +1240,74 @@ function downloadCSV(){
       csv+=[(LOCS[loc]?.label||loc),'"'+it.name+'"',it.bin,it.category,it.qty,cnt,v,(sv?.status||'not started')].join(',')+'\n';
     });
   });
+  // Add unlisted items to CSV
+  const validU=unlistedItems.filter(u=>u.name&&u.total>0);
+  if(validU.length){
+    csv+='\n--- UNLISTED ITEMS ---\n';
+    csv+='Name,Category,Location,Cases,Loose Bottles,Total Bottles\n';
+    validU.forEach(u=>{csv+=['"'+u.name+' [UNLISTED]"',u.category,(LOCS_LABELS[u.location]||u.location),(u.cases||0),(u.loose||0),u.total].join(',')+'\n';});
+  }
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='RPI_Inventory_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
 }
+
+// ═══ UNLISTED ITEMS ═══
+function addUnlisted(){
+  unlistedItems.push({id:'u'+Date.now(),name:'',category:'WINE',location:ST.loc||'liquor-cage',cases:0,loose:0,total:0});
+  renderUnlisted();
+  // Focus the name input of the new row
+  setTimeout(()=>{
+    const inputs=document.querySelectorAll('.unlisted-name-input');
+    if(inputs.length) inputs[inputs.length-1].focus();
+  },50);
+}
+function removeUnlisted(id){
+  unlistedItems=unlistedItems.filter(u=>u.id!==id);
+  renderUnlisted();
+}
+function updateUnlisted(id,field,val){
+  const u=unlistedItems.find(u=>u.id===id);
+  if(!u)return;
+  u[field]=val;
+  if(field==='cases'||field==='loose'){
+    u.total=(parseFloat(u.cases)||0)*getCaseSize()+(parseFloat(u.loose)||0);
+    const tot=document.getElementById('u-total-'+id);
+    if(tot)tot.textContent=u.total||'—';
+  }
+}
+function renderUnlisted(){
+  const list=document.getElementById('unlisted-list');
+  const empty=document.getElementById('unlisted-empty');
+  if(!unlistedItems.length){
+    if(empty)empty.style.display='block';
+    list.querySelectorAll('.unlisted-row').forEach(r=>r.remove());
+    return;
+  }
+  if(empty)empty.style.display='none';
+  // Remove existing rows and re-render
+  list.querySelectorAll('.unlisted-row').forEach(r=>r.remove());
+  const CATS=['WINE','LIQUOR','BEER','BAR SUPPLIES','OTHER'];
+  const LOCS=['red-wine','white-wine','liquor-cage','bar','walls','bar-prep'];
+  unlistedItems.forEach(u=>{
+    const div=document.createElement('div');
+    div.className='unlisted-row';
+    div.id='urow-'+u.id;
+    div.style.cssText='display:grid;grid-template-columns:2fr 1fr 1fr 70px 70px 60px 32px;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--parchment)';
+    div.innerHTML=
+      '<input type="text" class="unlisted-name-input" placeholder="Item name…" value="'+u.name+'" oninput="updateUnlisted(''+u.id+'','name',this.value)" style="padding:6px 8px;border:1.5px solid var(--divider);border-radius:var(--radius);font-family:Inter,sans-serif;font-size:12px;outline:none;width:100%">'+
+      '<select onchange="updateUnlisted(''+u.id+'','category',this.value)" style="padding:6px 8px;border:1.5px solid var(--divider);border-radius:var(--radius);font-family:Inter,sans-serif;font-size:11px;outline:none;width:100%">'+
+        CATS.map(c=>'<option value="'+c+'"'+(u.category===c?' selected':'')+'>'+c+'</option>').join('')+
+      '</select>'+
+      '<select onchange="updateUnlisted(''+u.id+'','location',this.value)" style="padding:6px 8px;border:1.5px solid var(--divider);border-radius:var(--radius);font-family:Inter,sans-serif;font-size:11px;outline:none;width:100%">'+
+        LOCS.map(l=>'<option value="'+l+'"'+(u.location===l?' selected':'')+'>'+LOCS_LABELS[l]+' </option>').join('')+
+      '</select>'+
+      '<input type="number" placeholder="Cases" min="0" value="'+(u.cases||'')+'" oninput="updateUnlisted(''+u.id+'','cases',this.value)" style="padding:6px 8px;border:1.5px solid var(--divider);border-radius:var(--radius);font-family:Courier Prime,monospace;font-size:13px;outline:none;width:100%;text-align:center">'+
+      '<input type="number" placeholder="Loose" min="0" value="'+(u.loose||'')+'" oninput="updateUnlisted(''+u.id+'','loose',this.value)" style="padding:6px 8px;border:1.5px solid var(--divider);border-radius:var(--radius);font-family:Courier Prime,monospace;font-size:13px;outline:none;width:100%;text-align:center">'+
+      '<div id="u-total-'+u.id+'" style="font-family:Courier Prime,monospace;font-size:16px;font-weight:700;color:var(--success);text-align:center">'+(u.total||'—')+'</div>'+
+      '<button onclick="removeUnlisted(''+u.id+'')" style="background:none;border:none;color:var(--slate-lt);font-size:18px;cursor:pointer;line-height:1">×</button>';
+    list.appendChild(div);
+  });
+}
+const LOCS_LABELS={'red-wine':'Red Wine','white-wine':'White Wine','liquor-cage':'Liq Cage','bar':'Bar','walls':'Walls','bar-prep':'Bar Prep'};
 
 let _tt=null;
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('show'),3000);}
