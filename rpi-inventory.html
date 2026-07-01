@@ -765,9 +765,12 @@ function importFromSheet(){
     // Always extract bin from name — ignore dedicated bin column
     let bin='';
     let name=rawName;
-    const wmatch=rawName.match(/^#(\d+)\s+(.+)$/);
+    const wmatch=rawName.match(/^#([A-Za-z]*\d+)\s+(.+)$/);
     if(wmatch){
-      bin='#'+String(parseInt(wmatch[1],10));
+      // Strip leading zeros from numeric part only e.g. #B001->#B1, #0010->#10
+      const binRaw=wmatch[1];
+      const binClean=binRaw.replace(/^([A-Za-z]*)0*(\d+)$/,(m,p,n)=>p+parseInt(n,10));
+      bin='#'+binClean;
       name=wmatch[2].trim();
     } else {
       const lmatch=rawName.match(/^([^\-]+?)\s+-\s+(.+)$/);
@@ -775,7 +778,7 @@ function importFromSheet(){
     }
     const cat=descColIndex>=0?(row[descColIndex]||'').trim():'';
     const bpc=12;
-    const isBB=bin.toUpperCase().startsWith('B');
+    const isBB=/^#B/i.test(bin);
     // Use sheet location columns if detected, else infer
     const hasLocCols=Object.keys(locColMap).length>0;
     if(hasLocCols){
@@ -784,6 +787,10 @@ function importFromSheet(){
       Object.entries(locColMap).forEach(([loc,ci])=>{
         const locQty=parseFloat((row[ci]||'0').replace(/[^0-9.]/g,''))||0;
         if(locQty>0){
+          // Wine rooms only get # bin items
+          const isWineRoom=loc==='red-wine'||loc==='white-wine';
+          const hasBinNum=bin.startsWith('#')||bin==='';
+          if(isWineRoom&&!hasBinNum) return;
           items.push({id:r+'_'+loc,name,bin,qty,category:cat,bpc,isBBin:isBB,location:loc,sheetRow:r+1});
           addedAny=true;
         }
