@@ -719,9 +719,9 @@ function buildColDrops(h){
 function trySet(id,val){const s=document.getElementById(id);if(s.value===-1||s.value==='-1')s.value=val;}
 let descColIndex = -1;
 let qtyOnHandColIndex = -1;
+let locColMap = {};
 function applyDefaultMappings(headers){
   const find=(name)=>headers.findIndex(h=>h.trim().toLowerCase()===name.toLowerCase());
-  const findPartial=(part)=>headers.findIndex(h=>h.trim().toLowerCase().includes(part));
   const productIdx=find('product');
   const physIdx=find('physical count');
   const descIdx=find('description');
@@ -731,23 +731,21 @@ function applyDefaultMappings(headers){
   const mb=document.getElementById('mb');
   if(productIdx>=0){ mn.value=productIdx; mb.value=productIdx; }
   if(physIdx>=0){ mq.value=physIdx; }
-  else {
-    const fallback=headers.findIndex(h=>{const l=h.toLowerCase();return l.includes('physical')||l.includes('count');});
-    if(fallback>=0) mq.value=fallback;
-  }
+  else{const f=headers.findIndex(h=>{const l=h.toLowerCase();return l.includes('physical')||l.includes('count');});if(f>=0)mq.value=f;}
   descColIndex=descIdx;
   qtyOnHandColIndex=qohIdx>=0?qohIdx:parseInt(mq.value);
-  // Detect location columns from sheet headers
-  locCols = {
-    redRoom:   headers.findIndex(h=>{const l=h.toLowerCase().replace(/\s+/g,'');return l.includes('redroom')||l==='red';}),
-    whiteRoom: headers.findIndex(h=>{const l=h.toLowerCase().replace(/\s+/g,'');return l.includes('whiteroom')||l.includes('whitewine');}),
-    liqCage:   headers.findIndex(h=>{const l=h.toLowerCase().replace(/\s+/g,'');return l.includes('liq')||l.includes('cage')||l.includes('liquor');}),
-    bar:       headers.findIndex(h=>h.trim().toLowerCase()==='bar'),
-    walls:     headers.findIndex(h=>h.trim().toLowerCase()==='walls'||h.trim().toLowerCase()==='wall'),
-  };
-  console.log('Location columns detected:', locCols);
+  locColMap={};
+  headers.forEach((h,i)=>{
+    const l=h.trim().toLowerCase().replace(/\s+/g,'');
+    if(l==='redroom'||l==='red') locColMap['red-wine']=i;
+    else if(l==='whiteroom'||l==='whitewine'||l==='white') locColMap['white-wine']=i;
+    else if(l==='liqcage'||l==='liquorcage'||l==='liq'||l==='cage') locColMap['liquor-cage']=i;
+    else if(l==='bar') locColMap['bar']=i;
+    else if(l==='walls'||l==='wall') locColMap['walls']=i;
+    else if(l==='barprep'||l==='prep') locColMap['bar-prep']=i;
+  });
+  console.log('Location columns:', locColMap);
 }
-
 function importFromSheet(){
   const nc=parseInt(document.getElementById('mn').value);
   const qc=parseInt(document.getElementById('mq').value);
@@ -778,7 +776,23 @@ function importFromSheet(){
     const cat=descColIndex>=0?(row[descColIndex]||'').trim():'';
     const bpc=12;
     const isBB=bin.toUpperCase().startsWith('B');
-    items.push({id:r,name,bin,qty,category:cat,bpc,isBBin:isBB,location:inferLoc(name,cat,bin,isBB),sheetRow:r+1});
+    // Use sheet location columns if detected, else infer
+    const hasLocCols=Object.keys(locColMap).length>0;
+    if(hasLocCols){
+      // Add item once per location that has qty > 0
+      let addedAny=false;
+      Object.entries(locColMap).forEach(([loc,ci])=>{
+        const locQty=parseFloat((row[ci]||'0').replace(/[^0-9.]/g,''))||0;
+        if(locQty>0){
+          items.push({id:r+'_'+loc,name,bin,qty,category:cat,bpc,isBBin:isBB,location:loc,sheetRow:r+1});
+          addedAny=true;
+        }
+      });
+      // If no location col had qty, fall back to inference
+      if(!addedAny) items.push({id:r,name,bin,qty,category:cat,bpc,isBBin:isBB,location:inferLoc(name,cat,bin,isBB),sheetRow:r+1});
+    } else {
+      items.push({id:r,name,bin,qty,category:cat,bpc,isBBin:isBB,location:inferLoc(name,cat,bin,isBB),sheetRow:r+1});
+    }
   }
   if(!items.length){setPStatus('ps-sheet','err','All items had 0 Qty ('+sk+' skipped).');return;}
   ST.items=items;ST.counts={};updateOP();
