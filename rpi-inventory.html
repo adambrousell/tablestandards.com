@@ -482,6 +482,8 @@
     <button class="loc-btn" id="loc-white-wine" onclick="selectLocation('white-wine')"><span class="ldot dw"></span>White Wine Room</button>
     <button class="loc-btn" id="loc-liquor-cage" onclick="selectLocation('liquor-cage')"><span class="ldot dg"></span>Liquor Cage</button>
     <button class="loc-btn" id="loc-bar" onclick="selectLocation('bar')"><span class="ldot db"></span>Bar</button>
+    <button class="loc-btn" id="loc-walls" onclick="selectLocation('walls')"><span class="ldot" style="background:#8b6914"></span>Walls</button>
+    <button class="loc-btn" id="loc-bar-prep" onclick="selectLocation('bar-prep')"><span class="ldot" style="background:#2d6a8a"></span>Bar Prep</button>
     <div class="sdiv"></div>
     <div class="slbl">Overall Progress</div>
     <div class="pwrap">
@@ -496,7 +498,7 @@
     <div id="setup-panel">
       <div class="scard">
         <div class="stitle">Connect Google Sheets</div>
-        <div class="ssub">Sign in once &mdash; the tool reads your QB inventory sheet and writes physical counts back to the Qty on Hand column automatically.</div>
+        <div class="ssub">Sign in once &mdash; the tool reads your QuickBooks inventory sheet and writes physical counts back to the Physical Count column automatically.</div>
         <div class="gcbox" id="gcbox">
           <div class="gcb-title">Connect your Google account</div>
           <div class="gcb-sub">Authorize read/write access to Google Sheets so counts sync back after each save.</div>
@@ -717,9 +719,10 @@ function buildColDrops(h){
 }
 function trySet(id,val){const s=document.getElementById(id);if(s.value===-1||s.value==='-1')s.value=val;}
 let descColIndex = -1;
-let qtyOnHandColIndex = -1; // Qty on Hand column — shown as QB qty
+let qtyOnHandColIndex = -1;
 function applyDefaultMappings(headers){
   const find=(name)=>headers.findIndex(h=>h.trim().toLowerCase()===name.toLowerCase());
+  const findPartial=(part)=>headers.findIndex(h=>h.trim().toLowerCase().includes(part));
   const productIdx=find('product');
   const physIdx=find('physical count');
   const descIdx=find('description');
@@ -734,7 +737,16 @@ function applyDefaultMappings(headers){
     if(fallback>=0) mq.value=fallback;
   }
   descColIndex=descIdx;
-  qtyOnHandColIndex=qohIdx>=0?qohIdx:parseInt(mq.value); // fallback to physical count col
+  qtyOnHandColIndex=qohIdx>=0?qohIdx:parseInt(mq.value);
+  // Detect location columns from sheet headers
+  locCols = {
+    redRoom:   headers.findIndex(h=>{const l=h.toLowerCase().replace(/\s+/g,'');return l.includes('redroom')||l==='red';}),
+    whiteRoom: headers.findIndex(h=>{const l=h.toLowerCase().replace(/\s+/g,'');return l.includes('whiteroom')||l.includes('whitewine');}),
+    liqCage:   headers.findIndex(h=>{const l=h.toLowerCase().replace(/\s+/g,'');return l.includes('liq')||l.includes('cage')||l.includes('liquor');}),
+    bar:       headers.findIndex(h=>h.trim().toLowerCase()==='bar'),
+    walls:     headers.findIndex(h=>h.trim().toLowerCase()==='walls'||h.trim().toLowerCase()==='wall'),
+  };
+  console.log('Location columns detected:', locCols);
 }
 
 function importFromSheet(){
@@ -829,7 +841,7 @@ function setSBadge(s,t){const b=document.getElementById('sbadge');b.className='s
 function resetPicker(){document.getElementById('cmap').classList.remove('on');document.getElementById('sid-input').value='';sm={id:null,tab:null,headers:[],rows:[],qci:-1,nci:-1};}
 function setPStatus(id,cls,msg){const el=document.getElementById(id);if(!el)return;el.className='pstatus '+cls;el.textContent=msg;}
 
-const LOCS={'red-wine':{label:'Red Wine Room',color:'#c0392b'},'white-wine':{label:'White Wine Room',color:'#d4a84b'},'liquor-cage':{label:'Liquor Cage',color:'#5aad5a'},'bar':{label:'Bar',color:'#5b8fd4'}};
+const LOCS={'red-wine':{label:'Red Wine Room',color:'#c0392b'},'white-wine':{label:'White Wine Room',color:'#d4a84b'},'liquor-cage':{label:'Liquor Cage',color:'#5aad5a'},'bar':{label:'Bar',color:'#5b8fd4'},'walls':{label:'Walls',color:'#8b6914'},'bar-prep':{label:'Bar Prep',color:'#2d6a8a'}};
 let ST={items:[],loc:null,litems:[],ai:0,unit:'bottles',counts:{}};
 
 document.addEventListener('DOMContentLoaded',async()=>{
@@ -874,6 +886,7 @@ function inferLoc(n,c,b,isBB){
   if(t.includes('red wine')||(t.includes('red')&&t.includes('wine'))||t.includes('cabernet')||t.includes('merlot')||t.includes('pinot noir')||t.includes('syrah')||t.includes('malbec')||t.includes('zinfandel')||t.includes('chianti')||t.includes('barolo')||t.includes('rioja'))return 'red-wine';
   if(t.includes('liquor')||t.includes('whiskey')||t.includes('whisky')||t.includes('bourbon')||t.includes('vodka')||t.includes('gin')||t.includes('rum')||t.includes('tequila')||t.includes('mezcal')||t.includes('cognac')||t.includes('brandy')||t.includes('liqueur')||t.includes('amaro')||t.includes('aperol')||t.includes('campari')||t.includes('st-germain')||t.includes('vermouth')||t.includes('bitters')||t.includes('beer'))return 'liquor-cage';
   if(t.includes('bar')||t.includes('draft')||t.includes('keg')||t.includes('bulk'))return 'bar';
+  if(t.includes('wall'))return 'walls';
   if(isBB)return 'red-wine';
   return 'red-wine';
 }
