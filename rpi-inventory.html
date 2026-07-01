@@ -22,7 +22,7 @@
   .g-dot.on{background:#7fd87f;}
   .btn-hdr{background:var(--gold);color:var(--ink);border:none;padding:7px 16px;border-radius:var(--radius);font-family:'Inter',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:background .2s;}
   .btn-hdr:hover{background:var(--gold-lt);}
-  .app-shell{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 56px);}
+  .app-shell{display:grid;grid-template-columns:220px 1fr;height:calc(100vh - 56px);overflow:hidden;}
   .sidebar{background:var(--ink);padding:20px 0;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;}
   .slbl{font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.3);padding:0 18px 8px;margin-top:16px;}
   .slbl:first-child{margin-top:0;}
@@ -37,7 +37,7 @@
   .pbg{background:rgba(255,255,255,.1);border-radius:3px;height:4px;}
   .pfill{background:var(--gold);height:4px;border-radius:3px;transition:width .4s ease;}
   .pcnt{font-size:10px;color:rgba(255,255,255,.4);margin-top:4px;}
-  .main-content{display:flex;flex-direction:column;background:var(--cream);}
+  .main-content{overflow-y:auto;height:100%;display:flex;flex-direction:column;background:var(--cream);}
   #setup-panel{max-width:700px;margin:40px auto;padding:0 24px;width:100%;}
   .scard{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:32px;margin-bottom:20px;}
   .stitle{font-family:'Playfair Display',serif;font-size:22px;font-weight:600;color:var(--burgundy);margin-bottom:6px;}
@@ -100,7 +100,7 @@
   .ubtn{padding:7px 14px;background:none;border:none;cursor:pointer;font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:var(--slate);transition:all .15s;}
   .ubtn.active{background:var(--burgundy);color:#fff;}
   .aiwrap{padding:20px 24px 0;}
-  .aicard{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);border-top:3px solid var(--gold);padding:20px 24px;display:none;}
+  .aicard{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);border-top:3px solid var(--gold);padding:20px 24px;display:none;position:sticky;top:56px;z-index:50;}
   .aicard.on{display:block;}
   .aihdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;}
   .ainame{font-family:'Playfair Display',serif;font-size:20px;font-weight:600;color:var(--ink);line-height:1.2;}
@@ -494,7 +494,7 @@
     <div class="sdiv"></div>
     <button class="loc-btn" onclick="showSetup()"><span style="font-size:12px">&#9881;</span> Setup / Load Sheet</button>
   </nav>
-  <main class="main-content">
+  <main class="main-content" style="overflow-y:auto;height:100%;">
     <div id="setup-panel">
       <div class="scard">
         <div class="stitle">Connect Google Sheets</div>
