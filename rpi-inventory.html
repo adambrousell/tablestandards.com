@@ -947,8 +947,8 @@ function selectLocation(lid){
   const nonWineRooms=['liquor-cage','bar','walls','bar-prep'];
   let items;
   if(nonWineRooms.includes(lid)){
-    // These locations show all non-wine-room items
-    items=ST.items.filter(it=>it.location!=='red-wine'&&it.location!=='white-wine');
+    // All four non-wine locations show every non-wine-room item
+    items=ST.items.filter(it=>it.location!=='red-wine');
   } else {
     items=ST.items.filter(it=>it.location===filterLoc);
   }
