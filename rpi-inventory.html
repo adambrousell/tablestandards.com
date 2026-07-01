@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -942,7 +942,9 @@ function selectLocation(lid){
   if(!ST.items.length){showToast('Load inventory data first');return;}
   ST.loc=lid;ST.ai=0;startCounting();
   Object.keys(LOCS).forEach(id=>document.getElementById('loc-'+id).classList.toggle('active',id===lid));
-  let items=ST.items.filter(it=>it.location===lid);
+  // White wine room shows same inventory as red wine room
+  const filterLoc=lid==='white-wine'?'red-wine':lid;
+  let items=ST.items.filter(it=>it.location===filterLoc);
   items=items.sort(sortBin);
   ST.litems=items;
   document.getElementById('lbname').textContent=LOCS[lid].label;
