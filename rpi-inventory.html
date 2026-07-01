@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -880,27 +880,31 @@ function resetPicker(){document.getElementById('cmap').classList.remove('on');do
 function setPStatus(id,cls,msg){const el=document.getElementById(id);if(!el)return;el.className='pstatus '+cls;el.textContent=msg;}
 
 const BTG_WINES = [
-  // Sparkling
+  // Sparkling BTG
   'pierre sparr',
   'clotilde davenne',
   'drappier carte',
-  'moet imp','moet imperial','moët','imperial brut','imperial rose',
-  // White
+  'moet imp','moet imperial','imperial brut','imperial rose',
+  // White BTG
   'jean aubron','gros plant',
   'lestang','sancerre 1573',
   'pazo das bruxas','pazo bruxas','familia torres','bruxas',
-  'petites secondes chardonnay','petit secondes chardonnay','domaine drouhin petit',
+  'petites secondes chardonnay','petit secondes chardonnay',
+  'domaine drouhin petit secondes','domaine drouhin petit',
   'pouilly fuisse','pouilly-fuisse','marie antoinette','famille vincent',
-  // Rose
+  // Rose BTG
   'peyrassol',
-  // Red
+  // Red BTG
   'aviron','moulin a vent','moulin-a-vent','stephane aviron',
-  'clovis cotes du rhone','clovis côtes du rhone','clovis 2023','clovis 2024','clovis 2025',
+  'clovis cotes du rhone','clovis 2023','clovis 2024','clovis 2025',
   'guyon','hautes cotes de nuits','dames de vergy',
-  'petites secondes pinot','maison drouhin petit secondes','drouhin petit secondes 2023',
-  'haut-l-artigue','haut l-artigue','haut lartigue','chateau haut-l','artigue',
+  'petites secondes pinot','drouhin petit secondes',
+  'haut-l-artigue','haut l-artigue','haut lartigue','artigue pessac',
+  'chateau haut-l','chateau haut l',
   'routestock',
-  'chappellet mountain'
+  'chappellet mountain',
+  // Coravin BTG
+  'latour 2019','pauillac de latour','le pauillac'
 ];
 function isBTG(name){
   const n=name.toLowerCase();
