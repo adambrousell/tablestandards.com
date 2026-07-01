@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -933,13 +933,14 @@ function showItem(idx){
     document.getElementById('ci-cases').value='';
     document.getElementById('ci-loose').value=sv.countBottles;
     updateTotal();
-    {
     document.getElementById('ai-my').textContent=sv.countBottles;
     const v=sv.countBottles-it.qty;
     document.getElementById('ai-var').textContent=(v>0?'+':'')+v.toFixed(1);
     document.getElementById('ai-var').style.color=v<0?'var(--danger)':v>0?'var(--success)':'var(--slate-lt)';
   }else{
-    document.getElementById('ci-cases').value='';document.getElementById('ci-loose').value='';document.getElementById('ci-total').textContent='\u2014';
+    document.getElementById('ci-cases').value='';
+    document.getElementById('ci-loose').value='';
+    document.getElementById('ci-total').textContent='\u2014';
     ['ai-my','ai-var'].forEach(id=>document.getElementById(id).textContent='\u2014');
     document.getElementById('ai-var').style.color='var(--slate-lt)';
   }
@@ -968,7 +969,6 @@ function onCI(){
   let btl=0;
   updateTotal();
   btl=getCountBottles();
-  {
   document.getElementById('ai-my').textContent=btl>0?+btl.toFixed(1):'\u2014';
   if(btl>0){const v=btl-it.qty;document.getElementById('ai-var').textContent=(v>0?'+':'')+v.toFixed(1);document.getElementById('ai-var').style.color=v<0?'var(--danger)':v>0?'var(--success)':'var(--slate-lt)';}
   else{document.getElementById('ai-var').textContent='\u2014';document.getElementById('ai-var').style.color='var(--slate-lt)';}
