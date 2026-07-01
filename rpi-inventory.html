@@ -232,7 +232,6 @@
     </div>
     <div class="sdiv"></div>
     <button class="loc-btn" onclick="showSetup()"><span style="font-size:12px">&#9881;</span> Setup / Load Sheet</button>
-    <button class="loc-btn" onclick="loadSample()"><span style="font-size:12px">&#9879;</span> Load Sample Data</button>
   </nav>
   <main class="main-content">
 
@@ -258,7 +257,7 @@
             <li>Copy the Client ID, open this HTML file in a text editor, and paste it into the <code>GOOGLE_CLIENT_ID</code> constant at the top of the script</li>
             </ol>
             <div style="margin-top:10px;padding:8px 12px;background:#fce8e8;border-radius:4px;color:var(--danger)">
-              Until then, use the <strong>CSV paste method</strong> below &mdash; counts can be exported as a CSV for manual re-import.
+              Once set up, sign in and paste your sheet URL above to begin.
             </div>
           </div>
         </div>
@@ -290,24 +289,6 @@
         </div>
       </div>
 
-      <div class="scard">
-        <div class="stitle">Or Paste CSV Manually</div>
-        <div class="ssub">File &rarr; Download &rarr; Comma Separated Values from Google Drive, then paste below.</div>
-        <textarea class="csv-ta" id="csv-in" placeholder="Name,Bin #,Qty on Hand,Category,Bottles/Case&#10;Chateau Margaux 2018,A12,6,Red Wine,12&#10;..."></textarea>
-        <div class="pstatus" id="ps-csv"></div>
-        <div class="brow">
-          <button class="btn-p" onclick="parseCSVManual()">Load CSV</button>
-          <button class="btn-s" onclick="loadSample()">Load Sample Data</button>
-        </div>
-      </div>
-
-      <div class="scard">
-        <div class="stitle">86 List (Optional)</div>
-        <div class="ssub">Paste the 86 sheet CSV to flag unavailable items during counting.</div>
-        <textarea class="csv-ta" id="csv86-in" style="height:90px" placeholder="Name,Category&#10;Chateau Something,Red Wine"></textarea>
-        <div class="pstatus" id="ps-86"></div>
-        <div class="brow"><button class="btn-s" onclick="parse86()">Load 86 List</button></div>
-      </div>
     </div>
 
     <!-- COUNT PANEL -->
@@ -316,7 +297,6 @@
         <div class="si"><span class="sn" id="st-counted">0</span><span class="sl">Counted</span></div>
         <div class="si"><span class="sn" id="st-skipped">0</span><span class="sl">Skipped</span></div>
         <div class="si"><span class="sn" id="st-rem">0</span><span class="sl">Remaining</span></div>
-        <div class="si"><span class="sn" id="st-86">0</span><span class="sl">86 Items</span></div>
         <div class="sync-badge" id="sbadge" onclick="showExport()">
           <span id="sbi">&#8679;</span><span id="sbt">Sync to Sheets</span>
         </div>
@@ -530,7 +510,7 @@ function importFromSheet(){
     items.push({id:r,name,bin,qty,category:cat,bpc,isBBin:isBB,location:inferLoc(name,cat,bin,isBB),sheetRow:r+1});
   }
   if(!items.length){setPStatus('ps-sheet','err','All items had 0 Qty ('+sk+' skipped).');return;}
-  applyItems(items,sk);
+  applyItems(items);
   setPStatus('ps-sheet','ok','\u2713 '+items.length+' items imported ('+sk+' zero-balance skipped). Counts will update column "'+sm.headers[qc]+'".');
   setTimeout(startCounting,500);
 }
@@ -597,7 +577,7 @@ const LOCS={
   'liquor-cage':{label:'Liquor Cage',color:'#5aad5a'},
   'bar':{label:'Bar',color:'#5b8fd4'},
 };
-let ST={items:[],e86:[],loc:null,litems:[],ai:0,unit:'bottles',counts:{}};
+let ST={items:[],loc:null,litems:[],ai:0,unit:'bottles',counts:{}};
 
 // ═══════════════════════════════════
 // INIT
@@ -629,93 +609,11 @@ function showExport(){
 }
 function closeExport(){document.getElementById('export-panel').style.display='none';if(ST.loc)startCounting();else showSetup();}
 
-// ═══════════════════════════════════
-// CSV PARSE (manual)
-// ═══════════════════════════════════
-function splitCSV(l){const r=[];let c='',q=false;for(const ch of l){if(ch==='"'){q=!q;continue;}if(ch===','&&!q){r.push(c);c='';continue;}c+=ch;}r.push(c);return r;}
-function parseRaw(t){const ls=t.trim().split('\n').map(l=>l.trim()).filter(Boolean);if(!ls.length)return[];const h=splitCSV(ls[0]).map(hh=>hh.toLowerCase().replace(/[^a-z0-9]/g,''));return ls.slice(1).map(l=>{const v=splitCSV(l);const o={};h.forEach((hh,i)=>{o[hh]=(v[i]||'').trim();});return o;});}
-
-function parseCSVManual(){
-  const raw=document.getElementById('csv-in').value.trim();
-  if(!raw){setPStatus('ps-csv','err','Paste CSV data first.');return;}
-  const rows=parseRaw(raw);if(!rows.length){setPStatus('ps-csv','err','No data rows found.');return;}
-  const ks=Object.keys(rows[0]);const f=(...opts)=>ks.find(k=>opts.some(o=>k.includes(o)))||null;
-  const nk=f('name','item','description','product');const qk=f('qty','quantity','onhand','balance','count');
-  const bk=f('bin','location');const ck=f('cat','type','class','kind','dept');const bpck=f('bpc','bottlespercase','case','percase');
-  if(!nk){setPStatus('ps-csv','err','Cannot find a Name column.');return;}
-  let sk=0;const items=[];
-  rows.forEach((r,idx)=>{
-    const qty=parseFloat((r[qk]||'0').replace(/[^0-9.\-]/g,''))||0;
-    if(qty<=0){sk++;return;}
-    const name=r[nk]||'';if(!name)return;
-    const bin=r[bk]||'';const cat=r[ck]||'';const bpc=parseInt(r[bpck]||'12')||12;
-    const isBB=bin.trim().toUpperCase().startsWith('B');
-    items.push({id:idx,name,bin,qty,category:cat,bpc,isBBin:isBB,location:inferLoc(name,cat,bin,isBB)});
-  });
-  if(!items.length){setPStatus('ps-csv','err','All items had 0 Qty ('+sk+' skipped).');return;}
-  applyItems(items,sk);
-  setPStatus('ps-csv','ok','\u2713 '+items.length+' items loaded ('+sk+' zero-balance skipped). Note: without Google Sheets, export as CSV only.');
-  setTimeout(startCounting,500);
-}
-
-function parse86(){
-  const raw=document.getElementById('csv86-in').value.trim();
-  if(!raw){setPStatus('ps-86','err','Paste 86 list first.');return;}
-  const rows=parseRaw(raw);const ks=Object.keys(rows[0]||{});
-  const nk=ks.find(k=>k.includes('name')||k.includes('item')||k.includes('desc'))||ks[0];
-  ST.e86=rows.map(r=>(r[nk]||'').trim()).filter(Boolean);
-  ST.items.forEach(it=>{it.is86=ST.e86.some(n=>n.toLowerCase()===it.name.toLowerCase());});
-  setPStatus('ps-86','ok','\u2713 '+ST.e86.length+' items on 86 list.');
-  updateStats();
-}
-
-function applyItems(items,sk){
-  items.forEach(it=>{it.is86=ST.e86.some(n=>n.toLowerCase()===it.name.toLowerCase());});
+function applyItems(items){
   ST.items=items;ST.counts={};updateOP();
 }
 
 function setPStatus(id,cls,msg){const el=document.getElementById(id);if(!el)return;el.className='pstatus '+cls;el.textContent=msg;}
-
-// ═══════════════════════════════════
-// SAMPLE DATA
-// ═══════════════════════════════════
-function loadSample(){
-  document.getElementById('csv-in').value=`Name,Bin #,Qty on Hand,Category,Bottles/Case
-Domaine Leroy Bourgogne Rouge 2020,A01,12,Red Wine,12
-Chateau Lynch-Bages 2018,A02,6,Red Wine,12
-Penfolds Grange 2017,A03,3,Red Wine,12
-Opus One 2019,A04,2,Red Wine,6
-Caymus Special Selection 2020,A05,18,Red Wine,12
-Ridge Monte Bello 2016,A06,6,Red Wine,12
-Stag's Leap Artemis 2021,A09,24,Red Wine,12
-Duckhorn Merlot 2021,A10,12,Red Wine,12
-Prisoner Red Blend 2022,B01,36,Red Wine,12
-Meiomi Pinot Noir 2022,B02,24,Red Wine,12
-Jordan Cabernet 2020,B03,18,Red Wine,12
-Silver Oak Alexander Valley 2019,B04,6,Red Wine,12
-Rombauer Zinfandel 2021,B06,12,Red Wine,12
-Domaine Leflaive Puligny-Montrachet 2021,W01,6,White Wine,12
-Chablis Premier Cru 2021,W02,12,White Wine,12
-Far Niente Chardonnay 2022,W03,18,White Wine,12
-Kim Crawford Sauvignon Blanc 2023,W06,36,White Wine,12
-Chateau d'Yquem Sauternes 2018,W08,3,White Wine,6
-Billecart-Salmon Blanc de Blancs NV,W09,12,Sparkling,12
-Grey Goose Vodka,,48,Spirits,12
-Hendrick's Gin,,24,Spirits,12
-Patron Silver Tequila,,18,Spirits,12
-Woodford Reserve Bourbon,,36,Spirits,12
-Aberfeldy 12yr Scotch,,12,Spirits,12
-Hennessy VS Cognac,,9,Spirits,12
-Aperol,,8,Spirits,12
-Campari,,6,Spirits,12
-St-Germain Elderflower,,3,Spirits,12
-Tito's Handmade Vodka,,24,Bar,12
-Ketel One Vodka,,12,Bar,12
-Bulleit Bourbon,,18,Bar,12
-Jameson Irish Whiskey,,12,Bar,12
-House Red Wine (bulk),,4,Bar,1`;
-  parseCSVManual();
-}
 
 // ═══════════════════════════════════
 // LOCATION
@@ -769,7 +667,6 @@ function showItem(idx){
   if(it.category)mh+='<span class="atag tcat">'+it.category+'</span>';
   if(it.isBBin)mh+='<span class="atag tbin" style="background:rgba(107,26,42,.12);color:var(--burgundy)">B Section</span>';
   document.getElementById('aimeta').innerHTML=mh;
-  document.getElementById('ai86').style.display=it.is86?'block':'none';
   document.getElementById('ai-qb').textContent=it.qty;
   document.getElementById('wbi').className='wbi';
   const sv=ST.counts[it.id];
@@ -922,12 +819,11 @@ function selRow(id){const idx=ST.litems.findIndex(i=>i.id===id);if(idx>=0)showIt
 // STATS
 // ═══════════════════════════════════
 function updateStats(){
-  const its=ST.litems;let cnt=0,sk=0,e86=0;
-  its.forEach(it=>{const s=ST.counts[it.id];if(s?.status==='counted')cnt++;if(s?.status==='skipped')sk++;if(it.is86)e86++;});
+  const its=ST.litems;let cnt=0,sk=0;
+  its.forEach(it=>{const s=ST.counts[it.id];if(s?.status==='counted')cnt++;if(s?.status==='skipped')sk++;});
   document.getElementById('st-counted').textContent=cnt;
   document.getElementById('st-skipped').textContent=sk;
   document.getElementById('st-rem').textContent=its.length-cnt-sk;
-  document.getElementById('st-86').textContent=e86;
 }
 function updateOP(){
   const total=ST.items.length;const done=ST.items.filter(it=>ST.counts[it.id]?.status).length;
