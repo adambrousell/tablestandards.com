@@ -228,8 +228,6 @@
             <div class="cmapi"><label>Item Name *</label><select id="mn"></select></div>
             <div class="cmapi"><label>Physical Count * (will be written back)</label><select id="mq"></select></div>
             <div class="cmapi"><label>Bin #</label><select id="mb"></select></div>
-            <div class="cmapi"><label>Category</label><select id="mc"></select></div>
-            <div class="cmapi"><label>Bottles / Case</label><select id="mbpc"></select></div>
           </div>
           <div class="pstatus" id="ps-sheet"></div>
           <div class="brow">
@@ -400,7 +398,7 @@ async function loadFromSheets(){
 }
 
 function buildColDrops(h){
-  const ids=['mn','mq','mb','mc','mbpc'];
+  const ids=['mn','mq','mb'];
   const base='<option value="-1">\u2014 select \u2014</option>';
   ids.forEach(id=>{document.getElementById(id).innerHTML=base+h.map((c,i)=>'<option value="'+i+'">'+c+'</option>').join('');});
   h.forEach((hh,i)=>{
@@ -408,8 +406,6 @@ function buildColDrops(h){
     if(l.includes('name')||l.includes('item')||l.includes('desc'))trySet('mn',i);
     if(l.includes('physical')||l.includes('physicalcount')||l.includes('qty')||l.includes('quantity')||l.includes('onhand')||l.includes('balance'))trySet('mq',i);
     if(l.includes('bin')||l.includes('location')||l.includes('shelf'))trySet('mb',i);
-    if(l.includes('cat')||l.includes('type')||l.includes('class')||l.includes('dept')||l.includes('desc')||l.includes('description'))trySet('mc',i);
-    if(l.includes('bpc')||l.includes('case')||l.includes('percase')||l.includes('bottlesper'))trySet('mbpc',i);
   });
 }
 function trySet(id,val){const s=document.getElementById(id);if(s.value===-1||s.value==='-1')s.value=val;}
@@ -418,8 +414,6 @@ function importFromSheet(){
   const nc=parseInt(document.getElementById('mn').value);
   const qc=parseInt(document.getElementById('mq').value);
   const bc=parseInt(document.getElementById('mb').value);
-  const cc=parseInt(document.getElementById('mc').value);
-  const bpcc=parseInt(document.getElementById('mbpc').value);
   if(nc<0){setPStatus('ps-sheet','err','Item Name column required.');return;}
   if(qc<0){setPStatus('ps-sheet','err','Qty on Hand column required.');return;}
   sm.nci=nc;sm.qci=qc;
@@ -442,8 +436,8 @@ function importFromSheet(){
         if(lmatch){bin=lmatch[1].trim();}
       }
     }
-    const cat=cc>=0?(row[cc]||'').trim():'';
-    const bpc=bpcc>=0?(parseInt(row[bpcc])||12):12;
+    const cat='';
+    const bpc=12;
     const isBB=bin.toUpperCase().startsWith('B');
     items.push({id:r,name,bin,qty,category:cat,bpc,isBBin:isBB,location:inferLoc(name,cat,bin,isBB),sheetRow:r+1});
   }
