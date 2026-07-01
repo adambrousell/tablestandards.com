@@ -792,7 +792,7 @@ function importFromSheet(){
           const hasBinNum=bin.startsWith('#');
           const isWine=(cat||'').toUpperCase()==='WINE';
           if(isWineRoom&&(!hasBinNum||!isWine)) return;
-          items.push({id:r+'_'+loc,name,bin,qty,category:cat,bpc,isBBin:isBB,location:loc,sheetRow:r+1});
+          items.push({id:r+'_'+loc,name,bin,qty,category:cat,bpc,isBBin:isBB,location:loc,sheetRow:r+1,btg:isBTG(name)});
           addedAny=true;
         }
       });
@@ -803,7 +803,7 @@ function importFromSheet(){
         const hasBinNum=bin.startsWith('#');
         const isWine=(cat||'').toUpperCase()==='WINE';
         if(!isWineRoom||( hasBinNum&&isWine)){
-          items.push({id:r,name,bin,qty,category:cat,bpc,isBBin:isBB,location:loc,sheetRow:r+1});
+          items.push({id:r,name,bin,qty,category:cat,bpc,isBBin:isBB,location:loc,sheetRow:r+1,btg:isBTG(name)});
         }
       }
     } else {
@@ -870,6 +870,19 @@ function setSBadge(s,t){const b=document.getElementById('sbadge');b.className='s
 function resetPicker(){document.getElementById('cmap').classList.remove('on');document.getElementById('sid-input').value='';sm={id:null,tab:null,headers:[],rows:[],qci:-1,nci:-1};}
 function setPStatus(id,cls,msg){const el=document.getElementById(id);if(!el)return;el.className='pstatus '+cls;el.textContent=msg;}
 
+const BTG_WINES = [
+  'pierre sparr','clotilde davenne cremant','drappier carte','moet imp','moet imperial','moët',
+  'jean aubron','lestang','sancerre 1573','pazo das bruxas','pazo bruxas','petites secondes chardonnay',
+  'pouilly fuisse','pouilly-fuisse','marie antoinette','famille vincent',
+  'peyrassol',
+  'aviron','moulin a vent','moulin-a-vent','clovis cotes du rhone','clovis côtes',
+  'guyon','hautes cotes de nuits','petites secondes pinot','drouhin petit secondes',
+  'haut-l'artigue','haut l'artigue','haut-l-artigue','routestock','chappellet mountain'
+];
+function isBTG(name){
+  const n=name.toLowerCase();
+  return BTG_WINES.some(w=>n.includes(w));
+}
 const LOCS={'red-wine':{label:'Red Wine Room',color:'#c0392b'},'white-wine':{label:'White Wine Room',color:'#d4a84b'},'liquor-cage':{label:'Liquor Cage',color:'#5aad5a'},'bar':{label:'Bar',color:'#5b8fd4'},'walls':{label:'Walls',color:'#8b6914'},'bar-prep':{label:'Bar Prep',color:'#2d6a8a'}};
 let ST={items:[],loc:null,litems:[],ai:0,counts:{}};
 
@@ -972,6 +985,7 @@ function showItem(idx){
   let mh='';
   if(it.bin)mh+='<span class="atag tbin">Bin '+it.bin+'</span>';
   if(it.category)mh+='<span class="atag tcat">'+it.category+'</span>';
+  if(it.btg)mh+='<span class="atag" style="background:rgba(184,144,58,.2);color:var(--gold);font-weight:700">BY THE GLASS</span>';
   if(it.isBBin)mh+='<span class="atag tbin" style="background:rgba(107,26,42,.12);color:var(--burgundy)">B Section</span>';
   document.getElementById('aimeta').innerHTML=mh;
   document.getElementById('ai-qb').textContent=it.qty;
@@ -1115,8 +1129,8 @@ function mkRow(it){
   let pill=st==='counted'&&sv?.synced?'<span class="pill psy">\u2713 Synced</span>':st==='counted'?'<span class="pill pk">Counted</span>':st==='skipped'?'<span class="pill psk">Skipped</span>':'<span class="pill pp">Pending</span>';
   const cd=sv?.countBottles!=null?'<span class="tdc">'+sv.countBottles+'</span>':'<span class="tdc e">\u2014</span>';
   const isBRow=it.isBBin;
-  const bStyle=isBRow?'background:#e8ffb0;':'';
-  return '<tr class="'+(isA?'ra ':'')+( st==='counted'?'rk':'')+'" id="row-'+it.id+'" style="'+bStyle+';cursor:pointer" onclick="selRow(\\"'+it.id+'\\")"><td class="tdb">'+(it.bin||'\u2014')+'</td><td class="tdn">'+it.name+'</td><td>'+(it.category||'\u2014')+'</td><td>'+it.qty+'</td><td>'+cd+'</td><td>'+pill+'</td><td><button class="rsbtn" onclick="selRow('+it.id+')">Select</button></td></tr>';
+  const bStyle=isBRow?'background:#e8ffb0;':it.btg?'background:#fff9ed;border-left:3px solid var(--gold);':'';
+  return '<tr class="'+(isA?'ra ':'')+( st==='counted'?'rk':'')+'" id="row-'+it.id+'" style="'+bStyle+';cursor:pointer" onclick="selRow(\\"'+it.id+'\\")"><td class="tdb">'+(it.bin||'\u2014')+'</td><td class="tdn">'+it.name+(it.btg?' <span style="font-size:9px;font-weight:700;letter-spacing:.06em;background:var(--gold);color:#fff;padding:1px 6px;border-radius:10px;vertical-align:middle">BTG</span>':'')+'</td><td>'+(it.category||'\u2014')+'</td><td>'+it.qty+'</td><td>'+cd+'</td><td>'+pill+'</td><td><button class="rsbtn" onclick="selRow('+it.id+')">Select</button></td></tr>';
 }
 function hlRow(id){document.querySelectorAll('.itable tr.ra').forEach(r=>r.classList.remove('ra'));const el=document.getElementById('row-'+id);if(el){el.classList.add('ra');el.scrollIntoView({block:'nearest',behavior:'smooth'});}}
 function selRow(id){const idx=ST.litems.findIndex(i=>String(i.id)===String(id));if(idx>=0)showItem(idx);}
