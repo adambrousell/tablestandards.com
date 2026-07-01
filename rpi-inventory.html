@@ -256,7 +256,9 @@
         </div>
         <div class="utog">
           <button class="ubtn active" id="u-btl" onclick="setUnit('bottles')">Bottles</button>
-          <button class="ubtn" id="u-case" onclick="setUnit('cases')">Cases</button>
+          <button class="ubtn" id="u-6pk" onclick="setUnit('6pk')">6-Pack</button>
+          <button class="ubtn" id="u-12pk" onclick="setUnit('12pk')">12-Pack</button>
+          <button class="ubtn" id="u-24pk" onclick="setUnit('24pk')">24-Pack</button>
         </div>
       </div>
       <div class="aiwrap">
@@ -310,15 +312,7 @@
   </main>
 </div>
 
-<div class="movl" id="casemod">
-  <div class="mbox">
-    <div class="mtitle">Counting in Cases</div>
-    <div class="msub" id="casemod-name">Item</div>
-    <div class="mfld"><div class="mlbl">Bottles per Case</div><input type="number" class="minp" id="mbpc-val" value="12" min="1" max="60"></div>
-    <div style="font-size:11px;color:var(--slate-lt)">Common: 12 (still wine), 6 (spirits/magnums), 24 (beer).</div>
-    <div class="mact"><button class="btn-p" onclick="confirmCase()">Confirm</button><button class="btn-s" onclick="cancelCase()">Cancel</button></div>
-  </div>
-</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -397,7 +391,8 @@ async function loadFromSheets(){
     const data=await shGet('https://sheets.googleapis.com/v4/spreadsheets/'+sm.id+'/values/'+encodeURIComponent(sm.tab)+'!A1:Z1000');
     const rows=data.values||[];
     if(!rows.length){setPStatus('ps-sheet','err','Sheet appears empty.');return;}
-    sm.headers=rows[0];sm.rows=rows;
+    // Headers on row 5 (index 4), data from row 6 (index 5)
+    sm.headers=rows[4]||rows[0];sm.rows=rows;
     buildColDrops(sm.headers);
     document.getElementById('cmap').classList.add('on');
     setPStatus('ps-sheet','ok','\u2713 Loaded "'+sm.tab+'" \u2014 '+(rows.length-1)+' rows. Map columns below then click Import.');
@@ -429,7 +424,8 @@ function importFromSheet(){
   if(qc<0){setPStatus('ps-sheet','err','Qty on Hand column required.');return;}
   sm.nci=nc;sm.qci=qc;
   const rows=sm.rows;let sk=0;const items=[];
-  for(let r=1;r<rows.length;r++){
+  const dataStart=rows.indexOf(sm.headers)+1;
+  for(let r=dataStart;r<rows.length;r++){
     const row=rows[r];
     const name=(row[nc]||'').trim();if(!name)continue;
     const qty=parseFloat((row[qc]||'0').replace(/[^0-9.\-]/g,''))||0;
@@ -577,8 +573,8 @@ function showItem(idx){
   const sv=ST.counts[it.id];
   const cin=document.getElementById('ci');
   if(sv?.status==='counted'){
-    const bpc=sv.bpc||it.bpc||12;
-    cin.value=ST.unit==='cases'?+(sv.countBottles/bpc).toFixed(2):sv.countBottles;
+    const bpc=bpcForUnit(ST.unit);
+    cin.value=ST.unit==='bottles'?sv.countBottles:+(sv.countBottles/bpc).toFixed(2);
     document.getElementById('ai-my').textContent=sv.countBottles;
     const v=sv.countBottles-it.qty;
     document.getElementById('ai-var').textContent=(v>0?'+':'')+v.toFixed(1);
@@ -588,7 +584,7 @@ function showItem(idx){
     ['ai-my','ai-var'].forEach(id=>document.getElementById(id).textContent='\u2014');
     document.getElementById('ai-var').style.color='var(--slate-lt)';
   }
-  document.getElementById('ai-myunit').textContent=ST.unit;
+  document.getElementById('ai-myunit').textContent=ST.unit==='bottles'?'bottles':ST.unit==='6pk'?'6-packs':ST.unit==='24pk'?'24-packs':'12-packs';
   updCaseDet(it);
   document.getElementById('npos').textContent=(idx+1)+' / '+its.length;
   cin.focus();hlRow(it.id);
@@ -596,14 +592,18 @@ function showItem(idx){
 function hideItem(){document.getElementById('aicard').classList.remove('on');document.getElementById('nohint').style.display='block';}
 function updCaseDet(it){
   const cd=document.getElementById('cdet');
-  if(ST.unit==='cases'){const bpc=ST.counts[it.id]?.bpc||it.bpc||12;cd.textContent=bpc+' bottles per case \u00B7 QB on-hand = '+(it.qty/bpc).toFixed(2)+' cases';cd.style.display='block';}
-  else cd.style.display='none';
+  if(ST.unit!=='bottles'){
+    const bpc=bpcForUnit(ST.unit);
+    const label=ST.unit==='6pk'?'6-pack':ST.unit==='24pk'?'24-pack':'12-pack';
+    cd.textContent=bpc+' bottles per '+label+' \u00B7 QB on-hand = '+(it.qty/bpc).toFixed(2)+' '+label+'s';
+    cd.style.display='block';
+  }else cd.style.display='none';
 }
 function onCI(){
   const it=ST.litems[ST.ai];if(!it)return;
   const raw=parseFloat(document.getElementById('ci').value)||0;
-  const bpc=ST.counts[it.id]?.bpc||it.bpc||12;
-  const btl=ST.unit==='cases'?raw*bpc:raw;
+  const bpc=bpcForUnit(ST.unit);
+  const btl=ST.unit==='bottles'?raw:raw*bpc;
   document.getElementById('ai-my').textContent=btl>0?+btl.toFixed(1):'\u2014';
   if(btl>0){const v=btl-it.qty;document.getElementById('ai-var').textContent=(v>0?'+':'')+v.toFixed(1);document.getElementById('ai-var').style.color=v<0?'var(--danger)':v>0?'var(--success)':'var(--slate-lt)';}
   else document.getElementById('ai-var').textContent='\u2014';
@@ -613,8 +613,8 @@ async function saveCount(){
   const it=its[ST.ai];
   const raw=parseFloat(document.getElementById('ci').value);
   if(isNaN(raw)||raw<0){showToast('Enter a valid count first');return;}
-  const bpc=ST.counts[it.id]?.bpc||it.bpc||12;
-  const btl=Math.round((ST.unit==='cases'?raw*bpc:raw)*10)/10;
+  const bpc=bpcForUnit(ST.unit);
+  const btl=Math.round((ST.unit==='bottles'?raw:raw*bpc)*10)/10;
   ST.counts[it.id]={countBottles:btl,countRaw:raw,unit:ST.unit,bpc,status:'counted',synced:false};
   updateStats();renderTblRow(it.id);updateOP();
   showToast('\u2713 '+it.name+' \u2014 '+raw+' '+ST.unit);
@@ -633,25 +633,22 @@ function navItem(d){
   showItem(idx);
 }
 
+function bpcForUnit(u){return u==='6pk'?6:u==='12pk'?12:u==='24pk'?24:1;}
 function setUnit(u){
   if(u===ST.unit)return;
-  if(u==='cases'){
-    const it=ST.litems[ST.ai];
-    if(it){document.getElementById('casemod-name').textContent=it.name;document.getElementById('mbpc-val').value=ST.counts[it.id]?.bpc||it.bpc||12;document.getElementById('casemod').classList.add('open');return;}
-  }
-  applyUnit(u,null);
-}
-function confirmCase(){const bpc=parseInt(document.getElementById('mbpc-val').value)||12;const it=ST.litems[ST.ai];if(it){it.bpc=bpc;if(ST.counts[it.id])ST.counts[it.id].bpc=bpc;}document.getElementById('casemod').classList.remove('open');applyUnit('cases',bpc);}
-function cancelCase(){document.getElementById('casemod').classList.remove('open');}
-function applyUnit(u,bpc){
   ST.unit=u;
-  document.getElementById('u-btl').classList.toggle('active',u==='bottles');
-  document.getElementById('u-case').classList.toggle('active',u==='cases');
-  document.getElementById('ai-myunit').textContent=u;
+  ['u-btl','u-6pk','u-12pk','u-24pk'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('active');});
+  const activeId=u==='bottles'?'u-btl':u==='6pk'?'u-6pk':u==='24pk'?'u-24pk':'u-12pk';
+  document.getElementById(activeId).classList.add('active');
+  const unitLabel=u==='bottles'?'bottles':u==='6pk'?'6-packs':u==='24pk'?'24-packs':'12-packs';
+  document.getElementById('ai-myunit').textContent=unitLabel;
   const it=ST.litems[ST.ai];if(!it)return;
   updCaseDet(it);
   const sv=ST.counts[it.id];
-  if(sv?.status==='counted'){const b=sv.countBottles;const db=bpc||sv.bpc||it.bpc||12;document.getElementById('ci').value=u==='cases'?+(b/db).toFixed(2):b;}
+  if(sv?.status==='counted'){
+    const b=sv.countBottles;const bpc=bpcForUnit(u);
+    document.getElementById('ci').value=u==='bottles'?b:+(b/bpc).toFixed(2);
+  }
 }
 
 function onSearch(val){
