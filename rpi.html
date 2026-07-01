@@ -702,8 +702,9 @@ async function loadFromSheets(){
     sm.headers=rows[4]||rows[0];sm.rows=rows;
     buildColDrops(sm.headers);
     applyDefaultMappings(sm.headers);
-    document.getElementById('cmap').classList.add('on');
-    setPStatus('ps-sheet','ok','\u2713 Loaded "'+sm.tab+'" \u2014 '+(rows.length-1)+' rows. Map columns below then click Import.');
+    // Auto-import with defaults — no mapper interaction needed
+    setPStatus('ps-sheet','info','\u2713 Loaded "'+sm.tab+'" \u2014 '+(rows.length-1)+' rows. Importing…');
+    setTimeout(importFromSheet, 200);
   }catch(e){console.error(e);setPStatus('ps-sheet','err','Error loading sheet: '+e.message);}
 }
 
@@ -719,15 +720,24 @@ function buildColDrops(h){
   });
 }
 function trySet(id,val){const s=document.getElementById(id);if(s.value===-1||s.value==='-1')s.value=val;}
+let descColIndex = -1; // global: tracks which column has WINE/LIQUOR/BEER
 function applyDefaultMappings(headers){
+  // Force override — ignore auto-detect, use exact column names
   const find=(name)=>headers.findIndex(h=>h.trim().toLowerCase()===name.toLowerCase());
-  const productIdx=find('Product');
-  const physIdx=find('Physical Count');
-  if(productIdx>=0){
-    document.getElementById('mn').value=productIdx;
-    document.getElementById('mb').value=productIdx;
+  const productIdx=find('product');
+  const physIdx=find('physical count');
+  const descIdx=find('description');
+  const mn=document.getElementById('mn');
+  const mq=document.getElementById('mq');
+  const mb=document.getElementById('mb');
+  if(productIdx>=0){ mn.value=productIdx; mb.value=productIdx; }
+  if(physIdx>=0){ mq.value=physIdx; }
+  else {
+    const fallback=headers.findIndex(h=>{const l=h.toLowerCase();return l.includes('physical')||l.includes('count');});
+    if(fallback>=0) mq.value=fallback;
   }
-  if(physIdx>=0) document.getElementById('mq').value=physIdx;
+  // Store description column index for category extraction
+  descColIndex=descIdx;
 }
 
 function importFromSheet(){
@@ -750,13 +760,13 @@ function importFromSheet(){
     if(!bin){
       const wmatch=rawName.match(/^#(\d+)\s+(.+)$/);
       if(wmatch){
-        bin='#'+wmatch[1];name=wmatch[2].trim();
+        bin='#'+String(parseInt(wmatch[1],10));name=wmatch[2].trim();
       } else {
         const lmatch=rawName.match(/^([^\-]+?)\s+-\s+(.+)$/);
         if(lmatch){bin=lmatch[1].trim();}
       }
     }
-    const cat='';
+    const cat=descColIndex>=0?(row[descColIndex]||'').trim():'';
     const bpc=12;
     const isBB=bin.toUpperCase().startsWith('B');
     items.push({id:r,name,bin,qty,category:cat,bpc,isBBin:isBB,location:inferLoc(name,cat,bin,isBB),sheetRow:r+1});
