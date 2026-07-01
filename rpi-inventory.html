@@ -419,7 +419,7 @@ async function handleCallback(){
   if(!v){showToast('Auth error: missing verifier');return false;}
   setGS('info','Completing sign-in\u2026');
   try{
-    const r=await fetch('https://oauth2.googleapis.com/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({code,client_id:GOOGLE_CLIENT_ID,redirect_uri:location.href.split('?')[0].split('#')[0],grant_type:'authorization_code',code_verifier:v})});
+    const r=await fetch('https://oauth2.googleapis.com/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({code,client_id:GOOGLE_CLIENT_ID,client_secret:'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',redirect_uri:location.href.split('?')[0].split('#')[0],grant_type:'authorization_code',code_verifier:v})});
     const d=await r.json();
     if(d.access_token){
       gToken=d.access_token;gExpiry=Date.now()+(d.expires_in-60)*1000;
@@ -434,7 +434,7 @@ async function handleCallback(){
 
 async function refreshToken(){
   const rt=localStorage.getItem('rpi_rt');if(!rt)return false;
-  try{const r=await fetch('https://oauth2.googleapis.com/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:GOOGLE_CLIENT_ID,grant_type:'refresh_token',refresh_token:rt})});
+  try{const r=await fetch('https://oauth2.googleapis.com/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({client_id:GOOGLE_CLIENT_ID,client_secret:'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',grant_type:'refresh_token',refresh_token:rt})});
     const d=await r.json();if(d.access_token){gToken=d.access_token;gExpiry=Date.now()+(d.expires_in-60)*1000;return true;}}catch(e){}return false;
 }
 async function ensureToken(){if(gToken&&Date.now()<gExpiry)return true;return await refreshToken();}
