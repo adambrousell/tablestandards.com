@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -944,7 +944,14 @@ function selectLocation(lid){
   Object.keys(LOCS).forEach(id=>document.getElementById('loc-'+id).classList.toggle('active',id===lid));
   // White wine room shows same inventory as red wine room
   const filterLoc=lid==='white-wine'?'red-wine':lid;
-  let items=ST.items.filter(it=>it.location===filterLoc);
+  const nonWineRooms=['liquor-cage','bar','walls','bar-prep'];
+  let items;
+  if(nonWineRooms.includes(lid)){
+    // These locations show all non-wine-room items
+    items=ST.items.filter(it=>it.location!=='red-wine'&&it.location!=='white-wine');
+  } else {
+    items=ST.items.filter(it=>it.location===filterLoc);
+  }
   items=items.sort(sortBin);
   ST.litems=items;
   document.getElementById('lbname').textContent=LOCS[lid].label;
@@ -1038,6 +1045,11 @@ function navItem(d){
   let idx=ST.ai+d;if(idx<0)idx=0;
   if(idx>=its.length){showToast('End of list for this location');return;}
   showItem(idx);
+  // Scroll table to the newly active row
+  setTimeout(()=>{
+    const row=document.getElementById('row-'+its[idx]?.id);
+    if(row) row.scrollIntoView({block:'center',behavior:'smooth'});
+  },80);
 }
 
 let currentCaseSize = 12;
@@ -1075,6 +1087,11 @@ function renderTbl(){
     return t+'</tbody></table><br>';
   };
   wrap.innerHTML=mkT(its);
+  // Auto-scroll to first pending item
+  setTimeout(()=>{
+    const firstPending=wrap.querySelector('.pill.pp')?.closest('tr');
+    if(firstPending) firstPending.scrollIntoView({block:'center',behavior:'smooth'});
+  },100);
 }
 function renderTbl2(){if(ST.loc)renderTbl();}
 function renderTblRow(id){const el=document.getElementById('row-'+id);const it=ST.items.find(i=>i.id===id);if(el&&it)el.outerHTML=mkRow(it);}
@@ -1084,10 +1101,10 @@ function mkRow(it){
   const cd=sv?.countBottles!=null?'<span class="tdc">'+sv.countBottles+'</span>':'<span class="tdc e">\u2014</span>';
   const isBRow=it.isBBin;
   const bStyle=isBRow?'background:#e8ffb0;':'';
-  return '<tr class="'+(isA?'ra ':'')+( st==='counted'?'rk':'')+'" id="row-'+it.id+'" style="'+bStyle+'"><td class="tdb">'+(it.bin||'\u2014')+'</td><td class="tdn">'+it.name+'</td><td>'+(it.category||'\u2014')+'</td><td>'+it.qty+'</td><td>'+cd+'</td><td>'+pill+'</td><td><button class="rsbtn" onclick="selRow('+it.id+')">Select</button></td></tr>';
+  return '<tr class="'+(isA?'ra ':'')+( st==='counted'?'rk':'')+'" id="row-'+it.id+'" style="'+bStyle+';cursor:pointer" onclick="selRow(\\"'+it.id+'\\")"><td class="tdb">'+(it.bin||'\u2014')+'</td><td class="tdn">'+it.name+'</td><td>'+(it.category||'\u2014')+'</td><td>'+it.qty+'</td><td>'+cd+'</td><td>'+pill+'</td><td><button class="rsbtn" onclick="selRow('+it.id+')">Select</button></td></tr>';
 }
 function hlRow(id){document.querySelectorAll('.itable tr.ra').forEach(r=>r.classList.remove('ra'));const el=document.getElementById('row-'+id);if(el){el.classList.add('ra');el.scrollIntoView({block:'nearest',behavior:'smooth'});}}
-function selRow(id){const idx=ST.litems.findIndex(i=>i.id===id);if(idx>=0)showItem(idx);}
+function selRow(id){const idx=ST.litems.findIndex(i=>String(i.id)===String(id));if(idx>=0)showItem(idx);}
 
 function updateStats(){
   const its=ST.litems;let cnt=0,sk=0;
