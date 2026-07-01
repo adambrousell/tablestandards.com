@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1057,7 +1057,7 @@ function renderTbl(){
   const mkT=(rows,lbl)=>{
     if(!rows.length)return'';
     let t=lbl?'<div class="seclbl">'+lbl+'</div>':'';
-    t+='<table class="itable"><thead><tr><th>Item</th><th>Bin</th><th>Category</th><th>QB Qty</th><th>Your Count</th><th>Status</th><th></th></tr></thead><tbody>';
+    t+='<table class="itable"><thead><tr><th>Bin</th><th>Item</th><th>Category</th><th>QB Qty</th><th>Your Count</th><th>Status</th><th></th></tr></thead><tbody>';
     rows.forEach(it=>{t+=mkRow(it);});
     return t+'</tbody></table><br>';
   };
@@ -1069,7 +1069,7 @@ function mkRow(it){
   const sv=ST.counts[it.id];const isA=ST.litems[ST.ai]?.id===it.id;const st=sv?.status||'pending';
   let pill=st==='counted'&&sv?.synced?'<span class="pill psy">\u2713 Synced</span>':st==='counted'?'<span class="pill pk">Counted</span>':st==='skipped'?'<span class="pill psk">Skipped</span>':'<span class="pill pp">Pending</span>';
   const cd=sv?.countBottles!=null?'<span class="tdc">'+sv.countBottles+'</span>':'<span class="tdc e">\u2014</span>';
-  return '<tr class="'+(isA?'ra ':'')+( st==='counted'?'rk':'')+'" id="row-'+it.id+'"><td class="tdn">'+it.name+'</td><td class="tdb">'+(it.bin||'\u2014')+'</td><td>'+(it.category||'\u2014')+'</td><td>'+it.qty+'</td><td>'+cd+'</td><td>'+pill+'</td><td><button class="rsbtn" onclick="selRow('+it.id+')">Select</button></td></tr>';
+  return '<tr class="'+(isA?'ra ':'')+( st==='counted'?'rk':'')+'" id="row-'+it.id+'"><t<td class="tdb">'+(it.bin||'\u2014')+'</td><td class="tdn">'+it.name+'</td><td>'+(it.category||'\u2014')+'</td><td>'+it.qty+'</td><td>'+cd+'</td><td>'+pill+'</td><td><button class="rsbtn" onclick="selRow('+it.id+')">Select</button></td></tr>';
 }
 function hlRow(id){document.querySelectorAll('.itable tr.ra').forEach(r=>r.classList.remove('ra'));const el=document.getElementById('row-'+id);if(el){el.classList.add('ra');el.scrollIntoView({block:'nearest',behavior:'smooth'});}}
 function selRow(id){const idx=ST.litems.findIndex(i=>i.id===id);if(idx>=0)showItem(idx);}
