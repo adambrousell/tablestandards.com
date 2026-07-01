@@ -226,7 +226,7 @@
           <div class="cmap-title">Map columns &mdash; confirm which column is which:</div>
           <div class="cmap-grid">
             <div class="cmapi"><label>Item Name *</label><select id="mn"></select></div>
-            <div class="cmapi"><label>Qty on Hand * (will be updated)</label><select id="mq"></select></div>
+            <div class="cmapi"><label>Physical Count * (will be written back)</label><select id="mq"></select></div>
             <div class="cmapi"><label>Bin #</label><select id="mb"></select></div>
             <div class="cmapi"><label>Category</label><select id="mc"></select></div>
             <div class="cmapi"><label>Bottles / Case</label><select id="mbpc"></select></div>
@@ -406,9 +406,9 @@ function buildColDrops(h){
   h.forEach((hh,i)=>{
     const l=hh.toLowerCase().replace(/[^a-z0-9]/g,'');
     if(l.includes('name')||l.includes('item')||l.includes('desc'))trySet('mn',i);
-    if(l.includes('qty')||l.includes('quantity')||l.includes('onhand')||l.includes('balance'))trySet('mq',i);
+    if(l.includes('physical')||l.includes('physicalcount')||l.includes('qty')||l.includes('quantity')||l.includes('onhand')||l.includes('balance'))trySet('mq',i);
     if(l.includes('bin')||l.includes('location')||l.includes('shelf'))trySet('mb',i);
-    if(l.includes('cat')||l.includes('type')||l.includes('class')||l.includes('dept'))trySet('mc',i);
+    if(l.includes('cat')||l.includes('type')||l.includes('class')||l.includes('dept')||l.includes('desc')||l.includes('description'))trySet('mc',i);
     if(l.includes('bpc')||l.includes('case')||l.includes('percase')||l.includes('bottlesper'))trySet('mbpc',i);
   });
 }
@@ -427,10 +427,21 @@ function importFromSheet(){
   const dataStart=rows.indexOf(sm.headers)+1;
   for(let r=dataStart;r<rows.length;r++){
     const row=rows[r];
-    const name=(row[nc]||'').trim();if(!name)continue;
+    const rawName=(row[nc]||'').trim();if(!rawName)continue;
     const qty=parseFloat((row[qc]||'0').replace(/[^0-9.\-]/g,''))||0;
     if(qty<=0){sk++;continue;}
-    const bin=bc>=0?(row[bc]||'').trim():'';
+    // Extract bin from name: #0010 prefix (wine) or Type - Brand pattern (liquor)
+    let bin=bc>=0?(row[bc]||'').trim():'';
+    let name=rawName;
+    if(!bin){
+      const wmatch=rawName.match(/^#(\d+)\s+(.+)$/);
+      if(wmatch){
+        bin='#'+wmatch[1];name=wmatch[2].trim();
+      } else {
+        const lmatch=rawName.match(/^([^\-]+?)\s+-\s+(.+)$/);
+        if(lmatch){bin=lmatch[1].trim();}
+      }
+    }
     const cat=cc>=0?(row[cc]||'').trim():'';
     const bpc=bpcc>=0?(parseInt(row[bpcc])||12):12;
     const isBB=bin.toUpperCase().startsWith('B');
@@ -524,10 +535,21 @@ function showExport(){
 function closeExport(){document.getElementById('export-panel').style.display='none';if(ST.loc)startCounting();else showSetup();}
 
 function inferLoc(n,c,b,isBB){
+  const cat=c.toUpperCase().trim();
+  const nm=n.toLowerCase();
+  // Direct category matches from QB sheet Description column
+  if(cat==='LIQUOR'||cat==='BEER')return 'liquor-cage';
+  if(cat==='WINE'){
+    // Wine bin # prefix determines red vs white/sparkling
+    if(isBB)return 'red-wine';
+    // #-prefixed bins: determine by number range or keep as red-wine default
+    return 'red-wine';
+  }
+  // Fallback: infer from name
   const t=(n+' '+c).toLowerCase();
-  if(t.includes('red wine')||(t.includes('red')&&t.includes('wine')))return 'red-wine';
-  if(t.includes('ros')||t.includes('white wine')||(t.includes('white')&&t.includes('wine'))||t.includes('sparkling')||t.includes('champagne')||t.includes('prosecco')||t.includes('cava')||t.includes('sauternes'))return 'white-wine';
-  if(t.includes('spirits')||t.includes('whiskey')||t.includes('whisky')||t.includes('bourbon')||t.includes('vodka')||t.includes('gin')||t.includes('rum')||t.includes('tequila')||t.includes('mezcal')||t.includes('cognac')||t.includes('brandy')||t.includes('liqueur')||t.includes('amaro')||t.includes('aperol')||t.includes('campari')||t.includes('st-germain')||t.includes('vermouth')||t.includes('bitters'))return 'liquor-cage';
+  if(t.includes('ros')||t.includes('white wine')||(t.includes('white')&&t.includes('wine'))||t.includes('sparkling')||t.includes('champagne')||t.includes('prosecco')||t.includes('cava')||t.includes('sauternes')||t.includes('chardonnay')||t.includes('sauvignon')||t.includes('pinot gris')||t.includes('riesling')||t.includes('cremant')||t.includes('crémant'))return 'white-wine';
+  if(t.includes('red wine')||(t.includes('red')&&t.includes('wine'))||t.includes('cabernet')||t.includes('merlot')||t.includes('pinot noir')||t.includes('syrah')||t.includes('malbec')||t.includes('zinfandel')||t.includes('chianti')||t.includes('barolo')||t.includes('rioja'))return 'red-wine';
+  if(t.includes('liquor')||t.includes('whiskey')||t.includes('whisky')||t.includes('bourbon')||t.includes('vodka')||t.includes('gin')||t.includes('rum')||t.includes('tequila')||t.includes('mezcal')||t.includes('cognac')||t.includes('brandy')||t.includes('liqueur')||t.includes('amaro')||t.includes('aperol')||t.includes('campari')||t.includes('st-germain')||t.includes('vermouth')||t.includes('bitters')||t.includes('beer'))return 'liquor-cage';
   if(t.includes('bar')||t.includes('draft')||t.includes('keg')||t.includes('bulk'))return 'bar';
   if(isBB)return 'red-wine';
   return 'red-wine';
