@@ -168,6 +168,7 @@ textarea{resize:vertical;min-height:72px;line-height:1.55}
 .btn-primary:hover{background:var(--gold)}
 .btn-secondary{display:inline-flex;align-items:center;gap:8px;font-family:'Josefin Sans',sans-serif;font-size:14px;padding:11px 24px;background:#fff;color:var(--ink);border:1px solid var(--border);border-radius:7px;cursor:pointer;transition:border-color .15s,background .15s;touch-action:manipulation}
 .btn-secondary:hover{border-color:var(--gold);background:var(--gold-pale)}
+.btn-secondary:disabled{opacity:.55;cursor:default}
 .btn-row{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
 
 /* MISC */
@@ -523,6 +524,7 @@ textarea{resize:vertical;min-height:72px;line-height:1.55}
     </div>
     <div class="btn-row">
       <button class="btn-primary" onclick="generate();goTab(2)">Generate Email Preview →</button>
+      <button class="btn-secondary" id="polish-btn" onclick="polishAllSections(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Polish Sections</button>
       <button class="btn-secondary" onclick="cfSaveShift()">&#9729; Save Draft</button>
       <button class="btn-secondary" onclick="goTab(0)">← Back</button>
     </div>
@@ -592,12 +594,24 @@ var _saveTimer  = null;   // debounce handle
 var _applying   = false;  // suppress input→save loop during remote apply
 var _dirty      = false;  // SYNC FIX: local edits not yet confirmed saved to KV
 var _editSeq    = 0;      // SYNC FIX: increments on every local edit
+var _polishing  = false;  // SYNC FIX: pause polling while an AI polish pass is writing fields
 var POLL_MS     = 10000;  // 10 s
 
 var CF = 'https://rpi-shift-api.amusementstandards.workers.dev';
 
 var DAY_SPECIALS = {0:'Lobster Frites',1:'Poulet en Croûte',2:'Oyster Rockefeller',3:'USDA Prime French Dip',4:'Southern Fried Quail',5:'Bouillabaisse Provençale',6:'Prime Short Rib Bourguignon'};
 var COMMON_SPECIALS = ['Poulet en Croûte','Oyster Rockefeller','USDA Prime French Dip','Southern Fried Quail','Bouillabaisse Provençale','Prime Short Rib Bourguignon','Lobster Frites','Steak Tartare'];
+
+// Sections eligible for AI polish: [textarea id, section label]
+var POLISH_SECTIONS = [
+  ['s-foh','FOH'],
+  ['s-food','Food'],
+  ['s-bev','Beverage'],
+  ['s-emp','Employees'],
+  ['s-hire','Interviews / New Hires'],
+  ['s-batch','Batch'],
+  ['s-maint','Maintenance / Orders']
+];
 
 // ═══════════════════════════════════════════════
 // DATE HELPERS
@@ -759,6 +773,7 @@ function isEditing() {
   return !!(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName));
 }
 async function cfPollShift() {
+  if (_polishing) return;            // SYNC FIX: never pull while an AI polish pass is writing fields
   if (_isSaving || _dirty) return;   // SYNC FIX: never pull over unsaved local edits
   if (isEditing()) return;           // SYNC FIX: never pull while a field is focused
   try {
@@ -766,8 +781,8 @@ async function cfPollShift() {
     var d = await r.json();
     if (!d||!d.savedAt) return;
     if (d.serviceDate&&d.serviceDate!==serviceDate()) return;
-    // SYNC FIX: re-check after the network round trip — user may have started typing
-    if (_dirty || isEditing()) return;
+    // SYNC FIX: re-check after the network round trip — user may have started typing or a polish may have begun
+    if (_dirty || _polishing || isEditing()) return;
     var kvT  = new Date(d.savedAt).getTime();
     var locT = _lastKvTs ? new Date(_lastKvTs).getTime() : 0;
     if (kvT > locT) {
@@ -778,6 +793,57 @@ async function cfPollShift() {
       setTimeout(function(){badge('','● live');},1500);
     }
   } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════
+// AI SECTION POLISH  (cleans shorthand → prose, in place)
+// ═══════════════════════════════════════════════
+async function polishSection(label, rawText) {
+  var trimmed = (rawText||'').trim();
+  if (!trimmed) return null;
+  var prompt =
+    'You clean up raw shorthand notes from a fine dining restaurant shift report into clear, professional prose '+
+    'for the section titled "'+label+'". River Pointe Inn is a French-American bistro in Rumson NJ; the report goes to ownership.\n\n'+
+    'Rules:\n'+
+    '- Never invent, infer, or add any fact, number, name, or detail not present in the notes.\n'+
+    '- Keep every number, dollar amount, table number (e.g. T29), and proper name exactly as written.\n'+
+    '- Fix grammar, capitalization, and phrasing only. Third person, past tense, concise.\n'+
+    '- Do not add praise or editorializing.\n'+
+    '- Never write "86" with an apostrophe — use "86" only.\n'+
+    '- Return ONLY the cleaned text. No preamble, no quotation marks, no markdown, no section label.\n\n'+
+    'Raw notes:\n'+trimmed;
+  try {
+    var r = await fetch(CF+'/summary',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})});
+    var d = await r.json();
+    var text = (d.content&&d.content[0]&&d.content[0].text) ? d.content[0].text.trim() : null;
+    return text || null;
+  } catch(e) { return null; }
+}
+
+async function polishAllSections(btn) {
+  if (_polishing) return;
+  _polishing = true;                 // SYNC FIX: hold off polling for the whole pass
+  var orig = btn ? btn.innerHTML : '';
+  if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner" style="width:13px;height:13px"></div>Polishing…'; }
+  badge('syncing','✨ polishing…');
+  var changed = 0, failed = 0;
+  try {
+    for (var i=0; i<POLISH_SECTIONS.length; i++) {
+      var id = POLISH_SECTIONS[i][0], label = POLISH_SECTIONS[i][1];
+      var el = document.getElementById(id);
+      if (!el || !el.value.trim()) continue;      // skip empty fields
+      if (el === document.activeElement) continue; // don't touch a field being typed in
+      var polished = await polishSection(label, el.value);
+      if (polished === null) { failed++; continue; }
+      if (polished !== el.value.trim()) { el.value = polished; changed++; }
+    }
+  } finally {
+    _polishing = false;
+    if (btn) { btn.disabled = false; btn.innerHTML = orig; }
+  }
+  if (changed) debounceSave();        // single save after all edits; _dirty keeps polling paused until confirmed
+  if (failed && !changed) badge('error','⚠ polish failed');
+  else { badge('ok','✓ polished '+changed); setTimeout(function(){badge('','● live');},2000); }
 }
 
 // ═══════════════════════════════════════════════
@@ -1032,13 +1098,14 @@ function generate(){
   document.getElementById('email-chrome-subject').textContent='River Pointe — End of Night'+(fmtD?' · '+fmtD:'');
   var H=[];
   H.push('<div class="email-subject-line">River Pointe End of Night'+(fmtD?' — '+esc(fmtD):'')+'</div>');
-  H.push('<div class="email-narrative" id="email-narrative-inject">Narrative summary will appear here after AI summary is generated above.</div>');
   H.push('<div class="email-section"><div class="email-kv-grid">');
   H.push('<span class="email-kv-label">Net Sales</span><span class="email-kv-value"><strong>'+esc(sales)+'</strong></span>');
   H.push('<span class="email-kv-label">Check Average</span><span class="email-kv-value">'+esc(avg)+'</span>');
   H.push('<span class="email-kv-label">Covers</span><span class="email-kv-value">'+esc(cvrs)+'&nbsp;<span style="color:var(--ink-faint);font-size:12px">Resy: '+esc(resy)+'</span></span>');
   H.push('<span class="email-kv-label">Weather</span><span class="email-kv-value">'+esc(wthr)+'</span>');
   H.push('</div></div><div class="email-divider"></div>');
+  H.push('<div class="email-narrative" id="email-narrative-inject">Narrative summary will appear here after AI summary is generated above.</div>');
+  H.push('<div class="email-divider"></div>');
   H.push('<div class="email-section"><div class="email-section-label">Closing Check</div><div class="email-check-grid">');
   [['Polishing area','cl-sw-polish'],['Perimeter walked','cl-perimeter'],['Front door locked','cl-d-front'],['Liquor cage locked','cl-d-wine'],['Bar bank $600','cl-sc-bank'],['Cash in safe','cl-sc-safe'],['Candles out','cl-candle-out'],['Lamps charging','cl-lamp-in']].forEach(function(c){H.push('<div class="email-check-item">'+chkBadge(getV(c[1]))+' <span>'+c[0]+'</span></div>');});
   H.push('</div></div><div class="email-divider"></div>');
@@ -1108,12 +1175,12 @@ function buildOutlookHTML(){
   var H=[];
   H.push('<div style="max-width:600px;padding:0">');
   H.push('<p style="font-family:Georgia,serif;font-size:20px;font-weight:bold;color:#1a1612;margin:0 0 16px 0;padding-bottom:14px;border-bottom:2px solid #c9a96e">River Pointe End of Night'+(fmtD?' — '+fmtD:'')+'</p>');
-  if(exec)H.push('<p style="font-family:Georgia,serif;font-size:15px;font-style:italic;color:#1a1612;line-height:1.8;margin:0 0 18px 0;padding-left:14px;border-left:3px solid #c9a96e">'+exec+'</p>');
-  if(preShiftSummary){H.push(div());H.push(sl('Pre-Shift Meeting'));H.push('<p style="font-family:Georgia,serif;font-size:14px;font-style:italic;color:#1a1612;line-height:1.7;margin:0">'+preShiftSummary+'</p>');}
-  else if(preShiftNotes.length){H.push(div());H.push(sl('Pre-Shift Meeting'));preShiftNotes.forEach(function(n){H.push('<p style="font-family:Arial,sans-serif;font-size:13px;color:#3d3530;margin:2px 0;padding-left:12px;border-left:2px solid #c9a96e">'+n.text+'</p>');});}
   H.push('<table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:4px">');
   H.push(row('Net Sales','<strong>'+sales+'</strong>'));H.push(row('Check Average',avg));
   H.push(row('Covers',cvrs+'&nbsp;<span style="color:#b8ada7;font-size:12px">Resy: '+resy+'</span>'));H.push(row('Weather',wthr));H.push('</table>');
+  if(exec){H.push(div());H.push('<p style="font-family:Georgia,serif;font-size:15px;font-style:italic;color:#1a1612;line-height:1.8;margin:0 0 18px 0;padding-left:14px;border-left:3px solid #c9a96e">'+exec+'</p>');}
+  if(preShiftSummary){H.push(div());H.push(sl('Pre-Shift Meeting'));H.push('<p style="font-family:Georgia,serif;font-size:14px;font-style:italic;color:#1a1612;line-height:1.7;margin:0">'+preShiftSummary+'</p>');}
+  else if(preShiftNotes.length){H.push(div());H.push(sl('Pre-Shift Meeting'));preShiftNotes.forEach(function(n){H.push('<p style="font-family:Arial,sans-serif;font-size:13px;color:#3d3530;margin:2px 0;padding-left:12px;border-left:2px solid #c9a96e">'+n.text+'</p>');});}
   H.push(div());H.push(sl('Closing Check'));H.push('<table cellpadding="0" cellspacing="0" border="0">');
   H.push(cr('Polishing area clean','cl-sw-polish'));H.push(cr('Perimeter walked','cl-perimeter'));H.push(cr('Front door locked','cl-d-front'));H.push(cr('Liquor cage locked','cl-d-wine'));H.push(cr('Bar bank $600','cl-sc-bank'));H.push(cr('Cash in safe','cl-sc-safe'));H.push(cr('Candles out','cl-candle-out'));H.push(cr('Lamps charging','cl-lamp-in'));H.push('</table>');
   if(vips.length){H.push(div());H.push(sl('VIPs'));H.push('<p style="margin:0">');vips.forEach(function(x){H.push('<span style="display:inline-block;background:#f5edd8;border:1px solid #e0c98a;border-radius:100px;padding:2px 10px;font-family:Arial,sans-serif;font-size:12px;color:#8a6d3b;margin:2px 4px 2px 0">'+x+'</span>');});H.push('</p>');}
@@ -1138,6 +1205,21 @@ function copyEmailPlain(){
   var eb=document.getElementById('email-body-render');
   if(!eb||eb.querySelector('.email-empty-hint')){alert('Generate the email first — click "Generate Email Preview" on Tab 2.');return;}
   var html=buildOutlookHTML();
+  var plain=_plainTextEmail||'';
+  // PREFERRED: async Clipboard API writes a real text/html flavor. New Outlook / Outlook on the web
+  // read that flavor and keep the styling. execCommand often lands only plain text in these clients.
+  if(navigator.clipboard && window.ClipboardItem){
+    try{
+      navigator.clipboard.write([new ClipboardItem({
+        'text/html':new Blob([html],{type:'text/html'}),
+        'text/plain':new Blob([plain],{type:'text/plain'})
+      })]).then(showCopySuccess).catch(function(){ copyViaExecCommand(html); });
+      return;
+    }catch(e){ /* fall through to execCommand */ }
+  }
+  copyViaExecCommand(html);
+}
+function copyViaExecCommand(html){
   var s=document.getElementById('outlook-staging');
   if(!s){s=document.createElement('div');s.id='outlook-staging';s.contentEditable='true';s.style.cssText='position:fixed;left:-9999px;top:0;width:600px;opacity:0;pointer-events:none;';document.body.appendChild(s);}
   s.innerHTML=html; s.focus();
@@ -1145,9 +1227,8 @@ function copyEmailPlain(){
   var sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
   var ok=false; try{ok=document.execCommand('copy');}catch(e){}
   sel.removeAllRanges(); s.blur();
-  if(ok){showCopySuccess();}
-  else if(window.ClipboardItem){navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([html],{type:'text/html'}),'text/plain':new Blob([_plainTextEmail||''],{type:'text/plain'})})]).then(showCopySuccess).catch(function(){alert('Copy failed — use Ctrl+A on the preview then Ctrl+C.');});}
-  else{alert('Copy failed — use Ctrl+A on the preview then Ctrl+C.');}
+  if(ok) showCopySuccess();
+  else alert('Copy failed — select the preview above, then press Ctrl+A and Ctrl+C.');
 }
 function showCopySuccess(){
   var btn=document.getElementById('big-copy-btn');
