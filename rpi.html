@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -590,6 +590,8 @@ var _lastKvTs   = null;   // ISO string — last savedAt we received from KV
 var _isSaving   = false;  // prevent concurrent saves
 var _saveTimer  = null;   // debounce handle
 var _applying   = false;  // suppress input→save loop during remote apply
+var _dirty      = false;  // SYNC FIX: local edits not yet confirmed saved to KV
+var _editSeq    = 0;      // SYNC FIX: increments on every local edit
 var POLL_MS     = 10000;  // 10 s
 
 var CF = 'https://rpi-shift-api.amusementstandards.workers.dev';
@@ -674,9 +676,10 @@ function applyFields(d) {
     ['s-covers',d.covers],['s-resy',d.resy],['s-foh',d.foh],['s-food',d.food],
     ['s-bev',d.bev],['s-emp',d.emp],['s-hire',d.hire],['s-batch',d.batch],
     ['s-maint',d.maint],['cl-cash-variance',d.cashVariance],['cl-notes',d.clNotes]];
-  map.forEach(function(f){ var e=document.getElementById(f[0]); if(e&&f[1]!=null&&f[1]!=='') e.value=f[1]; });
-  if (d.closer)  { var e=document.getElementById('s-closer');  if(e) e.value=d.closer; }
-  if (d.manager) { var e=document.getElementById('o-manager'); if(e) e.value=d.manager; }
+  // SYNC FIX: never overwrite the field the user is currently typing in
+  map.forEach(function(f){ var e=document.getElementById(f[0]); if(e&&f[1]!=null&&f[1]!==''&&e!==document.activeElement) e.value=f[1]; });
+  if (d.closer)  { var e=document.getElementById('s-closer');  if(e&&e!==document.activeElement) e.value=d.closer; }
+  if (d.manager) { var e=document.getElementById('o-manager'); if(e&&e!==document.activeElement) e.value=d.manager; }
 
   if (d.toggleState&&typeof d.toggleState==='object') {
     Object.keys(d.toggleState).forEach(function(k){ applyToggle(k,d.toggleState[k]); });
@@ -716,6 +719,7 @@ function loadDraftLocal() {
 // ═══════════════════════════════════════════════
 function debounceSave() {
   if (_applying) return;
+  _dirty = true; _editSeq++;   // SYNC FIX: mark unsaved local edits
   saveDraftLocal();
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(cfSaveShift, 1500);
@@ -729,28 +733,41 @@ document.addEventListener('change', function(){ if(!_applying) debounceSave(); }
 async function cfSaveShift() {
   if (_isSaving) return;
   _isSaving = true;
+  var seqAtSave = _editSeq;   // SYNC FIX: snapshot edit sequence at collect time
   saveDraftLocal();
   badge('syncing','↑ saving…');
   try {
     var p = collect();
     var r = await fetch(CF+'/shift',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});
     var d = await r.json();
-    if (d.ok) { _lastKvTs=p.savedAt; badge('ok','✓ saved'); setTimeout(function(){badge('','● live');},2000); showSyncStatus('Saved ✓'); }
+    if (d.ok) {
+      _lastKvTs = p.savedAt;
+      if (_editSeq === seqAtSave) _dirty = false;   // SYNC FIX: only clear if nothing typed during the fetch
+      badge('ok','✓ saved'); setTimeout(function(){badge('','● live');},2000); showSyncStatus('Saved ✓');
+    }
     else badge('error','⚠ err');
   } catch(e) { badge('error','⚠ offline'); }
   finally { _isSaving=false; }
 }
 
 // ═══════════════════════════════════════════════
-// KV — POLL  (every 10 s, applies if KV is newer)
+// KV — POLL  (every 10 s, applies if KV is newer,
+// but never while typing or with unsaved edits)
 // ═══════════════════════════════════════════════
+function isEditing() {
+  var ae = document.activeElement;
+  return !!(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName));
+}
 async function cfPollShift() {
-  if (_isSaving) return;
+  if (_isSaving || _dirty) return;   // SYNC FIX: never pull over unsaved local edits
+  if (isEditing()) return;           // SYNC FIX: never pull while a field is focused
   try {
     var r = await fetch(CF+'/shift');
     var d = await r.json();
     if (!d||!d.savedAt) return;
     if (d.serviceDate&&d.serviceDate!==serviceDate()) return;
+    // SYNC FIX: re-check after the network round trip — user may have started typing
+    if (_dirty || isEditing()) return;
     var kvT  = new Date(d.savedAt).getTime();
     var locT = _lastKvTs ? new Date(_lastKvTs).getTime() : 0;
     if (kvT > locT) {
