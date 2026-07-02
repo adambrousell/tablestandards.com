@@ -450,6 +450,7 @@ textarea{resize:vertical;min-height:72px;line-height:1.55}
           </div>
         </div>
         <div id="sling-error" style="display:none;padding:8px 12px;background:var(--red-pale);border:1px solid #e8b8b8;border-radius:6px;margin-bottom:12px;font-size:12px;color:var(--red-deep);font-family:DM Mono,monospace"></div>
+        <button class="add-row-btn" id="preshift-to-emp-btn" onclick="appendPreShiftToEmployees(this)" style="margin-bottom:10px;margin-top:0">↓ Add pre-shift notes</button>
         <textarea id="s-emp" placeholder="Performance notes, training observations, uniform issues, HR items…"></textarea>
       </div>
     </div>
@@ -1039,7 +1040,7 @@ async function summarizePreShift(){
   try {
     var r=await fetch(CF+'/summary',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})});
     var d=await r.json();
-    var text=(d.content&&d.content[0]&&d.content[0].text)?d.content[0].text.trim():null;
+    var text=(d.content&&d.content[0]&&d.content[0].text)?cleanSummary(d.content[0].text):null;
     if(text){preShiftSummary=text;showPreShiftSummary(text);if(status)status.textContent='Summary generated ✓';debounceSave();}
     else{if(status)status.textContent='Error — try again';}
   } catch(e){if(status)status.textContent='Failed: '+e.message;}
@@ -1102,6 +1103,21 @@ function appendRosterToNotes(){
   var emp=document.getElementById('s-emp'),existing=emp.value.trim();
   var lines=_slingRoster.map(function(e){var p=[e.name];if(e.position)p.push(e.position);if(e.start&&e.end)p.push(e.start+'–'+e.end);if(e.hours)p.push(e.hours+'h');return '– '+p.join(' · ');});
   emp.value=(existing?existing+'\n\n':'')+'Staff scheduled tonight:\n'+lines.join('\n');
+  debounceSave(); emp.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function appendPreShiftToEmployees(btn){
+  // Gather pre-shift content: logged meeting notes, then the Additional Pre-shift notes textarea
+  var lines=[];
+  preShiftNotes.forEach(function(n){ if(n&&n.text) lines.push('– '+n.text); });
+  var extra=(document.getElementById('o-preshift')||{}).value||'';
+  extra=extra.trim();
+  if(extra) lines.push(extra);
+  if(!lines.length){
+    if(btn){var o=btn.textContent;btn.textContent='No pre-shift notes logged';setTimeout(function(){btn.textContent=o;},1600);}
+    return;
+  }
+  var emp=document.getElementById('s-emp'),existing=emp.value.trim();
+  emp.value=(existing?existing+'\n\n':'')+'Pre-shift meeting:\n'+lines.join('\n');
   debounceSave(); emp.scrollIntoView({behavior:'smooth',block:'center'});
 }
 
@@ -1258,6 +1274,16 @@ function copyExec(){var t=document.getElementById('exec-box').innerText;navigato
 // ═══════════════════════════════════════════════
 // AI EXECUTIVE SUMMARY
 // ═══════════════════════════════════════════════
+// Strip any header the model prepends ("**Executive Summary — <date>**") and all markdown ** markers
+function cleanSummary(t){
+  if(!t) return '';
+  t=t.trim();
+  t=t.replace(/^\s*\*\*\s*executive summary[\s\S]*?\*\*\s*/i,'');   // bold header block
+  t=t.replace(/^\s*#{1,6}\s*/,'');                                  // stray markdown heading marks
+  t=t.replace(/^\s*executive summary\b\s*[-–—:]*\s*(?:(?:sun|mon|tues|wednes|thurs|fri|satur)day,?\s+[a-z]+\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4})?\s*[-–—:]*\s*/i,''); // plain header + optional date
+  t=t.replace(/\*\*/g,'');                                          // any remaining bold markers
+  return t.trim();
+}
 function buildContext(){
   var closing=[['cl-bar-clean','Bar clean'],['cl-bar-stock','Bar stocked'],['cl-bar-ice','Ice wells burnt'],['cl-sw-dining','Side work done'],['cl-candle-out','Candles out'],['cl-fire','Fireplace'],['cl-lamp-in','Lamps charging'],['cl-sc-safe','Tips/safe'],['cl-sc-bank','Bar bank $600'],['cl-d-front','All doors locked']].map(function(x){return x[1]+': '+getV(x[0]);}).join('; ')+'; Cash variance: '+(v('cl-cash-variance')||'N/A');
   var specs=openingSpecials.filter(function(s){return s.name;}).map(function(s){return s.eightysixed?s.name+': 86':s.name+': '+(s.sold||'?')+'/'+(s.count||'?')+' sold';}).concat(shiftExtras.filter(function(s){return s.name;}).map(function(s){return s.name+': '+(s.sold||'?')+'/'+(s.avail||'?')+' sold';})).join('; ');
@@ -1276,9 +1302,9 @@ async function generateExec(){
   box.classList.add('loading'); loading.style.display='flex'; cb.style.display=rb.style.display='none';
   box.innerHTML='<span style="color:var(--ink-faint);font-style:italic;font-size:15px">Writing summary…</span>';
   try {
-    var r=await fetch(CF+'/summary',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:'Write a one-paragraph executive summary for this shift report:\n\n'+buildContext()})});
+    var r=await fetch(CF+'/summary',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:'Write a one-paragraph executive summary for this shift report. Return only the paragraph itself as plain text — no title, no heading, do not begin with the words "Executive Summary", and do not use markdown, asterisks, or bold.\n\n'+buildContext()})});
     var raw=await r.text(); var d; try{d=JSON.parse(raw);}catch(e){throw new Error('Worker returned: '+raw.substring(0,100));}
-    var text=(d.content&&d.content[0]&&d.content[0].text)?d.content[0].text.trim():'API error: '+JSON.stringify(d.error||d).substring(0,120);
+    var text=(d.content&&d.content[0]&&d.content[0].text)?cleanSummary(d.content[0].text):'API error: '+JSON.stringify(d.error||d).substring(0,120);
     box.classList.remove('loading'); box.textContent=text; loading.style.display='none'; cb.style.display=rb.style.display='inline-flex';
     var ni=document.getElementById('email-narrative-inject'); if(ni) ni.textContent=text;
   } catch(e){
