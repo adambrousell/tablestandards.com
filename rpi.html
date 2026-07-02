@@ -347,14 +347,19 @@ textarea{resize:vertical;min-height:72px;line-height:1.55}
   <!-- TAB 2: SHIFT -->
   <div class="panel" id="panel-1">
     <div class="section">
-      <div class="section-head"><div class="section-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="section-title">Numbers</div></div>
+      <div class="section-head"><div class="section-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="section-title">Numbers</div>
+        <button onclick="pullToastNumbers(this)" id="toast-num-btn" style="margin-left:auto;display:flex;align-items:center;gap:5px;font-family:Josefin Sans,sans-serif;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:5px 12px;background:var(--ink);color:var(--cream);border:none;border-radius:5px;cursor:pointer;touch-action:manipulation">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><polyline points="21 3 21 12 12 12"/></svg>Pull from Toast
+        </button>
+      </div>
       <div class="section-body">
         <div class="grid-4" style="margin-bottom:16px">
           <div class="metric-card"><div class="metric-label">Net Sales</div><div class="metric-val"><input type="text" id="s-sales" placeholder="$0.00"></div></div>
           <div class="metric-card"><div class="metric-label">Check Avg</div><div class="metric-val"><input type="text" id="s-avg" placeholder="$0.00"></div></div>
           <div class="metric-card"><div class="metric-label">Covers</div><div class="metric-val"><input type="number" id="s-covers" placeholder="0"></div></div>
-          <div class="metric-card"><div class="metric-label">Resy</div><div class="metric-val"><input type="number" id="s-resy" placeholder="0"></div></div>
+          <div class="metric-card"><div class="metric-label">Resy <span style="font-size:8px;color:var(--ink-faint);letter-spacing:.05em">· MANUAL</span></div><div class="metric-val"><input type="number" id="s-resy" placeholder="0"></div></div>
         </div>
+        <div id="toast-num-status" style="font-size:11px;color:var(--ink-soft);font-family:DM Mono,monospace;margin:-8px 0 12px;min-height:14px"></div>
         <div class="field" style="max-width:320px">
           <div class="field-label">Closing manager</div>
           <select id="s-closer">
@@ -421,7 +426,8 @@ textarea{resize:vertical;min-height:72px;line-height:1.55}
       <div class="section-head"><div class="section-icon"><svg viewBox="0 0 24 24"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></div><div class="section-title">Food</div></div>
       <div class="section-body">
         <div id="shift-specials-list"></div>
-        <button class="add-row-btn" onclick="addShiftSpecial()" style="margin-bottom:12px">+ Add additional special</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><button class="add-row-btn" style="width:auto;margin-top:0;flex:1" onclick="addShiftSpecial()">+ Add additional special</button><button class="add-row-btn" id="toast-pmix-btn" style="width:auto;margin-top:0" onclick="pullToastPmix(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><polyline points="21 3 21 12 12 12"/></svg>Pull sold from Toast</button></div>
+        <div id="toast-pmix-status" style="font-size:11px;color:var(--ink-soft);font-family:DM Mono,monospace;margin:-4px 0 12px;min-height:14px"></div>
         <div class="divider"></div>
         <div class="field" style="margin-top:12px"><div class="field-label">Food notes</div><textarea id="s-food" placeholder="Complaints, send-backs, compliments, kitchen notes…"></textarea></div>
       </div>
@@ -434,7 +440,7 @@ textarea{resize:vertical;min-height:72px;line-height:1.55}
 
     <div class="section">
       <div class="section-head"><div class="section-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></div><div class="section-title">86 Items</div></div>
-      <div class="section-body"><div id="eighty-list"></div><button class="add-row-btn" onclick="addEighty()">+ Add 86</button></div>
+      <div class="section-body"><div id="eighty-list"></div><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px"><button class="add-row-btn" style="width:auto;margin-top:0;flex:1" onclick="addEighty()">+ Add 86</button><button class="add-row-btn" id="toast-86-btn" style="width:auto;margin-top:0" onclick="pullToast86(this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px"><path d="M21 12a9 9 0 1 1-6.219-8.56"/><polyline points="21 3 21 12 12 12"/></svg>Pull 86 from Toast</button></div><div id="toast-86-status" style="font-size:11px;color:var(--ink-soft);font-family:DM Mono,monospace;margin-top:8px;min-height:14px"></div></div>
     </div>
 
     <div class="section">
@@ -1070,6 +1076,78 @@ function fmtDate(val){
   return days[d.getDay()]+' '+months[d.getMonth()]+' '+day+sfx+', '+p[0];
 }
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ═══════════════════════════════════════════════
+// TOAST PULL  (fills numbers + 86 + specials sold)
+// Routes read secrets server-side; if creds aren't set yet the Worker
+// returns {error:...} and these fall back to manual entry gracefully.
+// ═══════════════════════════════════════════════
+function fmtMoney(n){ var x=parseFloat(n); if(isNaN(x)) return null; return '$'+x.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+function tStatus(id,msg,ok){ var e=document.getElementById(id); if(!e) return; e.textContent=msg||''; e.style.color=ok?'var(--green-deep)':(msg&&msg.indexOf('…')===-1?'var(--red-deep)':'var(--ink-soft)'); }
+function tSpin(btn,on,label){ if(!btn) return; if(on){ btn._o=btn.innerHTML; btn.disabled=true; btn.innerHTML='<div class="spinner" style="width:12px;height:12px;display:inline-block;vertical-align:middle"></div> '+(label||'…'); } else { btn.disabled=false; if(btn._o) btn.innerHTML=btn._o; } }
+
+async function pullToastNumbers(btn){
+  tSpin(btn,true,'Pulling…'); tStatus('toast-num-status','Contacting Toast…');
+  try{
+    var r=await fetch(CF+'/toast/today'); var d=await r.json();
+    if(d.error){ tStatus('toast-num-status','Toast: '+d.error); return; }
+    _applying=true;
+    if(d.netSales!=null){ var s=document.getElementById('s-sales'); if(s&&s!==document.activeElement) s.value=fmtMoney(d.netSales)||s.value; }
+    if(d.checkAvg!=null){ var a=document.getElementById('s-avg'); if(a&&a!==document.activeElement) a.value=fmtMoney(d.checkAvg)||a.value; }
+    if(d.covers!=null){ var c=document.getElementById('s-covers'); if(c&&c!==document.activeElement) c.value=d.covers; }
+    _applying=false;
+    // Resy intentionally untouched — not available from Toast (no Toast Tables).
+    tStatus('toast-num-status','Updated from Toast · '+(d.checkCount||0)+' checks · Resy still manual',true);
+    debounceSave();
+  }catch(e){ tStatus('toast-num-status','Could not reach Worker: '+e.message); }
+  finally{ tSpin(btn,false); }
+}
+
+async function pullToast86(btn){
+  tSpin(btn,true,'Pulling…'); tStatus('toast-86-status','Contacting Toast…');
+  try{
+    var r=await fetch(CF+'/toast/86'); var d=await r.json();
+    if(d.error){ tStatus('toast-86-status','Toast: '+d.error); return; }
+    if(d.baseline){ tStatus('toast-86-status','Baseline set — '+d.currentTotal+' already 86 at open. Pull again later for tonight\u2019s new 86s.'); return; }
+    var items=d.wentToday||[]; var added=0;
+    items.forEach(function(it){
+      var label=it.name||it.guid; if(!label) return;
+      var dup=eighties.some(function(e){ return e && e.toLowerCase().indexOf(String(label).toLowerCase())!==-1; });
+      if(!dup){ eighties.push(label); added++; }
+    });
+    renderEighties(); debounceSave();
+    tStatus('toast-86-status', added?('Added '+added+' that went 86 today'):(items.length?'All '+items.length+' already listed':'Nothing new went 86 today'), added>0);
+  }catch(e){ tStatus('toast-86-status','Could not reach Worker: '+e.message); }
+  finally{ tSpin(btn,false); }
+}
+
+// Optional: fill specials "sold" counts from Analytics PMix (async report; needs analytics creds).
+async function pullToastPmix(btn){
+  tSpin(btn,true,'Pulling…'); tStatus('toast-pmix-status','Requesting PMix (can take a few seconds)…');
+  try{
+    var r=await fetch(CF+'/toast/pmix'); var d=await r.json();
+    if(d.error){ tStatus('toast-pmix-status','Toast: '+d.error); return; }
+    // Report shape gets confirmed on first real run; match rows to opening specials by name.
+    var rows=[]; try{
+      var rep=d.report;
+      if(Array.isArray(rep)) rows=rep;
+      else if(rep&&Array.isArray(rep.data)) rows=rep.data;
+      else if(rep&&Array.isArray(rep.results)) rows=rep.results;
+    }catch(e){}
+    var filled=0;
+    openingSpecials.forEach(function(sp,i){
+      if(!sp.name) return;
+      var match=rows.find(function(row){
+        var nm=(row.name||row.itemName||row.menuItemName||'').toString().toLowerCase();
+        return nm && (nm===sp.name.toLowerCase()||nm.indexOf(sp.name.toLowerCase())!==-1||sp.name.toLowerCase().indexOf(nm)!==-1);
+      });
+      if(match){ var q=match.quantity!=null?match.quantity:(match.count!=null?match.count:match.itemCount); if(q!=null){ openingSpecials[i].sold=String(q); filled++; } }
+    });
+    renderOpeningSpecials(); renderShiftSpecials(); debounceSave();
+    tStatus('toast-pmix-status', filled?('Filled sold counts for '+filled+' special(s)'):'PMix returned — no special names matched (check first-run shape)', filled>0);
+  }catch(e){ tStatus('toast-pmix-status','Could not reach Worker: '+e.message); }
+  finally{ tSpin(btn,false); }
+}
 
 function appendPreShiftToEmployees(btn){
   // Gather pre-shift content: logged meeting notes, then the Additional Pre-shift notes textarea
