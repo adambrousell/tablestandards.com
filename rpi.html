@@ -1132,6 +1132,28 @@ function appendPreShiftToEmployees(btn){
 // ═══════════════════════════════════════════════
 // EMAIL GENERATE
 // ═══════════════════════════════════════════════
+// ═══════════════════════════════════════════════
+// REPORT ENRICHMENT HELPERS
+// ═══════════════════════════════════════════════
+function numOr(x){ var n=parseInt(String(x==null?'':x).replace(/[^0-9-]/g,''),10); return isNaN(n)?null:n; }
+function walkIns(){ var c=numOr(v('s-covers')), r=numOr(v('s-resy')); if(c===null||r===null) return null; var w=c-r; return w>=0?w:null; }
+function laborLine(){ if(!_slingRoster||!_slingRoster.length) return null; var h=0; _slingRoster.forEach(function(e){var x=parseFloat(e.hours); if(!isNaN(x)) h+=x;}); return {count:_slingRoster.length, hours:h}; }
+function fmtHours(h){ return h%1 ? h.toFixed(1) : String(h); }
+function pct(sold,total){ var s=parseFloat(sold), t=parseFloat(total); if(isNaN(s)||isNaN(t)||t<=0) return null; return Math.round(s/t*100); }
+// Walk every checklist row (opening + closing) and split into NO (flagged) vs not-yet-marked
+function collectFlags(){
+  var no=[], unset=[];
+  document.querySelectorAll('.check-row').forEach(function(row){
+    var btn=row.querySelector('.toggle-pair .tog[data-k]'); if(!btn) return;
+    var k=btn.getAttribute('data-k');
+    var nameEl=row.querySelector('.check-name'); var name=nameEl?nameEl.textContent.trim():k;
+    var val=toggleState[k];
+    if(val==='NO') no.push(name);
+    else if(!val) unset.push(name);
+  });
+  return {no:no, unset:unset};
+}
+
 function generate(){
   var date=v('o-date'),mgr=v('o-manager')||'Manager',closer=v('s-closer'),wthr=v('o-weather')||'—';
   var sales=v('s-sales')||'—',avg=v('s-avg')||'—',cvrs=v('s-covers')||'—',resy=v('s-resy')||'—';
@@ -1145,20 +1167,26 @@ function generate(){
   H.push('<span class="email-kv-label">Check Average</span><span class="email-kv-value">'+esc(avg)+'</span>');
   H.push('<span class="email-kv-label">Covers</span><span class="email-kv-value">'+esc(cvrs)+'&nbsp;<span style="color:var(--ink-faint);font-size:12px">Resy: '+esc(resy)+'</span></span>');
   H.push('<span class="email-kv-label">Weather</span><span class="email-kv-value">'+esc(wthr)+'</span>');
+  var _wi=walkIns(); if(_wi!==null) H.push('<span class="email-kv-label">Walk-ins</span><span class="email-kv-value">'+_wi+'</span>');
+  var _lb=laborLine(); if(_lb) H.push('<span class="email-kv-label">Staff on</span><span class="email-kv-value">'+_lb.count+(_lb.hours?'&nbsp;<span style="color:var(--ink-faint);font-size:12px">'+fmtHours(_lb.hours)+'h</span>':'')+'</span>');
   H.push('</div></div><div class="email-divider"></div>');
   H.push('<div class="email-narrative" id="email-narrative-inject">Narrative summary will appear here after AI summary is generated above.</div>');
   H.push('<div class="email-divider"></div>');
   H.push('<div class="email-section"><div class="email-section-label">Closing Check</div><div class="email-check-grid">');
   [['Polishing area','cl-sw-polish'],['Perimeter walked','cl-perimeter'],['Front door locked','cl-d-front'],['Liquor cage locked','cl-d-wine'],['Bar bank $600','cl-sc-bank'],['Cash in safe','cl-sc-safe'],['Candles out','cl-candle-out'],['Lamps charging','cl-lamp-in']].forEach(function(c){H.push('<div class="email-check-item">'+chkBadge(getV(c[1]))+' <span>'+c[0]+'</span></div>');});
   H.push('</div></div><div class="email-divider"></div>');
+  var _fl=collectFlags();
+  if(_fl.no.length){ H.push('<div class="email-section"><div class="email-section-label" style="color:var(--red-deep)">Needs Attention</div><ul class="email-bullet-list">'+_fl.no.map(function(x){return '<li style="color:var(--red-deep)">'+esc(x)+'</li>';}).join('')+'</ul>'+(_fl.unset.length?'<div class="email-section-content" style="color:var(--ink-faint);font-size:12px;margin-top:4px">'+_fl.unset.length+' item'+(_fl.unset.length>1?'s':'')+' not marked</div>':'')+'</div><div class="email-divider"></div>'); }
+  else if(_fl.unset.length){ H.push('<div class="email-section"><div class="email-section-label">Needs Attention</div><div class="email-section-content" style="color:var(--ink-faint)">All marked items passed · '+_fl.unset.length+' not marked</div></div><div class="email-divider"></div>'); }
   H.push('<div class="email-section"><div class="email-section-label">VIPs</div>');
   H.push(vips.length?'<div>'+vips.map(function(x){return '<span class="email-vip-pill">'+esc(x)+'</span>';}).join('')+'</div>':'<div class="email-section-content" style="color:var(--ink-faint)">None noted</div>');
   H.push('</div>');
+  if(shiftNotes.length){ H.push('<div class="email-divider"></div><div class="email-section"><div class="email-section-label">Shift Log</div>'+shiftNotes.map(function(n){return '<div class="email-section-content" style="font-size:13px;padding:1px 0"><span style="color:var(--ink-faint);font-family:DM Mono,monospace;font-size:12px">'+esc(n.ts)+' · '+esc(n.who)+'</span> — '+esc(n.text)+'</div>';}).join('')+'</div>'); }
   if(foh){H.push('<div class="email-divider"></div><div class="email-section"><div class="email-section-label">FOH</div><div class="email-section-content">'+esc(foh).replace(/\n/g,'<br>')+'</div></div>');}
   H.push('<div class="email-divider"></div><div class="email-section"><div class="email-section-label">Food</div>');
   var sl=[];
-  openingSpecials.forEach(function(s){if(!s.name)return;if(s.eightysixed)sl.push('<li>'+esc(s.name)+'<span class="email-86-pill">86</span></li>');else if(s.sold||s.count)sl.push('<li>'+esc(s.name)+' — sold '+esc(s.sold||'?')+' of '+esc(s.count||'?')+'</li>');else sl.push('<li>'+esc(s.name)+'</li>');});
-  shiftExtras.forEach(function(s){if(!s.name)return;sl.push('<li>'+esc(s.name)+' — sold '+esc(s.sold||'?')+' of '+esc(s.avail||'?')+'</li>');});
+  openingSpecials.forEach(function(s){if(!s.name)return;if(s.eightysixed)sl.push('<li>'+esc(s.name)+'<span class="email-86-pill">86</span></li>');else if(s.sold||s.count){var p=pct(s.sold,s.count);sl.push('<li>'+esc(s.name)+' — sold '+esc(s.sold||'?')+' of '+esc(s.count||'?')+(p!==null?' <span style="color:var(--ink-faint)">('+p+'%)</span>':'')+'</li>');}else sl.push('<li>'+esc(s.name)+'</li>');});
+  shiftExtras.forEach(function(s){if(!s.name)return;var p=pct(s.sold,s.avail);sl.push('<li>'+esc(s.name)+' — sold '+esc(s.sold||'?')+' of '+esc(s.avail||'?')+(p!==null?' <span style="color:var(--ink-faint)">('+p+'%)</span>':'')+'</li>');});
   if(sl.length) H.push('<ul class="email-bullet-list">'+sl.join('')+'</ul>');
   if(foodN) H.push('<div class="email-section-content" style="margin-top:'+(sl.length?'8px':'0')+'">'+esc(foodN).replace(/\n/g,'<br>')+'</div>');
   if(!sl.length&&!foodN) H.push('<div class="email-section-content" style="color:var(--ink-faint)">No notes</div>');
@@ -1182,13 +1210,18 @@ function generate(){
 function buildPlainText(date,mgr,closer,wthr,sales,avg,cvrs,resy,foh,foodN,bev,emp,hire,batch,maint,cashVar,clNotes,signoff){
   var L=[],fmtD=fmtDate(date);
   L.push('Shift: '+fmtD);L.push('- Net Sales: '+(sales||'—'));L.push('- Check Average: '+(avg||'—'));
-  L.push('- Covers: '+(cvrs||'—')+'  Resy: '+(resy||'—'));L.push('- Weather: '+(wthr||'—'));L.push('');
+  L.push('- Covers: '+(cvrs||'—')+'  Resy: '+(resy||'—'));
+  var _wi=walkIns(); if(_wi!==null) L.push('- Walk-ins: '+_wi);
+  var _lb=laborLine(); if(_lb) L.push('- Staff on: '+_lb.count+(_lb.hours?' ('+fmtHours(_lb.hours)+'h)':''));
+  L.push('- Weather: '+(wthr||'—'));L.push('');
   L.push('Closing Check:');L.push('- Polishing area: '+getV('cl-sw-polish'));L.push('- Perimeter: '+getV('cl-perimeter'));L.push('- Front door: '+getV('cl-d-front'));L.push('- Liquor cage: '+getV('cl-d-wine'));L.push('');
+  var _fl=collectFlags(); if(_fl.no.length){L.push('Needs Attention:');_fl.no.forEach(function(x){L.push('- '+x+': NO');});if(_fl.unset.length)L.push('('+_fl.unset.length+' not marked)');L.push('');}
   L.push('VIPs: ');if(vips.length)vips.forEach(function(x){L.push(x);});else L.push('N/A');L.push('');
+  if(shiftNotes.length){L.push('Shift Log:');shiftNotes.forEach(function(n){L.push('- '+n.ts+' '+n.who+': '+n.text);});L.push('');}
   L.push('FOH: ');if(foh)L.push(foh);L.push('');
   L.push('Food:');if(foodN)L.push(foodN);
-  openingSpecials.forEach(function(s){if(!s.name)return;if(s.eightysixed)L.push('- '+s.name+': 86');else if(s.sold)L.push('- '+s.name+': Sold '+s.sold+' of '+(s.count||'?'));});
-  shiftExtras.forEach(function(s){if(!s.name)return;L.push('- '+s.name+': sold '+(s.sold||'?')+' of '+(s.avail||'?'));});
+  openingSpecials.forEach(function(s){if(!s.name)return;if(s.eightysixed)L.push('- '+s.name+': 86');else if(s.sold){var p=pct(s.sold,s.count);L.push('- '+s.name+': Sold '+s.sold+' of '+(s.count||'?')+(p!==null?' ('+p+'%)':''));}});
+  shiftExtras.forEach(function(s){if(!s.name)return;var p=pct(s.sold,s.avail);L.push('- '+s.name+': sold '+(s.sold||'?')+' of '+(s.avail||'?')+(p!==null?' ('+p+'%)':''));});
   L.push('');L.push('Beverage: ');if(bev)L.push(bev);L.push('');
   L.push('Employees: ');if(emp)L.push(emp);L.push('');
   L.push('Interviews/New hires:');if(hire)L.push(hire);L.push('');
@@ -1219,16 +1252,22 @@ function buildOutlookHTML(){
   H.push('<p style="font-family:Georgia,serif;font-size:20px;font-weight:bold;color:#1a1612;margin:0 0 16px 0;padding-bottom:14px;border-bottom:2px solid #c9a96e">River Pointe End of Night'+(fmtD?' — '+fmtD:'')+'</p>');
   H.push('<table cellpadding="0" cellspacing="0" border="0" style="margin-bottom:4px">');
   H.push(row('Net Sales','<strong>'+sales+'</strong>'));H.push(row('Check Average',avg));
-  H.push(row('Covers',cvrs+'&nbsp;<span style="color:#b8ada7;font-size:12px">Resy: '+resy+'</span>'));H.push(row('Weather',wthr));H.push('</table>');
+  H.push(row('Covers',cvrs+'&nbsp;<span style="color:#b8ada7;font-size:12px">Resy: '+resy+'</span>'));
+  var _wi=walkIns(); if(_wi!==null) H.push(row('Walk-ins', String(_wi)));
+  var _lb=laborLine(); if(_lb) H.push(row('Staff on', _lb.count+(_lb.hours?'&nbsp;<span style="color:#b8ada7;font-size:12px">'+fmtHours(_lb.hours)+'h</span>':'')));
+  H.push(row('Weather',wthr));H.push('</table>');
   if(exec){H.push(div());H.push('<p style="font-family:Georgia,serif;font-size:15px;font-style:italic;color:#1a1612;line-height:1.8;margin:0 0 18px 0;padding-left:14px;border-left:3px solid #c9a96e">'+exec+'</p>');}
   if(preShiftSummary){H.push(div());H.push(sl('Pre-Shift Meeting'));H.push('<p style="font-family:Georgia,serif;font-size:14px;font-style:italic;color:#1a1612;line-height:1.7;margin:0">'+preShiftSummary+'</p>');}
   else if(preShiftNotes.length){H.push(div());H.push(sl('Pre-Shift Meeting'));preShiftNotes.forEach(function(n){H.push('<p style="font-family:Arial,sans-serif;font-size:13px;color:#3d3530;margin:2px 0;padding-left:12px;border-left:2px solid #c9a96e">'+n.text+'</p>');});}
   H.push(div());H.push(sl('Closing Check'));H.push('<table cellpadding="0" cellspacing="0" border="0">');
   H.push(cr('Polishing area clean','cl-sw-polish'));H.push(cr('Perimeter walked','cl-perimeter'));H.push(cr('Front door locked','cl-d-front'));H.push(cr('Liquor cage locked','cl-d-wine'));H.push(cr('Bar bank $600','cl-sc-bank'));H.push(cr('Cash in safe','cl-sc-safe'));H.push(cr('Candles out','cl-candle-out'));H.push(cr('Lamps charging','cl-lamp-in'));H.push('</table>');
+  var _fl=collectFlags();
+  if(_fl.no.length){H.push(div());H.push('<p style="font-family:Arial,sans-serif;font-size:10px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#6b2323;margin:0 0 6px 0">Needs Attention</p>');_fl.no.forEach(function(x){H.push('<p style="font-family:Arial,sans-serif;font-size:14px;color:#6b2323;margin:2px 0">✗ '+x+'</p>');});if(_fl.unset.length)H.push('<p style="font-family:Arial,sans-serif;font-size:12px;color:#b8ada7;margin:4px 0 0 0">'+_fl.unset.length+' item'+(_fl.unset.length>1?'s':'')+' not marked</p>');}
   if(vips.length){H.push(div());H.push(sl('VIPs'));H.push('<p style="margin:0">');vips.forEach(function(x){H.push('<span style="display:inline-block;background:#f5edd8;border:1px solid #e0c98a;border-radius:100px;padding:2px 10px;font-family:Arial,sans-serif;font-size:12px;color:#8a6d3b;margin:2px 4px 2px 0">'+x+'</span>');});H.push('</p>');}
+  if(shiftNotes.length){H.push(div());H.push(sl('Shift Log'));shiftNotes.forEach(function(n){H.push('<p style="font-family:Arial,sans-serif;font-size:13px;color:#1a1612;margin:2px 0"><span style="color:#b8ada7;font-size:12px">'+n.ts+' · '+n.who+'</span> — '+n.text+'</p>');});}
   if(foh){H.push(div());H.push(sl('FOH'));H.push(bt(foh));}
   var hasF=openingSpecials.filter(function(s){return s.name;}).length||shiftExtras.filter(function(s){return s.name;}).length||foodN;
-  if(hasF){H.push(div());H.push(sl('Food'));openingSpecials.forEach(function(s){if(!s.name)return;if(s.eightysixed)H.push('<p style="font-family:Arial,sans-serif;font-size:14px;color:#1a1612;margin:2px 0">'+s.name+' <span style="display:inline-block;background:#f9eded;color:#6b2323;border:1px solid #e8b8b8;border-radius:4px;padding:0 5px;font-size:11px;font-weight:bold">86</span></p>');else if(s.sold||s.count)H.push('<p style="font-family:Arial,sans-serif;font-size:14px;color:#1a1612;margin:2px 0">'+s.name+' — sold '+(s.sold||'?')+' of '+(s.count||'?')+'</p>');});shiftExtras.forEach(function(s){if(!s.name)return;H.push('<p style="font-family:Arial,sans-serif;font-size:14px;color:#1a1612;margin:2px 0">'+s.name+' — sold '+(s.sold||'?')+' of '+(s.avail||'?')+'</p>');});if(foodN)H.push('<p style="font-family:Arial,sans-serif;font-size:14px;color:#1a1612;line-height:1.7;margin:6px 0 0 0">'+foodN.replace(/\n/g,'<br>')+'</p>');}
+  if(hasF){H.push(div());H.push(sl('Food'));openingSpecials.forEach(function(s){if(!s.name)return;if(s.eightysixed)H.push('<p style="font-family:Arial,sans-serif;font-size:14px;color:#1a1612;margin:2px 0">'+s.name+' <span style="display:inline-block;background:#f9eded;color:#6b2323;border:1px solid #e8b8b8;border-radius:4px;padding:0 5px;font-size:11px;font-weight:bold">86</span></p>');else if(s.sold||s.count){var p=pct(s.sold,s.count);H.push('<p style="font-family:Arial,sans-serif;font-size:14px;color:#1a1612;margin:2px 0">'+s.name+' — sold '+(s.sold||'?')+' of '+(s.count||'?')+(p!==null?' <span style="color:#b8ada7">('+p+'%)</span>':'')+'</p>');}});shiftExtras.forEach(function(s){if(!s.name)return;var p=pct(s.sold,s.avail);H.push('<p style="font-family:Arial,sans-serif;font-size:14px;color:#1a1612;margin:2px 0">'+s.name+' — sold '+(s.sold||'?')+' of '+(s.avail||'?')+(p!==null?' <span style="color:#b8ada7">('+p+'%)</span>':'')+'</p>');});if(foodN)H.push('<p style="font-family:Arial,sans-serif;font-size:14px;color:#1a1612;line-height:1.7;margin:6px 0 0 0">'+foodN.replace(/\n/g,'<br>')+'</p>');}
   if(bev){H.push(div());H.push(sl('Beverage'));H.push(bt(bev));}
   var e86=eighties.filter(Boolean);if(e86.length){H.push(div());H.push(sl('86 Items'));e86.forEach(function(x){H.push('<p style="font-family:Arial,sans-serif;font-size:14px;color:#1a1612;margin:2px 0">– '+x+'</p>');});}
   if(emp){H.push(div());H.push(sl('Employees'));H.push(bt(emp));}
@@ -1355,6 +1394,9 @@ async function generateExec(){
 
   fetchWeather();
   cfLoadNotes();
+
+  // Silently prefetch tonight's Sling roster so the email's "Staff on" line can auto-fill (no UI change).
+  (async function(){ try{ var r=await fetch(CF+'/sling/tonight'); var d=await r.json(); if(d&&!d.error&&Array.isArray(d.roster)) _slingRoster=d.roster; }catch(e){} })();
 
   // Start polling loops
   setInterval(cfPollShift, POLL_MS);   // full shift every 10s
