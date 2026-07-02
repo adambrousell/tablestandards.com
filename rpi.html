@@ -441,23 +441,8 @@ textarea{resize:vertical;min-height:72px;line-height:1.55}
       <div class="section-head">
         <div class="section-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/></svg></div>
         <div class="section-title">Employees</div>
-        <button onclick="loadSlingRoster()" id="sling-btn" style="margin-left:auto;display:flex;align-items:center;gap:5px;font-family:Josefin Sans,sans-serif;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:5px 12px;background:var(--ink);color:var(--cream);border:none;border-radius:5px;cursor:pointer;touch-action:manipulation">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/></svg>Pull from Sling
-        </button>
       </div>
       <div class="section-body">
-        <div id="sling-roster" style="display:none;margin-bottom:14px;border:1px solid var(--border-light);border-radius:6px;overflow:hidden">
-          <div style="background:var(--cream-warm);padding:8px 14px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between">
-            <span style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)">Tonight's Schedule from Sling</span>
-            <span id="sling-date" style="font-size:11px;color:var(--ink-faint);font-family:DM Mono,monospace"></span>
-          </div>
-          <div id="sling-roster-list" style="padding:0"></div>
-          <div style="padding:8px 14px;background:var(--cream-warm);border-top:1px solid var(--border-light);display:flex;gap:8px;align-items:center">
-            <span id="sling-total" style="font-size:11px;color:var(--ink-soft);font-family:DM Mono,monospace"></span>
-            <button onclick="appendRosterToNotes()" style="font-family:Josefin Sans,sans-serif;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;background:var(--gold);color:#fff;border:none;border-radius:4px;cursor:pointer;margin-left:auto">Add to Notes ↓</button>
-          </div>
-        </div>
-        <div id="sling-error" style="display:none;padding:8px 12px;background:var(--red-pale);border:1px solid #e8b8b8;border-radius:6px;margin-bottom:12px;font-size:12px;color:var(--red-deep);font-family:DM Mono,monospace"></div>
         <button class="add-row-btn" id="preshift-to-emp-btn" onclick="appendPreShiftToEmployees(this)" style="margin-bottom:10px;margin-top:0">↓ Add pre-shift notes</button>
         <textarea id="s-emp" placeholder="Performance notes, training observations, uniform issues, HR items…"></textarea>
       </div>
@@ -1086,33 +1071,6 @@ function fmtDate(val){
 }
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-// ═══════════════════════════════════════════════
-// SLING ROSTER
-// ═══════════════════════════════════════════════
-var _slingRoster=[];
-async function loadSlingRoster(){
-  var btn=document.getElementById('sling-btn'),rd=document.getElementById('sling-roster'),err=document.getElementById('sling-error'),list=document.getElementById('sling-roster-list');
-  btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .7s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Loading…';
-  btn.disabled=true; err.style.display='none'; rd.style.display='none';
-  try {
-    var r=await fetch(CF+'/sling/tonight'); var d=await r.json();
-    if(d.error){err.textContent='Sling error: '+d.error;err.style.display='block';return;}
-    _slingRoster=d.roster||[];
-    document.getElementById('sling-date').textContent=d.date||'';
-    document.getElementById('sling-total').textContent=_slingRoster.length+' staff scheduled';
-    if(!_slingRoster.length){list.innerHTML='<div style="padding:12px 14px;font-size:13px;color:var(--ink-faint);font-style:italic">No shifts found for today.</div>';}
-    else{list.innerHTML=_slingRoster.map(function(e,i){var bg=i%2===0?'#fff':'var(--cream)';var ts=(e.start&&e.end)?e.start+' – '+e.end:(e.start||'');return '<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center;padding:8px 14px;background:'+bg+';border-bottom:1px solid var(--border-light)"><div><div style="font-family:Josefin Sans,sans-serif;font-size:13px;font-weight:500;color:var(--ink)">'+e.name+'</div><div style="font-size:11px;color:var(--ink-soft);margin-top:1px">'+(e.position||'')+'</div></div><div style="font-family:DM Mono,monospace;font-size:11px;color:var(--ink-soft)">'+ts+'</div><div style="font-family:DM Mono,monospace;font-size:11px;color:var(--gold);font-weight:500;white-space:nowrap">'+(e.hours?e.hours+'h':'')+'</div></div>';}).join('');}
-    rd.style.display='block';
-  } catch(e){err.textContent='Could not reach Worker: '+e.message;err.style.display='block';}
-  finally{btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/></svg> Pull from Sling';btn.disabled=false;}
-}
-function appendRosterToNotes(){
-  if(!_slingRoster.length) return;
-  var emp=document.getElementById('s-emp'),existing=emp.value.trim();
-  var lines=_slingRoster.map(function(e){var p=[e.name];if(e.position)p.push(e.position);if(e.start&&e.end)p.push(e.start+'–'+e.end);if(e.hours)p.push(e.hours+'h');return '– '+p.join(' · ');});
-  emp.value=(existing?existing+'\n\n':'')+'Staff scheduled tonight:\n'+lines.join('\n');
-  debounceSave(); emp.scrollIntoView({behavior:'smooth',block:'center'});
-}
 function appendPreShiftToEmployees(btn){
   // Gather pre-shift content: logged meeting notes, then the Additional Pre-shift notes textarea
   var lines=[];
@@ -1137,8 +1095,6 @@ function appendPreShiftToEmployees(btn){
 // ═══════════════════════════════════════════════
 function numOr(x){ var n=parseInt(String(x==null?'':x).replace(/[^0-9-]/g,''),10); return isNaN(n)?null:n; }
 function walkIns(){ var c=numOr(v('s-covers')), r=numOr(v('s-resy')); if(c===null||r===null) return null; var w=c-r; return w>=0?w:null; }
-function laborLine(){ if(!_slingRoster||!_slingRoster.length) return null; var h=0; _slingRoster.forEach(function(e){var x=parseFloat(e.hours); if(!isNaN(x)) h+=x;}); return {count:_slingRoster.length, hours:h}; }
-function fmtHours(h){ return h%1 ? h.toFixed(1) : String(h); }
 function pct(sold,total){ var s=parseFloat(sold), t=parseFloat(total); if(isNaN(s)||isNaN(t)||t<=0) return null; return Math.round(s/t*100); }
 // Walk every checklist row (opening + closing) and split into NO (flagged) vs not-yet-marked
 function collectFlags(){
@@ -1168,7 +1124,6 @@ function generate(){
   H.push('<span class="email-kv-label">Covers</span><span class="email-kv-value">'+esc(cvrs)+'&nbsp;<span style="color:var(--ink-faint);font-size:12px">Resy: '+esc(resy)+'</span></span>');
   H.push('<span class="email-kv-label">Weather</span><span class="email-kv-value">'+esc(wthr)+'</span>');
   var _wi=walkIns(); if(_wi!==null) H.push('<span class="email-kv-label">Walk-ins</span><span class="email-kv-value">'+_wi+'</span>');
-  var _lb=laborLine(); if(_lb) H.push('<span class="email-kv-label">Staff on</span><span class="email-kv-value">'+_lb.count+(_lb.hours?'&nbsp;<span style="color:var(--ink-faint);font-size:12px">'+fmtHours(_lb.hours)+'h</span>':'')+'</span>');
   H.push('</div></div><div class="email-divider"></div>');
   H.push('<div class="email-narrative" id="email-narrative-inject">Narrative summary will appear here after AI summary is generated above.</div>');
   H.push('<div class="email-divider"></div>');
@@ -1212,7 +1167,6 @@ function buildPlainText(date,mgr,closer,wthr,sales,avg,cvrs,resy,foh,foodN,bev,e
   L.push('Shift: '+fmtD);L.push('- Net Sales: '+(sales||'—'));L.push('- Check Average: '+(avg||'—'));
   L.push('- Covers: '+(cvrs||'—')+'  Resy: '+(resy||'—'));
   var _wi=walkIns(); if(_wi!==null) L.push('- Walk-ins: '+_wi);
-  var _lb=laborLine(); if(_lb) L.push('- Staff on: '+_lb.count+(_lb.hours?' ('+fmtHours(_lb.hours)+'h)':''));
   L.push('- Weather: '+(wthr||'—'));L.push('');
   L.push('Closing Check:');L.push('- Polishing area: '+getV('cl-sw-polish'));L.push('- Perimeter: '+getV('cl-perimeter'));L.push('- Front door: '+getV('cl-d-front'));L.push('- Liquor cage: '+getV('cl-d-wine'));L.push('');
   var _fl=collectFlags(); if(_fl.no.length){L.push('Needs Attention:');_fl.no.forEach(function(x){L.push('- '+x+': NO');});if(_fl.unset.length)L.push('('+_fl.unset.length+' not marked)');L.push('');}
@@ -1254,7 +1208,6 @@ function buildOutlookHTML(){
   H.push(row('Net Sales','<strong>'+sales+'</strong>'));H.push(row('Check Average',avg));
   H.push(row('Covers',cvrs+'&nbsp;<span style="color:#b8ada7;font-size:12px">Resy: '+resy+'</span>'));
   var _wi=walkIns(); if(_wi!==null) H.push(row('Walk-ins', String(_wi)));
-  var _lb=laborLine(); if(_lb) H.push(row('Staff on', _lb.count+(_lb.hours?'&nbsp;<span style="color:#b8ada7;font-size:12px">'+fmtHours(_lb.hours)+'h</span>':'')));
   H.push(row('Weather',wthr));H.push('</table>');
   if(exec){H.push(div());H.push('<p style="font-family:Georgia,serif;font-size:15px;font-style:italic;color:#1a1612;line-height:1.8;margin:0 0 18px 0;padding-left:14px;border-left:3px solid #c9a96e">'+exec+'</p>');}
   if(preShiftSummary){H.push(div());H.push(sl('Pre-Shift Meeting'));H.push('<p style="font-family:Georgia,serif;font-size:14px;font-style:italic;color:#1a1612;line-height:1.7;margin:0">'+preShiftSummary+'</p>');}
@@ -1394,9 +1347,6 @@ async function generateExec(){
 
   fetchWeather();
   cfLoadNotes();
-
-  // Silently prefetch tonight's Sling roster so the email's "Staff on" line can auto-fill (no UI change).
-  (async function(){ try{ var r=await fetch(CF+'/sling/tonight'); var d=await r.json(); if(d&&!d.error&&Array.isArray(d.roster)) _slingRoster=d.roster; }catch(e){} })();
 
   // Start polling loops
   setInterval(cfPollShift, POLL_MS);   // full shift every 10s
