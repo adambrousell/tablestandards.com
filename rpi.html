@@ -581,6 +581,7 @@ var toggleState     = {};
 var vips            = [];
 var eighties        = [];
 var shiftNotes      = [];
+var deletedNoteFPs  = [];   // tombstones: fingerprints of notes deleted locally, so /notes polling can't resurrect them
 var preShiftNotes   = [];
 var preShiftSummary = '';
 var openingSpecials = [];
@@ -678,7 +679,7 @@ function collect() {
     cashVariance: v('cl-cash-variance'), clNotes: v('cl-notes'),
     toggleState: toggleState,
     preShiftNotes: preShiftNotes, preShiftSummary: preShiftSummary,
-    vips: vips, shiftNotes: shiftNotes,
+    vips: vips, shiftNotes: shiftNotes, deletedNoteFPs: deletedNoteFPs,
     openingSpecials: openingSpecials, shiftExtras: shiftExtras, eighties: eighties
   };
 }
@@ -704,15 +705,26 @@ function applyFields(d) {
   if (d.vips&&d.vips.length) { vips=d.vips; renderVips(); }
   if (d.eighties&&d.eighties.length) { eighties=d.eighties; renderEighties(); }
 
+  // SYNC FIX: union deletion tombstones first so a delete on any device stays deleted everywhere
+  if (d.deletedNoteFPs&&d.deletedNoteFPs.length) {
+    d.deletedNoteFPs.forEach(function(fp){ if(deletedNoteFPs.indexOf(fp)===-1) deletedNoteFPs.push(fp); });
+  }
   if (d.shiftNotes&&d.shiftNotes.length) {
     var today=serviceDate();
-    var seen=shiftNotes.map(function(n){return n.ts+'|'+n.who+'|'+n.text;});
+    var seen=shiftNotes.map(noteFP);
     d.shiftNotes.forEach(function(n){
       if(n.date&&n.date!==today) return;
-      var fp=n.ts+'|'+n.who+'|'+n.text;
+      var fp=noteFP(n);
+      if(deletedNoteFPs.indexOf(fp)!==-1) return;   // tombstoned — never resurrect
       if(seen.indexOf(fp)===-1){shiftNotes.push(n);seen.push(fp);}
     });
     renderShiftNotes();
+  }
+  // SYNC FIX: drop any tombstoned note that slipped in from an older remote payload
+  if (deletedNoteFPs.length) {
+    var before=shiftNotes.length;
+    shiftNotes=shiftNotes.filter(function(n){ return deletedNoteFPs.indexOf(noteFP(n))===-1; });
+    if(shiftNotes.length!==before) renderShiftNotes();
   }
   if (d.openingSpecials&&d.openingSpecials.length) { openingSpecials=d.openingSpecials; renderOpeningSpecials(); renderShiftSpecials(); }
   if (d.shiftExtras&&d.shiftExtras.length) { shiftExtras=d.shiftExtras; renderShiftSpecials(); }
@@ -857,17 +869,18 @@ async function cfLoadNotes() {
     var r=await fetch(CF+'/notes'); var notes=await r.json();
     if(!notes||!notes.length) return;
     var today=serviceDate();
-    var seen=shiftNotes.map(function(n){return n.ts+'|'+n.who+'|'+n.text;});
+    var seen=shiftNotes.map(noteFP);
     notes.forEach(function(n){
       if(n.date&&n.date!==today) return;
-      var fp=n.ts+'|'+n.who+'|'+n.text;
+      var fp=noteFP(n);
+      if(deletedNoteFPs.indexOf(fp)!==-1) return;   // stay deleted — do not pull back in
       if(seen.indexOf(fp)===-1){shiftNotes.push(n);seen.push(fp);}
     });
     renderShiftNotes();
   } catch(e){}
 }
 async function cfClearNotes() {
-  try { await fetch(CF+'/notes',{method:'DELETE'}); shiftNotes=[]; renderShiftNotes(); showSyncStatus('Notes cleared ✓'); } catch(e){ showSyncStatus('Clear failed'); }
+  try { await fetch(CF+'/notes',{method:'DELETE'}); shiftNotes=[]; deletedNoteFPs=[]; renderShiftNotes(); debounceSave(); showSyncStatus('Notes cleared ✓'); } catch(e){ showSyncStatus('Clear failed'); }
 }
 function showSyncStatus(msg) {
   var el=document.getElementById('sync-status'); if(!el) return;
@@ -968,6 +981,7 @@ function renderShiftSpecials(){
 // ═══════════════════════════════════════════════
 // SHIFT NOTES
 // ═══════════════════════════════════════════════
+function noteFP(n){ return n.ts+'|'+n.who+'|'+n.text; }
 function addShiftNote(){
   var inp=document.getElementById('s-note-input'),txt=inp.value.trim(); if(!txt) return;
   var mgr=document.getElementById('o-manager').value||'Manager',who=mgr.split(' ')[0];
@@ -977,7 +991,11 @@ function addShiftNote(){
   shiftNotes.push(note); inp.value=''; renderShiftNotes(); cfPostNote(note); debounceSave();
   if(!openingSpecials.length){var ds=DAY_SPECIALS[serviceDay()];if(ds)openingSpecials.push({name:ds,count:'',sold:'',eightysixed:false});openingSpecials.push({name:'Steak Tartare',count:'',sold:'',eightysixed:false});renderOpeningSpecials();renderShiftSpecials();}
 }
-function removeShiftNote(i){shiftNotes.splice(i,1);renderShiftNotes();debounceSave();}
+function removeShiftNote(i){
+  var n=shiftNotes[i];
+  if(n){var fp=noteFP(n);if(deletedNoteFPs.indexOf(fp)===-1)deletedNoteFPs.push(fp);}  // tombstone so polling can't bring it back
+  shiftNotes.splice(i,1);renderShiftNotes();debounceSave();
+}
 function renderShiftNotes(){
   var log=document.getElementById('shift-notes-log'); if(!log) return;
   if(!shiftNotes.length){log.innerHTML='<div class="notes-empty">No notes yet — post one above.</div>';return;}
