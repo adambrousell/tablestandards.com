@@ -307,6 +307,12 @@ function isStaffOrComp(name) {
   return /[-–]\s*(staff|comp|void|comped|employee|mgr|manager)/i.test(name);
 }
 
+// Wine sold by the glass (BTG) is prefixed "GL:" in the Toast export; everything
+// else in the wine category (numbered bins, named bottles) is bottle wine.
+function isGlassWine(name) {
+  return /^\s*gl:/i.test(name);
+}
+
 function buildLookup(items) {
   const m = {};
   items.forEach(i => {
@@ -394,12 +400,18 @@ function renderDashboard(thisData, prevData) {
 
   const cocktailRev = sumRev(cats.cocktail);
   const wineRev     = sumRev(cats.wine);
+  const glassWine   = (cats.wine||[]).filter(i=>isGlassWine(i.name));
+  const bottleWine  = (cats.wine||[]).filter(i=>!isGlassWine(i.name));
+  const glassWineRev  = sumRev(glassWine);
+  const bottleWineRev = sumRev(bottleWine);
   const foodRev     = sumRev(cats.food) + sumRev(cats.starter) + sumRev(cats.dessert);
   const spiritRev   = sumRev(cats.spirit);
   const eventsRev   = sumRev(cats.events);
 
   const prevCocktailRev = sumRev(prevCats.cocktail);
   const prevWineRev     = sumRev(prevCats.wine);
+  const prevGlassWineRev  = sumRev((prevCats.wine||[]).filter(i=>isGlassWine(i.name)));
+  const prevBottleWineRev = sumRev((prevCats.wine||[]).filter(i=>!isGlassWine(i.name)));
   const prevFoodRev     = sumRev(prevCats.food)+sumRev(prevCats.starter)+sumRev(prevCats.dessert);
   const prevSpiritRev   = sumRev(prevCats.spirit);
   const prevEventsRev   = sumRev(prevCats.events);
@@ -419,8 +431,9 @@ function renderDashboard(thisData, prevData) {
   const kpis = [
     { label:'Est. revenue (this week)', val:fmt(totalRev), sub:`${items.length.toLocaleString()} line items`, delta:kpiDelta(totalRev, prevTotalRev), extra: discountNote },
     { label:'Cocktail revenue', val:fmt(cocktailRev), sub:`${sumQty(cats.cocktail)} drinks`, delta:kpiDelta(cocktailRev, prevCocktailRev) },
-    { label:'Wine revenue', val:fmt(wineRev), sub:`${sumQty(cats.wine)} pours/bottles`, delta:kpiDelta(wineRev, prevWineRev) },
-    { label:'Food revenue', val:fmt(foodRev), sub:`${sumQty(cats.food)+sumQty(cats.starter)} covers`, delta:kpiDelta(foodRev, prevFoodRev) },
+    { label:'Wine — by the glass', val:fmt(glassWineRev), sub:`${sumQty(glassWine)} pours`, delta:kpiDelta(glassWineRev, prevGlassWineRev) },
+    { label:'Wine — bottle', val:fmt(bottleWineRev), sub:`${sumQty(bottleWine)} bottles`, delta:kpiDelta(bottleWineRev, prevBottleWineRev) },
+    { label:'Food revenue', val:fmt(foodRev), sub:`${sumQty(cats.food)+sumQty(cats.starter)+sumQty(cats.dessert)} items`, delta:kpiDelta(foodRev, prevFoodRev) },
     { label:'Spirit revenue', val:fmt(spiritRev), sub:`${sumQty(cats.spirit)} pours`, delta:kpiDelta(spiritRev, prevSpiritRev) },
     ...(eventsRev > 0 ? [{ label:'Events & wine dinner', val:fmt(eventsRev), sub:`${sumQty(cats.events)} items`, delta:kpiDelta(eventsRev, prevEventsRev) }] : []),
     { label:'Top cocktail', val:topCocktail?topCocktail.name.replace(/^HH:\s*/i,'').split(' ').slice(0,3).join(' '):'—', sub:topCocktail?`${topCocktail.qty} sold`:'', delta:'' },
@@ -786,10 +799,16 @@ async function exportEmail() {
   const prevTotalRev = prevItems ? netRev(prevItems, discountPrev) : null;
   const cocktailRev  = sumRev(cats.cocktail);
   const wineRev      = sumRev(cats.wine);
+  const glassWine    = (cats.wine||[]).filter(i=>isGlassWine(i.name));
+  const bottleWine   = (cats.wine||[]).filter(i=>!isGlassWine(i.name));
+  const glassWineRev  = sumRev(glassWine);
+  const bottleWineRev = sumRev(bottleWine);
   const foodRev      = sumRev(cats.food) + sumRev(cats.starter) + sumRev(cats.dessert);
   const spiritRev    = sumRev(cats.spirit);
   const prevCocktailRev = sumRev(prevCats.cocktail);
   const prevWineRev     = sumRev(prevCats.wine);
+  const prevGlassWineRev  = sumRev((prevCats.wine||[]).filter(i=>isGlassWine(i.name)));
+  const prevBottleWineRev = sumRev((prevCats.wine||[]).filter(i=>!isGlassWine(i.name)));
   const prevFoodRev     = sumRev(prevCats.food)+sumRev(prevCats.starter)+sumRev(prevCats.dessert);
   const prevSpiritRev   = sumRev(prevCats.spirit);
 
@@ -916,8 +935,9 @@ async function exportEmail() {
     <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid #ece9e2;border-radius:6px;overflow:hidden;"><tr style="background:#faf8f4;">
       ${kpiBlock('Est. net revenue', fmt(totalRev), `${items.length} items`, totalRev, prevTotalRev)}
       ${kpiBlock('Cocktails', fmt(cocktailRev), `${sumQty(cats.cocktail)} drinks`, cocktailRev, prevCocktailRev)}
-      ${kpiBlock('Wine', fmt(wineRev), `${sumQty(cats.wine)} pours`, wineRev, prevWineRev)}
-      ${kpiBlock('Food', fmt(foodRev), `${sumQty(cats.food)+sumQty(cats.starter)} covers`, foodRev, prevFoodRev)}
+      ${kpiBlock('Wine · glass', fmt(glassWineRev), `${sumQty(glassWine)} pours`, glassWineRev, prevGlassWineRev)}
+      ${kpiBlock('Wine · bottle', fmt(bottleWineRev), `${sumQty(bottleWine)} bottles`, bottleWineRev, prevBottleWineRev)}
+      ${kpiBlock('Food', fmt(foodRev), `${sumQty(cats.food)+sumQty(cats.starter)+sumQty(cats.dessert)} items`, foodRev, prevFoodRev)}
       <td style="padding:12px 16px;text-align:center;">
         <div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#9f9f9b;margin-bottom:4px;">Spirits</div>
         <div style="font-family:Georgia,serif;font-size:22px;color:#1a1a18;line-height:1;">${fmt(spiritRev)}</div>
