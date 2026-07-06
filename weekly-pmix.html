@@ -965,28 +965,31 @@ async function exportEmail() {
           <strong style="color:#6b6b67;">${CAT_LABELS_EMAIL[key]}</strong>
           <span style="color:#9f9f9b;font-weight:normal;">&nbsp;${fmt(grpRev)} · ${grp.length} items</span>
         </div>`;
-        // Item grid as a real table: 3 solid-color cells per row (bgcolor for Outlook)
-        hmHtml += `<table width="100%" cellpadding="0" cellspacing="4" style="border-collapse:separate;margin-bottom:6px;">`;
+        // Item grid as a real table: 3 cells per row, bgcolor for Outlook.
+        // Tiles are kept LIGHT with DARK text so they stay readable even if
+        // Outlook strips the background fill; a colored left spine survives regardless.
+        hmHtml += `<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-bottom:6px;">`;
         for (let r = 0; r < grp.length; r += 3) {
           const rowItems = grp.slice(r, r + 3);
           hmHtml += '<tr>';
           rowItems.forEach(item => {
-            const opacity = 0.35 + (item.rev / maxR) * 0.65;
+            const opacity = 0.14 + (item.rev / maxR) * 0.31;   // 0.14–0.45: always light enough for dark text
             const bg = hexBlend(color, opacity);
-            const txt = textOn(bg);
+            const txt = '#1a1a18';
             const prevItem = prevLookup ? lookupPrev(item.name, prevLookup) : null;
             const d = prevItem ? (item.qty - prevItem.qty) / prevItem.qty * 100 : null;
+            const dCol = d === null ? '' : d > 2 ? '#1a7a3a' : d < -2 ? '#b83030' : '#6b6b67';
             const dStr = d !== null
-              ? `<div style="font-size:9px;color:${txt};margin-top:2px;">${d>2?'▲':d<-2?'▼':'—'} ${Math.abs(Math.round(d))}%</div>`
+              ? `<div style="font-size:9px;color:${dCol};margin-top:2px;font-weight:bold;">${d>2?'▲':d<-2?'▼':'—'} ${Math.abs(Math.round(d))}%</div>`
               : '';
             const nm = item.name.replace(/^(GL:|HH:|WD\s|\d{3,4}[:\s]|[Pp]\.\s*)/,'');
-            hmHtml += `<td width="33%" bgcolor="${bg}" style="background-color:${bg};padding:8px 10px;border-radius:4px;vertical-align:top;">
+            hmHtml += `<td width="33%" bgcolor="${bg}" style="background-color:${bg};border:3px solid #ffffff;border-left:4px solid ${color};padding:8px 10px;vertical-align:top;">
               <div style="font-size:10px;font-weight:bold;color:${txt};line-height:1.3;">${nm}</div>
-              <div style="font-size:9px;color:${txt};margin-top:2px;">${item.qty} · ${fmt(item.rev)}</div>
+              <div style="font-size:9px;color:#4a4a46;margin-top:2px;">${item.qty} · ${fmt(item.rev)}</div>
               ${dStr}
             </td>`;
           });
-          for (let k = rowItems.length; k < 3; k++) hmHtml += '<td width="33%" style="padding:0;"></td>';
+          for (let k = rowItems.length; k < 3; k++) hmHtml += '<td width="33%" style="border:3px solid #ffffff;"></td>';
           hmHtml += '</tr>';
         }
         hmHtml += `</table>`;
