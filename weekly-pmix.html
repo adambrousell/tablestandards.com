@@ -770,7 +770,7 @@ function clearAll() {
   currentThis=null; currentPrev=null; discountThis=0; discountPrev=0;
 }
 
-function exportEmail() {
+async function exportEmail() {
   if (!currentThis) return;
   const { items, dateRange } = currentThis;
   const prevItems = currentPrev?.items || null;
@@ -963,10 +963,26 @@ function exportEmail() {
   </td></tr>
 </table></td></tr></table></body></html>`;
 
+  // Preview window (optional visual check)
   const win = window.open('', '_blank');
-  win.document.write(html);
-  win.document.close();
-  navigator.clipboard.writeText(html).catch(()=>{});
+  if (win) { win.document.write(html); win.document.close(); }
+
+  // Copy as rich text so Outlook/Mail keeps formatting on paste
+  const plain = (hasAI ? aiText + '\n\n' : '') + `River Pointe Inn — product mix · ${weekLine}`;
+  const statusEl = document.getElementById('parse-status');
+  try {
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        'text/html':  new Blob([html],  { type: 'text/html'  }),
+        'text/plain': new Blob([plain], { type: 'text/plain' }),
+      })
+    ]);
+    statusEl.textContent = 'Email copied with formatting — paste into Outlook (Ctrl/Cmd+V).';
+  } catch (e) {
+    // Fallback for browsers without ClipboardItem support
+    try { await navigator.clipboard.writeText(html); } catch(_) {}
+    statusEl.textContent = 'Rich copy unavailable — copied raw HTML instead (use the preview tab to copy).';
+  }
 }
 
 document.querySelectorAll('.tab').forEach(btn => {
