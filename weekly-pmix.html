@@ -963,11 +963,7 @@ async function exportEmail() {
   </td></tr>
 </table></td></tr></table></body></html>`;
 
-  // Preview window (optional visual check)
-  const win = window.open('', '_blank');
-  if (win) { win.document.write(html); win.document.close(); }
-
-  // Copy as rich text so Outlook/Mail keeps formatting on paste
+  // Try a best-effort background copy from the main page (happy path).
   const plain = (hasAI ? aiText + '\n\n' : '') + `River Pointe Inn — product mix · ${weekLine}`;
   const statusEl = document.getElementById('parse-status');
   try {
@@ -977,12 +973,56 @@ async function exportEmail() {
         'text/plain': new Blob([plain], { type: 'text/plain' }),
       })
     ]);
-    statusEl.textContent = 'Email copied with formatting — paste into Outlook (Ctrl/Cmd+V).';
+    statusEl.textContent = '✓ Email copied — paste into Outlook (Ctrl/Cmd+V), or use the Copy button in the preview.';
   } catch (e) {
-    // Fallback for browsers without ClipboardItem support
-    try { await navigator.clipboard.writeText(html); } catch(_) {}
-    statusEl.textContent = 'Rich copy unavailable — copied raw HTML instead (use the preview tab to copy).';
+    statusEl.textContent = 'Preview opened — click "Copy for Outlook" there, then paste (Ctrl/Cmd+V).';
   }
+
+  // Open a preview window with a guaranteed one-click "Copy for Outlook" button.
+  // The click happens INSIDE this window, so it always has focus + a fresh user
+  // gesture — that's what makes the rich-text copy reliable across Outlook builds.
+  const bodyInner = (html.match(/<body[^>]*>([\s\S]*)<\/body>/i) || [null, html])[1];
+  const previewDoc =
+    '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+    '<title>Product mix email — ' + weekLine + '</title>' +
+    '<style>body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f7f5f0;}' +
+    '#rpi-bar{position:sticky;top:0;z-index:99;background:#1a1a18;color:#fff;padding:12px 20px;' +
+    'display:flex;align-items:center;gap:14px;box-shadow:0 2px 8px rgba(0,0,0,.15);}' +
+    '#rpi-copy{background:#2a5f3c;color:#fff;border:none;border-radius:6px;padding:9px 20px;' +
+    'font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;}' +
+    '#rpi-copy:hover{opacity:.9;}' +
+    '#rpi-msg{font-size:13px;color:#a8ffbe;min-width:120px;}' +
+    '#rpi-hint{font-size:12px;color:#9f9f9b;margin-left:auto;}</style></head>' +
+    '<body>' +
+    '<div id="rpi-bar">' +
+      '<button id="rpi-copy">\uD83D\uDCCB Copy for Outlook</button>' +
+      '<span id="rpi-msg"></span>' +
+      '<span id="rpi-hint">Then click into your Outlook message and paste (Ctrl/Cmd+V)</span>' +
+    '</div>' +
+    '<div id="rpi-email">' + bodyInner + '</div>' +
+    '<scr' + 'ipt>' +
+    'var btn=document.getElementById("rpi-copy"),msg=document.getElementById("rpi-msg"),' +
+    'target=document.getElementById("rpi-email");' +
+    'function selectEmail(){var r=document.createRange();r.selectNodeContents(target);' +
+    'var s=window.getSelection();s.removeAllRanges();s.addRange(r);return s;}' +
+    'btn.addEventListener("click",async function(){' +
+      'var htmlStr=target.innerHTML;' +
+      'try{await navigator.clipboard.write([new ClipboardItem({' +
+        '"text/html":new Blob([htmlStr],{type:"text/html"}),' +
+        '"text/plain":new Blob([target.innerText],{type:"text/plain"})})]);' +
+        'msg.textContent="\u2713 Copied! Paste into Outlook now.";return;' +
+      '}catch(e){}' +
+      'var s=selectEmail();var ok=false;try{ok=document.execCommand("copy");}catch(e){}' +
+      's.removeAllRanges();' +
+      'msg.textContent=ok?"\u2713 Copied! Paste into Outlook now.":"Press Ctrl/Cmd+C to copy, then paste.";' +
+      'if(!ok)selectEmail();' +
+    '});' +
+    '</scr' + 'ipt>' +
+    '</body></html>';
+
+  const win = window.open('', '_blank');
+  if (win) { win.document.write(previewDoc); win.document.close(); }
+  else { statusEl.textContent = 'Popup blocked — allow popups for this site, then click Export email again.'; }
 }
 
 document.querySelectorAll('.tab').forEach(btn => {
