@@ -694,7 +694,7 @@ async function generateSummary() {
     wowText = `\n\nWoW: net revenue ${rd>0?'up':'down'} ${Math.abs(rd)}% vs ${currentPrev.dateRange||'last week'} (after discounts). Movers: ${movers||'no major shifts'}.`;
   }
 
-  const prompt = `You are writing a weekly GM product mix brief for River Pointe Inn, a fine-dining French-American bistro in Rumson, NJ (Rallo family). The GM is Adam. Sharp, professional, useful — like a Monday morning brief for ownership. 2-3 paragraphs. No bullet points. Name specific items and numbers. Flag anything notable — surges, declines, mix shifts, anomalies, opportunities. When a holiday or seasonal event affected either week, factor that into your reading of the numbers — don't just note it, actually use it to explain what you see.
+  const prompt = `You are writing a weekly GM product mix brief for River Pointe Inn, a fine-dining French-American bistro in Rumson, NJ (Rallo family). The GM is Adam. Sharp, professional, useful — like a Monday morning brief for ownership. 2-3 paragraphs. No bullet points. Do NOT include a title, headline, or heading — the email already has one, so start directly with the first paragraph of prose. Name specific items and numbers. Flag anything notable — surges, declines, mix shifts, anomalies, opportunities. When a holiday or seasonal event affected either week, factor that into your reading of the numbers — don't just note it, actually use it to explain what you see.
 
 Week: ${dateRange||'current week'}${coversText}
 ${getHolidayContext(dateRange, currentPrev?.dateRange)}Est. net revenue this week: ~${fmt(thisRevNet)}${discountThis>0?' (after '+fmt(discountThis)+' in Toast discounts)':''}
@@ -872,6 +872,32 @@ async function exportEmail() {
   const weekLine = dateRange || 'Week ending';
   const prevLine = currentPrev?.dateRange ? ` · prev: ${currentPrev.dateRange}` : '';
 
+  // Convert the AI's Markdown (**bold**, *italic*, # headers) into email-safe HTML.
+  const mdInline = (s) => s
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+    .replace(/(^|[^*])\*([^*\n]+?)\*(?!\*)/g,'$1<em>$2</em>');
+  const summaryPara = 'font-family:Georgia,serif;font-size:15px;line-height:1.75;color:#1a1a18;';
+  const summaryHtml = (aiText||'').trim().split(/\n{2,}/).map(block => {
+    const stripped = block.replace(/^\s*#{1,6}\s*/,'');          // drop "## " header markers
+    const inner = mdInline(stripped).replace(/\n/g,'<br>');
+    return `<p style="${summaryPara}margin:0 0 12px;">${inner}</p>`;
+  }).join('');
+
+  // Blend a category color toward white by `opacity` -> a SOLID hex (Outlook ignores real opacity).
+  const hexBlend = (hex, opacity) => {
+    const c = hex.replace('#','');
+    const r = parseInt(c.substr(0,2),16), g = parseInt(c.substr(2,2),16), b = parseInt(c.substr(4,2),16);
+    const mix = (ch) => Math.round(255*(1-opacity) + ch*opacity).toString(16).padStart(2,'0');
+    return '#' + mix(r) + mix(g) + mix(b);
+  };
+  // Pick readable text color for a given background.
+  const textOn = (hex) => {
+    const c = hex.replace('#','');
+    const lum = 0.299*parseInt(c.substr(0,2),16) + 0.587*parseInt(c.substr(2,2),16) + 0.114*parseInt(c.substr(4,2),16);
+    return lum > 150 ? '#1a1a18' : '#ffffff';
+  };
+
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>River Pointe Inn — Product Mix ${weekLine}</title></head>
 <body style="margin:0;padding:0;background:#f7f5f0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f7f5f0;padding:24px 0;"><tr><td align="center">
@@ -883,7 +909,7 @@ async function exportEmail() {
   </td></tr>
   ${hasAI ? `<tr><td style="padding:24px 32px;border-bottom:1px solid #ece9e2;">
     <p style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#9f9f9b;margin:0 0 12px;">GM Summary</p>
-    <p style="font-family:Georgia,serif;font-size:15px;line-height:1.75;color:#1a1a18;margin:0;">${aiText.replace(/\n\n/g,'</p><p style="font-family:Georgia,serif;font-size:15px;line-height:1.75;color:#1a1a18;margin:12px 0 0;">').replace(/\n/g,'<br>')}</p>
+    ${summaryHtml}
   </td></tr>` : ''}
   <tr><td style="padding:20px 32px;border-bottom:1px solid #ece9e2;">
     <p style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#9f9f9b;margin:0 0 12px;">Key metrics — this week${discountThis>0?' (net of discounts)':''}</p>
@@ -931,28 +957,39 @@ async function exportEmail() {
         const grp = [...(cats[key]||[])].filter(i=>!isStaffOrComp(i.name)).map(i=>({...i,rev:i.qty*i.price})).sort((a,b)=>b.rev-a.rev);
         if (!grp.length) return;
         const grpRev = grp.reduce((s,i)=>s+i.rev,0);
-        const maxR = grp[0].rev;
+        const maxR = grp[0].rev || 1;
         const color = CAT_COLORS_EMAIL[key];
-        // Category header row
-        hmHtml += `<div style="display:flex;align-items:center;gap:8px;margin:12px 0 6px;">
-          <span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${color};"></span>
-          <span style="font-size:12px;font-weight:500;color:#6b6b67;">${CAT_LABELS_EMAIL[key]}</span>
-          <span style="font-size:11px;color:#9f9f9b;margin-left:4px;">${fmt(grpRev)} · ${grp.length} items</span>
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;">`;
-        grp.forEach(item => {
-          const opacity = (0.35 + (item.rev/maxR)*0.65).toFixed(2);
-          const prevItem = prevLookup ? lookupPrev(item.name, prevLookup) : null;
-          const d = prevItem ? (item.qty-prevItem.qty)/prevItem.qty*100 : null;
-          const dColor = d===null ? '' : d>2 ? '#a8ffbe' : d<-2 ? '#ffb3b3' : 'rgba(255,255,255,0.6)';
-          const dStr = d!==null ? `<span style="font-size:9px;color:${dColor};display:block;margin-top:1px;">${d>2?'▲':d<-2?'▼':'—'} ${Math.abs(Math.round(d))}%</span>` : '';
-          hmHtml += `<div style="background:${color};opacity:${opacity};border-radius:4px;padding:7px 9px;min-width:100px;flex:1 1 100px;max-width:160px;">
-            <div style="font-size:10px;font-weight:500;color:#fff;line-height:1.3;">${item.name.replace(/^(GL:|HH:|WD\s|\d{3,4}[:\s]|[Pp]\.\s*)/,'')}</div>
-            <div style="font-size:9px;color:rgba(255,255,255,0.8);margin-top:2px;">${item.qty} · ${fmt(item.rev)}</div>
-            ${dStr}
-          </div>`;
-        });
-        hmHtml += `</div>`;
+        // Category header (no flexbox — plain block so Outlook keeps it)
+        hmHtml += `<div style="margin:14px 0 6px;font-size:12px;color:#6b6b67;">
+          <span style="color:${color};font-size:13px;">&#9632;</span>
+          <strong style="color:#6b6b67;">${CAT_LABELS_EMAIL[key]}</strong>
+          <span style="color:#9f9f9b;font-weight:normal;">&nbsp;${fmt(grpRev)} · ${grp.length} items</span>
+        </div>`;
+        // Item grid as a real table: 3 solid-color cells per row (bgcolor for Outlook)
+        hmHtml += `<table width="100%" cellpadding="0" cellspacing="4" style="border-collapse:separate;margin-bottom:6px;">`;
+        for (let r = 0; r < grp.length; r += 3) {
+          const rowItems = grp.slice(r, r + 3);
+          hmHtml += '<tr>';
+          rowItems.forEach(item => {
+            const opacity = 0.35 + (item.rev / maxR) * 0.65;
+            const bg = hexBlend(color, opacity);
+            const txt = textOn(bg);
+            const prevItem = prevLookup ? lookupPrev(item.name, prevLookup) : null;
+            const d = prevItem ? (item.qty - prevItem.qty) / prevItem.qty * 100 : null;
+            const dStr = d !== null
+              ? `<div style="font-size:9px;color:${txt};margin-top:2px;">${d>2?'▲':d<-2?'▼':'—'} ${Math.abs(Math.round(d))}%</div>`
+              : '';
+            const nm = item.name.replace(/^(GL:|HH:|WD\s|\d{3,4}[:\s]|[Pp]\.\s*)/,'');
+            hmHtml += `<td width="33%" bgcolor="${bg}" style="background-color:${bg};padding:8px 10px;border-radius:4px;vertical-align:top;">
+              <div style="font-size:10px;font-weight:bold;color:${txt};line-height:1.3;">${nm}</div>
+              <div style="font-size:9px;color:${txt};margin-top:2px;">${item.qty} · ${fmt(item.rev)}</div>
+              ${dStr}
+            </td>`;
+          });
+          for (let k = rowItems.length; k < 3; k++) hmHtml += '<td width="33%" style="padding:0;"></td>';
+          hmHtml += '</tr>';
+        }
+        hmHtml += `</table>`;
       });
       return hmHtml;
     })()}
