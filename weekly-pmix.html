@@ -111,6 +111,22 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 
 .leg-dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
 .no-data { text-align: center; padding: 60px 20px; color: var(--text-3); font-size: 14px; }
+
+/* Pars */
+.par-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; font-size: 12px; color: var(--text-2); }
+.par-controls input, .par-controls select { border: 1px solid var(--border-strong); border-radius: var(--r); padding: 6px 10px; font-family: 'DM Sans', sans-serif; font-size: 12px; background: var(--surface); color: var(--text); outline: none; }
+.par-controls input:focus, .par-controls select:focus { border-color: var(--accent); }
+.par-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.par-table th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); padding: 6px 8px; border-bottom: 2px solid var(--border); white-space: nowrap; }
+.par-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+.par-table td.num, .par-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.par-input { width: 64px; border: 1px solid var(--border-strong); border-radius: 4px; padding: 4px 6px; font-family: 'DM Sans', sans-serif; font-size: 12px; text-align: right; background: var(--bg); color: var(--text); outline: none; }
+.par-input:focus { border-color: var(--accent); }
+.par-status { font-weight: 500; white-space: nowrap; }
+.par-status.ok { color: var(--up); }
+.par-status.under { color: var(--down); }
+.par-status.heavy { color: #b8942a; }
+.par-status.none { color: var(--text-3); font-weight: 400; }
 </style>
 </head>
 <body>
@@ -172,6 +188,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <button class="tab" data-panel="spirits">Spirits</button>
     <button class="tab" data-panel="food">Food</button>
     <button class="tab" data-panel="winedinner">Events & WD</button>
+    <button class="tab" data-panel="pars">Pars</button>
     <button class="tab" data-panel="heatmap">Revenue heatmap</button>
   </div>
 
@@ -183,6 +200,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <div id="panel-spirits"></div>
     <div id="panel-food"></div>
     <div id="panel-winedinner"></div>
+    <div id="panel-pars"></div>
     <div id="panel-heatmap"></div>
   </div>
 </div>
@@ -192,14 +210,14 @@ const CAT_COLORS = {
   cocktail:'#2150a0', wine:'#5c2d6e', food:'#c0452a',
   starter:'#2a5f3c', dessert:'#b8942a', spirit:'#4a7a8a',
   beer:'#7a5c2a', coffee:'#6b4e3d', na:'#888780',
-  events:'#7a3060',
+  events:'#7a3060', pdj:'#0f766e',
 };
 
 const CAT_LABELS = {
   cocktail:'Cocktails & martinis', wine:'Wine (glass & bottle)', food:'Entrees & sides',
   starter:'Starters & raw bar', dessert:'Desserts', spirit:'Spirits',
   beer:'Beer', coffee:'Coffee & tea', na:'NA beverages',
-  events:'Private Events & Wine Dinner',
+  events:'Private Events & Wine Dinner', pdj:'Plat du Jour specials',
 };
 
 // Known Toast subtotal / header rows to exclude from item-level sums
@@ -210,13 +228,18 @@ const SKIP_NAMES = new Set([
   'dessert wines & fortified wine','beer','coffee & tea','raw bar & starters',
   'entrees & sides','dessert','add on\'s','private events','hors d\'oeuvres',
   'open items','gift card','total','location(s)','product mix','retail',
+  'takeout','take out','take-out','to go','togo','online ordering','brunch',
+  'delivery','catering','entrees','entrées','sides','sandwiches','specials',
 ]);
 
 // Gift card / non-revenue row patterns
 const GIFT_CARD_RE = /^gift\s*card|^add value\s*\(\$\)|^gift\s*card\s*\d/i;
 
-function isSkipRow(name) {
+function isSkipRow(name, price) {
   const n = name.toLowerCase().trim();
+  // "Lunch" is both the Toast Lunch-menu subtotal AND a beer (Maine Beer Co. Lunch).
+  // The menu subtotal carries a high blended avg price; the beer rings ~$9-10.
+  if (n === 'lunch' && typeof price === 'number' && price > 0 && price <= 15) return false;
   if (SKIP_NAMES.has(n)) return true;
   // Gift cards are liabilities, not revenue
   if (GIFT_CARD_RE.test(n)) return true;
@@ -244,35 +267,68 @@ function applyDiscount() {
   if (currentThis) renderDashboard(currentThis, currentPrev);
 }
 
+// Merge duplicate item rows across menus (Dinner / Lunch / Takeout) so each item
+// appears exactly once: qty is summed, price becomes the revenue-weighted average
+// (so qty*price still equals total revenue across menus). Keys keep GL:/HH:
+// prefixes intact so glass pours never merge into bottle lines.
+function aggregateItems(items) {
+  const map = new Map();
+  const out = [];
+  items.forEach(i => {
+    const key = i.name.toLowerCase().replace(/\s+/g, ' ').trim();
+    if (map.has(key)) {
+      const ex = map.get(key);
+      const rev = ex.qty * ex.price + i.qty * i.price;
+      ex.qty += i.qty;
+      ex.price = ex.qty > 0 ? rev / ex.qty : 0;
+    } else {
+      const copy = { ...i };
+      map.set(key, copy);
+      out.push(copy);
+    }
+  });
+  return out;
+}
+
 function parsePaste(raw) {
-  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  const lines = raw.split('\n').map(l => l.replace(/[\u00A0\u2007\u202F]/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean);
   const items = [];
   let dateRange = '';
   const dateMatch = raw.match(/Date range\s+([\w\s,\-–\/]+?\d{4})/i);
   if (dateMatch) dateRange = dateMatch[1].trim();
 
   for (const line of lines) {
-    const m = line.match(/^(.+?)\s+([\d,]+)\s+\$([0-9,.]+)\s*$/);
+    // Toast product-mix rows come in two shapes depending on the export view:
+    //   "Item Name 202 $6.00"             (qty · avg price)
+    //   "Item Name 202 $6.00 $1,212.00"   (qty · avg price · net sales)
+    const m = line.match(/^(.+?)\s+([\d,]+)\s+\$([\d,.]+)(?:\s+\$([\d,.]+))?\s*$/);
     if (!m) continue;
     const name = m[1].trim();
-    const qty = parseInt(m[2].replace(',', ''));
-    const price = parseFloat(m[3].replace(',', ''));
+    const qty = parseInt(m[2].replace(/,/g, ''));
+    let price = parseFloat(m[3].replace(/,/g, ''));
+    const netSales = m[4] !== undefined ? parseFloat(m[4].replace(/,/g, '')) : null;
+    // When the net-sales column is present, derive the effective price from it —
+    // it reflects actual dollars (incl. modifiers/discount-adjusted) better than avg price.
+    if (netSales !== null && !isNaN(netSales) && qty > 0) price = netSales / qty;
     if (isNaN(qty) || qty <= 0 || isNaN(price) || price < 0 || name.length < 2) continue;
-    if (isSkipRow(name)) continue;
+    if (isSkipRow(name, price)) continue;
     items.push({ name, qty, price });
   }
-  return { items, dateRange };
+  return { items: aggregateItems(items), dateRange };
 }
 
 function categorize(name) {
   const n = name.toLowerCase();
+  // Plat du Jour specials get their own category — matches "Plat du Jour",
+  // "Plate de Jour", "PDJ Monday Coq au Vin", "Duck du Jour", etc.
+  if (/plat[e]?\s*d[eu]\s*jour|\bd[eu]\s*jour\b|^pdj\b/.test(n)) return 'pdj';
   if (/espresso martini|salt air|filthy|metropolitan|jockey club|river pointe|grasshopper|in fashion|saint joe|lychee|can't elope|pep in your|bee sting|negroni|strawberry fields|colada|hh:|martini happy hour|ancho problem|rhubarb/.test(n)) return 'cocktail';
   if (/aperol spritz|hugo spritz|french 75|paper plane|mimosa|bloody mary|lemon drop|mojito|moscow mule/.test(n)) return 'cocktail';
   if (/na almost|na pear|na espresso/.test(n)) return 'cocktail';
   if (/^gl:|cremant|brut ros|moet|drappier|folle blanche|albarino|ladoucette|drouhin.*secondes|pouilly|peyrassol|moulin.*vent|cotes du rh|guyon 2022|routestock|chappellet mountain|haut l'artigue/.test(n)) return 'wine';
   if (/wine by the bottle|btg bottle|sancerre|meursault|chablis|puligny|cabernet sauv|pride mountain|ridge.*lytton|kistler|o'shaugh|aubert.*carneros|turley|ducru|chauvin 2019|smith haut lafitte|leon beyer|melville|chevillon|cathiard|camus-bruchon|agrapart|sulauze|domaine pierre martin|francois de la roche|lauverjat|manarine|lafarge|domaine guyon|drouhin.*cotes de beaune|joseph drouhin|o'shaughnessy|maître de chai|le petit ducru|le petite smith/.test(n)) return 'wine';
-  // Bottle bins by number prefix
-  if (/^\d{3,4}[:\s]|^b\d{3}[:\s]|^2\d{3}[:\s]/.test(n)) return 'wine';
+  // Bottle bins by number prefix — incl. B-bins like "B000's - Blacksmith" or "B412: ..."
+  if (/^\d{3,4}[:\s]|^b\d{2,4}\b|^2\d{3}[:\s]/.test(n)) return 'wine';
   if (/latour pauillac somm|baron patrick laducette|blasson d'issan|hundred acre|fortunate son|domaine de montille|jean et s.*bastien dauvissat|stéphane aviron|henri billiot|banyuls|d'oliveiras|taylor fladgate|chateau d'yquem|domaine dominique guyon|bourgogne|chinon|lestang|domaine de pallus|giacometti|patrimonio|brio by ch|rauzan|saint-joseph|brecheras|pallus|chantegrive|meyer-fonn|paul blanck|hermann j wiemer|domaine michel lafarge|petit chablis l\. michel|drouhin-vaudon|chablis.*dauvissat/.test(n)) return 'wine';
   if (/\b(vodka|belvedere|grey goose|ketel one|tito's|tito\b|hendrick|beefeater|bombay sapphire|botanist|fords gin|plymouth gin|tanqueray|absolut|monkey 47|asbury park gin|wodka)\b/.test(n)) return 'spirit';
   if (/\bcasamigos|don julio|fortaleza|lalo\b|pueblo viejo|casa dragones|del maguey|clase azul|g4 blanco|g4 reposado/.test(n)) return 'spirit';
@@ -407,6 +463,7 @@ function renderDashboard(thisData, prevData) {
   const foodRev     = sumRev(cats.food) + sumRev(cats.starter) + sumRev(cats.dessert);
   const spiritRev   = sumRev(cats.spirit);
   const eventsRev   = sumRev(cats.events);
+  const pdjRev      = sumRev(cats.pdj);
 
   const prevCocktailRev = sumRev(prevCats.cocktail);
   const prevWineRev     = sumRev(prevCats.wine);
@@ -415,6 +472,7 @@ function renderDashboard(thisData, prevData) {
   const prevFoodRev     = sumRev(prevCats.food)+sumRev(prevCats.starter)+sumRev(prevCats.dessert);
   const prevSpiritRev   = sumRev(prevCats.spirit);
   const prevEventsRev   = sumRev(prevCats.events);
+  const prevPdjRev      = sumRev(prevCats.pdj);
 
   const topCocktail = [...(cats.cocktail||[])].filter(i=>!isStaffOrComp(i.name)).sort((a,b)=>b.qty-a.qty)[0];
   const topFood     = [...(cats.food||[])].filter(i=>!isStaffOrComp(i.name)).sort((a,b)=>b.qty-a.qty)[0];
@@ -436,6 +494,7 @@ function renderDashboard(thisData, prevData) {
     { label:'Food revenue', val:fmt(foodRev), sub:`${sumQty(cats.food)+sumQty(cats.starter)+sumQty(cats.dessert)} items`, delta:kpiDelta(foodRev, prevFoodRev) },
     { label:'Spirit revenue', val:fmt(spiritRev), sub:`${sumQty(cats.spirit)} pours`, delta:kpiDelta(spiritRev, prevSpiritRev) },
     ...(eventsRev > 0 ? [{ label:'Events & wine dinner', val:fmt(eventsRev), sub:`${sumQty(cats.events)} items`, delta:kpiDelta(eventsRev, prevEventsRev) }] : []),
+    ...(pdjRev > 0 ? [{ label:'Plat du Jour', val:fmt(pdjRev), sub:`${sumQty(cats.pdj)} plates`, delta:kpiDelta(pdjRev, prevPdjRev) }] : []),
     { label:'Top cocktail', val:topCocktail?topCocktail.name.replace(/^HH:\s*/i,'').split(' ').slice(0,3).join(' '):'—', sub:topCocktail?`${topCocktail.qty} sold`:'', delta:'' },
     { label:'Top food', val:topFood?topFood.name.split(' ').slice(0,2).join(' '):'—', sub:topFood?`${topFood.qty} sold`:'', delta:'' },
     { label:'Top spirit', val:topPour?topPour.name.split(' ').slice(0,2).join(' '):'—', sub:topPour?`${topPour.qty} pours`:'', delta:'' },
@@ -445,7 +504,7 @@ function renderDashboard(thisData, prevData) {
   ).join('');
 
   // Overview
-  const catOrder = ['food','starter','events','na','cocktail','spirit','wine','coffee','dessert','beer'];
+  const catOrder = ['food','pdj','starter','events','na','cocktail','spirit','wine','coffee','dessert','beer'];
   const overviewRows = catOrder.map(key => ({
     key, name:CAT_LABELS[key], qty:sumQty(cats[key]), rev:sumRev(cats[key]),
     prevQty:sumQty(prevCats[key]), color:CAT_COLORS[key]
@@ -534,6 +593,7 @@ function renderDashboard(thisData, prevData) {
   document.getElementById('panel-spirits').innerHTML = spiritHtml || '<div class="no-data">No spirit data.</div>';
 
   document.getElementById('panel-food').innerHTML =
+    makeBarSection('Plat du Jour specials', (cats.pdj||[]).filter(i=>!isStaffOrComp(i.name)), CAT_COLORS.pdj, prevLookup) +
     makeBarSection('Entrees & sides', (cats.food||[]).filter(i=>!isStaffOrComp(i.name)), CAT_COLORS.food, prevLookup) +
     makeBarSection('Starters & raw bar', cats.starter||[], CAT_COLORS.starter, prevLookup) +
     makeBarSection('Desserts', cats.dessert||[], CAT_COLORS.dessert, prevLookup);
@@ -543,7 +603,7 @@ function renderDashboard(thisData, prevData) {
     : '<div class="no-data">No event items found this week.</div>';
 
   // Heatmap
-  const catOrderHM = ['food','starter','events','cocktail','wine','spirit','dessert','beer','coffee','na'];
+  const catOrderHM = ['food','pdj','starter','events','cocktail','wine','spirit','dessert','beer','coffee','na'];
   let hmHtml = `<div class="card"><div class="card-title"><span>Revenue heatmap</span> all items by category — click header to collapse</div>`;
   catOrderHM.forEach(key => {
     const grp = [...(cats[key]||[])].filter(i=>!isStaffOrComp(i.name)).map(i=>({...i, rev:i.qty*i.price})).sort((a,b)=>b.rev-a.rev);
@@ -576,6 +636,115 @@ function renderDashboard(thisData, prevData) {
   document.getElementById('panel-heatmap').innerHTML = hmHtml;
 
   document.getElementById('dashboard').style.display = 'block';
+
+  renderParsPanel();
+}
+
+// ── Pars vs statistical average ─────────────────────────────────────────────
+// Enter current par per item; the table compares it against average nightly
+// usage computed from the pasted weeks and flags pars that run under or heavy.
+// Pars persist in localStorage so they carry over week to week.
+function getPars() { try { return JSON.parse(localStorage.getItem('rpi_pars') || '{}'); } catch(e) { return {}; } }
+function savePar(key, val) {
+  const p = getPars();
+  if (val === '' || val === null || isNaN(parseFloat(val))) { delete p[key]; }
+  else { p[key] = parseFloat(val); }
+  localStorage.setItem('rpi_pars', JSON.stringify(p));
+}
+
+function parStatus(par, avgNight) {
+  if (par === null || isNaN(par)) return { cls:'none', txt:'—' };
+  if (avgNight > par) return { cls:'under', txt:'▼ under par' };
+  if (par > avgNight * 1.6 && par - avgNight >= 3) return { cls:'heavy', txt:'▲ heavy' };
+  return { cls:'ok', txt:'✓ ok' };
+}
+
+let __parRows = [];
+
+function renderParsPanel() {
+  const panel = document.getElementById('panel-pars');
+  if (!currentThis) { panel.innerHTML = ''; return; }
+
+  const nights = parseInt(localStorage.getItem('rpi_par_nights')) || 7;
+  const filterCat = window.__parCat || 'food';
+  const prevLookup = currentPrev ? buildLookup(currentPrev.items) : null;
+  const pars = getPars();
+  const hasPrev = !!prevLookup;
+
+  __parRows = currentThis.items
+    .filter(i => !isStaffOrComp(i.name))
+    .filter(i => categorize(i.name) !== 'events')
+    .filter(i => filterCat === 'all' || categorize(i.name) === filterCat)
+    .map(i => {
+      const prev = prevLookup ? lookupPrev(i.name, prevLookup) : null;
+      const avgWk = prev ? (i.qty + prev.qty) / 2 : i.qty;
+      const peakWk = prev ? Math.max(i.qty, prev.qty) : i.qty;
+      const avgNight = avgWk / nights;
+      const suggested = Math.max(1, Math.ceil(peakWk / nights * 1.15)); // peak week + 15% buffer
+      const key = i.name.toLowerCase().replace(/\s+/g, ' ').trim();
+      const par = pars[key] !== undefined ? parseFloat(pars[key]) : null;
+      return { name: i.name, qty: i.qty, prevQty: prev ? prev.qty : null, avgWk, avgNight, suggested, key, par };
+    })
+    .sort((a, b) => b.avgWk - a.avgWk);
+
+  const catOptions = ['all','food','pdj','starter','dessert','cocktail','wine','spirit','beer','coffee','na']
+    .map(c => `<option value="${c}" ${c === filterCat ? 'selected' : ''}>${c === 'all' ? 'All categories' : CAT_LABELS[c]}</option>`).join('');
+
+  const rowsHtml = __parRows.map((r, idx) => {
+    const st = parStatus(r.par, r.avgNight);
+    const dispName = r.name.replace(/^(GL:|HH:)\s*/i, '');
+    return `<tr data-name="${dispName.toLowerCase().replace(/"/g, '')}">
+      <td>${dispName}</td>
+      <td class="num">${r.qty}</td>
+      <td class="num" style="color:var(--text-3);">${r.prevQty !== null ? r.prevQty : '—'}</td>
+      <td class="num">${r.avgWk % 1 ? r.avgWk.toFixed(1) : r.avgWk}</td>
+      <td class="num">${r.avgNight.toFixed(1)}</td>
+      <td class="num" style="color:var(--text-3);">${r.suggested}</td>
+      <td class="num"><input class="par-input" type="number" min="0" step="1" data-idx="${idx}" value="${r.par !== null ? r.par : ''}" placeholder="—"></td>
+      <td><span class="par-status ${st.cls}" id="par-st-${idx}">${st.txt}</span></td>
+    </tr>`;
+  }).join('');
+
+  panel.innerHTML = `<div class="card">
+    <div class="card-title"><span>Pars vs statistical average</span> avg from ${hasPrev ? 'the two pasted weeks' : 'this week only'} · pars save automatically</div>
+    <div class="par-controls">
+      <label>Category <select id="par-cat">${catOptions}</select></label>
+      <label>Nights open/week <input type="number" id="par-nights" min="1" max="7" step="1" value="${nights}" style="width:56px;"></label>
+      <label>Filter <input type="text" id="par-search" placeholder="Type to filter items..." style="width:180px;"></label>
+      <span style="color:var(--text-3);">Suggested = peak week ÷ nights + 15% buffer</span>
+    </div>
+    <table class="par-table">
+      <thead><tr>
+        <th>Item</th><th class="num">This wk</th><th class="num">Last wk</th><th class="num">Avg/wk</th><th class="num">Avg/night</th><th class="num">Suggested par</th><th class="num">Current par</th><th>Status</th>
+      </tr></thead>
+      <tbody id="par-tbody">${rowsHtml || '<tr><td colspan="8" style="text-align:center;color:var(--text-3);padding:30px;">No items in this category.</td></tr>'}</tbody>
+    </table>
+  </div>`;
+
+  document.getElementById('par-cat').addEventListener('change', e => { window.__parCat = e.target.value; renderParsPanel(); });
+  document.getElementById('par-nights').addEventListener('change', e => {
+    const v = Math.max(1, Math.min(7, parseInt(e.target.value) || 7));
+    localStorage.setItem('rpi_par_nights', v);
+    renderParsPanel();
+  });
+  document.getElementById('par-search').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase().trim();
+    document.querySelectorAll('#par-tbody tr').forEach(tr => {
+      tr.style.display = !q || (tr.dataset.name || '').includes(q) ? '' : 'none';
+    });
+  });
+  document.getElementById('par-tbody').addEventListener('input', e => {
+    if (!e.target.classList.contains('par-input')) return;
+    const idx = parseInt(e.target.dataset.idx);
+    const row = __parRows[idx];
+    if (!row) return;
+    savePar(row.key, e.target.value);
+    const par = e.target.value === '' ? null : parseFloat(e.target.value);
+    const st = parStatus(par, row.avgNight);
+    const stEl = document.getElementById('par-st-' + idx);
+    stEl.className = 'par-status ' + st.cls;
+    stEl.textContent = st.txt;
+  });
 }
 
 function toggleHmGroup(id) {
@@ -693,6 +862,8 @@ async function generateSummary() {
   const top = (arr,n=5) => [...(arr||[])].filter(i=>!isStaffOrComp(i.name)).sort((a,b)=>b.qty-a.qty).slice(0,n).map(i=>`${i.name} (${i.qty})`).join(', ');
   const wineDinnerRevAI = sumRev(cats.events);
   const wineDinnerTopAI = top(cats.events, 3);
+  const pdjRevAI = sumRev(cats.pdj);
+  const pdjTopAI = top(cats.pdj, 3);
 
   let wowText = '';
   if (hasPrev) {
@@ -715,7 +886,7 @@ Top cocktails: ${top(cats.cocktail)}
 Top wine BTG: ${top(cats.wine)}
 Top entrees: ${top(cats.food)}
 Top spirits: ${top(cats.spirit)}
-Category revenue — cocktails: ${fmt(sumRev(cats.cocktail))}, wine: ${fmt(sumRev(cats.wine))}, food+starters: ${fmt(sumRev(cats.food)+sumRev(cats.starter)+sumRev(cats.dessert))}, spirits: ${fmt(sumRev(cats.spirit))}${wineDinnerRevAI>0?`, wine dinner: ${fmt(wineDinnerRevAI)} (top items: ${wineDinnerTopAI})`:''}${wowText}
+Category revenue — cocktails: ${fmt(sumRev(cats.cocktail))}, wine: ${fmt(sumRev(cats.wine))}, food+starters: ${fmt(sumRev(cats.food)+sumRev(cats.starter)+sumRev(cats.dessert))}, spirits: ${fmt(sumRev(cats.spirit))}${wineDinnerRevAI>0?`, wine dinner: ${fmt(wineDinnerRevAI)} (top items: ${wineDinnerTopAI})`:''}${pdjRevAI>0?`, plat du jour specials: ${fmt(pdjRevAI)} (top: ${pdjTopAI})`:''}${wowText}
 
 Write the GM summary now.`;
 
@@ -763,7 +934,7 @@ function parseAndRender() {
   document.getElementById('card-this').classList.add('has-data');
   let prevData = null;
   if (rawPrev) { prevData = parsePaste(rawPrev); if (prevData.items.length) document.getElementById('card-prev').classList.add('has-data'); }
-  document.getElementById('parse-status').textContent = `Parsed ${thisData.items.length} items this week${prevData?`, ${prevData.items.length} last week — WoW enabled`:''}.`;
+  document.getElementById('parse-status').textContent = `Parsed ${thisData.items.length} items this week${prevData?`, ${prevData.items.length} last week — WoW enabled`:''} (dinner/lunch/takeout merged per item).`;
   document.getElementById('ai-output').textContent = 'Hit "Generate summary" for an AI-written GM brief on this week\'s mix.';
   document.getElementById('ai-output').className = '';
   document.getElementById('ai-btn').textContent = 'Generate summary ↗';
@@ -781,6 +952,7 @@ function clearAll() {
   document.getElementById('dashboard').style.display='none';
   document.getElementById('week-label').textContent='No data loaded';
   currentThis=null; currentPrev=null; discountThis=0; discountPrev=0;
+  document.getElementById('panel-pars').innerHTML='';
 }
 
 async function exportEmail() {
@@ -951,6 +1123,7 @@ async function exportEmail() {
   <tr><td style="padding:0 32px;">${topTable('Cocktails & martinis', cats.cocktail||[], '#2150a0')}</td></tr>
   <tr><td style="padding:0 32px;">${topTable('Wine by glass & bottle', cats.wine||[], '#5c2d6e')}</td></tr>
   <tr><td style="padding:0 32px;">${topTable('Entrees', cats.food||[], '#c0452a')}</td></tr>
+  ${(cats.pdj||[]).length ? `<tr><td style="padding:0 32px;">${topTable('Plat du Jour specials', cats.pdj||[], '#0f766e')}</td></tr>` : ''}
   <tr><td style="padding:0 32px;">${topTable('Starters & raw bar', cats.starter||[], '#2a5f3c')}</td></tr>
   ${(cats.events||[]).length ? `<tr><td style="padding:0 32px;">${topTable('Private Events & Wine Dinner', cats.events||[], '#7a3060')}</td></tr>` : ''}
   <tr><td style="padding:0 32px 24px;">${topTable('Spirits', cats.spirit||[], '#4a7a8a')}</td></tr>
@@ -961,16 +1134,17 @@ async function exportEmail() {
   </td></tr>
   <tr><td style="padding:0 32px 24px;">
     ${(() => {
-      const catOrderHM = ['food','starter','events','cocktail','wine','spirit','dessert','beer','coffee','na'];
+      const catOrderHM = ['food','pdj','starter','events','cocktail','wine','spirit','dessert','beer','coffee','na'];
       const CAT_COLORS_EMAIL = {
         cocktail:'#2150a0', wine:'#5c2d6e', food:'#c0452a',
         starter:'#2a5f3c', dessert:'#b8942a', spirit:'#4a7a8a',
-        beer:'#7a5c2a', coffee:'#6b4e3d', na:'#888780', events:'#7a3060',
+        beer:'#7a5c2a', coffee:'#6b4e3d', na:'#888780', events:'#7a3060', pdj:'#0f766e',
       };
       const CAT_LABELS_EMAIL = {
         cocktail:'Cocktails & martinis', wine:'Wine (glass & bottle)', food:'Entrees & sides',
         starter:'Starters & raw bar', dessert:'Desserts', spirit:'Spirits',
         beer:'Beer', coffee:'Coffee & tea', na:'NA beverages', events:'Private Events & Wine Dinner',
+        pdj:'Plat du Jour specials',
       };
       let hmHtml = '';
       catOrderHM.forEach(key => {
