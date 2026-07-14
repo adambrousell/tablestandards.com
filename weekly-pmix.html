@@ -270,18 +270,21 @@ function applyDiscount() {
 
 // Merge duplicate item rows across menus (Dinner / Lunch / Takeout) so each item
 // appears exactly once: qty is summed, price becomes the revenue-weighted average
-// (so qty*price still equals total revenue across menus). Keys keep GL:/HH:
-// prefixes intact so glass pours never merge into bottle lines.
+// (so qty*price still equals total revenue across menus). HH: (happy hour)
+// variants fold into their base item — "HH: Salt Air" merges into "Salt Air" —
+// but GL: stays intact so glass pours never merge into bottle lines.
 function aggregateItems(items) {
   const map = new Map();
   const out = [];
   items.forEach(i => {
-    const key = i.name.toLowerCase().replace(/\s+/g, ' ').trim();
+    const key = i.name.toLowerCase().replace(/^hh:\s*/, '').replace(/\s+/g, ' ').trim();
     if (map.has(key)) {
       const ex = map.get(key);
       const rev = ex.qty * ex.price + i.qty * i.price;
       ex.qty += i.qty;
       ex.price = ex.qty > 0 ? rev / ex.qty : 0;
+      // prefer the non-HH name for display
+      if (/^hh:/i.test(ex.name) && !/^hh:/i.test(i.name)) ex.name = i.name;
     } else {
       const copy = { ...i };
       map.set(key, copy);
@@ -354,8 +357,10 @@ function fmt(n) { return n.toLocaleString('en-US', { style:'currency', currency:
 function deltaClass(v) { return v > 2 ? 'up' : v < -2 ? 'down' : 'flat'; }
 function deltaArrow(v) { return v > 2 ? '▲' : v < -2 ? '▼' : '—'; }
 function normalizeKey(name) {
+  // strip HH: (folds happy hour into base item) but KEEP GL: — a glass pour
+  // must never cross-match the bottle of the same wine in the prior week
   return name.toLowerCase()
-    .replace(/^(gl:|hh:)\s*/i, '')
+    .replace(/^hh:\s*/i, '')
     .replace(/\s+/g, ' ')
     .trim();
 }
