@@ -215,6 +215,7 @@
     <span class="dot"></span>
     <span id="liststate-text">No list loaded yet</span>
     <button id="refreshbtn" type="button">Refresh list</button>
+    <a id="weeklylink" href="#" target="_blank" rel="noopener" style="color:var(--brass);font-size:13px;text-underline-offset:3px">Weekly list</a>
   </div>
 
   <div class="pushpanel" id="pushpanel">
@@ -611,6 +612,10 @@
   });
 
   els.countsbtn.addEventListener("click", uploadCounts);
+
+  if (!/YOUR-WORKER/.test(WORKER_URL)){
+    document.getElementById("weeklylink").href = WORKER_URL + "/weeklylist";
+  }
 
   loadStatus();
   loadPush();
