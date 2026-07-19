@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>RPI · Cellar Somm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14120e;
+    --ink-soft:#2a261e;
+    --parchment:#efe7d6;
+    --parchment-dim:#e3d8c2;
+    --brass:#b08d3e;
+    --brass-bright:#d4af5c;
+    --oxblood:#6e2b23;
+    --olive:#6b6a4e;
+    --line:rgba(176,141,62,.35);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    background:var(--ink);
+    color:var(--parchment);
+    font-family:'EB Garamond',serif;
+    font-size:17px;
+    line-height:1.45;
+    background-image:radial-gradient(ellipse at 50% -10%, #241f16 0%, var(--ink) 60%);
+    min-height:100dvh;
+  }
+  .wrap{max-width:560px;margin:0 auto;padding:20px 18px 64px}
+
+  /* ── Masthead ─────────────────────────── */
+  header{text-align:center;padding:6px 0 18px;border-bottom:1px solid var(--line)}
+  .est{font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--brass);font-family:'EB Garamond',serif}
+  h1{font-family:'Fraunces',serif;font-weight:600;font-size:30px;letter-spacing:.02em;margin:2px 0 0}
+  h1 .amp{color:var(--brass);font-style:italic;font-weight:400}
+  .sub{font-size:13px;color:var(--parchment-dim);letter-spacing:.14em;text-transform:uppercase;margin-top:2px}
+
+  /* ── List status line ─────────────────── */
+  .liststate{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    font-size:13px;color:var(--olive);margin:12px 0 4px;flex-wrap:wrap;text-align:center;
+  }
+  .liststate .dot{width:7px;height:7px;border-radius:50%;background:var(--olive);flex:0 0 auto}
+  .liststate.ok .dot{background:var(--brass-bright)}
+  .liststate.ok{color:var(--parchment-dim)}
+  .liststate button{
+    background:none;border:none;color:var(--brass);font-family:'EB Garamond',serif;
+    font-size:13px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:2px 4px;
+  }
+
+  /* ── Ask panel ────────────────────────── */
+  .ask{padding:26px 0 8px;text-align:center}
+  .micring{
+    width:118px;height:118px;border-radius:50%;margin:0 auto;position:relative;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .micbtn{
+    width:104px;height:104px;border-radius:50%;cursor:pointer;
+    background:radial-gradient(circle at 35% 30%, #d8b566, var(--brass) 55%, #8a6c2c);
+    border:1px solid #e5c87a;
+    box-shadow:0 8px 28px rgba(0,0,0,.55), inset 0 2px 6px rgba(255,255,255,.35), inset 0 -6px 12px rgba(0,0,0,.3);
+    display:flex;align-items:center;justify-content:center;
+    transition:transform .12s ease;
+  }
+  .micbtn:active{transform:scale(.96)}
+  .micbtn svg{width:38px;height:38px;fill:var(--ink)}
+  .micring.listening::before{
+    content:"";position:absolute;inset:-6px;border-radius:50%;
+    border:2px solid var(--brass-bright);
+    animation:pulse 1.4s ease-out infinite;
+  }
+  @keyframes pulse{
+    0%{transform:scale(.92);opacity:.9}
+    100%{transform:scale(1.22);opacity:0}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .micring.listening::before{animation:none;opacity:.9}
+  }
+  .micstate{margin-top:10px;font-size:14px;color:var(--parchment-dim);min-height:20px;font-style:italic}
+
+  .phrasebox{margin-top:16px;display:flex;gap:8px}
+  .phrasebox input{
+    flex:1;background:rgba(239,231,214,.06);border:1px solid var(--line);
+    border-radius:4px;padding:12px 14px;color:var(--parchment);
+    font-family:'EB Garamond',serif;font-size:17px;
+  }
+  .phrasebox input::placeholder{color:rgba(239,231,214,.4);font-style:italic}
+  .phrasebox input:focus{outline:2px solid var(--brass);outline-offset:1px}
+  .gobtn{
+    background:var(--oxblood);color:var(--parchment);border:1px solid #8a3a30;
+    border-radius:4px;padding:0 20px;font-family:'Fraunces',serif;font-weight:600;
+    font-size:15px;letter-spacing:.06em;cursor:pointer;
+  }
+  .gobtn:active{filter:brightness(1.15)}
+  .gobtn:focus-visible,.micbtn:focus-visible,button:focus-visible{outline:2px solid var(--brass-bright);outline-offset:2px}
+
+  /* ── Working / status ─────────────────── */
+  .working{display:none;text-align:center;padding:26px 0 8px}
+  .working.show{display:block}
+  .decant{
+    width:34px;height:34px;margin:0 auto 10px;border-radius:50%;
+    border:2px solid var(--line);border-top-color:var(--brass-bright);
+    animation:spin 1s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion: reduce){.decant{animation-duration:2.5s}}
+  .working p{font-style:italic;color:var(--parchment-dim);font-size:15px}
+
+  /* ── Results ──────────────────────────── */
+  .results{display:none;margin-top:10px}
+  .results.show{display:block}
+  .askedfor{
+    text-align:center;font-style:italic;color:var(--parchment-dim);
+    font-size:15px;margin:14px 0 4px;
+  }
+  .somm-note{
+    text-align:center;font-size:15px;color:var(--parchment);
+    padding:6px 10px 14px;border-bottom:1px solid var(--line);
+  }
+  .sectionhead{
+    display:flex;align-items:center;gap:12px;margin:22px 0 10px;
+  }
+  .sectionhead::before,.sectionhead::after{content:"";flex:1;height:1px;background:var(--line)}
+  .sectionhead span{
+    font-family:'Fraunces',serif;font-size:14px;font-weight:600;
+    letter-spacing:.22em;text-transform:uppercase;color:var(--brass-bright);white-space:nowrap;
+  }
+  .card{
+    border:1px solid var(--line);border-radius:6px;
+    background:linear-gradient(180deg, rgba(239,231,214,.05), rgba(239,231,214,.02));
+    padding:14px 14px 12px;margin-bottom:12px;
+  }
+  .cardtop{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+  .wname{font-family:'Fraunces',serif;font-weight:600;font-size:18px;line-height:1.25}
+  .wprice{font-family:'Fraunces',serif;font-weight:700;font-size:19px;color:var(--brass-bright);white-space:nowrap}
+  .wmeta{
+    display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 6px;
+  }
+  .tag{
+    font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;
+    border:1px solid var(--line);border-radius:3px;padding:2px 8px;color:var(--parchment-dim);
+  }
+  .tag.bin{
+    background:var(--brass);color:var(--ink);border-color:var(--brass-bright);
+    font-weight:600;letter-spacing:.1em;
+  }
+  .wnote{font-size:15.5px;color:var(--parchment-dim);font-style:italic}
+
+  .errbox{
+    display:none;margin:18px 0;border:1px solid rgba(110,43,35,.7);
+    border-radius:6px;padding:14px;background:rgba(110,43,35,.15);font-size:15px;
+  }
+  .errbox.show{display:block}
+  .errbox b{font-family:'Fraunces',serif}
+
+  /* ── Settings ─────────────────────────── */
+  details.settings{margin-top:34px;border-top:1px solid var(--line);padding-top:12px}
+  details.settings summary{
+    cursor:pointer;font-size:13px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--olive);list-style:none;text-align:center;
+  }
+  details.settings summary::-webkit-details-marker{display:none}
+  .settings-inner{padding:14px 0 4px}
+  .settings-inner label{display:block;font-size:13px;color:var(--parchment-dim);margin-bottom:6px;letter-spacing:.06em}
+  .urlrow{display:flex;gap:8px}
+  .urlrow input{
+    flex:1;background:rgba(239,231,214,.06);border:1px solid var(--line);border-radius:4px;
+    padding:10px 12px;color:var(--parchment);font-family:'EB Garamond',serif;font-size:14px;
+  }
+  .urlrow button{
+    background:none;border:1px solid var(--brass);color:var(--brass);border-radius:4px;
+    padding:0 14px;font-family:'EB Garamond',serif;font-size:14px;cursor:pointer;
+  }
+  .settings-inner .hint{font-size:13px;color:var(--olive);margin-top:8px;font-style:italic}
+
+  footer{margin-top:36px;text-align:center;font-size:13px;color:var(--olive);letter-spacing:.1em;font-style:italic}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="est">River Pointe Inn · Rumson</div>
+    <h1>Cellar <span class="amp">&amp;</span> Somm</h1>
+    <div class="sub">Speak · Pour · Bin · Page</div>
+  </header>
+
+  <div class="liststate" id="liststate">
+    <span class="dot"></span>
+    <span id="liststate-text">No list loaded yet</span>
+    <button id="refreshbtn" type="button">Refresh list</button>
+  </div>
+
+  <div class="ask" id="askpanel">
+    <div class="micring" id="micring">
+      <button class="micbtn" id="micbtn" type="button" aria-label="Speak your wine request">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3.5 3.5 0 0 0 3.5-3.5v-6a3.5 3.5 0 1 0-7 0v6A3.5 3.5 0 0 0 12 15zm6-3.5a6 6 0 0 1-12 0H4a8 8 0 0 0 7 7.93V22h2v-2.57A8 8 0 0 0 20 11.5h-2z"/></svg>
+      </button>
+    </div>
+    <div class="micstate" id="micstate">Tap and ask — “big Napa cab for a steak table”</div>
+    <div class="phrasebox">
+      <input id="phrase" type="text" placeholder="…or type the request" autocomplete="off" enterkeyhint="go">
+      <button class="gobtn" id="gobtn" type="button">Pair</button>
+    </div>
+  </div>
+
+  <div class="working" id="working">
+    <div class="decant" aria-hidden="true"></div>
+    <p id="working-text">Consulting the cellar…</p>
+  </div>
+
+  <div class="errbox" id="errbox"></div>
+
+  <div class="results" id="results">
+    <div class="askedfor" id="askedfor"></div>
+    <div class="somm-note" id="sommnote"></div>
+    <div id="glass-section"></div>
+    <div id="bottle-section"></div>
+  </div>
+
+  <details class="settings">
+    <summary>List source</summary>
+    <div class="settings-inner">
+      <label for="urlinput">Current wine list PDF</label>
+      <div class="urlrow">
+        <input id="urlinput" type="text" placeholder="https://images.getbento.com/…/wine list.pdf">
+        <button id="savebtn" type="button">Save</button>
+      </div>
+      <p class="hint" id="urlhint">“Refresh list” searches the web for the newest PDF automatically. Paste a URL here only if you need to override it.</p>
+    </div>
+  </details>
+
+  <footer>Melius semper</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var FALLBACK_URL = "https://images.getbento.com/accounts/be84cb931ce1e7c19aed8c0ce09c30f4/media/xyrD8DfsT4O456gsD5AQ_wine%20list%2007%2012.pdf";
+  var STORE_KEY = "cellar-somm:pdf";
+
+  var state = { url: null, foundAt: null, busy: false };
+
+  var els = {
+    liststate: document.getElementById("liststate"),
+    liststateText: document.getElementById("liststate-text"),
+    refreshbtn: document.getElementById("refreshbtn"),
+    micring: document.getElementById("micring"),
+    micbtn: document.getElementById("micbtn"),
+    micstate: document.getElementById("micstate"),
+    phrase: document.getElementById("phrase"),
+    gobtn: document.getElementById("gobtn"),
+    working: document.getElementById("working"),
+    workingText: document.getElementById("working-text"),
+    errbox: document.getElementById("errbox"),
+    results: document.getElementById("results"),
+    askedfor: document.getElementById("askedfor"),
+    sommnote: document.getElementById("sommnote"),
+    glassSection: document.getElementById("glass-section"),
+    bottleSection: document.getElementById("bottle-section"),
+    urlinput: document.getElementById("urlinput"),
+    savebtn: document.getElementById("savebtn")
+  };
+
+  /* ── helpers ── */
+  function esc(s){
+    return String(s == null ? "" : s)
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+  function todayStamp(){
+    var d = new Date();
+    return d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDate();
+  }
+  function shortUrl(u){
+    try{
+      var name = decodeURIComponent(u.split("/").pop());
+      return name.length > 42 ? name.slice(0, 39) + "…" : name;
+    }catch(e){ return "wine list PDF"; }
+  }
+  function setListState(ok, text){
+    els.liststate.classList.toggle("ok", !!ok);
+    els.liststateText.textContent = text;
+  }
+  function showError(html){
+    els.errbox.innerHTML = html;
+    els.errbox.classList.add("show");
+  }
+  function clearError(){
+    els.errbox.classList.remove("show");
+    els.errbox.innerHTML = "";
+  }
+  function setWorking(on, text){
+    state.busy = on;
+    els.working.classList.toggle("show", on);
+    if (text) els.workingText.textContent = text;
+    els.gobtn.disabled = on;
+    els.micbtn.disabled = on;
+  }
+  function stripFences(t){
+    return String(t || "").replace(/```json/gi,"").replace(/```/g,"").trim();
+  }
+  function extractJSON(t){
+    t = stripFences(t);
+    var a = t.indexOf("{"), b = t.lastIndexOf("}");
+    if (a === -1 || b === -1) throw new Error("no JSON found");
+    return JSON.parse(t.slice(a, b + 1));
+  }
+  function textBlocks(data){
+    if (!data || !data.content) return "";
+    return data.content
+      .filter(function(x){ return x.type === "text"; })
+      .map(function(x){ return x.text; })
+      .join("\n");
+  }
+
+  /* ── storage ── */
+  async function loadStored(){
+    try{
+      var r = await window.storage.get(STORE_KEY);
+      if (r && r.value){
+        var v = JSON.parse(r.value);
+        if (v && v.url){ state.url = v.url; state.foundAt = v.foundAt || null; }
+      }
+    }catch(e){ /* nothing stored yet */ }
+    if (!state.url){ state.url = FALLBACK_URL; state.foundAt = null; }
+    reflectUrl();
+  }
+  async function saveStored(){
+    try{
+      await window.storage.set(STORE_KEY, JSON.stringify({ url: state.url, foundAt: state.foundAt }));
+    }catch(e){ console.error("storage save failed", e); }
+  }
+  function reflectUrl(){
+    els.urlinput.value = state.url || "";
+    if (state.url){
+      var fresh = state.foundAt === todayStamp();
+      setListState(true, (fresh ? "Today’s list · " : "List on file · ") + shortUrl(state.url));
+    } else {
+      setListState(false, "No list loaded yet");
+    }
+  }
+
+  /* ── discovery: ask Claude + web search for the newest PDF url ── */
+  async function discoverLatest(){
+    setWorking(true, "Checking the web for today’s list…");
+    try{
+      var resp = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 1000,
+          messages: [{
+            role: "user",
+            content:
+              "Search the web for the current wine list PDF for River Pointe Inn in Rumson, NJ. " +
+              "Their site is riverpointeinn.com (check the /menus/ page results). The PDF is hosted on images.getbento.com " +
+              "under account be84cb931ce1e7c19aed8c0ce09c30f4 and its filename contains 'wine list' plus a date. " +
+              "Find the newest such PDF URL. Respond with ONLY a JSON object, no other text, no markdown: " +
+              "{\"url\": \"<full pdf url>\"} — or {\"url\": null} if you cannot find one."
+          }],
+          tools: [{ type: "web_search_20250305", name: "web_search" }]
+        })
+      });
+      var data = await resp.json();
+      if (data.error) throw new Error(data.error.message || "API error");
+      var parsed = extractJSON(textBlocks(data));
+      var found = parsed && parsed.url;
+      if (found && /getbento\.com/.test(found) && /\.pdf/i.test(found)){
+        var changed = found !== state.url;
+        state.url = found;
+        state.foundAt = todayStamp();
+        await saveStored();
+        reflectUrl();
+        return { ok: true, changed: changed };
+      }
+      // nothing new found — keep what we have, but mark it checked today
+      if (state.url){ state.foundAt = todayStamp(); await saveStored(); reflectUrl(); }
+      return { ok: false };
+    }catch(err){
+      console.error("discovery failed", err);
+      return { ok: false, err: err };
+    }finally{
+      setWorking(false);
+    }
+  }
+
+  /* ── recommendation call ── */
+  async function recommend(phrase){
+    if (state.busy) return;
+    clearError();
+    els.results.classList.remove("show");
+
+    // refresh once per day, automatically, before the first pairing
+    if (state.foundAt !== todayStamp()){
+      await discoverLatest();
+    }
+    if (!state.url){
+      showError("<b>No wine list on file.</b> Tap “Refresh list,” or paste the PDF link under List source below.");
+      return;
+    }
+
+    setWorking(true, "Reading the list & pairing…");
+    try{
+      var prompt =
+        "You are the sommelier at River Pointe Inn, a French-American bistro in Rumson, NJ. " +
+        "The attached PDF is the CURRENT wine list. A guest asked for: \"" + phrase + "\".\n\n" +
+        "Using ONLY wines that actually appear in this PDF, recommend:\n" +
+        "- up to 2 by-the-glass options (if any fit)\n" +
+        "- up to 3 bottles\n\n" +
+        "For each bottle include its BIN NUMBER exactly as printed on the list and the PDF PAGE NUMBER where it appears. " +
+        "Prices exactly as printed. If no by-the-glass option fits, return an empty glass array.\n\n" +
+        "Respond with ONLY a JSON object, no markdown fences, no other text:\n" +
+        "{\"summary\": \"one short sommelier sentence about the direction you took\", " +
+        "\"glass\": [{\"name\": \"producer + wine + vintage\", \"style\": \"grape/region\", \"price\": \"$XX\", \"note\": \"why, in one short clause\"}], " +
+        "\"bottles\": [{\"name\": \"producer + wine + vintage\", \"style\": \"grape/region\", \"bin\": \"###\", \"page\": #, \"price\": \"$XXX\", \"note\": \"why, in one short clause\"}]}";
+
+      var resp = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 1000,
+          messages: [{
+            role: "user",
+            content: [
+              { type: "document", source: { type: "url", url: state.url } },
+              { type: "text", text: prompt }
+            ]
+          }]
+        })
+      });
+      var data = await resp.json();
+      if (data.error) throw new Error(data.error.message || "API error");
+      var recs = extractJSON(textBlocks(data));
+      renderResults(phrase, recs);
+    }catch(err){
+      console.error("recommend failed", err);
+      showError(
+        "<b>Couldn’t read the list.</b> The saved PDF link may be stale — tap “Refresh list” to hunt for today’s version, " +
+        "or paste the new link under List source. (" + esc(err.message || err) + ")"
+      );
+    }finally{
+      setWorking(false);
+    }
+  }
+
+  /* ── render ── */
+  function card(w, isBottle){
+    var meta = "";
+    if (isBottle && w.bin) meta += '<span class="tag bin">Bin ' + esc(w.bin) + "</span>";
+    if (isBottle && (w.page || w.page === 0)) meta += '<span class="tag">Page ' + esc(w.page) + "</span>";
+    if (w.style) meta += '<span class="tag">' + esc(w.style) + "</span>";
+    return (
+      '<div class="card">' +
+        '<div class="cardtop"><div class="wname">' + esc(w.name) + '</div>' +
+        '<div class="wprice">' + esc(w.price || "") + "</div></div>" +
+        (meta ? '<div class="wmeta">' + meta + "</div>" : "") +
+        (w.note ? '<div class="wnote">' + esc(w.note) + "</div>" : "") +
+      "</div>"
+    );
+  }
+  function renderResults(phrase, recs){
+    els.askedfor.textContent = "“" + phrase + "”";
+    els.sommnote.textContent = recs.summary || "";
+
+    var g = Array.isArray(recs.glass) ? recs.glass : [];
+    var b = Array.isArray(recs.bottles) ? recs.bottles : [];
+
+    els.glassSection.innerHTML = g.length
+      ? '<div class="sectionhead"><span>By the Glass</span></div>' + g.map(function(w){ return card(w, false); }).join("")
+      : "";
+    els.bottleSection.innerHTML = b.length
+      ? '<div class="sectionhead"><span>By the Bottle</span></div>' + b.map(function(w){ return card(w, true); }).join("")
+      : "";
+
+    if (!g.length && !b.length){
+      showError("<b>Nothing matched that request on today’s list.</b> Try rephrasing — grape, region, weight, or the dish it’s pairing with.");
+      return;
+    }
+    els.results.classList.add("show");
+    els.results.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  /* ── speech ── */
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var rec = null, listening = false;
+  if (SR){
+    rec = new SR();
+    rec.lang = "en-US";
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
+    rec.onresult = function(ev){
+      var txt = "";
+      for (var i = 0; i < ev.results.length; i++) txt += ev.results[i][0].transcript;
+      els.phrase.value = txt;
+      if (ev.results[ev.results.length - 1].isFinal){
+        stopListening();
+        if (txt.trim()) recommend(txt.trim());
+      }
+    };
+    rec.onerror = function(ev){
+      stopListening();
+      if (ev.error === "not-allowed"){
+        els.micstate.textContent = "Mic blocked — type the request below instead";
+      } else {
+        els.micstate.textContent = "Didn’t catch that — tap again or type below";
+      }
+    };
+    rec.onend = function(){ stopListening(); };
+  } else {
+    els.micstate.textContent = "Voice isn’t available here — type the request below";
+  }
+  function startListening(){
+    if (!rec || state.busy) return;
+    listening = true;
+    els.micring.classList.add("listening");
+    els.micstate.textContent = "Listening…";
+    try{ rec.start(); }catch(e){ /* already started */ }
+  }
+  function stopListening(){
+    listening = false;
+    els.micring.classList.remove("listening");
+    if (els.micstate.textContent === "Listening…"){
+      els.micstate.textContent = "Tap and ask — “big Napa cab for a steak table”";
+    }
+    if (rec){ try{ rec.stop(); }catch(e){} }
+  }
+
+  /* ── wire up ── */
+  els.micbtn.addEventListener("click", function(){
+    if (!rec){
+      els.phrase.focus();
+      return;
+    }
+    listening ? stopListening() : startListening();
+  });
+  els.gobtn.addEventListener("click", function(){
+    var t = els.phrase.value.trim();
+    if (t) recommend(t);
+  });
+  els.phrase.addEventListener("keydown", function(ev){
+    if (ev.key === "Enter"){
+      var t = els.phrase.value.trim();
+      if (t) recommend(t);
+    }
+  });
+  els.refreshbtn.addEventListener("click", async function(){
+    if (state.busy) return;
+    clearError();
+    var r = await discoverLatest();
+    if (r.ok){
+      els.micstate.textContent = r.changed ? "Fresh list found — ready to pair" : "List confirmed current";
+    } else {
+      showError("<b>Couldn’t find a newer PDF on the web.</b> Keeping the list on file. If the link changed today, paste the new one under List source.");
+    }
+  });
+  els.savebtn.addEventListener("click", async function(){
+    var u = els.urlinput.value.trim();
+    if (!/^https:\/\//.test(u) || !/\.pdf/i.test(u)){
+      showError("<b>That doesn’t look like a PDF link.</b> It should start with https:// and end in .pdf");
+      return;
+    }
+    clearError();
+    state.url = u;
+    state.foundAt = todayStamp();
+    await saveStored();
+    reflectUrl();
+    els.micstate.textContent = "List saved — ready to pair";
+  });
+
+  loadStored();
+})();
+</script>
+</body>
+</html>
