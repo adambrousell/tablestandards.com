@@ -177,6 +177,28 @@
   }
   .settings-inner .hint{font-size:13px;color:var(--olive);margin-top:8px;font-style:italic}
 
+  .tag.pick{background:var(--oxblood);color:var(--parchment);border-color:#8a3a30;font-weight:600}
+
+  .pushpanel{display:none;border:1px solid var(--line);border-radius:6px;margin-top:14px;padding:12px 14px;
+    background:linear-gradient(180deg, rgba(176,141,62,.08), rgba(176,141,62,.02))}
+  .pushpanel.show{display:block}
+  .pushpanel h2{font-family:'Fraunces',serif;font-size:13px;font-weight:600;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--brass-bright);text-align:center;margin-bottom:8px}
+  .pushgroup{margin:8px 0 2px}
+  .pushgroup .glabel{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--olive);margin-bottom:5px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{font-size:13.5px;border:1px solid var(--line);border-radius:3px;padding:3px 9px;color:var(--parchment-dim)}
+  .chip b{color:var(--brass-bright);font-weight:600;margin-right:5px;font-family:'Fraunces',serif}
+  .pushpanel .built{text-align:center;font-size:12px;color:var(--olive);font-style:italic;margin-top:8px}
+
+  .countsbox{margin-top:18px;border-top:1px dashed var(--line);padding-top:14px}
+  .countsbox textarea{width:100%;min-height:110px;background:rgba(239,231,214,.06);border:1px solid var(--line);
+    border-radius:4px;padding:10px 12px;color:var(--parchment);font-family:ui-monospace,Menlo,monospace;font-size:13px;resize:vertical}
+  .countsbox textarea:focus{outline:2px solid var(--brass);outline-offset:1px}
+  .countsbox .rowbtns{display:flex;justify-content:flex-end;margin-top:8px}
+  .countsbox .rowbtns button{background:none;border:1px solid var(--brass);color:var(--brass);border-radius:4px;
+    padding:8px 16px;font-family:'EB Garamond',serif;font-size:14px;cursor:pointer}
+
   footer{margin-top:36px;text-align:center;font-size:13px;color:var(--olive);letter-spacing:.1em;font-style:italic}
 </style>
 </head>
@@ -193,6 +215,19 @@
     <span class="dot"></span>
     <span id="liststate-text">No list loaded yet</span>
     <button id="refreshbtn" type="button">Refresh list</button>
+  </div>
+
+  <div class="pushpanel" id="pushpanel">
+    <h2>Cellar Priorities</h2>
+    <div class="pushgroup" id="ripegroup" style="display:none">
+      <div class="glabel">Ripe · drink now</div>
+      <div class="chips" id="ripechips"></div>
+    </div>
+    <div class="pushgroup" id="overgroup" style="display:none">
+      <div class="glabel">Overstock · move it</div>
+      <div class="chips" id="overchips"></div>
+    </div>
+    <div class="built" id="pushbuilt"></div>
   </div>
 
   <div class="ask" id="askpanel">
@@ -231,6 +266,17 @@
         <button id="savebtn" type="button">Save</button>
       </div>
       <p class="hint" id="urlhint">“Refresh list” searches the web for the newest PDF automatically. Paste a URL here only if you need to override it.</p>
+
+      <div class="countsbox">
+        <label for="countsinput">Monthly cycle counts (CSV: bin, wine, count, par — par optional)</label>
+        <textarea id="countsinput" placeholder="bin,wine,count,par
+118,Ridge Three Valleys 2021,14,6
+204,Drouhin Chablis 2022,9,12"></textarea>
+        <div class="rowbtns">
+          <button id="countsbtn" type="button">Upload counts</button>
+        </div>
+        <p class="hint">Overstock is flagged where count beats par (or 12+ with no par). Ripe wines are judged from the list’s vintages. Both quietly steer pairings until next month’s count.</p>
+      </div>
     </div>
   </details>
 
@@ -241,10 +287,13 @@
 (function(){
   "use strict";
 
-  var FALLBACK_URL = "https://images.getbento.com/accounts/be84cb931ce1e7c19aed8c0ce09c30f4/media/xyrD8DfsT4O456gsD5AQ_wine%20list%2007%2012.pdf";
-  var STORE_KEY = "cellar-somm:pdf";
+  /* ─────────────────────────────────────────────
+     Set this ONCE to your Cloudflare Worker URL.
+     No trailing slash.
+  ───────────────────────────────────────────── */
+  var WORKER_URL = "https://YOUR-WORKER.workers.dev";
 
-  var state = { url: null, foundAt: null, busy: false };
+  var state = { busy: false, checked: false };
 
   var els = {
     liststate: document.getElementById("liststate"),
@@ -264,17 +313,21 @@
     glassSection: document.getElementById("glass-section"),
     bottleSection: document.getElementById("bottle-section"),
     urlinput: document.getElementById("urlinput"),
-    savebtn: document.getElementById("savebtn")
+    savebtn: document.getElementById("savebtn"),
+    pushpanel: document.getElementById("pushpanel"),
+    ripegroup: document.getElementById("ripegroup"),
+    ripechips: document.getElementById("ripechips"),
+    overgroup: document.getElementById("overgroup"),
+    overchips: document.getElementById("overchips"),
+    pushbuilt: document.getElementById("pushbuilt"),
+    countsinput: document.getElementById("countsinput"),
+    countsbtn: document.getElementById("countsbtn")
   };
 
   /* ── helpers ── */
   function esc(s){
     return String(s == null ? "" : s)
       .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-  }
-  function todayStamp(){
-    var d = new Date();
-    return d.getFullYear() + "-" + (d.getMonth()+1) + "-" + d.getDate();
   }
   function shortUrl(u){
     try{
@@ -301,149 +354,126 @@
     els.gobtn.disabled = on;
     els.micbtn.disabled = on;
   }
-  function stripFences(t){
-    return String(t || "").replace(/```json/gi,"").replace(/```/g,"").trim();
-  }
-  function extractJSON(t){
-    t = stripFences(t);
-    var a = t.indexOf("{"), b = t.lastIndexOf("}");
-    if (a === -1 || b === -1) throw new Error("no JSON found");
-    return JSON.parse(t.slice(a, b + 1));
-  }
-  function textBlocks(data){
-    if (!data || !data.content) return "";
-    return data.content
-      .filter(function(x){ return x.type === "text"; })
-      .map(function(x){ return x.text; })
-      .join("\n");
+  function workerReady(){
+    if (/YOUR-WORKER/.test(WORKER_URL)){
+      showError("<b>Worker not configured.</b> Open somm.html and set WORKER_URL at the top of the script to your Cloudflare Worker address.");
+      return false;
+    }
+    return true;
   }
 
-  /* ── storage ── */
-  async function loadStored(){
+  /* ── status: show which list the Worker has on file ── */
+  async function loadStatus(){
+    if (/YOUR-WORKER/.test(WORKER_URL)){ setListState(false, "Worker not configured"); return; }
     try{
-      var r = await window.storage.get(STORE_KEY);
-      if (r && r.value){
-        var v = JSON.parse(r.value);
-        if (v && v.url){ state.url = v.url; state.foundAt = v.foundAt || null; }
+      var r = await fetch(WORKER_URL + "/status");
+      var s = await r.json();
+      if (s && s.url){
+        els.urlinput.value = s.url;
+        setListState(true, (s.setAt ? "Checked " + s.setAt + " · " : "List on file · ") + shortUrl(s.url));
+      } else {
+        setListState(false, "No list on file yet");
       }
-    }catch(e){ /* nothing stored yet */ }
-    if (!state.url){ state.url = FALLBACK_URL; state.foundAt = null; }
-    reflectUrl();
-  }
-  async function saveStored(){
-    try{
-      await window.storage.set(STORE_KEY, JSON.stringify({ url: state.url, foundAt: state.foundAt }));
-    }catch(e){ console.error("storage save failed", e); }
-  }
-  function reflectUrl(){
-    els.urlinput.value = state.url || "";
-    if (state.url){
-      var fresh = state.foundAt === todayStamp();
-      setListState(true, (fresh ? "Today’s list · " : "List on file · ") + shortUrl(state.url));
-    } else {
-      setListState(false, "No list loaded yet");
+    }catch(e){
+      setListState(false, "Can’t reach the Worker");
     }
   }
 
-  /* ── discovery: ask Claude + web search for the newest PDF url ── */
-  async function discoverLatest(){
-    setWorking(true, "Checking the web for today’s list…");
+  /* ── cellar priorities from monthly cycle counts ── */
+  function chip(bin, label){
+    return '<span class="chip"><b>' + esc(bin) + "</b>" + esc(label) + "</span>";
+  }
+  function renderPush(p){
+    var ripe = (p && p.ripe) || [];
+    var over = (p && p.overstock) || [];
+    if (!ripe.length && !over.length){
+      els.pushpanel.classList.remove("show");
+      return;
+    }
+    els.ripegroup.style.display = ripe.length ? "" : "none";
+    els.overgroup.style.display = over.length ? "" : "none";
+    els.ripechips.innerHTML = ripe.map(function(r){
+      return chip(r.bin, (r.name + " " + (r.vintage || "")).trim());
+    }).join("");
+    els.overchips.innerHTML = over.map(function(o){
+      return chip(o.bin, o.name + " · " + (o.onHand != null ? o.onHand + " on hand" : ""));
+    }).join("");
+    els.pushbuilt.textContent = p.builtAt ? "From cycle count uploaded " + p.builtAt : "";
+    els.pushpanel.classList.add("show");
+  }
+  async function loadPush(){
+    if (/YOUR-WORKER/.test(WORKER_URL)) return;
     try{
-      var resp = await fetch("https://api.anthropic.com/v1/messages", {
+      var r = await fetch(WORKER_URL + "/push");
+      renderPush(await r.json());
+    }catch(e){ /* panel just stays hidden */ }
+  }
+  async function uploadCounts(){
+    if (state.busy || !workerReady()) return;
+    var csv = els.countsinput.value.trim();
+    if (!csv){
+      showError("<b>Nothing to upload.</b> Paste the cycle count CSV first — bin, wine, count, par.");
+      return;
+    }
+    clearError();
+    setWorking(true, "Building Ripe & Overstock lists…");
+    try{
+      var r = await fetch(WORKER_URL + "/counts", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-6",
-          max_tokens: 1000,
-          messages: [{
-            role: "user",
-            content:
-              "Search the web for the current wine list PDF for River Pointe Inn in Rumson, NJ. " +
-              "Their site is riverpointeinn.com (check the /menus/ page results). The PDF is hosted on images.getbento.com " +
-              "under account be84cb931ce1e7c19aed8c0ce09c30f4 and its filename contains 'wine list' plus a date. " +
-              "Find the newest such PDF URL. Respond with ONLY a JSON object, no other text, no markdown: " +
-              "{\"url\": \"<full pdf url>\"} — or {\"url\": null} if you cannot find one."
-          }],
-          tools: [{ type: "web_search_20250305", name: "web_search" }]
-        })
+        headers: { "Content-Type": "text/plain" },
+        body: csv
       });
-      var data = await resp.json();
-      if (data.error) throw new Error(data.error.message || "API error");
-      var parsed = extractJSON(textBlocks(data));
-      var found = parsed && parsed.url;
-      if (found && /getbento\.com/.test(found) && /\.pdf/i.test(found)){
-        var changed = found !== state.url;
-        state.url = found;
-        state.foundAt = todayStamp();
-        await saveStored();
-        reflectUrl();
-        return { ok: true, changed: changed };
+      if (!r.ok) throw new Error(await r.text());
+      var p = await r.json();
+      renderPush(p);
+      els.micstate.textContent = "Priorities set — " +
+        ((p.ripe || []).length) + " ripe, " + ((p.overstock || []).length) + " overstock";
+      if (p.ripeError){
+        showError("<b>Overstock saved, but the ripe read failed.</b> " + esc(p.ripeError) + " — re-upload to retry.");
       }
-      // nothing new found — keep what we have, but mark it checked today
-      if (state.url){ state.foundAt = todayStamp(); await saveStored(); reflectUrl(); }
-      return { ok: false };
-    }catch(err){
-      console.error("discovery failed", err);
-      return { ok: false, err: err };
+    }catch(e){
+      showError("<b>Counts upload failed.</b> " + esc(e.message || e));
     }finally{
       setWorking(false);
     }
   }
 
-  /* ── recommendation call ── */
+  /* ── refresh: Worker hunts the web for the newest PDF ── */
+  async function refreshList(){
+    if (!workerReady()) return { ok:false };
+    setWorking(true, "Checking the web for today’s list…");
+    try{
+      var r = await fetch(WORKER_URL + "/refresh");
+      var s = await r.json();
+      await loadStatus();
+      return s;
+    }catch(e){
+      return { ok:false, err:e };
+    }finally{
+      setWorking(false);
+    }
+  }
+
+  /* ── pair: Worker reads the PDF and recommends ── */
   async function recommend(phrase){
-    if (state.busy) return;
+    if (state.busy || !workerReady()) return;
     clearError();
     els.results.classList.remove("show");
-
-    // refresh once per day, automatically, before the first pairing
-    if (state.foundAt !== todayStamp()){
-      await discoverLatest();
-    }
-    if (!state.url){
-      showError("<b>No wine list on file.</b> Tap “Refresh list,” or paste the PDF link under List source below.");
-      return;
-    }
-
     setWorking(true, "Reading the list & pairing…");
     try{
-      var prompt =
-        "You are the sommelier at River Pointe Inn, a French-American bistro in Rumson, NJ. " +
-        "The attached PDF is the CURRENT wine list. A guest asked for: \"" + phrase + "\".\n\n" +
-        "Using ONLY wines that actually appear in this PDF, recommend:\n" +
-        "- up to 2 by-the-glass options (if any fit)\n" +
-        "- up to 3 bottles\n\n" +
-        "For each bottle include its BIN NUMBER exactly as printed on the list and the PDF PAGE NUMBER where it appears. " +
-        "Prices exactly as printed. If no by-the-glass option fits, return an empty glass array.\n\n" +
-        "Respond with ONLY a JSON object, no markdown fences, no other text:\n" +
-        "{\"summary\": \"one short sommelier sentence about the direction you took\", " +
-        "\"glass\": [{\"name\": \"producer + wine + vintage\", \"style\": \"grape/region\", \"price\": \"$XX\", \"note\": \"why, in one short clause\"}], " +
-        "\"bottles\": [{\"name\": \"producer + wine + vintage\", \"style\": \"grape/region\", \"bin\": \"###\", \"page\": #, \"price\": \"$XXX\", \"note\": \"why, in one short clause\"}]}";
-
-      var resp = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-6",
-          max_tokens: 1000,
-          messages: [{
-            role: "user",
-            content: [
-              { type: "document", source: { type: "url", url: state.url } },
-              { type: "text", text: prompt }
-            ]
-          }]
-        })
-      });
-      var data = await resp.json();
-      if (data.error) throw new Error(data.error.message || "API error");
-      var recs = extractJSON(textBlocks(data));
+      var r = await fetch(WORKER_URL + "/pair?format=json&q=" + encodeURIComponent(phrase));
+      if (!r.ok){
+        var msg = await r.text();
+        throw new Error(msg || ("HTTP " + r.status));
+      }
+      var recs = await r.json();
       renderResults(phrase, recs);
+      loadStatus(); // pair may have rolled the list forward for the day
     }catch(err){
       console.error("recommend failed", err);
       showError(
-        "<b>Couldn’t read the list.</b> The saved PDF link may be stale — tap “Refresh list” to hunt for today’s version, " +
-        "or paste the new link under List source. (" + esc(err.message || err) + ")"
+        "<b>Pairing failed.</b> Tap “Refresh list” to hunt for today’s PDF, or paste the new link under List source. (" +
+        esc(err.message || err) + ")"
       );
     }finally{
       setWorking(false);
@@ -453,6 +483,7 @@
   /* ── render ── */
   function card(w, isBottle){
     var meta = "";
+    if (w.push) meta += '<span class="tag pick">Cellar pick</span>';
     if (isBottle && w.bin) meta += '<span class="tag bin">Bin ' + esc(w.bin) + "</span>";
     if (isBottle && (w.page || w.page === 0)) meta += '<span class="tag">Page ' + esc(w.page) + "</span>";
     if (w.style) meta += '<span class="tag">' + esc(w.style) + "</span>";
@@ -466,7 +497,7 @@
     );
   }
   function renderResults(phrase, recs){
-    els.askedfor.textContent = "“" + phrase + "”";
+    els.askedfor.textContent = "\u201C" + phrase + "\u201D";
     els.sommnote.textContent = recs.summary || "";
 
     var g = Array.isArray(recs.glass) ? recs.glass : [];
@@ -527,17 +558,14 @@
     listening = false;
     els.micring.classList.remove("listening");
     if (els.micstate.textContent === "Listening…"){
-      els.micstate.textContent = "Tap and ask — “big Napa cab for a steak table”";
+      els.micstate.textContent = "Tap and ask — \u201Cbig Napa cab for a steak table\u201D";
     }
     if (rec){ try{ rec.stop(); }catch(e){} }
   }
 
   /* ── wire up ── */
   els.micbtn.addEventListener("click", function(){
-    if (!rec){
-      els.phrase.focus();
-      return;
-    }
+    if (!rec){ els.phrase.focus(); return; }
     listening ? stopListening() : startListening();
   });
   els.gobtn.addEventListener("click", function(){
@@ -553,28 +581,39 @@
   els.refreshbtn.addEventListener("click", async function(){
     if (state.busy) return;
     clearError();
-    var r = await discoverLatest();
-    if (r.ok){
-      els.micstate.textContent = r.changed ? "Fresh list found — ready to pair" : "List confirmed current";
+    var r = await refreshList();
+    if (r && r.ok){
+      els.micstate.textContent = "Fresh list found — ready to pair";
     } else {
       showError("<b>Couldn’t find a newer PDF on the web.</b> Keeping the list on file. If the link changed today, paste the new one under List source.");
     }
   });
   els.savebtn.addEventListener("click", async function(){
+    if (!workerReady()) return;
     var u = els.urlinput.value.trim();
     if (!/^https:\/\//.test(u) || !/\.pdf/i.test(u)){
       showError("<b>That doesn’t look like a PDF link.</b> It should start with https:// and end in .pdf");
       return;
     }
     clearError();
-    state.url = u;
-    state.foundAt = todayStamp();
-    await saveStored();
-    reflectUrl();
-    els.micstate.textContent = "List saved — ready to pair";
+    setWorking(true, "Saving list…");
+    try{
+      var r = await fetch(WORKER_URL + "/setlist?url=" + encodeURIComponent(u));
+      var s = await r.json();
+      if (!s.ok) throw new Error("Worker rejected the URL");
+      await loadStatus();
+      els.micstate.textContent = "List saved — ready to pair";
+    }catch(e){
+      showError("<b>Couldn’t save.</b> " + esc(e.message || e));
+    }finally{
+      setWorking(false);
+    }
   });
 
-  loadStored();
+  els.countsbtn.addEventListener("click", uploadCounts);
+
+  loadStatus();
+  loadPush();
 })();
 </script>
 </body>
