@@ -485,6 +485,7 @@
   function card(w, isBottle){
     var meta = "";
     if (w.push) meta += '<span class="tag pick">Cellar pick</span>';
+    if (isBottle && w.tier) meta += '<span class="tag">' + esc(w.tier) + "</span>";
     if (isBottle && w.bin) meta += '<span class="tag bin">Bin ' + esc(w.bin) + "</span>";
     if (isBottle && (w.page || w.page === 0)) meta += '<span class="tag">Page ' + esc(w.page) + "</span>";
     if (w.style) meta += '<span class="tag">' + esc(w.style) + "</span>";
