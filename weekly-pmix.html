@@ -337,7 +337,7 @@ function categorize(name) {
   if (/\b(vodka|belvedere|grey goose|ketel one|tito's|tito\b|hendrick|beefeater|bombay sapphire|botanist|fords gin|plymouth gin|tanqueray|absolut|monkey 47|asbury park gin|wodka)\b/.test(n)) return 'spirit';
   if (/\bcasamigos|don julio|fortaleza|lalo\b|pueblo viejo|casa dragones|del maguey|clase azul|g4 blanco|g4 reposado/.test(n)) return 'spirit';
   if (/\bangels envy|blanton|buffalo trace|bulleit|dewars|high west|jack daniel|jameson|johnnie walker|laguavulin|macallan|maker's mark|maker's mark|michter|oban 14|sazerac rye|whistlepig|widow jane|woodford reserve|basil hayden|four roses|penelope toasted\b/.test(n)) return 'spirit';
-  if (/chartreuse|cognac park|lazzaroni amaretto|molinari sambuca|nonino amaro|averna amaro|limoncello|bailey's|campari|taylor fladgate|port|braulio|frangelico|rum|havana club|captain morgan/.test(n)) return 'spirit';
+  if (/chartreuse|cognac park|lazzaroni amaretto|molinari sambuca|nonino amaro|averna amaro|limoncello|bailey's|campari|taylor fladgate|\bport\b|braulio|frangelico|rum|havana club|captain morgan/.test(n)) return 'spirit';
   if (/beer done|vliet|birdsmouth|kronenbourg|other half forever|athletic brewing/.test(n)) return 'beer';
   // "Lunch" as a beer (Maine Beer Co.)
   if (/^lunch\s*\d*\s*\$/.test(n) || n === 'lunch') return 'beer';
