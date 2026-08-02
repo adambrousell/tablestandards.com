@@ -149,10 +149,10 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 
 <script>
 // ══════════════════════════════════════════════════════════════════════════
-// CONFIG — set your Worker URL once. Everything else is done.
+// CONFIG — fully set. No changes needed.
 // Chef password: RiverPointe2026  (hash below — see notes to change it)
 // ══════════════════════════════════════════════════════════════════════════
-const WORKER_URL = 'https://rpi-pmix-backend.YOUR-SUBDOMAIN.workers.dev';
+const WORKER_URL = 'https://rpi-pmix-backend.amusementstandards.workers.dev';
 const API_KEY = 'rpi-b04a0658e08474b70d959363edfc089b7228121dedbecee7';
 const PASSWORD_HASH = '1171c36f51505276afa307fcc193704c0f487038c40bb470508e5f719d2f2457';
 
@@ -259,13 +259,6 @@ async function loadData() {
   loading.style.display = 'block';
   errBox.style.display = 'none';
   document.getElementById('dashboard').classList.remove('active');
-
-  if (WORKER_URL.includes('YOUR-SUBDOMAIN')) {
-    loading.style.display = 'none';
-    errBox.style.display = 'block';
-    errBox.innerHTML = '<p>Setup incomplete — WORKER_URL not set in this file.</p>';
-    return;
-  }
 
   try {
     const resp = await fetch(`${WORKER_URL}/latest`, {
