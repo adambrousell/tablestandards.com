@@ -3,1210 +3,440 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PMix Pipeline — Toast POS → Power BI → Email</title>
+<title>River Pointe Inn — Category Ranking</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg:        #0d0f0e;
-    --bg2:       #131614;
-    --bg3:       #1a1d1b;
-    --bg4:       #222623;
-    --border:    #2a2e2b;
-    --border2:   #343a35;
-    --green:     #3ddc84;
-    --green-dim: #1f6b3f;
-    --green-fg:  #a8f0c4;
-    --amber:     #f0a500;
-    --amber-dim: #5a3d00;
-    --amber-fg:  #ffd07a;
-    --blue:      #4ea8de;
-    --blue-dim:  #0d2f4a;
-    --coral:     #ff6b4a;
-    --coral-dim: #4a1e12;
-    --purple:    #c084fc;
-    --purple-dim:#3b1f5e;
-    --purple-fg: #e4bafe;
-    --text:      #c8d0c9;
-    --text-dim:  #6b7a6d;
-    --text-faint:#3d4a3e;
-    --mono:      'IBM Plex Mono', monospace;
-    --sans:      'IBM Plex Sans', sans-serif;
-    --radius:    4px;
-  }
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    font-size: 15px;
-    line-height: 1.7;
-    min-height: 100vh;
-  }
-  body::before {
-    content: '';
-    position: fixed; inset: 0;
-    background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);
-    pointer-events: none;
-    z-index: 9999;
-  }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f7f5f0; --surface: #fff; --border: rgba(0,0,0,0.09); --border-strong: rgba(0,0,0,0.16);
+  --text: #1a1a18; --text-2: #6b6b67; --text-3: #9f9f9b;
+  --accent: #2a5f3c; --up: #1a7a3a; --up-bg: #e8f5ed; --down: #b83030; --down-bg: #faeaea;
+  --neutral: #888780; --r: 6px;
+}
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.5; }
+header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.logo { font-family: 'DM Serif Display', serif; font-size: 20px; }
+.logo span { font-style: italic; color: var(--text-2); font-size: 17px; }
 
-  /* ── SIDEBAR ── */
-  .sidebar {
-    width: 248px; flex-shrink: 0;
-    background: var(--bg2);
-    border-right: 1px solid var(--border);
-    position: fixed; top: 0; left: 0; bottom: 0;
-    overflow-y: auto; padding: 0 0 48px; z-index: 100;
-  }
-  .sidebar-logo { padding: 22px 20px 18px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
-  .sidebar-logo .wordmark { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--green); letter-spacing: 0.12em; text-transform: uppercase; }
-  .sidebar-logo .sub { font-family: var(--mono); font-size: 10px; color: var(--text-dim); margin-top: 3px; letter-spacing: 0.05em; }
-  .nav-section { padding: 14px 20px 4px; font-family: var(--mono); font-size: 9px; font-weight: 600; color: var(--text-faint); letter-spacing: 0.18em; text-transform: uppercase; }
-  .nav-link {
-    display: flex; align-items: center; gap: 8px;
-    padding: 7px 20px;
-    font-family: var(--mono); font-size: 12px;
-    color: var(--text-dim); text-decoration: none;
-    transition: color 0.15s, background 0.15s; position: relative;
-  }
-  .nav-link:hover { color: var(--text); background: var(--bg3); }
-  .nav-link.active { color: var(--green); background: rgba(61,220,132,0.06); }
-  .nav-link.active::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--green); }
-  .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border2); flex-shrink: 0; }
-  .nav-link.active .nav-dot { background: var(--green); }
-  .nav-link.airtable-link { color: var(--purple-fg); opacity: 0.7; }
-  .nav-link.airtable-link .nav-dot { background: var(--purple-dim); }
-  .nav-link.airtable-link.active { color: var(--purple); background: rgba(192,132,252,0.06); opacity: 1; }
-  .nav-link.airtable-link.active::before { background: var(--purple); }
-  .nav-link.airtable-link.active .nav-dot { background: var(--purple); }
+.login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--bg); }
+.login-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 40px; max-width: 400px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.login-card h1 { font-family: 'DM Serif Display', serif; font-size: 24px; margin-bottom: 8px; }
+.login-card p { font-size: 13px; color: var(--text-3); margin-bottom: 24px; }
+.login-card input { width: 100%; border: 1px solid var(--border-strong); border-radius: var(--r); padding: 10px 12px; font-family: 'DM Sans', sans-serif; font-size: 14px; margin-bottom: 16px; outline: none; }
+.login-card input:focus { border-color: var(--accent); }
+.login-card button { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: var(--r); padding: 10px; font-size: 14px; font-weight: 500; cursor: pointer; }
+.login-card button:hover { opacity: 0.88; }
+.login-error { color: var(--down); font-size: 12px; margin-bottom: 12px; }
 
-  /* ── MAIN ── */
-  .main { margin-left: 248px; flex: 1; max-width: 920px; padding: 60px 56px 120px; }
+.main-content { display: none; }
+.main-content.authed { display: block; }
 
-  /* ── HERO ── */
-  .hero { border-bottom: 1px solid var(--border); padding-bottom: 48px; margin-bottom: 56px; opacity: 0; animation: fadeUp 0.6s ease forwards; }
-  .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(61,220,132,0.08); border: 1px solid var(--green-dim); border-radius: 2px; padding: 4px 10px; font-family: var(--mono); font-size: 10px; color: var(--green); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 24px; }
-  .hero-badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--green); animation: pulse 2s ease-in-out infinite; }
-  h1 { font-family: var(--mono); font-size: 32px; font-weight: 600; color: #e8ede9; line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.02em; }
-  h1 .accent { color: var(--green); }
-  .hero-desc { font-size: 16px; color: var(--text-dim); max-width: 580px; line-height: 1.8; margin-bottom: 28px; }
+#data-input-section { margin: 20px 32px; }
+.paste-card { background: var(--surface); border: 1.5px dashed var(--border-strong); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.paste-label { font-size: 12px; font-weight: 500; color: var(--text-2); }
+.paste-card textarea { width: 100%; height: 100px; border: 1px solid var(--border); border-radius: var(--r); padding: 8px 10px; font-family: 'DM Sans', sans-serif; font-size: 11px; color: var(--text); background: var(--bg); resize: vertical; outline: none; }
+.paste-card textarea:focus { border-color: var(--accent); }
 
-  /* ── STORAGE MODE TOGGLE ── */
-  .mode-toggle {
-    display: inline-flex; align-items: center;
-    background: var(--bg3); border: 1px solid var(--border2);
-    border-radius: var(--radius); overflow: hidden;
-    margin-bottom: 24px;
-  }
-  .mode-btn {
-    font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em;
-    padding: 8px 18px; cursor: pointer; border: none; background: none;
-    color: var(--text-dim); transition: all 0.15s;
-  }
-  .mode-btn:first-child { border-right: 1px solid var(--border2); }
-  .mode-btn.active-sqlite { background: rgba(78,168,222,0.12); color: var(--blue); }
-  .mode-btn.active-airtable { background: rgba(192,132,252,0.12); color: var(--purple); }
-  .mode-label { font-family: var(--mono); font-size: 10px; color: var(--text-faint); margin-left: 12px; letter-spacing: 0.06em; }
+.action-row { margin: 0 32px 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.parse-btn { background: var(--accent); color: #fff; border: none; border-radius: var(--r); padding: 9px 22px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; }
+.parse-btn:hover { opacity: 0.88; }
+.parse-btn:disabled { opacity: 0.5; cursor: default; }
+.clear-btn { background: transparent; color: var(--text-2); border: 1px solid var(--border-strong); border-radius: var(--r); padding: 9px 16px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; }
+#parse-status { font-size: 12px; color: var(--text-3); }
 
-  /* ── PIPELINE FLOW ── */
-  .pipeline-flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; }
-  .flow-node { font-family: var(--mono); font-size: 11px; color: var(--text-dim); background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius); padding: 6px 12px; white-space: nowrap; transition: all 0.3s; }
-  .flow-node.green  { color: var(--green-fg);   border-color: var(--green-dim);  background: rgba(61,220,132,0.05); }
-  .flow-node.amber  { color: var(--amber-fg);   border-color: var(--amber-dim);  background: rgba(240,165,0,0.05); }
-  .flow-node.blue   { color: var(--blue);       border-color: var(--blue-dim);   background: rgba(78,168,222,0.05); }
-  .flow-node.coral  { color: var(--coral);      border-color: var(--coral-dim);  background: rgba(255,107,74,0.05); }
-  .flow-node.purple { color: var(--purple-fg);  border-color: var(--purple-dim); background: rgba(192,132,252,0.05); }
-  .flow-arrow { font-family: var(--mono); color: var(--text-faint); font-size: 12px; padding: 0 6px; }
+#dashboard { display: none; margin: 0 32px 40px; }
+#dashboard.active { display: block; }
 
-  /* ── SECTION ── */
-  .section { margin-bottom: 64px; opacity: 0; animation: fadeUp 0.5s ease forwards; }
-  .section:nth-child(2)  { animation-delay: 0.04s; }
-  .section:nth-child(3)  { animation-delay: 0.08s; }
-  .section:nth-child(4)  { animation-delay: 0.12s; }
-  .section:nth-child(5)  { animation-delay: 0.16s; }
-  .section:nth-child(6)  { animation-delay: 0.20s; }
-  .section:nth-child(7)  { animation-delay: 0.24s; }
-  .section:nth-child(8)  { animation-delay: 0.28s; }
-  .section:nth-child(9)  { animation-delay: 0.32s; }
-  .section:nth-child(10) { animation-delay: 0.36s; }
-  .section:nth-child(11) { animation-delay: 0.40s; }
+.toggle-section { margin: 0 32px 20px; display: flex; gap: 10px; }
+.toggle-btn { background: var(--surface); color: var(--text-2); border: 1px solid var(--border-strong); border-radius: var(--r); padding: 8px 18px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; font-weight: 500; }
+.toggle-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-  .section-header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
-  .step-num { font-family: var(--mono); font-size: 10px; font-weight: 600; color: var(--text-faint); letter-spacing: 0.1em; min-width: 32px; }
-  h2 { font-family: var(--mono); font-size: 18px; font-weight: 600; color: #dde5de; letter-spacing: -0.01em; }
-  h2 .tag { font-size: 11px; font-weight: 400; color: var(--text-faint); margin-left: 10px; letter-spacing: 0.06em; text-transform: uppercase; }
-  h3 { font-family: var(--mono); font-size: 13px; font-weight: 500; color: var(--text-dim); margin: 24px 0 10px; letter-spacing: 0.04em; }
-  p { color: var(--text-dim); margin-bottom: 16px; line-height: 1.8; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
+.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; }
+.kpi-label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+.kpi-val { font-family: 'DM Serif Display', serif; font-size: 26px; line-height: 1; color: var(--text); }
+.kpi-sub { font-size: 11px; color: var(--text-3); margin-top: 4px; }
 
-  /* ── TABS (SQLite / Airtable) ── */
-  .tab-bar {
-    display: flex; gap: 0;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 0;
-  }
-  .tab-btn {
-    font-family: var(--mono); font-size: 11px; letter-spacing: 0.07em;
-    padding: 8px 16px; cursor: pointer; border: none; background: none;
-    color: var(--text-dim); border-bottom: 2px solid transparent;
-    margin-bottom: -1px; transition: all 0.15s;
-  }
-  .tab-btn:hover { color: var(--text); }
-  .tab-btn.active-sqlite  { color: var(--blue);   border-bottom-color: var(--blue); }
-  .tab-btn.active-airtable{ color: var(--purple); border-bottom-color: var(--purple); }
-  .tab-pane { display: none; padding-top: 4px; }
-  .tab-pane.visible { display: block; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 16px 18px; margin-bottom: 14px; }
+.card-title { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); margin-bottom: 14px; }
+.card-title span { font-family: 'DM Serif Display', serif; font-size: 15px; text-transform: none; letter-spacing: 0; color: var(--text); margin-right: 8px; }
 
-  /* ── CODE BLOCKS ── */
-  .code-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin: 14px 0 22px; }
-  .code-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: var(--bg3); border-bottom: 1px solid var(--border); }
-  .code-filename { font-family: var(--mono); font-size: 11px; color: var(--text-dim); display: flex; align-items: center; gap: 8px; }
-  .code-filename::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--green-dim); border: 1px solid var(--green); }
-  .code-filename.purple::before { background: var(--purple-dim); border-color: var(--purple); }
-  .copy-btn { font-family: var(--mono); font-size: 10px; color: var(--text-faint); background: none; border: 1px solid var(--border2); border-radius: var(--radius); padding: 3px 8px; cursor: pointer; transition: all 0.15s; letter-spacing: 0.06em; }
-  .copy-btn:hover { color: var(--green); border-color: var(--green-dim); }
-  .copy-btn.copied { color: var(--green); border-color: var(--green-dim); }
-  pre { padding: 20px; overflow-x: auto; font-family: var(--mono); font-size: 12.5px; line-height: 1.7; color: var(--text); tab-size: 4; }
+.cat-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.cat-row:last-child { border-bottom: none; }
+.cat-name { width: 180px; color: var(--text); font-weight: 500; }
+.cat-bar { flex: 1; height: 20px; background: var(--border); border-radius: 3px; position: relative; overflow: hidden; }
+.cat-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s ease; display: flex; align-items: center; justify-content: flex-end; padding-right: 6px; }
+.cat-val { width: 80px; text-align: right; color: var(--text-2); font-variant-numeric: tabular-nums; }
 
-  /* syntax */
-  .k  { color: #c084fc; }
-  .s  { color: #86efac; }
-  .c  { color: var(--text-faint); font-style: italic; }
-  .f  { color: var(--blue); }
-  .n  { color: var(--amber-fg); }
-  .t  { color: var(--coral); }
-  .v  { color: var(--text); }
-  .p  { color: var(--text-dim); }
-  .d  { color: #67e8f9; }
-  .at { color: var(--purple-fg); }  /* airtable highlight */
+.hm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; margin-top: 14px; }
+.hm-cell { border-radius: 4px; padding: 10px; cursor: default; }
+.hm-name { font-size: 11px; font-weight: 500; color: #fff; line-height: 1.3; }
+.hm-meta { font-size: 10px; color: rgba(255,255,255,0.8); margin-top: 3px; }
 
-  /* ── CALLOUTS ── */
-  .callout { border-left: 2px solid; padding: 12px 16px; border-radius: 0 var(--radius) var(--radius) 0; margin: 14px 0 22px; font-size: 13.5px; line-height: 1.7; }
-  .callout.tip    { border-color: var(--green);  background: rgba(61,220,132,0.04); color: var(--green-fg); }
-  .callout.warn   { border-color: var(--amber);  background: rgba(240,165,0,0.04);  color: var(--amber-fg); }
-  .callout.info   { border-color: var(--blue);   background: rgba(78,168,222,0.04); color: var(--blue); }
-  .callout.purple { border-color: var(--purple); background: rgba(192,132,252,0.04); color: var(--purple-fg); }
-  .callout strong { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; display: block; margin-bottom: 4px; opacity: 0.7; }
+.header-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.logout-btn { font-size: 12px; color: var(--text-3); background: transparent; border: 1px solid var(--border-strong); padding: 6px 12px; border-radius: var(--r); cursor: pointer; }
+.logout-btn:hover { color: var(--text-2); border-color: var(--text-2); }
 
-  /* ── AIRTABLE SCHEMA TABLE ── */
-  .schema-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; margin: 14px 0 22px; }
-  .schema-table th { background: rgba(192,132,252,0.08); color: var(--purple-fg); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; padding: 8px 14px; text-align: left; border-bottom: 1px solid rgba(192,132,252,0.2); font-weight: 600; }
-  .schema-table td { padding: 9px 14px; border-bottom: 1px solid var(--border); color: var(--text-dim); }
-  .schema-table tr:last-child td { border-bottom: none; }
-  .schema-table tr:hover td { background: var(--bg3); }
-  .schema-table td:first-child { color: var(--purple-fg); }
-  .schema-table td:nth-child(2) { color: var(--amber-fg); }
+.week-label { font-size: 12px; color: var(--text-3); }
 
-  /* ── ENV TABLE ── */
-  .env-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; margin: 14px 0 22px; }
-  .env-table th { background: var(--bg3); color: var(--text-faint); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; padding: 8px 14px; text-align: left; border-bottom: 1px solid var(--border); font-weight: 600; }
-  .env-table td { padding: 9px 14px; border-bottom: 1px solid var(--border); color: var(--text-dim); }
-  .env-table tr:last-child td { border-bottom: none; }
-  .env-table tr:hover td { background: var(--bg3); }
-  .env-table td:first-child { color: var(--green-fg); white-space: nowrap; }
-  .env-table td:nth-child(2) { color: var(--amber-fg); }
-  .env-table tr.at-row td:first-child { color: var(--purple-fg); }
-
-  /* ── DAX GRID ── */
-  .dax-grid { display: grid; gap: 16px; margin: 14px 0; }
-  .dax-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-  .dax-card-head { background: var(--bg3); padding: 8px 14px; font-family: var(--mono); font-size: 11px; color: var(--blue); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-  .dax-card-head span { color: var(--text-faint); font-size: 10px; }
-  .dax-card pre { padding: 14px; font-size: 12px; }
-
-  /* ── SCHEDULE GRID ── */
-  .schedule-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 14px 0; }
-  .sched-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-  .sched-head { background: var(--bg3); padding: 10px 14px; font-family: var(--mono); font-size: 11px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
-  .sched-os { font-size: 9px; color: var(--text-faint); letter-spacing: 0.1em; text-transform: uppercase; }
-  .sched-card pre { padding: 14px; font-size: 11.5px; }
-
-  /* ── PAGE LIST ── */
-  .page-list { display: grid; gap: 10px; margin: 14px 0; }
-  .page-item { display: flex; align-items: flex-start; gap: 14px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; transition: border-color 0.15s; }
-  .page-item:hover { border-color: var(--border2); }
-  .page-num { font-family: var(--mono); font-size: 10px; font-weight: 600; color: var(--green-dim); background: rgba(61,220,132,0.08); border: 1px solid var(--green-dim); width: 22px; height: 22px; border-radius: 2px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
-  .page-info strong { font-family: var(--mono); font-size: 13px; color: var(--text); display: block; margin-bottom: 3px; }
-  .page-info span { font-size: 12.5px; color: var(--text-dim); }
-
-  /* ── DECISION TABLE ── */
-  .decision-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 14px 0; }
-  .decision-table th { background: var(--bg3); padding: 9px 14px; text-align: left; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-faint); border-bottom: 1px solid var(--border); font-weight: 600; }
-  .decision-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text-dim); vertical-align: top; }
-  .decision-table tr:last-child td { border-bottom: none; }
-  .decision-table td:first-child { font-family: var(--mono); font-size: 12px; color: var(--amber-fg); white-space: nowrap; }
-
-  /* ── INLINE CODE ── */
-  code { font-family: var(--mono); font-size: 12px; color: var(--green-fg); background: rgba(61,220,132,0.06); border: 1px solid var(--green-dim); border-radius: 2px; padding: 1px 5px; }
-  code.purple { color: var(--purple-fg); background: rgba(192,132,252,0.06); border-color: var(--purple-dim); }
-
-  /* ── AT BADGE ── */
-  .at-badge { display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 10px; color: var(--purple); background: rgba(192,132,252,0.08); border: 1px solid var(--purple-dim); border-radius: 2px; padding: 2px 8px; letter-spacing: 0.08em; text-transform: uppercase; margin-left: 8px; }
-
-  /* ── DUAL PATH BANNER ── */
-  .dual-banner {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
-    margin: 16px 0 24px;
-  }
-  .dual-card {
-    background: var(--bg2); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 14px 16px;
-  }
-  .dual-card.sqlite  { border-top: 2px solid var(--blue); }
-  .dual-card.airtable { border-top: 2px solid var(--purple); }
-  .dual-card .dc-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
-  .dual-card.sqlite .dc-label   { color: var(--blue); }
-  .dual-card.airtable .dc-label { color: var(--purple); }
-  .dual-card ul { list-style: none; }
-  .dual-card ul li { font-size: 12.5px; color: var(--text-dim); padding: 3px 0; padding-left: 14px; position: relative; }
-  .dual-card ul li::before { content: '→'; position: absolute; left: 0; color: var(--text-faint); font-size: 11px; }
-
-  /* ── ANIMATIONS ── */
-  @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-  @keyframes pulse  { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
-
-  /* ── SCROLLBAR ── */
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-
-  /* ── FOOTER ── */
-  .footer { margin-top: 80px; padding-top: 24px; border-top: 1px solid var(--border); font-family: var(--mono); font-size: 11px; color: var(--text-faint); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-
-  @media (max-width: 780px) {
-    .sidebar { display: none; }
-    .main { margin-left: 0; padding: 32px 20px 80px; }
-    .schedule-grid, .dual-banner { grid-template-columns: 1fr; }
-    h1 { font-size: 24px; }
-  }
+@media (max-width: 700px) {
+  .action-row, #data-input-section { margin-left: 16px; margin-right: 16px; }
+  .cat-name { width: 120px; }
+  .hm-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+}
 </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
-<nav class="sidebar">
-  <div class="sidebar-logo">
-    <div class="wordmark">PMix Pipeline</div>
-    <div class="sub">Toast → Power BI → Email</div>
+<!-- Login Screen -->
+<div class="login-screen" id="login-screen">
+  <div class="login-card">
+    <h1>Product Mix</h1>
+    <p>River Pointe Inn</p>
+    <div id="login-error" class="login-error"></div>
+    <input type="password" id="password-input" placeholder="Enter password" onkeypress="if(event.key==='Enter') authenticate()">
+    <button onclick="authenticate()">Access</button>
   </div>
+</div>
 
-  <div class="nav-section">Overview</div>
-  <a class="nav-link active" href="#overview"><span class="nav-dot"></span>Architecture</a>
-  <a class="nav-link" href="#prereqs"><span class="nav-dot"></span>Prerequisites</a>
+<!-- Main Content -->
+<div class="main-content" id="main-content">
+  <header>
+    <div class="logo">River Pointe Inn <span>— category ranking</span></div>
+    <button class="logout-btn" onclick="logout()">Log out</button>
+  </header>
 
-  <div class="nav-section">SQLite path</div>
-  <a class="nav-link" href="#step1"><span class="nav-dot"></span>1 · Toast API pull</a>
-  <a class="nav-link" href="#step2"><span class="nav-dot"></span>2 · SQLite load</a>
-
-  <div class="nav-section">Airtable path</div>
-  <a class="nav-link airtable-link" href="#airtable-schema"><span class="nav-dot"></span>2A · Schema setup</a>
-  <a class="nav-link airtable-link" href="#airtable-push"><span class="nav-dot"></span>2B · Push to Airtable</a>
-  <a class="nav-link airtable-link" href="#airtable-pbi"><span class="nav-dot"></span>2C · PBI connection</a>
-
-  <div class="nav-section">Shared</div>
-  <a class="nav-link" href="#step3"><span class="nav-dot"></span>3 · Power BI setup</a>
-  <a class="nav-link" href="#step4"><span class="nav-dot"></span>4 · DAX measures</a>
-  <a class="nav-link" href="#step5"><span class="nav-dot"></span>5 · Export &amp; email</a>
-  <a class="nav-link" href="#step6"><span class="nav-dot"></span>6 · Scheduler</a>
-
-  <div class="nav-section">Reference</div>
-  <a class="nav-link" href="#envvars"><span class="nav-dot"></span>Env variables</a>
-  <a class="nav-link" href="#decisions"><span class="nav-dot"></span>Architecture decisions</a>
-</nav>
-
-<!-- MAIN -->
-<main class="main">
-
-  <!-- HERO -->
-  <div class="hero" id="overview">
-    <div class="hero-badge">Automated reporting system</div>
-    <h1>Weekly <span class="accent">PMix</span> Dashboard</h1>
-    <p class="hero-desc">
-      Full-stack pipeline pulling product mix data from the Toast POS API,
-      transforming it through Python, storing to either SQLite or Airtable,
-      rendering in Power BI, and automatically emailing a PDF report every Monday.
-    </p>
-
-    <p style="font-family:var(--mono);font-size:11px;color:var(--text-faint);margin-bottom:10px;letter-spacing:0.06em;">SELECT STORAGE BACKEND</p>
-    <div class="mode-toggle">
-      <button class="mode-btn active-sqlite" id="mode-sqlite" onclick="setMode('sqlite')">SQLite / SQL</button>
-      <button class="mode-btn" id="mode-airtable" onclick="setMode('airtable')">Airtable</button>
+  <div id="data-input-section" style="display:none;">
+    <div class="paste-card">
+      <div class="paste-label">Paste Toast product mix export</div>
+      <textarea id="raw-data" placeholder="Paste this week's Toast product mix export..."></textarea>
     </div>
-    <span class="mode-label" id="mode-desc">local database file, no infra required</span>
-
-    <div style="margin-top:20px;">
-      <div class="pipeline-flow" id="flow-sqlite">
-        <div class="flow-node amber">Toast POS API</div>
-        <div class="flow-arrow">→</div>
-        <div class="flow-node green">Python ETL</div>
-        <div class="flow-arrow">→</div>
-        <div class="flow-node blue">SQLite / SQL</div>
-        <div class="flow-arrow">→</div>
-        <div class="flow-node blue">Power BI</div>
-        <div class="flow-arrow">→</div>
-        <div class="flow-node coral">Email PDF</div>
-      </div>
-      <div class="pipeline-flow" id="flow-airtable" style="display:none;">
-        <div class="flow-node amber">Toast POS API</div>
-        <div class="flow-arrow">→</div>
-        <div class="flow-node green">Python ETL</div>
-        <div class="flow-arrow">→</div>
-        <div class="flow-node purple">Airtable</div>
-        <div class="flow-arrow">→</div>
-        <div class="flow-node green">CSV export</div>
-        <div class="flow-arrow">→</div>
-        <div class="flow-node blue">Power BI</div>
-        <div class="flow-arrow">→</div>
-        <div class="flow-node coral">Email PDF</div>
-      </div>
+    <div class="action-row">
+      <button class="parse-btn" onclick="parseAndRender()">Parse & render</button>
+      <button class="clear-btn" onclick="clearAll()">Clear</button>
+      <span id="parse-status"></span>
     </div>
   </div>
 
-  <!-- PREREQS -->
-  <div class="section" id="prereqs">
-    <div class="section-header">
-      <span class="step-num">00</span>
-      <h2>Prerequisites <span class="tag">before you start</span></h2>
-    </div>
-
-    <p>Install these before running any of the scripts below. The Airtable package is only needed if you're using the Airtable path.</p>
-
-    <div class="code-wrap">
-      <div class="code-header">
-        <span class="code-filename">terminal</span>
-        <button class="copy-btn" onclick="copyCode(this)">copy</button>
+  <div id="dashboard">
+    <div class="header-bar">
+      <div>
+        <div class="logo" style="font-size:16px;margin-bottom:4px;">Week of <span class="week-label" id="week-label"></span></div>
       </div>
-      <pre><span class="c"># Core packages (both paths)</span>
-pip install requests pandas python-dotenv
-
-<span class="c"># SQLite path: ODBC driver for Power BI Desktop (Windows)</span>
-<span class="c"># Download: http://www.ch-werner.de/sqliteodbc/</span>
-<span class="c"># Install sqliteodbc.exe — creates system DSN automatically</span>
-
-<span class="c"># Airtable path: pyairtable wrapper (optional, or use requests directly)</span>
-pip install pyairtable
-
-<span class="c"># Postgres / Azure SQL (only if upgrading from SQLite)</span>
-pip install psycopg2-binary sqlalchemy</pre>
+      <div class="toggle-section">
+        <button class="toggle-btn active" onclick="setView('revenue')">Revenue</button>
+        <button class="toggle-btn" onclick="setView('quantity')">Quantity</button>
+      </div>
     </div>
 
-    <div class="callout info">
-      <strong>Power BI licensing</strong>
-      Power BI Pro or Premium Per User is required to publish reports and use scheduled
-      refresh in the Service. Power BI Desktop is free and sufficient for local use and
-      manual PDF exports.
+    <div id="kpi-grid" class="kpi-grid"></div>
+
+    <div class="card">
+      <div class="card-title"><span id="ranking-title">Categories by revenue</span></div>
+      <div id="ranking-list"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>Category heatmap</span></div>
+      <div id="heatmap"></div>
+    </div>
+
+    <div id="debug-section" style="margin:20px 0;padding:0 18px;display:none;">
+      <button class="clear-btn" onclick="toggleDataInput()">Re-enter data</button>
     </div>
   </div>
+</div>
 
-  <!-- STEP 1: TOAST PULL -->
-  <div class="section" id="step1">
-    <div class="section-header">
-      <span class="step-num">01</span>
-      <h2>Toast API pull <span class="tag">pull_pmix.py — both paths</span></h2>
-    </div>
+<script>
+const CAT_COLORS = {
+  cocktail:'#2150a0', wine:'#5c2d6e', food:'#c0452a',
+  starter:'#2a5f3c', dessert:'#b8942a', spirit:'#4a7a8a',
+  beer:'#7a5c2a', coffee:'#6b4e3d', na:'#888780',
+  events:'#7a3060', pdj:'#0f766e',
+};
 
-    <p>
-      This script is identical regardless of which storage backend you choose.
-      It authenticates against Toast, pulls item-selection detail for the last 7 days,
-      and normalizes the data into a clean DataFrame that the next step consumes.
-    </p>
+const CAT_LABELS = {
+  cocktail:'Cocktails & martinis', wine:'Wine (glass & bottle)', food:'Entrees & sides',
+  starter:'Starters & raw bar', dessert:'Desserts', spirit:'Spirits',
+  beer:'Beer', coffee:'Coffee & tea', na:'NA beverages',
+  events:'Private Events & Wine Dinner', pdj:'Plat du Jour specials',
+};
 
-    <div class="callout warn">
-      <strong>Toast API field names</strong>
-      Toast renames fields occasionally between API versions. Run a test pull and
-      <code>print(df.columns.tolist())</code> to confirm your exact field names before
-      wiring the rename map below.
-    </div>
+// ── Password Authentication ──────────────────────────────────────────────
+// Simple SHA-256 hash for password. Change PASSWORD_HASH to your desired password hash.
+// To generate: open browser console and run: await crypto.subtle.digest('SHA-256', new TextEncoder().encode('your-password')).then(h=>Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join(''))
+const PASSWORD_HASH = '5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5'; // hash of '12345' — CHANGE THIS
 
-    <div class="code-wrap">
-      <div class="code-header">
-        <span class="code-filename">pull_pmix.py</span>
-        <button class="copy-btn" onclick="copyCode(this)">copy</button>
-      </div>
-      <pre><span class="k">import</span> os, requests, pandas <span class="k">as</span> pd
-<span class="k">from</span> datetime <span class="k">import</span> datetime, timedelta
-<span class="k">from</span> dotenv <span class="k">import</span> load_dotenv
-
-load_dotenv()
-
-TOAST_HOST      = <span class="s">"https://ws-api.toasttab.com"</span>
-CLIENT_ID       = os.environ[<span class="s">"TOAST_CLIENT_ID"</span>]
-CLIENT_SECRET   = os.environ[<span class="s">"TOAST_CLIENT_SECRET"</span>]
-RESTAURANT_GUID = os.environ[<span class="s">"TOAST_RESTAURANT_GUID"</span>]
-
-
-<span class="k">def</span> <span class="f">get_token</span>() -> str:
-    r = requests.<span class="f">post</span>(
-        <span class="n">f</span><span class="s">"{TOAST_HOST}/authentication/v1/authentication/login"</span>,
-        json={
-            <span class="s">"clientId"</span>:      CLIENT_ID,
-            <span class="s">"clientSecret"</span>:  CLIENT_SECRET,
-            <span class="s">"userAccessType"</span>:<span class="s">"TOAST_MACHINE_CLIENT"</span>,
-        },
-    )
-    r.<span class="f">raise_for_status</span>()
-    <span class="k">return</span> r.<span class="f">json</span>()[<span class="s">"token"</span>][<span class="s">"accessToken"</span>]
-
-
-<span class="k">def</span> <span class="f">pull_pmix</span>(start_dt: datetime, end_dt: datetime) -> pd.DataFrame:
-    token   = <span class="f">get_token</span>()
-    headers = {
-        <span class="s">"Authorization"</span>:                <span class="n">f</span><span class="s">"Bearer {token}"</span>,
-        <span class="s">"Toast-Restaurant-External-ID"</span>: RESTAURANT_GUID,
-    }
-    params = {
-        <span class="s">"startDate"</span>: start_dt.<span class="f">strftime</span>(<span class="s">"%Y%m%d"</span>),
-        <span class="s">"endDate"</span>:   end_dt.<span class="f">strftime</span>(<span class="s">"%Y%m%d"</span>),
-    }
-
-    r = requests.<span class="f">get</span>(
-        <span class="n">f</span><span class="s">"{TOAST_HOST}/reporting/v1/reports/itemselectiondetails"</span>,
-        headers=headers, params=params,
-    )
-    r.<span class="f">raise_for_status</span>()
-
-    df = pd.<span class="f">DataFrame</span>(r.<span class="f">json</span>())
-    df = df.<span class="f">rename</span>(columns={
-        <span class="s">"menuItemName"</span>:  <span class="s">"item_name"</span>,
-        <span class="s">"menuGroupName"</span>: <span class="s">"category"</span>,
-        <span class="s">"quantity"</span>:      <span class="s">"qty_sold"</span>,
-        <span class="s">"grossSales"</span>:    <span class="s">"gross_sales"</span>,
-        <span class="s">"netSales"</span>:      <span class="s">"net_sales"</span>,
-        <span class="s">"orderDate"</span>:     <span class="s">"order_date"</span>,
-    })
-
-    df[<span class="s">"order_date"</span>] = pd.<span class="f">to_datetime</span>(df[<span class="s">"order_date"</span>])
-    df[<span class="s">"week_start"</span>] = (
-        df[<span class="s">"order_date"</span>] - pd.<span class="f">to_timedelta</span>(df[<span class="s">"order_date"</span>].dt.dayofweek, unit=<span class="s">"d"</span>)
-    )
-    df[<span class="s">"gross_sales"</span>] = df[<span class="s">"gross_sales"</span>] / <span class="n">100</span>  <span class="c"># cents → dollars</span>
-    df[<span class="s">"net_sales"</span>]   = df[<span class="s">"net_sales"</span>]   / <span class="n">100</span>
-
-    <span class="k">return</span> df[[
-        <span class="s">"item_name"</span>, <span class="s">"category"</span>, <span class="s">"qty_sold"</span>,
-        <span class="s">"gross_sales"</span>, <span class="s">"net_sales"</span>, <span class="s">"order_date"</span>, <span class="s">"week_start"</span>,
-    ]]
-
-
-<span class="k">if</span> __name__ == <span class="s">"__main__"</span>:
-    end   = datetime.<span class="f">now</span>()
-    start = end - timedelta(days=<span class="n">7</span>)
-    df    = <span class="f">pull_pmix</span>(start, end)
-    <span class="f">print</span>(df.<span class="f">head</span>(<span class="n">10</span>))
-    <span class="f">print</span>(<span class="n">f</span><span class="s">"\n{len(df)} rows pulled"</span>)
-    df.<span class="f">to_csv</span>(<span class="s">"pmix_latest.csv"</span>, index=<span class="n">False</span>)  <span class="c"># always write CSV fallback</span></pre>
-    </div>
-  </div>
-
-  <!-- STEP 2: SQLITE -->
-  <div class="section" id="step2">
-    <div class="section-header">
-      <span class="step-num">02</span>
-      <h2>SQLite load <span class="tag">load_pmix.py</span></h2>
-    </div>
-
-    <p>
-      Idempotent upsert — deletes the loaded date range then re-inserts, so re-running
-      never duplicates rows. Zero infrastructure: a single <code>pmix.db</code> file on disk.
-      Skip this section entirely if you're using the Airtable path.
-    </p>
-
-    <div class="code-wrap">
-      <div class="code-header">
-        <span class="code-filename">load_pmix.py</span>
-        <button class="copy-btn" onclick="copyCode(this)">copy</button>
-      </div>
-      <pre><span class="k">import</span> sqlite3, pandas <span class="k">as</span> pd
-<span class="k">from</span> pathlib <span class="k">import</span> Path
-
-DB_PATH = Path(<span class="s">"pmix.db"</span>)
-
-CREATE_SQL = <span class="s">"""
-CREATE TABLE IF NOT EXISTS pmix (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    item_name   TEXT    NOT NULL,
-    category    TEXT,
-    qty_sold    REAL    DEFAULT 0,
-    gross_sales REAL    DEFAULT 0,
-    net_sales   REAL    DEFAULT 0,
-    order_date  TEXT    NOT NULL,
-    week_start  TEXT    NOT NULL
-)
-"""</span>
-
-
-<span class="k">def</span> <span class="f">upsert_pmix</span>(df: pd.DataFrame) -> <span class="t">int</span>:
-    con = sqlite3.<span class="f">connect</span>(DB_PATH)
-    con.<span class="f">execute</span>(CREATE_SQL)
-    con.<span class="f">execute</span>(<span class="s">"CREATE INDEX IF NOT EXISTS idx_dates ON pmix(week_start, order_date)"</span>)
-
-    min_date = df[<span class="s">"order_date"</span>].<span class="f">min</span>()
-    max_date = df[<span class="s">"order_date"</span>].<span class="f">max</span>()
-    <span class="k">if</span> <span class="f">isinstance</span>(min_date, pd.Timestamp):
-        min_date = min_date.date().<span class="f">isoformat</span>()
-        max_date = max_date.date().<span class="f">isoformat</span>()
-
-    con.<span class="f">execute</span>(<span class="s">"DELETE FROM pmix WHERE order_date BETWEEN ? AND ?"</span>, (min_date, max_date))
-
-    df = df.<span class="f">copy</span>()
-    df[<span class="s">"order_date"</span>] = df[<span class="s">"order_date"</span>].dt.date.<span class="f">astype</span>(<span class="t">str</span>)
-    df[<span class="s">"week_start"</span>] = df[<span class="s">"week_start"</span>].dt.date.<span class="f">astype</span>(<span class="t">str</span>)
-
-    df.<span class="f">to_sql</span>(<span class="s">"pmix"</span>, con, if_exists=<span class="s">"append"</span>, index=<span class="n">False</span>)
-    con.<span class="f">commit</span>(); con.<span class="f">close</span>()
-    <span class="k">return</span> <span class="f">len</span>(df)
-
-
-<span class="k">if</span> __name__ == <span class="s">"__main__"</span>:
-    <span class="k">from</span> pull_pmix <span class="k">import</span> pull_pmix
-    <span class="k">from</span> datetime <span class="k">import</span> datetime, timedelta
-    end = datetime.<span class="f">now</span>(); start = end - timedelta(days=<span class="n">7</span>)
-    n = <span class="f">upsert_pmix</span>(<span class="f">pull_pmix</span>(start, end))
-    <span class="f">print</span>(<span class="n">f</span><span class="s">"✓ {n} rows loaded to {DB_PATH}"</span>)</pre>
-    </div>
-
-    <h3>// Postgres or Azure SQL swap</h3>
-    <div class="code-wrap">
-      <div class="code-header">
-        <span class="code-filename">connection string alternatives</span>
-        <button class="copy-btn" onclick="copyCode(this)">copy</button>
-      </div>
-      <pre><span class="k">from</span> sqlalchemy <span class="k">import</span> create_engine
-
-<span class="c"># Postgres</span>
-engine = create_engine(os.environ[<span class="s">"DATABASE_URL"</span>])
-<span class="c"># postgresql://user:pass@host:5432/pmix</span>
-
-<span class="c"># Azure SQL</span>
-engine = create_engine(
-    <span class="s">"mssql+pyodbc://user:pass@server.database.windows.net/pmix"</span>
-    <span class="s">"?driver=ODBC+Driver+18+for+SQL+Server"</span>
-)
-
-df.<span class="f">to_sql</span>(<span class="s">"pmix"</span>, engine, if_exists=<span class="s">"append"</span>, index=<span class="n">False</span>)</pre>
-    </div>
-  </div>
-
-  <!-- AIRTABLE: SCHEMA -->
-  <div class="section" id="airtable-schema">
-    <div class="section-header">
-      <span class="step-num">2A</span>
-      <h2>Airtable schema setup <span class="at-badge">airtable path</span></h2>
-    </div>
-
-    <p>
-      Create a new table called <strong>PMix</strong> in your existing Airtable base
-      (you can use the same base as the MASI inspector portal or create a dedicated
-      River Pointe base). Set up these fields manually before running the push script.
-    </p>
-
-    <div class="callout purple">
-      <strong>Row limits</strong>
-      Airtable free tier caps at 1,000 rows per base. A year of daily PMix data for a
-      busy restaurant can hit 50k+ rows — you'll want a Team plan (50,000 rows/base) or
-      a dedicated PMix base with periodic archiving of old weeks to keep row count down.
-    </div>
-
-    <table class="schema-table">
-      <thead>
-        <tr>
-          <th>Field name</th>
-          <th>Airtable field type</th>
-          <th>Notes</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td>Item Name</td><td>Single line text</td><td>Primary field — rename the default "Name" field</td></tr>
-        <tr><td>Category</td><td>Single line text</td><td>Menu group (Appetizers, Entrees, etc.)</td></tr>
-        <tr><td>Qty Sold</td><td>Number → Integer</td><td>Units sold in the period</td></tr>
-        <tr><td>Gross Sales</td><td>Currency → USD</td><td>Dollars (the Python script converts cents)</td></tr>
-        <tr><td>Net Sales</td><td>Currency → USD</td><td>After discounts/comps</td></tr>
-        <tr><td>Order Date</td><td>Date → ISO format</td><td>Individual transaction date</td></tr>
-        <tr><td>Week Start</td><td>Date → ISO format</td><td>Monday of the report week — used for grouping</td></tr>
-        <tr><td>Week Key</td><td>Formula</td><td><code class="purple">DATETIME_FORMAT(Week Start,'YYYY-[W]WW')</code> — useful for filters</td></tr>
-      </tbody>
-    </table>
-
-    <p>
-      Find your base ID in the Airtable URL: <code class="purple">airtable.com/YOUR_BASE_ID/...</code> —
-      it starts with <code class="purple">app</code>. Your table name is exactly what you named it above.
-    </p>
-  </div>
-
-  <!-- AIRTABLE: PUSH -->
-  <div class="section" id="airtable-push">
-    <div class="section-header">
-      <span class="step-num">2B</span>
-      <h2>Push to Airtable <span class="at-badge">airtable path</span></h2>
-    </div>
-
-    <p>
-      Replaces <code>load_pmix.py</code> in the SQLite path. Airtable's API accepts records
-      in batches of up to 10. The script deletes existing records for the date window first
-      (idempotent), then inserts the fresh batch. A CSV is always written alongside as a fallback
-      for Power BI.
-    </p>
-
-    <div class="callout warn">
-      <strong>Rate limit</strong>
-      Airtable enforces 5 requests per second per base. The script includes a short
-      <code>time.sleep(0.25)</code> between batches to stay safely under the limit. For
-      a week of data this adds at most a few seconds.
-    </div>
-
-    <div class="code-wrap">
-      <div class="code-header">
-        <span class="code-filename purple">load_airtable.py</span>
-        <button class="copy-btn" onclick="copyCode(this)">copy</button>
-      </div>
-      <pre><span class="k">import</span> os, time, requests, pandas <span class="k">as</span> pd
-<span class="k">from</span> dotenv <span class="k">import</span> load_dotenv
-
-load_dotenv()
-
-<span class="at">AIRTABLE_TOKEN</span>   = os.environ[<span class="s">"AIRTABLE_TOKEN"</span>]
-<span class="at">AIRTABLE_BASE_ID</span> = os.environ[<span class="s">"AIRTABLE_BASE_ID"</span>]
-<span class="at">AIRTABLE_TABLE</span>   = os.environ.<span class="f">get</span>(<span class="s">"AIRTABLE_PMIX_TABLE"</span>, <span class="s">"PMix"</span>)
-
-AT_BASE = (
-    <span class="n">f</span><span class="s">"https://api.airtable.com/v0/{AIRTABLE_BASE_ID}"</span>
-    <span class="n">f</span><span class="s">"/{AIRTABLE_TABLE}"</span>
-)
-HEADERS = {
-    <span class="s">"Authorization"</span>: <span class="n">f</span><span class="s">"Bearer {AIRTABLE_TOKEN}"</span>,
-    <span class="s">"Content-Type"</span>:  <span class="s">"application/json"</span>,
+async function hashPassword(pwd) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(pwd);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-
-<span class="k">def</span> <span class="f">delete_week</span>(week_start: str) -> <span class="t">int</span>:
-    <span class="s">"""Delete all existing records for a given week_start date string."""</span>
-    deleted = <span class="n">0</span>
-    offset  = <span class="n">None</span>
-
-    <span class="k">while</span> <span class="n">True</span>:
-        params = {
-            <span class="s">"filterByFormula"</span>: <span class="n">f</span><span class="s">"{{Week Start}}='{week_start}'"</span>,
-            <span class="s">"fields[]"</span>: <span class="s">"Week Start"</span>,
-        }
-        <span class="k">if</span> offset:
-            params[<span class="s">"offset"</span>] = offset
-
-        r = requests.<span class="f">get</span>(AT_BASE, headers=HEADERS, params=params)
-        r.<span class="f">raise_for_status</span>()
-        data    = r.<span class="f">json</span>()
-        records = data.<span class="f">get</span>(<span class="s">"records"</span>, [])
-
-        <span class="k">if not</span> records:
-            <span class="k">break</span>
-
-        <span class="c"># Delete up to 10 at a time</span>
-        ids = [rec[<span class="s">"id"</span>] <span class="k">for</span> rec <span class="k">in</span> records]
-        <span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(<span class="n">0</span>, <span class="f">len</span>(ids), <span class="n">10</span>):
-            params_del = {<span class="s">"records[]"</span>: ids[i:i+<span class="n">10</span>]}
-            rd = requests.<span class="f">delete</span>(AT_BASE, headers=HEADERS, params=params_del)
-            rd.<span class="f">raise_for_status</span>()
-            deleted += <span class="f">len</span>(ids[i:i+<span class="n">10</span>])
-            time.<span class="f">sleep</span>(<span class="n">0.25</span>)
-
-        offset = data.<span class="f">get</span>(<span class="s">"offset"</span>)
-        <span class="k">if not</span> offset:
-            <span class="k">break</span>
-
-    <span class="k">return</span> deleted
-
-
-<span class="k">def</span> <span class="f">push_to_airtable</span>(df: pd.DataFrame) -> <span class="t">int</span>:
-    <span class="s">"""Idempotent push: delete existing week, then insert fresh records."""</span>
-    <span class="c"># Get unique week_starts to clean before inserting</span>
-    week_starts = df[<span class="s">"week_start"</span>].dt.date.<span class="f">astype</span>(<span class="t">str</span>).<span class="f">unique</span>()
-    <span class="k">for</span> ws <span class="k">in</span> week_starts:
-        n_del = <span class="f">delete_week</span>(ws)
-        <span class="k">if</span> n_del:
-            <span class="f">print</span>(<span class="n">f</span><span class="s">"  Deleted {n_del} existing records for week {ws}"</span>)
-
-    <span class="c"># Build record list</span>
-    records = []
-    <span class="k">for</span> _, row <span class="k">in</span> df.<span class="f">iterrows</span>():
-        records.<span class="f">append</span>({
-            <span class="s">"fields"</span>: {
-                <span class="s">"Item Name"</span>:   row[<span class="s">"item_name"</span>],
-                <span class="s">"Category"</span>:    row[<span class="s">"category"</span>],
-                <span class="s">"Qty Sold"</span>:    <span class="f">float</span>(row[<span class="s">"qty_sold"</span>]),
-                <span class="s">"Gross Sales"</span>: <span class="f">float</span>(row[<span class="s">"gross_sales"</span>]),
-                <span class="s">"Net Sales"</span>:   <span class="f">float</span>(row[<span class="s">"net_sales"</span>]),
-                <span class="s">"Order Date"</span>:  row[<span class="s">"order_date"</span>].date().<span class="f">isoformat</span>(),
-                <span class="s">"Week Start"</span>:  row[<span class="s">"week_start"</span>].date().<span class="f">isoformat</span>(),
-            }
-        })
-
-    <span class="c"># Batch insert (max 10 per request)</span>
-    created = <span class="n">0</span>
-    <span class="k">for</span> i <span class="k">in</span> <span class="f">range</span>(<span class="n">0</span>, <span class="f">len</span>(records), <span class="n">10</span>):
-        batch = records[i:i+<span class="n">10</span>]
-        r = requests.<span class="f">post</span>(AT_BASE, headers=HEADERS, json={<span class="s">"records"</span>: batch})
-        r.<span class="f">raise_for_status</span>()
-        created += <span class="f">len</span>(r.<span class="f">json</span>().<span class="f">get</span>(<span class="s">"records"</span>, []))
-        time.<span class="f">sleep</span>(<span class="n">0.25</span>)  <span class="c"># stay under 5 req/sec rate limit</span>
-
-    <span class="k">return</span> created
-
-
-<span class="k">def</span> <span class="f">export_csv_from_airtable</span>(output_path: str = <span class="s">"pmix_latest.csv"</span>) -> <span class="t">None</span>:
-    <span class="s">"""Pull all records from Airtable and write a CSV for Power BI."""</span>
-    all_records = []
-    offset = <span class="n">None</span>
-
-    <span class="k">while</span> <span class="n">True</span>:
-        params = {<span class="s">"view"</span>: <span class="s">"Grid view"</span>}
-        <span class="k">if</span> offset:
-            params[<span class="s">"offset"</span>] = offset
-        r = requests.<span class="f">get</span>(AT_BASE, headers=HEADERS, params=params)
-        r.<span class="f">raise_for_status</span>()
-        data = r.<span class="f">json</span>()
-        all_records.<span class="f">extend</span>(data.<span class="f">get</span>(<span class="s">"records"</span>, []))
-        offset = data.<span class="f">get</span>(<span class="s">"offset"</span>)
-        <span class="k">if not</span> offset:
-            <span class="k">break</span>
-        time.<span class="f">sleep</span>(<span class="n">0.25</span>)
-
-    rows = [rec[<span class="s">"fields"</span>] <span class="k">for</span> rec <span class="k">in</span> all_records]
-    df   = pd.<span class="f">DataFrame</span>(rows)
-    df.<span class="f">to_csv</span>(output_path, index=<span class="n">False</span>)
-    <span class="f">print</span>(<span class="n">f</span><span class="s">"  ✓ Exported {len(df)} rows → {output_path}"</span>)
-
-
-<span class="k">if</span> __name__ == <span class="s">"__main__"</span>:
-    <span class="k">from</span> pull_pmix <span class="k">import</span> pull_pmix
-    <span class="k">from</span> datetime <span class="k">import</span> datetime, timedelta
-    end   = datetime.<span class="f">now</span>()
-    start = end - timedelta(days=<span class="n">7</span>)
-    df    = <span class="f">pull_pmix</span>(start, end)
-    n     = <span class="f">push_to_airtable</span>(df)
-    <span class="f">print</span>(<span class="n">f</span><span class="s">"✓ {n} records in Airtable"</span>)
-    <span class="f">export_csv_from_airtable</span>()  <span class="c"># refresh CSV for Power BI</span></pre>
-    </div>
-  </div>
-
-  <!-- AIRTABLE: PBI CONNECTION -->
-  <div class="section" id="airtable-pbi">
-    <div class="section-header">
-      <span class="step-num">2C</span>
-      <h2>Power BI + Airtable <span class="at-badge">airtable path</span></h2>
-    </div>
-
-    <p>
-      Airtable has no native Power BI connector. The recommended approach is to have the
-      pipeline write a fresh <code>pmix_latest.csv</code> (the <code>export_csv_from_airtable()</code>
-      call at the end of the script), then point Power BI at that CSV via the on-prem gateway.
-      This also means Airtable serves as the human-readable live view and CSV is the
-      Power BI data source — you get both.
-    </p>
-
-    <div class="dual-banner">
-      <div class="dual-card sqlite">
-        <div class="dc-label">Option A — CSV bridge (recommended)</div>
-        <ul>
-          <li>Pipeline writes CSV after each Airtable push</li>
-          <li>Power BI reads CSV via on-prem gateway</li>
-          <li>Zero extra dependencies</li>
-          <li>Staff can view live data in Airtable</li>
-          <li>Power BI gets a clean weekly snapshot</li>
-        </ul>
-      </div>
-      <div class="dual-card airtable">
-        <div class="dc-label">Option B — Third-party connector</div>
-        <ul>
-          <li>Coupler.io or Supermetrics sync Airtable → PBI</li>
-          <li>No CSV file needed</li>
-          <li>Paid dependency ($20–50/mo)</li>
-          <li>Scheduled sync — not real-time</li>
-          <li>Adds a third service to maintain</li>
-        </ul>
-      </div>
-    </div>
-
-    <h3>// Connect Power BI Desktop to the CSV</h3>
-    <div class="code-wrap">
-      <div class="code-header">
-        <span class="code-filename purple">Power BI Desktop — steps</span>
-        <button class="copy-btn" onclick="copyCode(this)">copy</button>
-      </div>
-      <pre><span class="c">1. Home → Get Data → Text/CSV</span>
-   → Browse to: C:\pmix-pipeline\pmix_latest.csv
-   → Load
-
-<span class="c">2. In Power Query (Transform Data):</span>
-   → Set Order Date and Week Start column types → Date
-   → Set Gross Sales, Net Sales → Decimal Number
-   → Set Qty Sold → Whole Number
-   → Close &amp; Apply
-
-<span class="c">3. For scheduled refresh in Power BI Service:</span>
-   → Install Power BI on-prem gateway on the pipeline machine
-   → In Service: Dataset → Settings → Gateway connection
-   → Point the CSV data source at the gateway
-   → Schedule refresh: Daily or Weekly after the pipeline runs
-
-<span class="c">4. Alternative — skip the gateway entirely:</span>
-   → Use Power BI Desktop only
-   → Manually refresh before viewing, or schedule via Task Scheduler
-   → Export PDF from Desktop via File → Export → PDF</pre>
-    </div>
-
-    <div class="callout tip">
-      <strong>Best of both worlds</strong>
-      Keep Airtable as the live operational view — the team can open it any time and
-      see every PMix record, filter by category, sort by qty. Power BI reads the CSV for
-      visualizations and the PDF email. You're already running Airtable for AS 360 so
-      this adds no new infrastructure cost.
-    </div>
-  </div>
-
-  <!-- STEP 3: POWER BI -->
-  <div class="section" id="step3">
-    <div class="section-header">
-      <span class="step-num">03</span>
-      <h2>Power BI setup <span class="tag">Desktop → Service</span></h2>
-    </div>
-
-    <p>These steps apply regardless of storage backend. The data model is the same whether Power BI reads from SQLite/ODBC or from the CSV.</p>
-
-    <div class="tab-bar">
-      <button class="tab-btn active-sqlite" onclick="switchTab(this,'sqlite-pbi','airtable-pbi-tab')">SQLite / ODBC</button>
-      <button class="tab-btn" onclick="switchTab(this,'airtable-pbi-tab','sqlite-pbi')">Airtable CSV</button>
-    </div>
-
-    <div class="tab-pane visible" id="sqlite-pbi">
-      <div class="code-wrap" style="border-top:none;border-radius:0 0 4px 4px;">
-        <div class="code-header">
-          <span class="code-filename">SQLite via ODBC</span>
-          <button class="copy-btn" onclick="copyCode(this)">copy</button>
-        </div>
-        <pre><span class="c">1. Install SQLite ODBC driver</span>
-   → http://www.ch-werner.de/sqliteodbc/
-   → Run sqliteodbc.exe
-
-<span class="c">2. Get Data → ODBC → SQLite Datasource</span>
-   → Advanced: Database=C:\pmix-pipeline\pmix.db
-   → Navigator → select [pmix] table → Load
-
-<span class="c">3. In Model view:</span>
-   → order_date → Date type
-   → week_start → Date type
-   → gross_sales, net_sales → Fixed decimal (currency)
-   → qty_sold → Whole number</pre>
-      </div>
-    </div>
-
-    <div class="tab-pane" id="airtable-pbi-tab">
-      <div class="code-wrap" style="border-top:none;border-radius:0 0 4px 4px;">
-        <div class="code-header">
-          <span class="code-filename purple">Airtable CSV path</span>
-          <button class="copy-btn" onclick="copyCode(this)">copy</button>
-        </div>
-        <pre><span class="c">1. Get Data → Text/CSV</span>
-   → Browse to: C:\pmix-pipeline\pmix_latest.csv
-
-<span class="c">2. Transform Data → Power Query:</span>
-   → Order Date, Week Start → Date type
-   → Gross Sales, Net Sales → Decimal Number
-   → Qty Sold → Whole Number
-   → Close &amp; Apply
-
-<span class="c">3. For auto-refresh without a gateway:</span>
-   → Add a Task Scheduler step after the pipeline runs:
-     powershell -command "Start-Process 'PBIDesktop.exe' -Args '/Refresh pmix.pbix'"
-   → This refreshes Desktop and re-exports PDF without PBI Service</pre>
-      </div>
-    </div>
-
-    <h3>// Dashboard pages to build</h3>
-    <div class="page-list">
-      <div class="page-item">
-        <div class="page-num">1</div>
-        <div class="page-info">
-          <strong>PMix Overview</strong>
-          <span>Clustered bar — top 20 items by qty_sold. Slicer on category. KPI cards: total covers, total revenue, avg check size.</span>
-        </div>
-      </div>
-      <div class="page-item">
-        <div class="page-num">2</div>
-        <div class="page-info">
-          <strong>Revenue mix</strong>
-          <span>Treemap: gross_sales by category → item_name. Shows revenue concentration at a glance.</span>
-        </div>
-      </div>
-      <div class="page-item">
-        <div class="page-num">3</div>
-        <div class="page-info">
-          <strong>Weekly trend</strong>
-          <span>Line chart — week_start on X, qty_sold on Y, item_name as legend. Filter to top 10 items.</span>
-        </div>
-      </div>
-      <div class="page-item">
-        <div class="page-num">4</div>
-        <div class="page-info">
-          <strong>WoW movement</strong>
-          <span>Table: item | this week qty | last week qty | Δ qty | Δ%. Conditional formatting: green ↑, red ↓. Sort by Δ% desc.</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- STEP 4: DAX -->
-  <div class="section" id="step4">
-    <div class="section-header">
-      <span class="step-num">04</span>
-      <h2>DAX measures <span class="tag">add in Power BI Desktop</span></h2>
-    </div>
-    <p>Create these as explicit measures (Home → New Measure). They power all four dashboard pages regardless of storage backend.</p>
-
-    <div class="dax-grid">
-      <div class="dax-card">
-        <div class="dax-card-head">Qty This Week <span>total qty in current week filter</span></div>
-        <pre><span class="v">Qty This Week</span> =
-<span class="f">CALCULATE</span>(
-    <span class="f">SUM</span>(pmix[qty_sold]),
-    <span class="f">DATESINPERIOD</span>(pmix[week_start], <span class="f">LASTDATE</span>(pmix[week_start]), -<span class="n">1</span>, WEEK)
-)</pre>
-      </div>
-      <div class="dax-card">
-        <div class="dax-card-head">Category Mix % <span>item share of total qty</span></div>
-        <pre><span class="v">Category Mix %</span> =
-<span class="f">DIVIDE</span>(
-    <span class="f">SUM</span>(pmix[qty_sold]),
-    <span class="f">CALCULATE</span>(<span class="f">SUM</span>(pmix[qty_sold]), <span class="f">ALL</span>(pmix[category]))
-)</pre>
-      </div>
-      <div class="dax-card">
-        <div class="dax-card-head">Revenue per Item <span>average selling price</span></div>
-        <pre><span class="v">Revenue per Item</span> =
-<span class="f">DIVIDE</span>(<span class="f">SUM</span>(pmix[gross_sales]), <span class="f">SUM</span>(pmix[qty_sold]))</pre>
-      </div>
-      <div class="dax-card">
-        <div class="dax-card-head">QoW Change % <span>week-over-week qty movement</span></div>
-        <pre><span class="v">QoW Change %</span> =
-<span class="k">VAR</span> thisWeek = <span class="f">SUM</span>(pmix[qty_sold])
-<span class="k">VAR</span> lastWeek = <span class="f">CALCULATE</span>(
-    <span class="f">SUM</span>(pmix[qty_sold]),
-    <span class="f">DATEADD</span>(pmix[week_start], -<span class="n">1</span>, WEEK)
-)
-<span class="k">RETURN</span> <span class="f">DIVIDE</span>(thisWeek - lastWeek, lastWeek)</pre>
-      </div>
-      <div class="dax-card">
-        <div class="dax-card-head">Gross Sales This Week <span>dollar total, current week</span></div>
-        <pre><span class="v">Gross Sales This Week</span> =
-<span class="f">CALCULATE</span>(
-    <span class="f">SUM</span>(pmix[gross_sales]),
-    <span class="f">DATESINPERIOD</span>(pmix[week_start], <span class="f">LASTDATE</span>(pmix[week_start]), -<span class="n">1</span>, WEEK)
-)</pre>
-      </div>
-      <div class="dax-card">
-        <div class="dax-card-head">Top N Filter <span>dynamic top-N via What-If parameter</span></div>
-        <pre><span class="c">-- 1. Add What-If parameter: TopN, 1-50, default 20</span>
-<span class="c">-- 2. Use this measure as a visual-level filter > 0</span>
-
-<span class="v">Top N Filter</span> =
-<span class="k">VAR</span> rank = <span class="f">RANKX</span>(
-    <span class="f">ALL</span>(pmix[item_name]),
-    <span class="f">CALCULATE</span>(<span class="f">SUM</span>(pmix[qty_sold])),
-    , <span class="f">DESC</span>, Dense
-)
-<span class="k">RETURN</span> <span class="f">IF</span>(rank <= [TopN Value], <span class="n">1</span>, <span class="n">0</span>)</pre>
-      </div>
-    </div>
-  </div>
-
-  <!-- STEP 5: EMAIL -->
-  <div class="section" id="step5">
-    <div class="section-header">
-      <span class="step-num">05</span>
-      <h2>Export &amp; email <span class="tag">send_report.py</span></h2>
-    </div>
-    <p>
-      Authenticates against the Power BI REST API via Azure AD service principal,
-      kicks off a PDF export job, polls until complete, then emails the PDF via SMTP.
-      Works with any SMTP provider — Gmail app passwords are the fastest path.
-    </p>
-    <div class="callout info">
-      <strong>Azure App Registration</strong>
-      Create an Azure AD app registration with the Power BI API permission
-      <code>Report.ReadAll</code>. Grant admin consent. Takes ~10 minutes in the Azure portal.
-      Not needed if you export PDF manually from Power BI Desktop.
-    </div>
-    <div class="code-wrap">
-      <div class="code-header">
-        <span class="code-filename">send_report.py</span>
-        <button class="copy-btn" onclick="copyCode(this)">copy</button>
-      </div>
-      <pre><span class="k">import</span> os, smtplib, time, requests
-<span class="k">from</span> email.mime.multipart <span class="k">import</span> MIMEMultipart
-<span class="k">from</span> email.mime.base <span class="k">import</span> MIMEBase
-<span class="k">from</span> email.mime.text <span class="k">import</span> MIMEText
-<span class="k">from</span> email <span class="k">import</span> encoders
-<span class="k">from</span> datetime <span class="k">import</span> datetime
-<span class="k">from</span> dotenv <span class="k">import</span> load_dotenv
-
-load_dotenv()
-
-TENANT_ID     = os.environ[<span class="s">"AZURE_TENANT_ID"</span>]
-CLIENT_ID     = os.environ[<span class="s">"AZURE_CLIENT_ID"</span>]
-CLIENT_SECRET = os.environ[<span class="s">"AZURE_CLIENT_SECRET"</span>]
-WORKSPACE_ID  = os.environ[<span class="s">"PBI_WORKSPACE_ID"</span>]
-REPORT_ID     = os.environ[<span class="s">"PBI_REPORT_ID"</span>]
-SMTP_HOST     = os.environ[<span class="s">"SMTP_HOST"</span>]
-SMTP_PORT     = <span class="f">int</span>(os.environ.<span class="f">get</span>(<span class="s">"SMTP_PORT"</span>, <span class="n">587</span>))
-SMTP_USER     = os.environ[<span class="s">"SMTP_USER"</span>]
-SMTP_PASS     = os.environ[<span class="s">"SMTP_PASS"</span>]
-
-RECIPIENTS = [
-    <span class="s">"gm@yourrestaurant.com"</span>,
-    <span class="s">"chef@yourrestaurant.com"</span>,
-    <span class="s">"ownership@yourgroup.com"</span>,
-]
-
-PBI_BASE = (
-    <span class="n">f</span><span class="s">"https://api.powerbi.com/v1.0/myorg/groups/{WORKSPACE_ID}"</span>
-    <span class="n">f</span><span class="s">"/reports/{REPORT_ID}"</span>
-)
-
-
-<span class="k">def</span> <span class="f">get_pbi_token</span>() -> str:
-    r = requests.<span class="f">post</span>(
-        <span class="n">f</span><span class="s">"https://login.microsoftonline.com/{TENANT_ID}/oauth2/v2.0/token"</span>,
-        data={
-            <span class="s">"grant_type"</span>:    <span class="s">"client_credentials"</span>,
-            <span class="s">"client_id"</span>:     CLIENT_ID,
-            <span class="s">"client_secret"</span>: CLIENT_SECRET,
-            <span class="s">"scope"</span>: <span class="s">"https://analysis.windows.net/powerbi/api/.default"</span>,
-        },
-    )
-    r.<span class="f">raise_for_status</span>()
-    <span class="k">return</span> r.<span class="f">json</span>()[<span class="s">"access_token"</span>]
-
-
-<span class="k">def</span> <span class="f">export_report_pdf</span>(token: str) -> bytes:
-    headers = {<span class="s">"Authorization"</span>: <span class="n">f</span><span class="s">"Bearer {token}"</span>}
-    r = requests.<span class="f">post</span>(<span class="n">f</span><span class="s">"{PBI_BASE}/ExportTo"</span>, headers=headers, json={<span class="s">"format"</span>: <span class="s">"PDF"</span>})
-    r.<span class="f">raise_for_status</span>()
-    export_id = r.<span class="f">json</span>()[<span class="s">"id"</span>]
-    <span class="f">print</span>(<span class="n">f</span><span class="s">"  Export id: {export_id}"</span>)
-
-    <span class="k">for</span> attempt <span class="k">in</span> <span class="f">range</span>(<span class="n">30</span>):
-        time.<span class="f">sleep</span>(<span class="n">5</span>)
-        sr    = requests.<span class="f">get</span>(<span class="n">f</span><span class="s">"{PBI_BASE}/exports/{export_id}"</span>, headers=headers)
-        st    = sr.<span class="f">json</span>().<span class="f">get</span>(<span class="s">"status"</span>)
-        pct   = sr.<span class="f">json</span>().<span class="f">get</span>(<span class="s">"percentComplete"</span>, <span class="n">0</span>)
-        <span class="f">print</span>(<span class="n">f</span><span class="s">"  [{attempt+1}/30] {st} ({pct}%)"</span>)
-        <span class="k">if</span> st == <span class="s">"Succeeded"</span>:
-            fr = requests.<span class="f">get</span>(<span class="n">f</span><span class="s">"{PBI_BASE}/exports/{export_id}/file"</span>, headers=headers)
-            <span class="k">return</span> fr.content
-        <span class="k">if</span> st == <span class="s">"Failed"</span>:
-            <span class="k">raise</span> <span class="t">RuntimeError</span>(<span class="n">f</span><span class="s">"Export failed: {sr.json()}"</span>)
-
-    <span class="k">raise</span> <span class="t">TimeoutError</span>(<span class="s">"Power BI export timed out"</span>)
-
-
-<span class="k">def</span> <span class="f">send_email</span>(pdf_bytes: bytes, week_label: str) -> <span class="t">None</span>:
-    msg = MIMEMultipart()
-    msg[<span class="s">"From"</span>]    = SMTP_USER
-    msg[<span class="s">"To"</span>]      = <span class="s">", "</span>.<span class="f">join</span>(RECIPIENTS)
-    msg[<span class="s">"Subject"</span>] = <span class="n">f</span><span class="s">"Weekly PMix Report — {week_label}"</span>
-    msg.<span class="f">attach</span>(MIMEText(<span class="n">f</span><span class="s">"""Team,
-
-Attached is the product mix report for the week of {week_label}.
-
-  • Top 20 items by qty sold (page 1)
-  • Category revenue mix treemap (page 2)
-  • Week-over-week movement (page 4)
-
-Generated automatically every Monday from live Toast POS data.
-"""</span>))
-    att = MIMEBase(<span class="s">"application"</span>, <span class="s">"octet-stream"</span>)
-    att.<span class="f">set_payload</span>(pdf_bytes)
-    encoders.<span class="f">encode_base64</span>(att)
-    att.<span class="f">add_header</span>(<span class="s">"Content-Disposition"</span>, <span class="n">f</span><span class="s">'attachment; filename="PMix_{week_label}.pdf"'</span>)
-    msg.<span class="f">attach</span>(att)
-
-    <span class="k">with</span> smtplib.<span class="f">SMTP</span>(SMTP_HOST, SMTP_PORT) <span class="k">as</span> server:
-        server.<span class="f">starttls</span>()
-        server.<span class="f">login</span>(SMTP_USER, SMTP_PASS)
-        server.<span class="f">sendmail</span>(SMTP_USER, RECIPIENTS, msg.<span class="f">as_string</span>())
-    <span class="f">print</span>(<span class="n">f</span><span class="s">"  ✓ Emailed to {len(RECIPIENTS)} recipients"</span>)
-
-
-<span class="k">if</span> __name__ == <span class="s">"__main__"</span>:
-    week = datetime.<span class="f">now</span>().<span class="f">strftime</span>(<span class="s">"%Y-%m-%d"</span>)
-    token = <span class="f">get_pbi_token</span>()
-    pdf   = <span class="f">export_report_pdf</span>(token)
-    <span class="f">send_email</span>(pdf, week)
-    <span class="f">print</span>(<span class="s">"Done."</span>)</pre>
-    </div>
-  </div>
-
-  <!-- STEP 6: SCHEDULER -->
-  <div class="section" id="step6">
-    <div class="section-header">
-      <span class="step-num">06</span>
-      <h2>Scheduler <span class="tag">run_pipeline.py + cron / Task Scheduler</span></h2>
-    </div>
-
-    <p>The main entry point wires all steps together. Use the SQLite or Airtable import depending on your path.</p>
-
-    <div class="tab-bar">
-      <button class="tab-btn active-sqlite" onclick="switchTab(this,'runner-sqlite','runner-airtable')">SQLite runner</button>
-      <button class="tab-btn" onclick="switchTab(this,'runner-airtable','runner-sqlite')">Airtable runner</button>
-    </div>
-
-    <div class="tab-pane visible" id="runner-sqlite">
-      <div class="code-wrap" style="border-top:none;border-radius:0 0 4px 4px;">
-        <div class="code-header">
-          <span class="code-filename">run_pipeline.py — SQLite path</span>
-          <button class="copy-btn" onclick="copyCode(this)">copy</button>
-        </div>
-        <pre><span class="k">from</span> datetime <span class="k">import</span> datetime, timedelta
-<span class="k">from</span> pull_pmix  <span class="k">import</span> pull_pmix
-<span class="k">from</span> load_pmix  <span class="k">import</span> upsert_pmix
-<span class="k">from</span> send_report <span class="k">import</span> get_pbi_token, export_report_pdf, send_email
-
-<span class="k">def</span> <span class="f">run</span>():
-    end  = datetime.<span class="f">now</span>(); start = end - timedelta(days=<span class="n">7</span>)
-    week = start.<span class="f">strftime</span>(<span class="s">"%Y-%m-%d"</span>)
-    <span class="f">print</span>(<span class="s">f"=== PMix Pipeline (SQLite) — week of {week} ==="</span>)
-
-    <span class="f">print</span>(<span class="s">"[1/4] Toast API pull..."</span>)
-    df = <span class="f">pull_pmix</span>(start, end)
-    <span class="f">print</span>(<span class="s">f"      {len(df)} rows"</span>)
-
-    <span class="f">print</span>(<span class="s">"[2/4] Load to SQLite..."</span>)
-    <span class="f">upsert_pmix</span>(df)
-
-    <span class="f">print</span>(<span class="s">"[3/4] Export Power BI PDF..."</span>)
-    pdf = <span class="f">export_report_pdf</span>(<span class="f">get_pbi_token</span>())
-
-    <span class="f">print</span>(<span class="s">"[4/4] Send email..."</span>)
-    <span class="f">send_email</span>(pdf, week)
-    <span class="f">print</span>(<span class="s">"=== Done ==="</span>)
-
-<span class="k">if</span> __name__ == <span class="s">"__main__"</span>: <span class="f">run</span>()</pre>
-      </div>
-    </div>
-
-    <div class="tab-pane" id="runner-airtable">
-      <div class="code-wrap" style="border-top:none;border-radius:0 0 4px 4px;">
-        <div class="code-header">
-          <span class="code-filename purple">run_pipeline.py — Airtable path</span>
-          <button class="copy-btn" onclick="copyCode(this)">copy</button>
-        </div>
-        <pre><span class="k">from</span> datetime <span class="k">import</span> datetime, timedelta
-<span class="k">from</span> pull_pmix      <span class="k">import</span> pull_pmix
-<span class="k">from</span> load_airtable  <span class="k">import</span> push_to_airtable, export_csv_from_airtable
-<span class="k">from</span> send_report    <span class="k">import</span> get_pbi_token, export_report_pdf, send_email
-
-<span class="k">def</span> <span class="f">run</span>():
-    end  = datetime.<span class="f">now</span>(); start = end - timedelta(days=<span class="n">7</span>)
-    week = start.<span class="f">strftime</span>(<span class="s">"%Y-%m-%d"</span>)
-    <span class="f">print</span>(<span class="s">f"=== PMix Pipeline (Airtable) — week of {week} ==="</span>)
-
-    <span class="f">print</span>(<span class="s">"[1/5] Toast
+async function authenticate() {
+  const pwd = document.getElementById('password-input').value.trim();
+  if (!pwd) { showLoginError('Enter password'); return; }
+  const hash = await hashPassword(pwd);
+  if (hash === PASSWORD_HASH) {
+    sessionStorage.setItem('rpi_authed', 'true');
+    showMainContent();
+  } else {
+    showLoginError('Incorrect password');
+  }
+}
+
+function showLoginError(msg) {
+  const err = document.getElementById('login-error');
+  err.textContent = msg;
+  setTimeout(() => { err.textContent = ''; }, 3000);
+}
+
+function logout() {
+  sessionStorage.removeItem('rpi_authed');
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('main-content').classList.remove('authed');
+  document.getElementById('dashboard').classList.remove('active');
+  document.getElementById('data-input-section').style.display = 'none';
+  document.getElementById('password-input').value = '';
+  document.getElementById('raw-data').value = '';
+}
+
+function showMainContent() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-content').classList.add('authed');
+  document.getElementById('data-input-section').style.display = 'block';
+}
+
+// Check auth on load
+window.addEventListener('load', () => {
+  if (sessionStorage.getItem('rpi_authed') === 'true') {
+    showMainContent();
+  }
+});
+
+// ── Data Parsing ──────────────────────────────────────────────────────────
+
+const SKIP_NAMES = new Set([
+  'drinks','dinner','lunch','na beverage','wine by the glass','wine by the bottle',
+  'house cocktails & martinis','cocktails','martini happy hour','vodka & gin',
+  'tequila & mezcal','whiskey','aperitifs, cognac, brandy, cordials',
+  'dessert wines & fortified wine','beer','coffee & tea','raw bar & starters',
+  'entrees & sides','dessert','add on\'s','private events','hors d\'oeuvres',
+  'open items','gift card','total','location(s)','product mix','retail',
+  'takeout','take out','take-out','to go','togo','online ordering','brunch',
+  'delivery','catering','entrees','entrées','sides','sandwiches','specials',
+]);
+
+const GIFT_CARD_RE = /^gift\s*card|^add value\s*\(\$\)|^gift\s*card\s*\d/i;
+
+function isSkipRow(name, price) {
+  const n = name.toLowerCase().trim();
+  if (n === 'lunch' && typeof price === 'number' && price > 0 && price <= 15) return false;
+  if (SKIP_NAMES.has(n)) return true;
+  if (GIFT_CARD_RE.test(n)) return true;
+  if (/^\d[\d\-'s]*\s*(-\s*.+)?$/.test(n)) return true;
+  if (/^location/i.test(n)) return true;
+  if (/^total\b/i.test(n)) return true;
+  if (/^menu\b|^menus?\s+item|^qty sold|^avg price|^item cogs/i.test(n)) return true;
+  if (/questions or feedback|data delay|near real-time/i.test(n)) return true;
+  if (/^case\s+|^6\s*pack\s+/i.test(n)) return true;
+  return false;
+}
+
+function aggregateItems(items) {
+  const map = new Map();
+  const out = [];
+  items.forEach(i => {
+    const key = i.name.toLowerCase().replace(/^hh:\s*/, '').replace(/\s+/g, ' ').trim();
+    if (map.has(key)) {
+      const ex = map.get(key);
+      const rev = ex.qty * ex.price + i.qty * i.price;
+      ex.qty += i.qty;
+      ex.price = ex.qty > 0 ? rev / ex.qty : 0;
+      if (/^hh:/i.test(ex.name) && !/^hh:/i.test(i.name)) ex.name = i.name;
+    } else {
+      const copy = { ...i };
+      map.set(key, copy);
+      out.push(copy);
+    }
+  });
+  return out;
+}
+
+function parsePaste(raw) {
+  const lines = raw.split('\n').map(l => l.replace(/[\u00A0\u2007\u202F]/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const items = [];
+  let dateRange = '';
+  const dateMatch = raw.match(/Date range\s+([\w\s,\-–\/]+?\d{4})/i);
+  if (dateMatch) dateRange = dateMatch[1].trim();
+
+  for (const line of lines) {
+    const m = line.match(/^(.+?)\s+([\d,]+)\s+\$([\d,.]+)(?:\s+\$([\d,.]+))?\s*$/);
+    if (!m) continue;
+    const name = m[1].trim();
+    const qty = parseInt(m[2].replace(/,/g, ''));
+    let price = parseFloat(m[3].replace(/,/g, ''));
+    const netSales = m[4] !== undefined ? parseFloat(m[4].replace(/,/g, '')) : null;
+    if (netSales !== null && !isNaN(netSales) && qty > 0) price = netSales / qty;
+    if (isNaN(qty) || qty <= 0 || isNaN(price) || price < 0 || name.length < 2) continue;
+    if (isSkipRow(name, price)) continue;
+    items.push({ name, qty, price });
+  }
+  return { items: aggregateItems(items), dateRange };
+}
+
+function categorize(name) {
+  const n = name.toLowerCase();
+  if (/plat[e]?\s*d[eu]\s*jour|\bd[eu]\s*jour\b|^pdj\b/.test(n)) return 'pdj';
+  if (/espresso martini|salt air|filthy|metropolitan|jockey club|river pointe|grasshopper|in fashion|saint joe|lychee|can't elope|pep in your|bee sting|negroni|strawberry fields|colada|hh:|martini happy hour|ancho problem|rhubarb/.test(n)) return 'cocktail';
+  if (/aperol spritz|hugo spritz|french 75|paper plane|mimosa|bloody mary|lemon drop|mojito|moscow mule/.test(n)) return 'cocktail';
+  if (/na almost|na pear|na espresso/.test(n)) return 'cocktail';
+  if (/^gl:|cremant|brut ros|moet|drappier|folle blanche|albarino|ladoucette|drouhin.*secondes|pouilly|peyrassol|moulin.*vent|cotes du rh|guyon 2022|routestock|chappellet mountain|haut l'artigue/.test(n)) return 'wine';
+  if (/wine by the bottle|btg bottle|sancerre|meursault|chablis|puligny|cabernet sauv|pride mountain|ridge.*lytton|kistler|o'shaugh|aubert.*carneros|turley|ducru|chauvin 2019|smith haut lafitte|leon beyer|melville|chevillon|cathiard|camus-bruchon|agrapart|sulauze|domaine pierre martin|francois de la roche|lauverjat|manarine|lafarge|domaine guyon|drouhin.*cotes de beaune|joseph drouhin|o'shaughnessy|maître de chai|le petit ducru|le petite smith/.test(n)) return 'wine';
+  if (/^\d{3,4}[:\s]|^b\d{2,4}\b|^2\d{3}[:\s]/.test(n)) return 'wine';
+  if (/latour pauillac somm|baron patrick laducette|blasson d'issan|hundred acre|fortunate son|domaine de montille|jean et s.*bastien dauvissat|stéphane aviron|henri billiot|banyuls|d'oliveiras|taylor fladgate|chateau d'yquem|domaine dominique guyon|bourgogne|chinon|lestang|domaine de pallus|giacometti|patrimonio|brio by ch|rauzan|saint-joseph|brecheras|pallus|chantegrive|meyer-fonn|paul blanck|hermann j wiemer|domaine michel lafarge|petit chablis l\. michel|drouhin-vaudon|chablis.*dauvissat/.test(n)) return 'wine';
+  if (/\b(vodka|belvedere|grey goose|ketel one|tito's|tito\b|hendrick|beefeater|bombay sapphire|botanist|fords gin|plymouth gin|tanqueray|absolut|monkey 47|asbury park gin|wodka)\b/.test(n)) return 'spirit';
+  if (/\bcasamigos|don julio|fortaleza|lalo\b|pueblo viejo|casa dragones|del maguey|clase azul|g4 blanco|g4 reposado/.test(n)) return 'spirit';
+  if (/\bangels envy|blanton|buffalo trace|bulleit|dewars|high west|jack daniel|jameson|johnnie walker|laguavulin|macallan|maker's mark|michter|oban 14|sazerac rye|whistlepig|widow jane|woodford reserve|basil hayden|four roses|penelope toasted\b/.test(n)) return 'spirit';
+  if (/chartreuse|cognac park|lazzaroni amaretto|molinari sambuca|nonino amaro|averna amaro|limoncello|bailey's|campari|taylor fladgate|\bport\b|braulio|frangelico|rum|havana club|captain morgan/.test(n)) return 'spirit';
+  if (/beer done|vliet|birdsmouth|kronenbourg|other half forever|athletic brewing/.test(n)) return 'beer';
+  if (/^lunch\s*\d*\s*\$/.test(n) || n === 'lunch') return 'beer';
+  if (/\bespresso\b|\bcappuccino\b|\bmacchiato\b|\bcoffee\b|peppermint tea|chamomile tea|earl gr[ae]y|green tea|black tea/.test(n)) return 'coffee';
+  if (/btl.*still water|btl.*sparkling water|\bcoke\b|diet coke|sprite|ginger ale|club soda|ginger beer|shirley temple|lemonade|iced tea|apple juice|arnold palmer|pineapple juice|cranberry juice|fresh oj|milk/.test(n)) return 'na';
+  if (/wagyu burger|ratatouille|paillard|moules frites|tuna prov|halibut|loup de mar|lasagna|au poivre|pork chop|steak frites|roast chicken for|ny strip|porterhouse|pommes frites|pommes duchess|haricot vert|peppers carmen|peas.*lard|poulet en croute|oysters rockefeller|french dip|southern fried quail|bouillabaise|short rib|lobster frites|crispy fish|salmon burger|pan bagnat|chicken salad sandwich|omelette|eggs benedict|hanger steak|kids tenders|kids cheeseburger|chicken fingers.*staff|wagyu burger.*staff|side donuts|salmon\b|branzino|red snapper|snapper|french onion lasagna|prime short rib|chicken au poivre|corn & lardons|corn.*lardons/.test(n)) return 'food';
+  if (/bread service|little gem|garden salad|asparagus mimosa|escargots|^jambon|steak tartare|crepe aux|berries.*cream|caviar.*donut|crudo tasting|shrimp cocktail|tuna tartare|ceviche|dune fox|swan point|sugar shack|love.*dozen|barnegat|violet sky|salad de tomates|eggplant|peaches|^p\. /.test(n)) return 'starter';
+  if (/carrot cake|meringue cake|chocolate cake|cheesecake|raspberry tart|creme brulee|banana split|brownie sundae|banana chip ice|brown butter ice|chocolate ice|strawberry ice|vanilla ice|mint ice|lemon sorbet|fromage/.test(n)) return 'dessert';
+  if (/^wd\s|wine dinner|^wd bread|^wd crab|^wd gnudi|^wd monkfish|^wd new york|^wd mousse/.test(n)) return 'events';
+  if (/^p\.|private event adult|private event child|event decor/.test(n)) return 'events';
+  if (/^p\.(bread|jambon|berries|garden|hanger|duchess|haricot|au poivre|escargots|eggplant|little gem|chicken|branzino|potato|ny strip)|hanger add on|crudo\b|parfait|lunch oyster/.test(n)) return 'food';
+  if (/open drink|open food|open item|case peyrassol|six pack guyon|custom cake/.test(n)) return 'food';
+  return 'food';
+}
+
+const sumRev = arr => (arr||[]).reduce((s,i)=>s+i.qty*i.price, 0);
+const sumQty = arr => (arr||[]).reduce((s,i)=>s+i.qty, 0);
+const fmt = n => n.toLocaleString('en-US', { style:'currency', currency:'USD', maximumFractionDigits:0 });
+
+let currentData = null;
+let currentView = 'revenue';
+
+function parseAndRender() {
+  const raw = document.getElementById('raw-data').value.trim();
+  if (!raw) {
+    document.getElementById('parse-status').textContent = 'Paste data first.';
+    return;
+  }
+  const parsed = parsePaste(raw);
+  if (!parsed.items.length) {
+    document.getElementById('parse-status').textContent = 'Could not parse items. Paste the full Toast product mix export.';
+    return;
+  }
+  currentData = parsed;
+  document.getElementById('parse-status').textContent = `✓ Parsed ${parsed.items.length} items.`;
+  document.getElementById('data-input-section').style.display = 'none';
+  document.getElementById('debug-section').style.display = 'block';
+  renderDashboard();
+}
+
+function renderDashboard() {
+  if (!currentData) return;
+  const { items, dateRange } = currentData;
+  document.getElementById('week-label').textContent = dateRange || 'Week loaded';
+
+  const cats = {};
+  items.forEach(i => {
+    const c = categorize(i.name);
+    if (!cats[c]) cats[c] = [];
+    cats[c].push(i);
+  });
+
+  // Build ranking
+  const ranking = Object.keys(cats).map(key => ({
+    key,
+    label: CAT_LABELS[key],
+    color: CAT_COLORS[key],
+    qty: sumQty(cats[key]),
+    rev: sumRev(cats[key]),
+  })).filter(r => r.qty > 0);
+
+  const sorted = currentView === 'revenue'
+    ? ranking.sort((a,b) => b.rev - a.rev)
+    : ranking.sort((a,b) => b.qty - a.qty);
+
+  const totalRev = ranking.reduce((s,r) => s + r.rev, 0);
+  const totalQty = ranking.reduce((s,r) => s + r.qty, 0);
+
+  // KPIs
+  const kpis = [
+    { label: 'Est. revenue', val: fmt(totalRev), sub: `${ranking.length} categories` },
+    { label: 'Total qty sold', val: totalQty.toLocaleString(), sub: `${items.length} line items` },
+  ];
+  document.getElementById('kpi-grid').innerHTML = kpis.map(k =>
+    `<div class="kpi"><div class="kpi-label">${k.label}</div><div class="kpi-val">${k.val}</div><div class="kpi-sub">${k.sub}</div></div>`
+  ).join('');
+
+  // Ranking list
+  const maxVal = currentView === 'revenue' ? sorted[0].rev : sorted[0].qty;
+  document.getElementById('ranking-title').textContent = currentView === 'revenue' ? 'Categories by revenue' : 'Categories by quantity';
+  document.getElementById('ranking-list').innerHTML = sorted.map(r => {
+    const val = currentView === 'revenue' ? r.rev : r.qty;
+    const pct = Math.round(val / maxVal * 100);
+    const displayVal = currentView === 'revenue' ? fmt(r.rev) : r.qty.toLocaleString();
+    return `<div class="cat-row">
+      <span class="cat-name">${r.label}</span>
+      <span class="cat-bar"><span class="cat-bar-fill" style="width:${pct}%;background:${r.color};"><span style="font-size:10px;color:#fff;font-weight:500;padding-right:4px;">${pct}%</span></span></span>
+      <span class="cat-val">${displayVal}</span>
+    </div>`;
+  }).join('');
+
+  // Heatmap
+  let hmHtml = '';
+  sorted.forEach(cat => {
+    const items_in_cat = [...cats[cat.key]].sort((a,b) => b.qty*b.price - a.qty*a.price).slice(0, 12);
+    const maxRev = items_in_cat[0]?.qty * items_in_cat[0]?.price || 1;
+    hmHtml += `<div style="margin-bottom:20px;">
+      <div style="font-size:12px;margin-bottom:8px;color:${cat.color};font-weight:500;">▪ ${cat.label}</div>
+      <div class="hm-grid">`;
+    items_in_cat.forEach(item => {
+      const itemRev = item.qty * item.price;
+      const opacity = 0.3 + (itemRev / maxRev) * 0.7;
+      const name = item.name.replace(/^(GL:|HH:)\s*/i,'');
+      hmHtml += `<div class="hm-cell" style="background:${cat.color};opacity:${opacity.toFixed(2)};">
+        <div class="hm-name">${name.substring(0,20)}${name.length>20?'…':''}</div>
+        <div class="hm-meta">${item.qty} · ${fmt(itemRev)}</div>
+      </div>`;
+    });
+    hmHtml += `</div></div>`;
+  });
+  document.getElementById('heatmap').innerHTML = hmHtml;
+
+  document.getElementById('dashboard').classList.add('active');
+}
+
+function setView(view) {
+  currentView = view;
+  document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  if (currentData) renderDashboard();
+}
+
+function toggleDataInput() {
+  if (document.getElementById('data-input-section').style.display === 'none') {
+    document.getElementById('data-input-section').style.display = 'block';
+    document.getElementById('dashboard').classList.remove('active');
+  } else {
+    document.getElementById('data-input-section').style.display = 'none';
+  }
+}
+
+function clearAll() {
+  document.getElementById('raw-data').value = '';
+  document.getElementById('parse-status').textContent = '';
+  document.getElementById('dashboard').classList.remove('active');
+  currentData = null;
+}
+</script>
+</body>
+</html>
