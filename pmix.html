@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>River Pointe Inn — Category Ranking</title>
+<title>River Pointe Inn — Weekly Mix</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <style>
@@ -11,8 +11,7 @@
 :root {
   --bg: #f7f5f0; --surface: #fff; --border: rgba(0,0,0,0.09); --border-strong: rgba(0,0,0,0.16);
   --text: #1a1a18; --text-2: #6b6b67; --text-3: #9f9f9b;
-  --accent: #2a5f3c; --up: #1a7a3a; --up-bg: #e8f5ed; --down: #b83030; --down-bg: #faeaea;
-  --neutral: #888780; --r: 6px;
+  --accent: #2a5f3c; --up: #1a7a3a; --down: #b83030; --r: 6px;
 }
 body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.5; }
 header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
@@ -20,142 +19,149 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .logo span { font-style: italic; color: var(--text-2); font-size: 17px; }
 
 .login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--bg); }
-.login-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 40px; max-width: 400px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-.login-card h1 { font-family: 'DM Serif Display', serif; font-size: 24px; margin-bottom: 8px; }
+.login-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 40px; width: 100%; max-width: 380px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin: 0 20px; }
+.login-card h1 { font-family: 'DM Serif Display', serif; font-size: 24px; margin-bottom: 4px; }
 .login-card p { font-size: 13px; color: var(--text-3); margin-bottom: 24px; }
-.login-card input { width: 100%; border: 1px solid var(--border-strong); border-radius: var(--r); padding: 10px 12px; font-family: 'DM Sans', sans-serif; font-size: 14px; margin-bottom: 16px; outline: none; }
+.login-card input { width: 100%; border: 1px solid var(--border-strong); border-radius: var(--r); padding: 10px 12px; font-family: 'DM Sans', sans-serif; font-size: 15px; margin-bottom: 14px; outline: none; }
 .login-card input:focus { border-color: var(--accent); }
-.login-card button { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: var(--r); padding: 10px; font-size: 14px; font-weight: 500; cursor: pointer; }
+.login-card button { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: var(--r); padding: 11px; font-size: 14px; font-weight: 500; cursor: pointer; }
 .login-card button:hover { opacity: 0.88; }
-.login-error { color: var(--down); font-size: 12px; margin-bottom: 12px; }
+.login-error { color: var(--down); font-size: 12px; margin-bottom: 12px; min-height: 16px; }
 
 .main-content { display: none; }
 .main-content.authed { display: block; }
 
-#data-input-section { margin: 20px 32px; }
-.paste-card { background: var(--surface); border: 1.5px dashed var(--border-strong); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
-.paste-label { font-size: 12px; font-weight: 500; color: var(--text-2); }
-.paste-card textarea { width: 100%; height: 100px; border: 1px solid var(--border); border-radius: var(--r); padding: 8px 10px; font-family: 'DM Sans', sans-serif; font-size: 11px; color: var(--text); background: var(--bg); resize: vertical; outline: none; }
-.paste-card textarea:focus { border-color: var(--accent); }
+.loading { text-align: center; padding: 60px 20px; color: var(--text-3); }
+.loading-spinner { display: inline-block; width: 26px; height: 26px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
-.action-row { margin: 0 32px 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.parse-btn { background: var(--accent); color: #fff; border: none; border-radius: var(--r); padding: 9px 22px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; }
-.parse-btn:hover { opacity: 0.88; }
-.parse-btn:disabled { opacity: 0.5; cursor: default; }
-.clear-btn { background: transparent; color: var(--text-2); border: 1px solid var(--border-strong); border-radius: var(--r); padding: 9px 16px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; }
-#parse-status { font-size: 12px; color: var(--text-3); }
-
-#dashboard { display: none; margin: 0 32px 40px; }
+#dashboard { margin: 20px 32px 40px; display: none; }
 #dashboard.active { display: block; }
+@media (max-width: 700px) { #dashboard { margin: 16px 14px 40px; } }
 
-.toggle-section { margin: 0 32px 20px; display: flex; gap: 10px; }
-.toggle-btn { background: var(--surface); color: var(--text-2); border: 1px solid var(--border-strong); border-radius: var(--r); padding: 8px 18px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; font-weight: 500; }
+.header-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.week-label { font-size: 13px; color: var(--text-2); }
+.uploaded-label { font-size: 11px; color: var(--text-3); }
+.logout-btn { font-size: 12px; color: var(--text-3); background: transparent; border: 1px solid var(--border-strong); padding: 6px 12px; border-radius: var(--r); cursor: pointer; }
+.logout-btn:hover { color: var(--text-2); }
+
+.toggle-section { display: flex; gap: 8px; }
+.toggle-btn { background: var(--surface); color: var(--text-2); border: 1px solid var(--border-strong); border-radius: 20px; padding: 8px 20px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; font-weight: 500; }
 .toggle-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
 .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; }
 .kpi-label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
-.kpi-val { font-family: 'DM Serif Display', serif; font-size: 26px; line-height: 1; color: var(--text); }
+.kpi-val { font-family: 'DM Serif Display', serif; font-size: 24px; line-height: 1.1; color: var(--text); }
 .kpi-sub { font-size: 11px; color: var(--text-3); margin-top: 4px; }
 
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 16px 18px; margin-bottom: 14px; }
 .card-title { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); margin-bottom: 14px; }
 .card-title span { font-family: 'DM Serif Display', serif; font-size: 15px; text-transform: none; letter-spacing: 0; color: var(--text); margin-right: 8px; }
 
-.cat-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+/* Category ranking rows */
+.cat-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
 .cat-row:last-child { border-bottom: none; }
-.cat-name { width: 180px; color: var(--text); font-weight: 500; }
-.cat-bar { flex: 1; height: 20px; background: var(--border); border-radius: 3px; position: relative; overflow: hidden; }
-.cat-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s ease; display: flex; align-items: center; justify-content: flex-end; padding-right: 6px; }
-.cat-val { width: 80px; text-align: right; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.cat-rank { width: 22px; text-align: right; color: var(--text-3); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.cat-name { width: 190px; color: var(--text); font-weight: 500; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cat-bar { flex: 1; height: 18px; background: #efede6; border-radius: 3px; overflow: hidden; min-width: 40px; }
+.cat-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s ease; min-width: 2px; }
+.cat-val { width: 84px; text-align: right; color: var(--text); font-variant-numeric: tabular-nums; font-weight: 500; flex-shrink: 0; }
+.cat-sub { width: 70px; text-align: right; color: var(--text-3); font-size: 11px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+@media (max-width: 700px) { .cat-name { width: 120px; } .cat-sub { display: none; } }
 
-.hm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; margin-top: 14px; }
-.hm-cell { border-radius: 4px; padding: 10px; cursor: default; }
+/* Item ranking inside each category (sorted high → low) */
+.item-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 12px; }
+.item-name { flex: 1; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item-qty { width: 44px; text-align: right; color: var(--text-2); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.item-rev { width: 70px; text-align: right; color: var(--text-3); font-size: 11px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+
+/* Heatmap */
+.hm-cat-section { margin-bottom: 18px; }
+.hm-cat-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer; user-select: none; }
+.hm-cat-label { font-size: 12px; font-weight: 500; color: var(--text-2); }
+.hm-cat-rev { font-size: 11px; color: var(--text-3); }
+.hm-cat-toggle { font-size: 11px; color: var(--text-3); margin-left: auto; }
+.leg-dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+.hm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 5px; }
+.hm-grid.collapsed { display: none; }
+.hm-cell { border-radius: 4px; padding: 9px 11px; }
 .hm-name { font-size: 11px; font-weight: 500; color: #fff; line-height: 1.3; }
-.hm-meta { font-size: 10px; color: rgba(255,255,255,0.8); margin-top: 3px; }
+.hm-meta { font-size: 10px; color: rgba(255,255,255,0.8); margin-top: 2px; }
 
-.header-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
-.logout-btn { font-size: 12px; color: var(--text-3); background: transparent; border: 1px solid var(--border-strong); padding: 6px 12px; border-radius: var(--r); cursor: pointer; }
-.logout-btn:hover { color: var(--text-2); border-color: var(--text-2); }
-
-.week-label { font-size: 12px; color: var(--text-3); }
-
-@media (max-width: 700px) {
-  .action-row, #data-input-section { margin-left: 16px; margin-right: 16px; }
-  .cat-name { width: 120px; }
-  .hm-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
-}
+.error-box { text-align: center; padding: 60px 20px; color: var(--down); }
+.error-box p.small { font-size: 12px; color: var(--text-3); margin-top: 10px; }
+.retry-btn { margin-top: 16px; background: var(--accent); color: #fff; border: none; border-radius: var(--r); padding: 9px 22px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; }
 </style>
 </head>
 <body>
 
-<!-- Login Screen -->
+<!-- Login -->
 <div class="login-screen" id="login-screen">
   <div class="login-card">
-    <h1>Product Mix</h1>
-    <p>River Pointe Inn</p>
+    <h1>Weekly Product Mix</h1>
+    <p>River Pointe Inn — kitchen view</p>
     <div id="login-error" class="login-error"></div>
-    <input type="password" id="password-input" placeholder="Enter password" onkeypress="if(event.key==='Enter') authenticate()">
-    <button onclick="authenticate()">Access</button>
+    <input type="password" id="password-input" placeholder="Password" autocomplete="current-password">
+    <button onclick="authenticate()">View this week</button>
   </div>
 </div>
 
-<!-- Main Content -->
+<!-- Main -->
 <div class="main-content" id="main-content">
   <header>
-    <div class="logo">River Pointe Inn <span>— category ranking</span></div>
+    <div class="logo">River Pointe Inn <span>— weekly mix</span></div>
     <button class="logout-btn" onclick="logout()">Log out</button>
   </header>
 
-  <div id="data-input-section" style="display:none;">
-    <div class="paste-card">
-      <div class="paste-label">Paste Toast product mix export</div>
-      <textarea id="raw-data" placeholder="Paste this week's Toast product mix export..."></textarea>
-    </div>
-    <div class="action-row">
-      <button class="parse-btn" onclick="parseAndRender()">Parse & render</button>
-      <button class="clear-btn" onclick="clearAll()">Clear</button>
-      <span id="parse-status"></span>
-    </div>
+  <div id="loading" class="loading" style="display:none;">
+    <div class="loading-spinner"></div>
+    <p style="margin-top:12px;">Loading this week's mix...</p>
   </div>
+
+  <div id="error-box" class="error-box" style="display:none;"></div>
 
   <div id="dashboard">
     <div class="header-bar">
       <div>
-        <div class="logo" style="font-size:16px;margin-bottom:4px;">Week of <span class="week-label" id="week-label"></span></div>
+        <div class="week-label" id="week-label"></div>
+        <div class="uploaded-label" id="uploaded-label"></div>
       </div>
       <div class="toggle-section">
-        <button class="toggle-btn active" onclick="setView('revenue')">Revenue</button>
-        <button class="toggle-btn" onclick="setView('quantity')">Quantity</button>
+        <button class="toggle-btn active" id="tg-revenue" onclick="setView('revenue')">By revenue</button>
+        <button class="toggle-btn" id="tg-quantity" onclick="setView('quantity')">By quantity</button>
       </div>
     </div>
 
     <div id="kpi-grid" class="kpi-grid"></div>
 
     <div class="card">
-      <div class="card-title"><span id="ranking-title">Categories by revenue</span></div>
+      <div class="card-title"><span id="ranking-title">Categories ranked by revenue</span> highest → lowest</div>
       <div id="ranking-list"></div>
     </div>
 
     <div class="card">
-      <div class="card-title"><span>Category heatmap</span></div>
+      <div class="card-title"><span>Items ranked within each category</span> highest → lowest · <span style="font-size:11px;color:var(--text-3);font-family:'DM Sans',sans-serif;">click a header to collapse</span></div>
       <div id="heatmap"></div>
-    </div>
-
-    <div id="debug-section" style="margin:20px 0;padding:0 18px;display:none;">
-      <button class="clear-btn" onclick="toggleDataInput()">Re-enter data</button>
     </div>
   </div>
 </div>
 
 <script>
+// ══════════════════════════════════════════════════════════════════════════
+// CONFIG — set your Worker URL once. Everything else is done.
+// Chef password: RiverPointe2026  (hash below — see notes to change it)
+// ══════════════════════════════════════════════════════════════════════════
+const WORKER_URL = 'https://rpi-pmix-backend.YOUR-SUBDOMAIN.workers.dev';
+const API_KEY = 'rpi-b04a0658e08474b70d959363edfc089b7228121dedbecee7';
+const PASSWORD_HASH = '1171c36f51505276afa307fcc193704c0f487038c40bb470508e5f719d2f2457';
+
 const CAT_COLORS = {
   cocktail:'#2150a0', wine:'#5c2d6e', food:'#c0452a',
   starter:'#2a5f3c', dessert:'#b8942a', spirit:'#4a7a8a',
   beer:'#7a5c2a', coffee:'#6b4e3d', na:'#888780',
   events:'#7a3060', pdj:'#0f766e',
 };
-
 const CAT_LABELS = {
   cocktail:'Cocktails & martinis', wine:'Wine (glass & bottle)', food:'Entrees & sides',
   starter:'Starters & raw bar', dessert:'Desserts', spirit:'Spirits',
@@ -163,14 +169,9 @@ const CAT_LABELS = {
   events:'Private Events & Wine Dinner', pdj:'Plat du Jour specials',
 };
 
-// ── Password Authentication ──────────────────────────────────────────────
-// Simple SHA-256 hash for password. Change PASSWORD_HASH to your desired password hash.
-// To generate: open browser console and run: await crypto.subtle.digest('SHA-256', new TextEncoder().encode('your-password')).then(h=>Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join(''))
-const PASSWORD_HASH = '5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5'; // hash of '12345' — CHANGE THIS
-
+// ── Auth ───────────────────────────────────────────────────────────────────
 async function hashPassword(pwd) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(pwd);
+  const data = new TextEncoder().encode(pwd);
   const hash = await crypto.subtle.digest('SHA-256', data);
   return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
@@ -180,7 +181,7 @@ async function authenticate() {
   if (!pwd) { showLoginError('Enter password'); return; }
   const hash = await hashPassword(pwd);
   if (hash === PASSWORD_HASH) {
-    sessionStorage.setItem('rpi_authed', 'true');
+    sessionStorage.setItem('rpi_chef_authed', 'true');
     showMainContent();
   } else {
     showLoginError('Incorrect password');
@@ -188,224 +189,179 @@ async function authenticate() {
 }
 
 function showLoginError(msg) {
-  const err = document.getElementById('login-error');
-  err.textContent = msg;
-  setTimeout(() => { err.textContent = ''; }, 3000);
+  document.getElementById('login-error').textContent = msg;
+  setTimeout(() => { document.getElementById('login-error').textContent = ''; }, 3000);
 }
 
 function logout() {
-  sessionStorage.removeItem('rpi_authed');
+  sessionStorage.removeItem('rpi_chef_authed');
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('main-content').classList.remove('authed');
   document.getElementById('dashboard').classList.remove('active');
-  document.getElementById('data-input-section').style.display = 'none';
   document.getElementById('password-input').value = '';
-  document.getElementById('raw-data').value = '';
 }
 
 function showMainContent() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('main-content').classList.add('authed');
-  document.getElementById('data-input-section').style.display = 'block';
+  loadData();
 }
 
-// Check auth on load
+document.getElementById('password-input').addEventListener('keypress', e => {
+  if (e.key === 'Enter') authenticate();
+});
 window.addEventListener('load', () => {
-  if (sessionStorage.getItem('rpi_authed') === 'true') {
-    showMainContent();
-  }
+  if (sessionStorage.getItem('rpi_chef_authed') === 'true') showMainContent();
 });
 
-// ── Data Parsing ──────────────────────────────────────────────────────────
-
-const SKIP_NAMES = new Set([
-  'drinks','dinner','lunch','na beverage','wine by the glass','wine by the bottle',
-  'house cocktails & martinis','cocktails','martini happy hour','vodka & gin',
-  'tequila & mezcal','whiskey','aperitifs, cognac, brandy, cordials',
-  'dessert wines & fortified wine','beer','coffee & tea','raw bar & starters',
-  'entrees & sides','dessert','add on\'s','private events','hors d\'oeuvres',
-  'open items','gift card','total','location(s)','product mix','retail',
-  'takeout','take out','take-out','to go','togo','online ordering','brunch',
-  'delivery','catering','entrees','entrées','sides','sandwiches','specials',
-]);
-
-const GIFT_CARD_RE = /^gift\s*card|^add value\s*\(\$\)|^gift\s*card\s*\d/i;
-
-function isSkipRow(name, price) {
-  const n = name.toLowerCase().trim();
-  if (n === 'lunch' && typeof price === 'number' && price > 0 && price <= 15) return false;
-  if (SKIP_NAMES.has(n)) return true;
-  if (GIFT_CARD_RE.test(n)) return true;
-  if (/^\d[\d\-'s]*\s*(-\s*.+)?$/.test(n)) return true;
-  if (/^location/i.test(n)) return true;
-  if (/^total\b/i.test(n)) return true;
-  if (/^menu\b|^menus?\s+item|^qty sold|^avg price|^item cogs/i.test(n)) return true;
-  if (/questions or feedback|data delay|near real-time/i.test(n)) return true;
-  if (/^case\s+|^6\s*pack\s+/i.test(n)) return true;
-  return false;
-}
-
-function aggregateItems(items) {
-  const map = new Map();
-  const out = [];
-  items.forEach(i => {
-    const key = i.name.toLowerCase().replace(/^hh:\s*/, '').replace(/\s+/g, ' ').trim();
-    if (map.has(key)) {
-      const ex = map.get(key);
-      const rev = ex.qty * ex.price + i.qty * i.price;
-      ex.qty += i.qty;
-      ex.price = ex.qty > 0 ? rev / ex.qty : 0;
-      if (/^hh:/i.test(ex.name) && !/^hh:/i.test(i.name)) ex.name = i.name;
-    } else {
-      const copy = { ...i };
-      map.set(key, copy);
-      out.push(copy);
-    }
-  });
-  return out;
-}
-
-function parsePaste(raw) {
-  const lines = raw.split('\n').map(l => l.replace(/[\u00A0\u2007\u202F]/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean);
-  const items = [];
-  let dateRange = '';
-  const dateMatch = raw.match(/Date range\s+([\w\s,\-–\/]+?\d{4})/i);
-  if (dateMatch) dateRange = dateMatch[1].trim();
-
-  for (const line of lines) {
-    const m = line.match(/^(.+?)\s+([\d,]+)\s+\$([\d,.]+)(?:\s+\$([\d,.]+))?\s*$/);
-    if (!m) continue;
-    const name = m[1].trim();
-    const qty = parseInt(m[2].replace(/,/g, ''));
-    let price = parseFloat(m[3].replace(/,/g, ''));
-    const netSales = m[4] !== undefined ? parseFloat(m[4].replace(/,/g, '')) : null;
-    if (netSales !== null && !isNaN(netSales) && qty > 0) price = netSales / qty;
-    if (isNaN(qty) || qty <= 0 || isNaN(price) || price < 0 || name.length < 2) continue;
-    if (isSkipRow(name, price)) continue;
-    items.push({ name, qty, price });
-  }
-  return { items: aggregateItems(items), dateRange };
-}
-
+// ── Categorizer (mirrors weekly-pmix.html) ─────────────────────────────────
 function categorize(name) {
   const n = name.toLowerCase();
   if (/plat[e]?\s*d[eu]\s*jour|\bd[eu]\s*jour\b|^pdj\b/.test(n)) return 'pdj';
   if (/espresso martini|salt air|filthy|metropolitan|jockey club|river pointe|grasshopper|in fashion|saint joe|lychee|can't elope|pep in your|bee sting|negroni|strawberry fields|colada|hh:|martini happy hour|ancho problem|rhubarb/.test(n)) return 'cocktail';
-  if (/aperol spritz|hugo spritz|french 75|paper plane|mimosa|bloody mary|lemon drop|mojito|moscow mule/.test(n)) return 'cocktail';
-  if (/na almost|na pear|na espresso/.test(n)) return 'cocktail';
-  if (/^gl:|cremant|brut ros|moet|drappier|folle blanche|albarino|ladoucette|drouhin.*secondes|pouilly|peyrassol|moulin.*vent|cotes du rh|guyon 2022|routestock|chappellet mountain|haut l'artigue/.test(n)) return 'wine';
-  if (/wine by the bottle|btg bottle|sancerre|meursault|chablis|puligny|cabernet sauv|pride mountain|ridge.*lytton|kistler|o'shaugh|aubert.*carneros|turley|ducru|chauvin 2019|smith haut lafitte|leon beyer|melville|chevillon|cathiard|camus-bruchon|agrapart|sulauze|domaine pierre martin|francois de la roche|lauverjat|manarine|lafarge|domaine guyon|drouhin.*cotes de beaune|joseph drouhin|o'shaughnessy|maître de chai|le petit ducru|le petite smith/.test(n)) return 'wine';
+  if (/aperol spritz|hugo spritz|french 75|paper plane|mimosa|bloody mary|lemon drop|mojito|moscow mule|vesper|garden state|cavaillon|berry spritz|cocogroni/.test(n)) return 'cocktail';
+  if (/na almost|na pear|na espresso|na summer/.test(n)) return 'cocktail';
+  if (/^gl:|^gl\s|cremant|brut ros|moet|drappier|folle blanche|albarino|ladoucette|drouhin.*secondes|pouilly|peyrassol|moulin.*vent|cotes du rh|guyon 2022|routestock|route stock|chappellet mountain|haut l'artigue|haut-l|pazo das bruxas/.test(n)) return 'wine';
+  if (/wine by the bottle|btg bottle|sancerre|meursault|chablis|puligny|cabernet sauv|pride mountain|ridge.*lytton|kistler|o'shaugh|aubert.*carneros|turley|ducru|chauvin 2019|smith haut lafitte|leon beyer|melville|chevillon|cathiard|camus-bruchon|agrapart|sulauze|domaine pierre martin|francois de la roche|lauverjat|manarine|lafarge|domaine guyon|drouhin.*cotes de beaune|joseph drouhin|o'shaughnessy|maître de chai|le petit ducru|le petite smith|pessac|picpoul|lieu dit|fess parker|daniel rion|petitot|hautes co|philéandre|lynch bages|cantenac|sociando|solitude|la rame|saint cyr|morgon|giacometti|patrimonio|arnot-roberts|fullerton|jk carriere|hundred acre|screaming eagle|lavieille|isabelle garrault|julie et patrick/.test(n)) return 'wine';
   if (/^\d{3,4}[:\s]|^b\d{2,4}\b|^2\d{3}[:\s]/.test(n)) return 'wine';
-  if (/latour pauillac somm|baron patrick laducette|blasson d'issan|hundred acre|fortunate son|domaine de montille|jean et s.*bastien dauvissat|stéphane aviron|henri billiot|banyuls|d'oliveiras|taylor fladgate|chateau d'yquem|domaine dominique guyon|bourgogne|chinon|lestang|domaine de pallus|giacometti|patrimonio|brio by ch|rauzan|saint-joseph|brecheras|pallus|chantegrive|meyer-fonn|paul blanck|hermann j wiemer|domaine michel lafarge|petit chablis l\. michel|drouhin-vaudon|chablis.*dauvissat/.test(n)) return 'wine';
   if (/\b(vodka|belvedere|grey goose|ketel one|tito's|tito\b|hendrick|beefeater|bombay sapphire|botanist|fords gin|plymouth gin|tanqueray|absolut|monkey 47|asbury park gin|wodka)\b/.test(n)) return 'spirit';
-  if (/\bcasamigos|don julio|fortaleza|lalo\b|pueblo viejo|casa dragones|del maguey|clase azul|g4 blanco|g4 reposado/.test(n)) return 'spirit';
-  if (/\bangels envy|blanton|buffalo trace|bulleit|dewars|high west|jack daniel|jameson|johnnie walker|laguavulin|macallan|maker's mark|michter|oban 14|sazerac rye|whistlepig|widow jane|woodford reserve|basil hayden|four roses|penelope toasted\b/.test(n)) return 'spirit';
-  if (/chartreuse|cognac park|lazzaroni amaretto|molinari sambuca|nonino amaro|averna amaro|limoncello|bailey's|campari|taylor fladgate|\bport\b|braulio|frangelico|rum|havana club|captain morgan/.test(n)) return 'spirit';
-  if (/beer done|vliet|birdsmouth|kronenbourg|other half forever|athletic brewing/.test(n)) return 'beer';
-  if (/^lunch\s*\d*\s*\$/.test(n) || n === 'lunch') return 'beer';
+  if (/\bcasamigos|don julio|fortaleza|lalo\b|pueblo viejo|casa dragones|del maguey|clase azul|g4 blanco|g4 reposado|g4 anejo|tanteo/.test(n)) return 'spirit';
+  if (/\bangels envy|blanton|buffalo trace|bulleit|dewars|high west|jack daniel|jameson|johnnie walker|laguavulin|macallan|maker's mark|michter|oban 14|sazerac rye|whistlepig|widow jane|woodford reserve|basil hayden|four roses|penelope|glenlivet|old rip van winkle/.test(n)) return 'spirit';
+  if (/chartreuse|cognac park|lazzaroni|molinari sambuca|nonino amaro|averna amaro|limoncello|bailey|campari|taylor fladgate|\bport\b|braulio|frangelico|\brum\b|havana|havanna|captain morgan|ron zacapa|bacardi|st\. agrestis|varnelli/.test(n)) return 'spirit';
+  if (/beer done|vliet|birdsmouth|kronenbourg|other half|grimm|athletic brewing/.test(n)) return 'beer';
+  if (n === 'lunch') return 'beer';
   if (/\bespresso\b|\bcappuccino\b|\bmacchiato\b|\bcoffee\b|peppermint tea|chamomile tea|earl gr[ae]y|green tea|black tea/.test(n)) return 'coffee';
-  if (/btl.*still water|btl.*sparkling water|\bcoke\b|diet coke|sprite|ginger ale|club soda|ginger beer|shirley temple|lemonade|iced tea|apple juice|arnold palmer|pineapple juice|cranberry juice|fresh oj|milk/.test(n)) return 'na';
-  if (/wagyu burger|ratatouille|paillard|moules frites|tuna prov|halibut|loup de mar|lasagna|au poivre|pork chop|steak frites|roast chicken for|ny strip|porterhouse|pommes frites|pommes duchess|haricot vert|peppers carmen|peas.*lard|poulet en croute|oysters rockefeller|french dip|southern fried quail|bouillabaise|short rib|lobster frites|crispy fish|salmon burger|pan bagnat|chicken salad sandwich|omelette|eggs benedict|hanger steak|kids tenders|kids cheeseburger|chicken fingers.*staff|wagyu burger.*staff|side donuts|salmon\b|branzino|red snapper|snapper|french onion lasagna|prime short rib|chicken au poivre|corn & lardons|corn.*lardons/.test(n)) return 'food';
-  if (/bread service|little gem|garden salad|asparagus mimosa|escargots|^jambon|steak tartare|crepe aux|berries.*cream|caviar.*donut|crudo tasting|shrimp cocktail|tuna tartare|ceviche|dune fox|swan point|sugar shack|love.*dozen|barnegat|violet sky|salad de tomates|eggplant|peaches|^p\. /.test(n)) return 'starter';
-  if (/carrot cake|meringue cake|chocolate cake|cheesecake|raspberry tart|creme brulee|banana split|brownie sundae|banana chip ice|brown butter ice|chocolate ice|strawberry ice|vanilla ice|mint ice|lemon sorbet|fromage/.test(n)) return 'dessert';
-  if (/^wd\s|wine dinner|^wd bread|^wd crab|^wd gnudi|^wd monkfish|^wd new york|^wd mousse/.test(n)) return 'events';
+  if (/btl.*still water|btl.*sparkling water|\bcoke\b|diet coke|sprite|ginger ale|club soda|ginger beer|\btonic\b|shirley temple|lemonade|iced tea|apple juice|arnold palmer|pineapple juice|cranberry juice|fresh oj|milk/.test(n)) return 'na';
+  if (/wagyu|ratatouille|paillard|moules frites|tuna prov|halibut|loup de mar|lasagna|au poivre|pork chop|steak frites|roast chicken for|ny strip|porterhouse|pommes frites|pommes duchess|haricot vert|peppers carmen|peas.*lard|poulet en croute|oysters rockefeller|french dip|southern fried quail|bouillabaise|short rib|lobster frites|crispy fish|salmon burger|pan bagnat|chicken salad sandwich|omelette|eggs benedict|hanger steak|kids tenders|kids cheeseburger|chicken fingers|side donuts|salmon\b|branzino|red snapper|snapper|saumon|medaillons/.test(n)) return 'food';
+  if (/bread service|little gem|garden salad|asparagus mimosa|escargots|^jambon|steak tartare|sardine toast|crepe aux|berries.*cream|caviar.*donut|crudo tasting|shrimp cocktail|tuna tartare|ceviche|dune fox|sloop point|salty rose|laughing gull|little darling|violet sky|swan point|sugar shack|love.*dozen|barnegat|salad de tomates|eggplant|peaches|parfait|lunch oyster/.test(n)) return 'starter';
+  if (/carrot.*cake|meringue cake|chocolate cake|cheesecake|raspberry tart|creme brulee|banana split|brownie sundae|banana chip ice|brown butter ice|chocolate ice|strawberry ice|vanilla ice|mint ice|lemon sorbet|fromage/.test(n)) return 'dessert';
+  if (/^wd\s|wine dinner/.test(n)) return 'events';
   if (/^p\.|private event adult|private event child|event decor/.test(n)) return 'events';
-  if (/^p\.(bread|jambon|berries|garden|hanger|duchess|haricot|au poivre|escargots|eggplant|little gem|chicken|branzino|potato|ny strip)|hanger add on|crudo\b|parfait|lunch oyster/.test(n)) return 'food';
-  if (/open drink|open food|open item|case peyrassol|six pack guyon|custom cake/.test(n)) return 'food';
+  if (/open drink|open food|open item|custom cake|side |^tip$|fet d'or/.test(n)) return 'food';
   return 'food';
+}
+
+function isStaffOrComp(name) {
+  return /[-–]\s*(staff|comp|void|comped|employee|mgr|manager)/i.test(name);
 }
 
 const sumRev = arr => (arr||[]).reduce((s,i)=>s+i.qty*i.price, 0);
 const sumQty = arr => (arr||[]).reduce((s,i)=>s+i.qty, 0);
 const fmt = n => n.toLocaleString('en-US', { style:'currency', currency:'USD', maximumFractionDigits:0 });
 
+// ── Data ───────────────────────────────────────────────────────────────────
 let currentData = null;
 let currentView = 'revenue';
 
-function parseAndRender() {
-  const raw = document.getElementById('raw-data').value.trim();
-  if (!raw) {
-    document.getElementById('parse-status').textContent = 'Paste data first.';
+async function loadData() {
+  const loading = document.getElementById('loading');
+  const errBox = document.getElementById('error-box');
+  loading.style.display = 'block';
+  errBox.style.display = 'none';
+  document.getElementById('dashboard').classList.remove('active');
+
+  if (WORKER_URL.includes('YOUR-SUBDOMAIN')) {
+    loading.style.display = 'none';
+    errBox.style.display = 'block';
+    errBox.innerHTML = '<p>Setup incomplete — WORKER_URL not set in this file.</p>';
     return;
   }
-  const parsed = parsePaste(raw);
-  if (!parsed.items.length) {
-    document.getElementById('parse-status').textContent = 'Could not parse items. Paste the full Toast product mix export.';
-    return;
+
+  try {
+    const resp = await fetch(`${WORKER_URL}/latest`, {
+      headers: { 'Authorization': `Bearer ${API_KEY}` }
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error || `Server error ${resp.status}`);
+    }
+    currentData = await resp.json();
+    loading.style.display = 'none';
+    renderDashboard();
+  } catch (err) {
+    loading.style.display = 'none';
+    errBox.style.display = 'block';
+    errBox.innerHTML = `<p>Couldn't load this week's data: ${err.message}</p>
+      <p class="small">If this keeps happening, let Adam know.</p>
+      <button class="retry-btn" onclick="loadData()">Try again</button>`;
   }
-  currentData = parsed;
-  document.getElementById('parse-status').textContent = `✓ Parsed ${parsed.items.length} items.`;
-  document.getElementById('data-input-section').style.display = 'none';
-  document.getElementById('debug-section').style.display = 'block';
-  renderDashboard();
 }
 
+// ── Render ─────────────────────────────────────────────────────────────────
 function renderDashboard() {
   if (!currentData) return;
-  const { items, dateRange } = currentData;
-  document.getElementById('week-label').textContent = dateRange || 'Week loaded';
+  const items = (currentData.items || []).filter(i => !isStaffOrComp(i.name));
+  document.getElementById('week-label').textContent = 'Week of ' + (currentData.dateRange || '—');
+  if (currentData.uploadedAt) {
+    const d = new Date(currentData.uploadedAt);
+    document.getElementById('uploaded-label').textContent =
+      'Updated ' + d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' }) +
+      ' ' + d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+  }
 
   const cats = {};
-  items.forEach(i => {
-    const c = categorize(i.name);
-    if (!cats[c]) cats[c] = [];
-    cats[c].push(i);
-  });
+  items.forEach(i => { const c = categorize(i.name); (cats[c]||(cats[c]=[])).push(i); });
 
-  // Build ranking
   const ranking = Object.keys(cats).map(key => ({
-    key,
-    label: CAT_LABELS[key],
-    color: CAT_COLORS[key],
-    qty: sumQty(cats[key]),
-    rev: sumRev(cats[key]),
+    key, label: CAT_LABELS[key], color: CAT_COLORS[key],
+    qty: sumQty(cats[key]), rev: sumRev(cats[key]),
   })).filter(r => r.qty > 0);
 
-  const sorted = currentView === 'revenue'
-    ? ranking.sort((a,b) => b.rev - a.rev)
-    : ranking.sort((a,b) => b.qty - a.qty);
+  const byRev = currentView === 'revenue';
+  const sorted = [...ranking].sort((a,b) => byRev ? b.rev - a.rev : b.qty - a.qty);
 
-  const totalRev = ranking.reduce((s,r) => s + r.rev, 0);
-  const totalQty = ranking.reduce((s,r) => s + r.qty, 0);
+  const totalRev = ranking.reduce((s,r)=>s+r.rev, 0);
+  const totalQty = ranking.reduce((s,r)=>s+r.qty, 0);
+  const topCat = sorted[0];
 
-  // KPIs
-  const kpis = [
-    { label: 'Est. revenue', val: fmt(totalRev), sub: `${ranking.length} categories` },
-    { label: 'Total qty sold', val: totalQty.toLocaleString(), sub: `${items.length} line items` },
-  ];
-  document.getElementById('kpi-grid').innerHTML = kpis.map(k =>
-    `<div class="kpi"><div class="kpi-label">${k.label}</div><div class="kpi-val">${k.val}</div><div class="kpi-sub">${k.sub}</div></div>`
-  ).join('');
+  document.getElementById('kpi-grid').innerHTML = [
+    { label:'Est. revenue', val:fmt(totalRev), sub:`${items.length} items` },
+    { label:'Total sold', val:Math.round(totalQty).toLocaleString(), sub:`${ranking.length} categories` },
+    { label:'Top category', val:topCat ? topCat.label.split(' ')[0] : '—',
+      sub:topCat ? (byRev ? fmt(topCat.rev) : `${Math.round(topCat.qty).toLocaleString()} sold`) : '' },
+  ].map(k => `<div class="kpi"><div class="kpi-label">${k.label}</div><div class="kpi-val">${k.val}</div><div class="kpi-sub">${k.sub}</div></div>`).join('');
 
-  // Ranking list
-  const maxVal = currentView === 'revenue' ? sorted[0].rev : sorted[0].qty;
-  document.getElementById('ranking-title').textContent = currentView === 'revenue' ? 'Categories by revenue' : 'Categories by quantity';
-  document.getElementById('ranking-list').innerHTML = sorted.map(r => {
-    const val = currentView === 'revenue' ? r.rev : r.qty;
-    const pct = Math.round(val / maxVal * 100);
-    const displayVal = currentView === 'revenue' ? fmt(r.rev) : r.qty.toLocaleString();
+  // Category ranking, highest → lowest
+  document.getElementById('ranking-title').textContent =
+    byRev ? 'Categories ranked by revenue' : 'Categories ranked by quantity';
+  const maxVal = byRev ? sorted[0].rev : sorted[0].qty;
+  document.getElementById('ranking-list').innerHTML = sorted.map((r, idx) => {
+    const val = byRev ? r.rev : r.qty;
+    const pct = Math.max(2, Math.round(val / maxVal * 100));
+    const main = byRev ? fmt(r.rev) : Math.round(r.qty).toLocaleString();
+    const sub  = byRev ? `${Math.round(r.qty).toLocaleString()} sold` : fmt(r.rev);
     return `<div class="cat-row">
+      <span class="cat-rank">${idx+1}</span>
       <span class="cat-name">${r.label}</span>
-      <span class="cat-bar"><span class="cat-bar-fill" style="width:${pct}%;background:${r.color};"><span style="font-size:10px;color:#fff;font-weight:500;padding-right:4px;">${pct}%</span></span></span>
-      <span class="cat-val">${displayVal}</span>
+      <span class="cat-bar"><span class="cat-bar-fill" style="width:${pct}%;background:${r.color};"></span></span>
+      <span class="cat-val">${main}</span>
+      <span class="cat-sub">${sub}</span>
     </div>`;
   }).join('');
 
-  // Heatmap
+  // Per-category item breakdown, sorted high → low by the active metric
   let hmHtml = '';
   sorted.forEach(cat => {
-    const items_in_cat = [...cats[cat.key]].sort((a,b) => b.qty*b.price - a.qty*a.price).slice(0, 12);
-    const maxRev = items_in_cat[0]?.qty * items_in_cat[0]?.price || 1;
-    hmHtml += `<div style="margin-bottom:20px;">
-      <div style="font-size:12px;margin-bottom:8px;color:${cat.color};font-weight:500;">▪ ${cat.label}</div>
-      <div class="hm-grid">`;
-    items_in_cat.forEach(item => {
-      const itemRev = item.qty * item.price;
-      const opacity = 0.3 + (itemRev / maxRev) * 0.7;
-      const name = item.name.replace(/^(GL:|HH:)\s*/i,'');
-      hmHtml += `<div class="hm-cell" style="background:${cat.color};opacity:${opacity.toFixed(2)};">
-        <div class="hm-name">${name.substring(0,20)}${name.length>20?'…':''}</div>
-        <div class="hm-meta">${item.qty} · ${fmt(itemRev)}</div>
+    const grp = [...cats[cat.key]]
+      .map(i => ({ ...i, rev: i.qty * i.price }))
+      .sort((a,b) => byRev ? b.rev - a.rev : b.qty - a.qty);
+    const maxR = byRev ? (grp[0]?.rev || 1) : (grp[0]?.qty || 1);
+    const id = 'hmg-' + cat.key;
+    hmHtml += `<div class="hm-cat-section">
+      <div class="hm-cat-header" onclick="toggleHmGroup('${id}')">
+        <span class="leg-dot" style="background:${cat.color}"></span>
+        <span class="hm-cat-label">${cat.label}</span>
+        <span class="hm-cat-rev">${fmt(cat.rev)} · ${Math.round(cat.qty).toLocaleString()} sold · ${grp.length} items</span>
+        <span class="hm-cat-toggle" id="${id}-toggle">▼</span>
+      </div>
+      <div class="hm-grid" id="${id}">`;
+    grp.forEach(item => {
+      const metric = byRev ? item.rev : item.qty;
+      const opacity = (0.3 + (metric / maxR) * 0.7).toFixed(2);
+      const name = item.name.replace(/^(GL:|HH:|\d{3,4}[:\s]|B\d{2,4}[:\s]?)\s*/i,'');
+      hmHtml += `<div class="hm-cell" style="background:${cat.color};opacity:${opacity};">
+        <div class="hm-name">${name}</div>
+        <div class="hm-meta">${Math.round(item.qty)} sold · ${fmt(item.rev)}</div>
       </div>`;
     });
     hmHtml += `</div></div>`;
@@ -415,27 +371,17 @@ function renderDashboard() {
   document.getElementById('dashboard').classList.add('active');
 }
 
+function toggleHmGroup(id) {
+  const el = document.getElementById(id);
+  const tog = document.getElementById(id + '-toggle');
+  tog.textContent = el.classList.toggle('collapsed') ? '▶' : '▼';
+}
+
 function setView(view) {
   currentView = view;
-  document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
+  document.getElementById('tg-revenue').classList.toggle('active', view === 'revenue');
+  document.getElementById('tg-quantity').classList.toggle('active', view === 'quantity');
   if (currentData) renderDashboard();
-}
-
-function toggleDataInput() {
-  if (document.getElementById('data-input-section').style.display === 'none') {
-    document.getElementById('data-input-section').style.display = 'block';
-    document.getElementById('dashboard').classList.remove('active');
-  } else {
-    document.getElementById('data-input-section').style.display = 'none';
-  }
-}
-
-function clearAll() {
-  document.getElementById('raw-data').value = '';
-  document.getElementById('parse-status').textContent = '';
-  document.getElementById('dashboard').classList.remove('active');
-  currentData = null;
 }
 </script>
 </body>
