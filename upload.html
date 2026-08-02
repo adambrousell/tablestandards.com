@@ -61,9 +61,9 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 // ══════════════════════════════════════════════════════════════════════════
 // CONFIG — set your Worker URL once. Everything else is done.
 // After deploying the Worker, copy its URL from the Cloudflare dashboard.
-// It looks like: https://rpi-pmix-backend.YOUR-SUBDOMAIN.workers.dev
+// It looks like: https://rpi-pmix-backend.amusementstandards.workers.dev
 // ══════════════════════════════════════════════════════════════════════════
-const WORKER_URL = 'https://rpi-pmix-backend.YOUR-SUBDOMAIN.workers.dev';
+const WORKER_URL = 'https://rpi-pmix-backend.amusementstandards.workers.dev';
 const API_KEY = 'rpi-b04a0658e08474b70d959363edfc089b7228121dedbecee7';
 
 // ── Toast parser (same logic as weekly-pmix.html) ──────────────────────────
@@ -142,10 +142,6 @@ function showStatus(msg, cls) {
 }
 
 async function parseAndUpload() {
-  if (WORKER_URL.includes('YOUR-SUBDOMAIN')) {
-    showStatus('Set WORKER_URL at the top of this file first.', 'error');
-    return;
-  }
   const rawThis = document.getElementById('raw-this').value.trim();
   if (!rawThis) { showStatus('Paste this week\'s data first.', 'error'); return; }
 
