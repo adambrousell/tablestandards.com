@@ -158,13 +158,13 @@ const CAT_COLORS = {
   cocktail:'#2150a0', wine:'#5c2d6e', food:'#c0452a',
   starter:'#2a5f3c', dessert:'#b8942a', spirit:'#4a7a8a',
   beer:'#7a5c2a', coffee:'#6b4e3d', na:'#888780',
-  events:'#7a3060', pdj:'#0f766e',
+  events:'#7a3060', pdj:'#0f766e', lunch:'#556677',
 };
 const CAT_LABELS = {
-  cocktail:'Cocktails & martinis', wine:'Wine (glass & bottle)', food:'Entrees & sides',
+  cocktail:'Cocktails & martinis', wine:'Wine (glass & bottle)', food:'Entrées & sides',
   starter:'Starters & raw bar', dessert:'Desserts', spirit:'Spirits',
   beer:'Beer', coffee:'Coffee & tea', na:'NA beverages',
-  events:'Private Events & Wine Dinner', pdj:'Plat du Jour specials',
+  events:'Private Events & Wine Dinner', pdj:'Weekly specials (Plats du Jour)', lunch:'Lunch',
 };
 
 // ── Auth (server-side) ─────────────────────────────────────────────────────
@@ -222,29 +222,42 @@ window.addEventListener('load', () => {
   if (getToken()) showMainContent();   // token validity is checked by the server on load
 });
 
-// ── Categorizer (mirrors weekly-pmix.html) ─────────────────────────────────
+// ── Categorizer (matches riverpointeinn.com/menus structure) ───────────────
 function categorize(name) {
   const n = name.toLowerCase();
+  // Weekly specials (Plats du Jour) — Toast rings them by dish name
   if (/plat[e]?\s*d[eu]\s*jour|\bd[eu]\s*jour\b|^pdj\b/.test(n)) return 'pdj';
-  if (/espresso martini|salt air|filthy|metropolitan|jockey club|river pointe|grasshopper|in fashion|saint joe|lychee|can't elope|pep in your|bee sting|negroni|strawberry fields|colada|hh:|martini happy hour|ancho problem|rhubarb/.test(n)) return 'cocktail';
+  if (/poulet en croute|poulet en cro|oysters? rockefeller|french dip|crispy fish\s*(&\s*)?frites|bouillabais|prime short rib|short rib bourg|lobster frites/.test(n)) return 'pdj';
+  // Events & wine dinner — checked before food so "P. Hanger Steak" etc. never leak in
+  if (/^wd\s|wine dinner/.test(n)) return 'events';
+  if (/^p\s*\.|private event adult|private event child|event decor/.test(n)) return 'events';
+  // Lunch-only items (Fri–Sun lunch menu)
+  if (/omelette|eggs benedict|pan bagnat|chicken salad sandwich|salmon burger|crispy fish sandwich|^parfait$|lunch oyster/.test(n)) return 'lunch';
+  // Cocktails & martinis
+  if (/espresso martini|salt air|filthy|metropolitan|jockey club|river pointe|the rpi|grasshopper|in fashion|saint joe|lychee|can't elope|pep in your|bee sting|negroni|strawberry fields|colada|hh:|martini happy hour|ancho problem|rhubarb|rhu-barbara/.test(n)) return 'cocktail';
   if (/aperol spritz|hugo spritz|french 75|paper plane|mimosa|bloody mary|lemon drop|mojito|moscow mule|vesper|garden state|cavaillon|berry spritz|cocogroni/.test(n)) return 'cocktail';
   if (/na almost|na pear|na espresso|na summer/.test(n)) return 'cocktail';
-  if (/^gl:|^gl\s|cremant|brut ros|moet|drappier|folle blanche|albarino|ladoucette|drouhin.*secondes|pouilly|peyrassol|moulin.*vent|cotes du rh|guyon 2022|routestock|route stock|chappellet mountain|haut l'artigue|haut-l|pazo das bruxas/.test(n)) return 'wine';
+  // Wine — incl. somm selections & rare pours that ring as spirits-style lines
+  if (/d[’']?yquem|latour pauillac|somm selection/.test(n)) return 'wine';
+  if (/^gl:|^gl\s|cremant|brut ros|moet|drappier|folle blanche|albarino|ladoucette|drouhin.*secondes|pouilly|peyrassol|moulin.*vent|cotes du rh|guyon 2022|routestock|route stock|chappellet mountain|haut l'artigue|haut-l|pazo das bruxas|gros plant|jean aubron|saint-cyrgues|costières/.test(n)) return 'wine';
   if (/wine by the bottle|btg bottle|sancerre|meursault|chablis|puligny|cabernet sauv|pride mountain|ridge.*lytton|kistler|o'shaugh|aubert.*carneros|turley|ducru|chauvin 2019|smith haut lafitte|leon beyer|melville|chevillon|cathiard|camus-bruchon|agrapart|sulauze|domaine pierre martin|francois de la roche|lauverjat|manarine|lafarge|domaine guyon|drouhin.*cotes de beaune|joseph drouhin|o'shaughnessy|maître de chai|le petit ducru|le petite smith|pessac|picpoul|lieu dit|fess parker|daniel rion|petitot|hautes co|philéandre|lynch bages|cantenac|sociando|solitude|la rame|saint cyr|morgon|giacometti|patrimonio|arnot-roberts|fullerton|jk carriere|hundred acre|screaming eagle|lavieille|isabelle garrault|julie et patrick/.test(n)) return 'wine';
   if (/^\d{3,4}[:\s]|^b\d{2,4}\b|^2\d{3}[:\s]/.test(n)) return 'wine';
+  // Spirits
   if (/\b(vodka|belvedere|grey goose|ketel one|tito's|tito\b|hendrick|beefeater|bombay sapphire|botanist|fords gin|plymouth gin|tanqueray|absolut|monkey 47|asbury park gin|wodka)\b/.test(n)) return 'spirit';
   if (/\bcasamigos|don julio|fortaleza|lalo\b|pueblo viejo|casa dragones|del maguey|clase azul|g4 blanco|g4 reposado|g4 anejo|tanteo/.test(n)) return 'spirit';
   if (/\bangels envy|blanton|buffalo trace|bulleit|dewars|high west|jack daniel|jameson|johnnie walker|laguavulin|macallan|maker's mark|michter|oban 14|sazerac rye|whistlepig|widow jane|woodford reserve|basil hayden|four roses|penelope|glenlivet|old rip van winkle/.test(n)) return 'spirit';
   if (/chartreuse|cognac park|lazzaroni|molinari sambuca|nonino amaro|averna amaro|limoncello|bailey|campari|taylor fladgate|\bport\b|braulio|frangelico|\brum\b|havana|havanna|captain morgan|ron zacapa|bacardi|st\. agrestis|varnelli/.test(n)) return 'spirit';
+  // Beer / coffee / NA
   if (/beer done|vliet|birdsmouth|kronenbourg|other half|grimm|athletic brewing/.test(n)) return 'beer';
   if (n === 'lunch') return 'beer';
   if (/\bespresso\b|\bcappuccino\b|\bmacchiato\b|\bcoffee\b|peppermint tea|chamomile tea|earl gr[ae]y|green tea|black tea/.test(n)) return 'coffee';
   if (/btl.*still water|btl.*sparkling water|\bcoke\b|diet coke|sprite|ginger ale|club soda|ginger beer|\btonic\b|shirley temple|lemonade|iced tea|apple juice|arnold palmer|pineapple juice|cranberry juice|fresh oj|milk/.test(n)) return 'na';
-  if (/wagyu|ratatouille|paillard|moules frites|tuna prov|halibut|loup de mar|lasagna|au poivre|pork chop|steak frites|roast chicken for|ny strip|porterhouse|pommes frites|pommes duchess|haricot vert|peppers carmen|peas.*lard|poulet en croute|oysters rockefeller|french dip|southern fried quail|bouillabaise|short rib|lobster frites|crispy fish|salmon burger|pan bagnat|chicken salad sandwich|omelette|eggs benedict|hanger steak|kids tenders|kids cheeseburger|chicken fingers|side donuts|salmon\b|branzino|red snapper|snapper|saumon|medaillons/.test(n)) return 'food';
-  if (/bread service|little gem|garden salad|asparagus mimosa|escargots|^jambon|steak tartare|sardine toast|crepe aux|berries.*cream|caviar.*donut|crudo tasting|shrimp cocktail|tuna tartare|ceviche|dune fox|sloop point|salty rose|laughing gull|little darling|violet sky|swan point|sugar shack|love.*dozen|barnegat|salad de tomates|eggplant|peaches|parfait|lunch oyster/.test(n)) return 'starter';
+  // Entrées & sides — dinner menu only (specials/lunch/events already routed above)
+  if (/wagyu|waygu|ratatouille|paillard|moules frites|lasagna|au poivre|pork chop|steak frites|roast chicken for|ny strip|new york strip|porterhouse|pommes frites|pommes duchess|haricot vert|peppers carmen|corn & lardons|corn.*lardons|salmon\b|saumon|medaillons|branzino|red snapper|snapper|kids tenders|kids cheeseburger|chicken fingers|side donuts/.test(n)) return 'food';
+  // Starters & raw bar
+  if (/bread service|little gem|garden salad|asparagus mimosa|escargots|^jambon|steak tartare|sardine toast|crepe aux|berries.*cream|caviar.*donut|crudo tasting|shrimp cocktail|tuna tartare|ceviche|fluke|dune fox|sloop point|salty rose|laughing gull|little darling|violet sky|swan point|sugar shack|love.*dozen|barnegat|salad de tomates|eggplant|peaches/.test(n)) return 'starter';
+  // Desserts
   if (/carrot.*cake|meringue cake|chocolate cake|cheesecake|raspberry tart|creme brulee|banana split|brownie sundae|banana chip ice|brown butter ice|chocolate ice|strawberry ice|vanilla ice|mint ice|lemon sorbet|fromage/.test(n)) return 'dessert';
-  if (/^wd\s|wine dinner/.test(n)) return 'events';
-  if (/^p\.|private event adult|private event child|event decor/.test(n)) return 'events';
   if (/open drink|open food|open item|custom cake|side |^tip$|fet d'or/.test(n)) return 'food';
   return 'food';
 }
