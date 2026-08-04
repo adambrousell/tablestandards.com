@@ -391,29 +391,33 @@ async function loadShiftSpecials() {
     if (!resp.ok) return;
     const data = await resp.json();
     const map = {};
+    // Track which weekdays had a shift report at all (even with empty fields)
+    // vs. days that are dark — Adam's off Mon/Tue, no report expected.
+    const reportedDays = {};
     const WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
     (data.days || []).forEach(day => {
       const wd = WD[new Date(day.date + 'T12:00:00Z').getUTCDay()];
-      (day.specials || []).forEach(s => {
+      const specials = day.specials || [];
+      if (specials.length) reportedDays[wd] = true;      // report exists for this weekday
+      specials.forEach(s => {
         const k = canonSpecial(s.name);
         if (!k) return;
         (map[k] || (map[k] = [])).push({ d: wd, avail: s.avail, sold: s.sold, x: s.x });
       });
     });
-    if (Object.keys(map).length) {
-      shiftSpecialsMap = map;
-      renderDashboard();               // re-render with shift data attached
-    }
+    shiftSpecialsMap = { entries: map, reportedDays: reportedDays };
+    renderDashboard();
   } catch (e) { /* shift data is additive — fail silently */ }
 }
 
 function shiftEntriesFor(itemName) {
   if (!shiftSpecialsMap) return null;
+  const entries = shiftSpecialsMap.entries;
   const ck = canonSpecial(itemName);
-  if (shiftSpecialsMap[ck]) return shiftSpecialsMap[ck];
-  const keys = Object.keys(shiftSpecialsMap);
+  if (entries[ck]) return entries[ck];
+  const keys = Object.keys(entries);
   const hit = keys.find(k => k.includes(ck) || ck.includes(k));
-  return hit ? shiftSpecialsMap[hit] : null;
+  return hit ? entries[hit] : null;
 }
 
 // ── Render ─────────────────────────────────────────────────────────────────
@@ -565,14 +569,41 @@ function renderDashboard() {
         }
       }
       let shiftHtml = '';
-      if (cat.key === 'pdj') {
-        const entries = shiftEntriesFor(item.name);
-        if (entries && entries.length) {
-          const parts = entries.map(en => {
-            const sold = (en.sold !== null && en.sold !== '') ? en.sold : '\u2014';
-            const avail = (en.avail !== null && en.avail !== '') ? '/' + en.avail : '';
-            return en.d + ' ' + sold + avail + (en.x ? ' \u00b7 86' : '');
-          });
+      if (cat.key === 'pdj' && shiftSpecialsMap) {
+        const entries = shiftEntriesFor(item.name) || [];
+        const byDay = {};
+        entries.forEach(en => { byDay[en.d] = en; });
+        const reported = shiftSpecialsMap.reportedDays || {};
+        // Walk every weekday in the range so nights without data show explicit state
+        const range = parseRange(currentData.dateRange);
+        const WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        const parts = [];
+        if (range) {
+          const start = new Date(range.start + 'T12:00:00Z');
+          const end   = new Date(range.end   + 'T12:00:00Z');
+          const d = new Date(start);
+          while (d <= end) {
+            const wd = WD[d.getUTCDay()];
+            const en = byDay[wd];
+            if (en) {
+              // shift report exists for this dish that night
+              const hasSold  = en.sold  !== null && en.sold  !== '';
+              const hasAvail = en.avail !== null && en.avail !== '';
+              if (en.x) parts.push(wd + ' 86');
+              else if (hasSold && hasAvail) parts.push(wd + ' ' + en.sold + '/' + en.avail);
+              else if (hasSold)             parts.push(wd + ' ' + en.sold);
+              else if (hasAvail)            parts.push(wd + ' \u2014/' + en.avail);
+              else                          parts.push(wd + ' not entered');
+            } else if (reported[wd]) {
+              // shift report exists but this dish wasn't run that night — skip silently
+            } else {
+              // Adam's off, no report — say so explicitly
+              parts.push(wd + ' no data');
+            }
+            d.setUTCDate(d.getUTCDate() + 1);
+          }
+        }
+        if (parts.length) {
           shiftHtml = `<div class="hm-meta" style="color:${metaCol};margin-top:3px;border-top:1px solid ${light ? 'rgba(26,26,24,0.12)' : 'rgba(255,255,255,0.25)'};padding-top:3px;">Shift log: ${parts.join(' \u00b7 ')}</div>`;
         }
       }
