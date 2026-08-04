@@ -62,6 +62,8 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 /* Category ranking rows */
 .cat-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
 .cat-row:last-child { border-bottom: none; }
+.cat-header-row { display: flex; align-items: center; gap: 10px; padding: 0 0 7px; border-bottom: 2px solid var(--border); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); font-weight: 500; }
+.cat-share { width: 44px; text-align: right; color: var(--text-2); font-size: 12px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
 .cat-rank { width: 22px; text-align: right; color: var(--text-3); font-variant-numeric: tabular-nums; flex-shrink: 0; }
 .cat-name { width: 190px; color: var(--text); font-weight: 500; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cat-bar { flex: 1; height: 18px; background: #efede6; border-radius: 3px; overflow: hidden; min-width: 40px; }
@@ -148,7 +150,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <div id="kpi-grid" class="kpi-grid"></div>
 
     <div class="card">
-      <div class="card-title"><span id="ranking-title">Categories ranked by revenue</span> highest → lowest</div>
+      <div class="card-title"><span id="ranking-title">Categories ranked by revenue</span> highest → lowest · bar = share of week's total</div>
       <div id="ranking-list"></div>
     </div>
 
@@ -393,20 +395,31 @@ function renderDashboard() {
       sub:topCat ? (byRev ? fmt(topCat.rev) : `${Math.round(topCat.qty).toLocaleString()} sold`) : '', delta:'' },
   ].map(k => `<div class="kpi"><div class="kpi-label">${k.label}</div><div class="kpi-val">${k.val}</div><div class="kpi-sub">${k.sub}</div>${k.delta||''}</div>`).join('');
 
-  // Category ranking, highest \u2192 lowest, with WoW
+  // Category ranking, highest → lowest — bar = share of total (widths sum to 100%)
   document.getElementById('ranking-title').textContent =
     byRev ? 'Categories ranked by revenue' : 'Categories ranked by quantity';
-  const maxVal = byRev ? sorted[0].rev : sorted[0].qty;
-  document.getElementById('ranking-list').innerHTML = sorted.map((r, idx) => {
+  const totalMetric = byRev ? totalRev : totalQty;
+  const headerHtml = `<div class="cat-header-row">
+    <span class="cat-rank">#</span>
+    <span class="cat-name">Category</span>
+    <span class="cat-bar" style="background:transparent;height:auto;">Share of total</span>
+    <span class="cat-share">%</span>
+    <span class="cat-val">${byRev ? 'Revenue' : 'Qty sold'}</span>
+    <span class="cat-sub">${byRev ? 'Qty sold' : 'Revenue'}</span>
+    ${hasPrev ? '<span class="cat-delta" style="color:var(--text-3);">vs last wk</span>' : ''}
+  </div>`;
+  document.getElementById('ranking-list').innerHTML = headerHtml + sorted.map((r, idx) => {
     const val = byRev ? r.rev : r.qty;
     const prevVal = byRev ? r.prevRev : r.prevQty;
-    const pct = Math.max(2, Math.round(val / maxVal * 100));
+    const share = totalMetric > 0 ? val / totalMetric * 100 : 0;
+    const width = Math.max(1.5, share);
     const main = byRev ? fmt(r.rev) : Math.round(r.qty).toLocaleString();
     const sub  = byRev ? `${Math.round(r.qty).toLocaleString()} sold` : fmt(r.rev);
     return `<div class="cat-row">
       <span class="cat-rank">${idx+1}</span>
       <span class="cat-name">${r.label}</span>
-      <span class="cat-bar"><span class="cat-bar-fill" style="width:${pct}%;background:${r.color};"></span></span>
+      <span class="cat-bar"><span class="cat-bar-fill" style="width:${width}%;background:${r.color};"></span></span>
+      <span class="cat-share">${share < 1 ? share.toFixed(1) : Math.round(share)}%</span>
       <span class="cat-val">${main}</span>
       <span class="cat-sub">${sub}</span>
       ${hasPrev ? (deltaTag(val, prevVal, 'cat-delta') || '<span class="cat-delta flat">new</span>') : ''}
