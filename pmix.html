@@ -59,13 +59,12 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .card-title { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); margin-bottom: 14px; }
 .card-title span { font-family: 'DM Serif Display', serif; font-size: 15px; text-transform: none; letter-spacing: 0; color: var(--text); margin-right: 8px; }
 
-/* Category ranking rows */
 .cat-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; cursor: pointer; border-radius: 4px; }
 .cat-row:hover { background: #f1efe8; }
 .cat-row:last-child { border-bottom: none; }
 .hm-cat-section.flash { animation: hmflash 1.6s ease; }
 @keyframes hmflash { 0% { background: #fdf6dd; } 100% { background: transparent; } }
-.hm-cat-section { border-radius: 6px; scroll-margin-top: 70px; }
+.hm-cat-section { border-radius: 6px; scroll-margin-top: 70px; margin-bottom: 18px; }
 .cat-header-row { display: flex; align-items: center; gap: 10px; padding: 0 0 7px; border-bottom: 2px solid var(--border); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); font-weight: 500; }
 .cat-share { width: 44px; text-align: right; color: var(--text-2); font-size: 12px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
 .cat-rank { width: 22px; text-align: right; color: var(--text-3); font-variant-numeric: tabular-nums; flex-shrink: 0; }
@@ -80,14 +79,6 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .cat-delta.flat { color: var(--text-3); }
 @media (max-width: 700px) { .cat-name { width: 110px; } .cat-sub { display: none; } }
 
-/* Item ranking inside each category (sorted high → low) */
-.item-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 12px; }
-.item-name { flex: 1; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.item-qty { width: 44px; text-align: right; color: var(--text-2); font-variant-numeric: tabular-nums; flex-shrink: 0; }
-.item-rev { width: 70px; text-align: right; color: var(--text-3); font-size: 11px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
-
-/* Heatmap */
-.hm-cat-section { margin-bottom: 18px; }
 .hm-cat-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer; user-select: none; }
 .hm-cat-label { font-size: 12px; font-weight: 500; color: var(--text-2); }
 .hm-cat-rev { font-size: 11px; color: var(--text-3); }
@@ -99,6 +90,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .hm-name { font-size: 11px; font-weight: 500; line-height: 1.3; }
 .hm-meta { font-size: 10px; margin-top: 2px; }
 .hm-delta { font-size: 10px; margin-top: 2px; font-weight: 600; }
+.hm-pinned-badge { display: inline-block; font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); background: #e8f2ec; border: 1px solid #c7dccf; border-radius: 10px; padding: 1px 7px; margin-left: 6px; vertical-align: middle; }
 .kpi-delta { display: inline-block; font-size: 11px; font-weight: 500; padding: 1px 7px; border-radius: 10px; margin-top: 5px; }
 .kpi-delta.up { background: #e8f5ed; color: var(--up); }
 .kpi-delta.down { background: #faeaea; color: var(--down); }
@@ -111,7 +103,6 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 </head>
 <body>
 
-<!-- Login -->
 <div class="login-screen" id="login-screen">
   <div class="login-card">
     <h1>Weekly Product Mix</h1>
@@ -122,7 +113,6 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   </div>
 </div>
 
-<!-- Main -->
 <div class="main-content" id="main-content">
   <header>
     <div class="logo">River Pointe Inn <span>— weekly mix</span></div>
@@ -156,17 +146,13 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     </div>
 
     <div class="card">
-      <div class="card-title"><span>Items ranked within each category</span> highest → lowest · <span style="font-size:11px;color:var(--text-3);font-family:'DM Sans',sans-serif;">click a header to collapse</span></div>
+      <div class="card-title"><span>Items ranked within each category</span> weekly specials pinned first, remaining categories by rank · <span style="font-size:11px;color:var(--text-3);font-family:'DM Sans',sans-serif;">click a header to collapse</span></div>
       <div id="heatmap"></div>
     </div>
   </div>
 </div>
 
 <script>
-// ══════════════════════════════════════════════════════════════════════════
-// CONFIG — no secrets in this file. The password is checked by the server,
-// which returns a signed 12-hour session token. Nothing to steal here.
-// ══════════════════════════════════════════════════════════════════════════
 const WORKER_URL = 'https://rpi-pmix-backend.amusementstandards.workers.dev';
 
 const CAT_COLORS = {
@@ -182,7 +168,6 @@ const CAT_LABELS = {
   events:'Private Events & Wine Dinner', pdj:'Weekly specials (Plats du Jour)', lunch:'Lunch only items', sides:'Sides',
 };
 
-// ── Auth (server-side) ─────────────────────────────────────────────────────
 function getToken() { return sessionStorage.getItem('rpi_chef_token') || ''; }
 
 async function authenticate() {
@@ -197,10 +182,7 @@ async function authenticate() {
       body: JSON.stringify({ password: pwd })
     });
     const data = await resp.json();
-    if (!resp.ok) {
-      showLoginError(data.error || 'Login failed');
-      return;
-    }
+    if (!resp.ok) { showLoginError(data.error || 'Login failed'); return; }
     sessionStorage.setItem('rpi_chef_token', data.token);
     document.getElementById('password-input').value = '';
     showMainContent();
@@ -234,59 +216,42 @@ document.getElementById('password-input').addEventListener('keypress', e => {
   if (e.key === 'Enter') authenticate();
 });
 window.addEventListener('load', () => {
-  if (getToken()) showMainContent();   // token validity is checked by the server on load
+  if (getToken()) showMainContent();
 });
 
-// ── Categorizer (matches riverpointeinn.com/menus structure) ───────────────
 function categorize(name) {
   const n = name.toLowerCase();
-  // Weekly specials (Plats du Jour) — Toast rings them by dish name
   if (/plat[e]?\s*d[eu]\s*jour|\bd[eu]\s*jour\b|^pdj\b/.test(n)) return 'pdj';
   if (/poulet en croute|poulet en cro|oysters? rockefeller|french dip|crispy fish\s*(&\s*)?frites|bouillabais|prime short rib|short rib bourg|lobster frites/.test(n)) return 'pdj';
-  // Events & wine dinner — checked before food so "P. Hanger Steak" etc. never leak in
   if (/^wd\s|wine dinner/.test(n)) return 'events';
   if (/^p\s*\.|private event adult|private event child|event decor|grazing table|beer.*wine.*spritz|beverage package|\bpackage\b/.test(n)) return 'events';
-  // Lunch-only items (Fri–Sun lunch menu)
   if (/omelette|eggs benedict|pan bagnat|chicken salad sandwich|salmon burger|crispy fish sandwich|^parfait$|lunch oyster/.test(n)) return 'lunch';
-  // Sides — dinner Sides section plus add-on side items
   if (/pommes frites|pommes duchess|haricot vert|peppers carmen|corn & lardons|corn.*lardons|^side\s|side donuts/.test(n)) return 'sides';
-  // Cocktails & martinis
   if (/espresso martini|salt air|filthy|metropolitan|jockey club|river pointe|the rpi|grasshopper|in fashion|saint joe|lychee|can't elope|pep in your|bee sting|negroni|strawberry fields|colada|hh:|martini happy hour|ancho problem|rhubarb|rhu-barbara/.test(n)) return 'cocktail';
   if (/aperol spritz|hugo spritz|french 75|paper plane|mimosa|bloody mary|lemon drop|mojito|moscow mule|vesper|garden state|cavaillon|berry spritz|cocogroni|sangria/.test(n)) return 'cocktail';
   if (/na almost|na pear|na espresso|na summer/.test(n)) return 'cocktail';
-  // Wine — incl. somm selections & rare pours that ring as spirits-style lines
   if (/d[’']?yquem|latour pauillac|somm selection/.test(n)) return 'wine';
   if (/^gl:|^gl\s|cremant|brut ros|moet|drappier|folle blanche|albarino|ladoucette|drouhin.*secondes|pouilly|peyrassol|moulin.*vent|cotes du rh|guyon 2022|routestock|route stock|chappellet mountain|haut l'artigue|haut-l|pazo das bruxas|gros plant|jean aubron|saint-cyrgues|costières/.test(n)) return 'wine';
   if (/wine by the bottle|btg bottle|sancerre|meursault|chablis|puligny|cabernet sauv|pride mountain|ridge.*lytton|kistler|o'shaugh|aubert.*carneros|turley|ducru|chauvin 2019|smith haut lafitte|leon beyer|melville|chevillon|cathiard|camus-bruchon|agrapart|sulauze|domaine pierre martin|francois de la roche|lauverjat|manarine|lafarge|domaine guyon|drouhin.*cotes de beaune|joseph drouhin|o'shaughnessy|maître de chai|le petit ducru|le petite smith|pessac|picpoul|lieu dit|fess parker|daniel rion|petitot|hautes co|philéandre|lynch bages|cantenac|sociando|solitude|la rame|saint cyr|morgon|giacometti|patrimonio|arnot-roberts|fullerton|jk carriere|hundred acre|screaming eagle|lavieille|isabelle garrault|julie et patrick/.test(n)) return 'wine';
   if (/^\d{3,4}[:\s]|^b\d{2,4}\b|^2\d{3}[:\s]/.test(n)) return 'wine';
-  // Spirits
   if (/\b(vodka|belvedere|grey goose|ketel one|tito's|tito\b|hendrick|beefeater|bombay sapphire|botanist|fords gin|plymouth gin|tanqueray|absolut|monkey 47|asbury park gin|wodka)\b/.test(n)) return 'spirit';
   if (/\bcasamigos|don julio|fortaleza|lalo\b|pueblo viejo|casa dragones|del maguey|clase azul|g4 blanco|g4 reposado|g4 anejo|tanteo/.test(n)) return 'spirit';
   if (/\bangels envy|blanton|buffalo trace|bulleit|dewars|high west|jack daniel|jameson|johnnie walker|laguavulin|macallan|maker's mark|michter|oban 14|sazerac rye|whistlepig|widow jane|woodford reserve|basil hayden|four roses|penelope|glenlivet|old rip van winkle/.test(n)) return 'spirit';
   if (/chartreuse|\bcognac\b|pierre ferrand|grand marnier|fernet|lazzaroni|molinari sambuca|nonino amaro|averna amaro|limoncello|bailey|campari|taylor fladgate|\bport\b|braulio|frangelico|\brum\b|havana|havanna|captain morgan|ron zacapa|bacardi|st\. agrestis|varnelli/.test(n)) return 'spirit';
   if (/\bcodigo\b/.test(n)) return 'spirit';
-  // Beer / coffee / NA
   if (/beer done|vliet|birdsmouth|kronenbourg|other half|grimm|athletic brewing/.test(n)) return 'beer';
   if (n === 'lunch') return 'beer';
   if (/\bespresso\b|\bcappuccino\b|\bmacchiato\b|\bcoffee\b|peppermint tea|chamomile tea|earl gr[ae]y|green tea|black tea/.test(n)) return 'coffee';
   if (/btl.*still water|btl.*sparkling water|\bcoke\b|diet coke|sprite|ginger ale|club soda|ginger beer|\btonic\b|shirley temple|lemonade|iced tea|apple juice|arnold palmer|pineapple juice|cranberry juice|fresh oj|milk/.test(n)) return 'na';
-  // Entrées — dinner menu only (specials/lunch/sides/events already routed above)
   if (/wagyu|waygu|ratatouille|paillard|moules frites|lasagna|au poivre|pork chop|steak frites|roast chicken for|ny strip|new york strip|porterhouse|salmon\b|saumon|medaillons|branzino|red snapper|snapper|kids tenders|kids cheeseburger|chicken fingers/.test(n)) return 'food';
-  // Raw bar (Les Fruits de Mer) — oysters auto-route via the ½-dozen catch,
-  // so rotating varieties land here without a code change
   if (/1\s*\/\s*2\s*(dozen|dzn)|half\s*dozen|½\s*dozen/.test(n)) return 'rawbar';
   if (/crudo tasting|shrimp cocktail|tuna tartare|ceviche|fluke|caviar.*donut|dune fox|sloop point|salty rose|laughing gull|little darling|violet sky|swan point|sugar shack|barnegat/.test(n)) return 'rawbar';
-  // Starters
   if (/bread service|little gem|garden salad|asparagus mimosa|escargots|^jambon|steak tartare|sardine toast|crepe aux|berries.*cream|salad de tomates|eggplant|peaches/.test(n)) return 'starter';
-  // Desserts
   if (/carrot.*cake|meringue cake|chocolate cake|cheesecake|raspberry tart|creme brulee|banana split|brownie sundae|banana chip ice|brown butter ice|chocolate ice|strawberry ice|vanilla ice|mint ice|lemon sorbet|fromage/.test(n)) return 'dessert';
   if (/custom cake|fet d'or/.test(n)) return 'food';
   return 'food';
 }
 
-// Non-menu rows the chef can't act on — hidden from the view entirely.
-// Includes Toast section-subtotal rows (e.g. Take Out's "Appetizers") that
-// are blended rollups, not dishes — counting them double-counts revenue.
 function isMiscRow(name) {
   const n = name.trim();
   if (/^open\s*(food|drink)|open item|^tip$|don'?t make/i.test(n)) return true;
@@ -302,7 +267,6 @@ const sumRev = arr => (arr||[]).reduce((s,i)=>s+i.qty*i.price, 0);
 const sumQty = arr => (arr||[]).reduce((s,i)=>s+i.qty, 0);
 const fmt = n => n.toLocaleString('en-US', { style:'currency', currency:'USD', maximumFractionDigits:0 });
 
-// ── Data ───────────────────────────────────────────────────────────────────
 let currentData = null;
 let currentView = 'quantity';
 
@@ -318,7 +282,6 @@ async function loadData() {
       headers: { 'Authorization': `Bearer ${getToken()}` }
     });
     if (resp.status === 401) {
-      // Token expired or invalid — back to login
       logout();
       showLoginError('Session expired — log in again');
       return;
@@ -330,7 +293,7 @@ async function loadData() {
     currentData = await resp.json();
     loading.style.display = 'none';
     renderDashboard();
-    loadShiftSpecials();               // nightly counts from RPI Shift, arrives async
+    loadShiftSpecials();
   } catch (err) {
     loading.style.display = 'none';
     errBox.style.display = 'block';
@@ -340,13 +303,9 @@ async function loadData() {
   }
 }
 
-// ── RPI Shift daily specials ───────────────────────────────────────────────
-// Canonicalize dish names so shift-report spellings ("Poulet en Croûte",
-// "Oyster Rockefeller", "USDA Prime French Dip", "Bouillabaisse Provençale")
-// match Toast spellings ("Poulet en Croute", "Oysters Rockefeller", ...).
 function canonSpecial(name) {
   return String(name||'').toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')   // strip accents
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/\busda prime\b/g, '')
     .replace(/provencale?/g, 'provencal')
     .replace(/bourguignon/g, 'bourgignon')
@@ -357,7 +316,6 @@ function canonSpecial(name) {
 }
 
 function parseRange(dateRange) {
-  // "July 27, 2026 - August 2, 2026" → {start:'2026-07-27', end:'2026-08-02'}
   if (!dateRange) return null;
   const months = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
   const parts = dateRange.split(/[-\u2013\u2014]/).map(p => p.trim());
@@ -378,7 +336,7 @@ function parseRange(dateRange) {
   return (start && end) ? { start, end } : null;
 }
 
-let shiftSpecialsMap = null;   // canon name → [{d:'Mon', avail, sold, x}]
+let shiftSpecialsMap = null;
 
 async function loadShiftSpecials() {
   shiftSpecialsMap = null;
@@ -391,14 +349,12 @@ async function loadShiftSpecials() {
     if (!resp.ok) return;
     const data = await resp.json();
     const map = {};
-    // Track which weekdays had a shift report at all (even with empty fields)
-    // vs. days that are dark — Adam's off Mon/Tue, no report expected.
     const reportedDays = {};
     const WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
     (data.days || []).forEach(day => {
       const wd = WD[new Date(day.date + 'T12:00:00Z').getUTCDay()];
       const specials = day.specials || [];
-      if (specials.length) reportedDays[wd] = true;      // report exists for this weekday
+      if (specials.length) reportedDays[wd] = true;
       specials.forEach(s => {
         const k = canonSpecial(s.name);
         if (!k) return;
@@ -407,7 +363,7 @@ async function loadShiftSpecials() {
     });
     shiftSpecialsMap = { entries: map, reportedDays: reportedDays };
     renderDashboard();
-  } catch (e) { /* shift data is additive — fail silently */ }
+  } catch (e) { /* additive — fail silently */ }
 }
 
 function shiftEntriesFor(itemName) {
@@ -420,7 +376,6 @@ function shiftEntriesFor(itemName) {
   return hit ? entries[hit] : null;
 }
 
-// ── Render ─────────────────────────────────────────────────────────────────
 function normalizeKey(name) {
   return name.toLowerCase().replace(/^hh:\s*/i, '').replace(/\s+/g, ' ').trim();
 }
@@ -432,7 +387,6 @@ function deltaTag(cur, prev, cls) {
   return `<span class="${cls} ${deltaClass(d)}">${deltaArrow(d)} ${Math.abs(Math.round(d))}%</span>`;
 }
 
-// Blend a category color toward white -> SOLID hex (keeps text readable at any intensity)
 function hexBlend(hex, w) {
   const c = hex.replace('#','');
   const mix = ch => Math.round(255*(1-w) + parseInt(ch,16)*w).toString(16).padStart(2,'0');
@@ -465,7 +419,6 @@ function renderDashboard() {
   items.forEach(i => { const c = categorize(i.name); (cats[c]||(cats[c]=[])).push(i); });
   prevItems.forEach(i => { const c = categorize(i.name); (prevCats[c]||(prevCats[c]=[])).push(i); });
 
-  // Item-level lookup for last week (aggregated by normalized name)
   const prevLookup = {};
   prevItems.forEach(i => {
     const k = normalizeKey(i.name);
@@ -498,7 +451,6 @@ function renderDashboard() {
       sub:topCat ? (byRev ? fmt(topCat.rev) : `${Math.round(topCat.qty).toLocaleString()} sold`) : '', delta:'' },
   ].map(k => `<div class="kpi"><div class="kpi-label">${k.label}</div><div class="kpi-val">${k.val}</div><div class="kpi-sub">${k.sub}</div>${k.delta||''}</div>`).join('');
 
-  // Category ranking, highest → lowest — bar = share of total (widths sum to 100%)
   document.getElementById('ranking-title').textContent =
     byRev ? 'Categories ranked by revenue' : 'Categories ranked by quantity';
   const totalMetric = byRev ? totalRev : totalQty;
@@ -529,25 +481,32 @@ function renderDashboard() {
     </div>`;
   }).join('');
 
-  // Per-category item breakdown with WoW per item
+  // Item-breakdown order: Weekly specials pinned first (chef's operational
+  // priority), everything else in ranked order. Stable sort preserves rank.
+  const hmOrder = sorted.slice().sort((a, b) => {
+    if (a.key === 'pdj' && b.key !== 'pdj') return -1;
+    if (b.key === 'pdj' && a.key !== 'pdj') return 1;
+    return 0;
+  });
   let hmHtml = '';
-  sorted.forEach(cat => {
+  hmOrder.forEach(cat => {
     const grp = [...cats[cat.key]]
       .map(i => ({ ...i, rev: i.qty * i.price }))
       .sort((a,b) => byRev ? b.rev - a.rev : b.qty - a.qty);
     const maxR = byRev ? (grp[0]?.rev || 1) : (grp[0]?.qty || 1);
     const id = 'hmg-' + cat.key;
+    const pinBadge = (cat.key === 'pdj') ? '<span class="hm-pinned-badge">Pinned</span>' : '';
     hmHtml += `<div class="hm-cat-section">
       <div class="hm-cat-header" onclick="toggleHmGroup('${id}')">
         <span class="leg-dot" style="background:${cat.color}"></span>
-        <span class="hm-cat-label">${cat.label}</span>
+        <span class="hm-cat-label">${cat.label}</span>${pinBadge}
         <span class="hm-cat-rev">${fmt(cat.rev)} \u00b7 ${Math.round(cat.qty).toLocaleString()} sold \u00b7 ${grp.length} items</span>
         <span class="hm-cat-toggle" id="${id}-toggle">\u25bc</span>
       </div>
       <div class="hm-grid" id="${id}">`;
     grp.forEach(item => {
       const metric = byRev ? item.rev : item.qty;
-      const weight = 0.25 + (metric / maxR) * 0.75;          // 0.25 (light) -> 1.0 (full color)
+      const weight = 0.25 + (metric / maxR) * 0.75;
       const bg = hexBlend(cat.color, weight);
       const light = isLightBg(bg);
       const nameCol = light ? '#1a1a18' : '#ffffff';
@@ -574,7 +533,6 @@ function renderDashboard() {
         const byDay = {};
         entries.forEach(en => { byDay[en.d] = en; });
         const reported = shiftSpecialsMap.reportedDays || {};
-        // Walk every weekday in the range so nights without data show explicit state
         const range = parseRange(currentData.dateRange);
         const WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
         const parts = [];
@@ -586,7 +544,6 @@ function renderDashboard() {
             const wd = WD[d.getUTCDay()];
             const en = byDay[wd];
             if (en) {
-              // shift report exists for this dish that night
               const hasSold  = en.sold  !== null && en.sold  !== '';
               const hasAvail = en.avail !== null && en.avail !== '';
               if (en.x) parts.push(wd + ' 86');
@@ -595,9 +552,8 @@ function renderDashboard() {
               else if (hasAvail)            parts.push(wd + ' \u2014/' + en.avail);
               else                          parts.push(wd + ' not entered');
             } else if (reported[wd]) {
-              // shift report exists but this dish wasn't run that night — skip silently
+              // dish wasn't run that night — skip silently
             } else {
-              // Adam's off, no report — say so explicitly
               parts.push(wd + ' no data');
             }
             d.setUTCDate(d.getUTCDate() + 1);
@@ -624,13 +580,13 @@ function renderDashboard() {
 function jumpToCategory(key) {
   const grid = document.getElementById('hmg-' + key);
   if (!grid) return;
-  grid.classList.remove('collapsed');                       // drop it open if collapsed
+  grid.classList.remove('collapsed');
   const tog = document.getElementById('hmg-' + key + '-toggle');
   if (tog) tog.textContent = '\u25bc';
   const section = grid.closest('.hm-cat-section');
   section.scrollIntoView({ behavior: 'smooth', block: 'start' });
   section.classList.remove('flash');
-  void section.offsetWidth;                                 // restart the animation
+  void section.offsetWidth;
   section.classList.add('flash');
 }
 
