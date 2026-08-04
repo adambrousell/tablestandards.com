@@ -60,8 +60,12 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .card-title span { font-family: 'DM Serif Display', serif; font-size: 15px; text-transform: none; letter-spacing: 0; color: var(--text); margin-right: 8px; }
 
 /* Category ranking rows */
-.cat-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.cat-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; cursor: pointer; border-radius: 4px; }
+.cat-row:hover { background: #f1efe8; }
 .cat-row:last-child { border-bottom: none; }
+.hm-cat-section.flash { animation: hmflash 1.6s ease; }
+@keyframes hmflash { 0% { background: #fdf6dd; } 100% { background: transparent; } }
+.hm-cat-section { border-radius: 6px; scroll-margin-top: 70px; }
 .cat-header-row { display: flex; align-items: center; gap: 10px; padding: 0 0 7px; border-bottom: 2px solid var(--border); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); font-weight: 500; }
 .cat-share { width: 44px; text-align: right; color: var(--text-2); font-size: 12px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
 .cat-rank { width: 22px; text-align: right; color: var(--text-3); font-variant-numeric: tabular-nums; flex-shrink: 0; }
@@ -139,15 +143,15 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
         <div class="uploaded-label" id="uploaded-label"></div>
       </div>
       <div class="toggle-section">
-        <button class="toggle-btn active" id="tg-revenue" onclick="setView('revenue')">By revenue</button>
-        <button class="toggle-btn" id="tg-quantity" onclick="setView('quantity')">By quantity</button>
+        <button class="toggle-btn" id="tg-revenue" onclick="setView('revenue')">By revenue</button>
+        <button class="toggle-btn active" id="tg-quantity" onclick="setView('quantity')">By quantity</button>
       </div>
     </div>
 
     <div id="kpi-grid" class="kpi-grid"></div>
 
     <div class="card">
-      <div class="card-title"><span id="ranking-title">Categories ranked by revenue</span> highest → lowest · bar = share of week's total</div>
+      <div class="card-title"><span id="ranking-title">Categories ranked by quantity</span> highest → lowest · bar = share of week's total</div>
       <div id="ranking-list"></div>
     </div>
 
@@ -300,7 +304,7 @@ const fmt = n => n.toLocaleString('en-US', { style:'currency', currency:'USD', m
 
 // ── Data ───────────────────────────────────────────────────────────────────
 let currentData = null;
-let currentView = 'revenue';
+let currentView = 'quantity';
 
 async function loadData() {
   const loading = document.getElementById('loading');
@@ -433,7 +437,7 @@ function renderDashboard() {
     const width = Math.max(1.5, share);
     const main = byRev ? fmt(r.rev) : Math.round(r.qty).toLocaleString();
     const sub  = byRev ? `${Math.round(r.qty).toLocaleString()} sold` : fmt(r.rev);
-    return `<div class="cat-row">
+    return `<div class="cat-row" onclick="jumpToCategory('${r.key}')" title="View ${r.label} items">
       <span class="cat-rank">${idx+1}</span>
       <span class="cat-name">${r.label}</span>
       <span class="cat-bar"><span class="cat-bar-fill" style="width:${width}%;background:${r.color};"></span></span>
@@ -494,6 +498,19 @@ function renderDashboard() {
   document.getElementById('heatmap').innerHTML = hmHtml;
 
   document.getElementById('dashboard').classList.add('active');
+}
+
+function jumpToCategory(key) {
+  const grid = document.getElementById('hmg-' + key);
+  if (!grid) return;
+  grid.classList.remove('collapsed');                       // drop it open if collapsed
+  const tog = document.getElementById('hmg-' + key + '-toggle');
+  if (tog) tog.textContent = '\u25bc';
+  const section = grid.closest('.hm-cat-section');
+  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  section.classList.remove('flash');
+  void section.offsetWidth;                                 // restart the animation
+  section.classList.add('flash');
 }
 
 function toggleHmGroup(id) {
