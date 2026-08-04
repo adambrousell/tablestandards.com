@@ -398,44 +398,76 @@ function setShiftStatus(msg, isError) {
 
 async function loadShiftSpecials() {
   shiftSpecialsMap = null;
+  const map = {};
+  const reportedDays = {};
+  const WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let nights = 0, fetchProblem = null;
+
+  // 1) Pull nightly counts from RPI Shift
   try {
     const range = parseRange(currentData && currentData.dateRange);
-    if (!range) { setShiftStatus('could not read week dates from the upload', true); return; }
-    const resp = await fetch(`${WORKER_URL}/specials?start=${range.start}&end=${range.end}`, {
-      headers: { 'Authorization': `Bearer ${getToken()}` }
-    });
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      if (resp.status === 404) setShiftStatus('worker is running OLD code without the /specials route — redeploy worker.js', true);
-      else setShiftStatus(err.error || ('server error ' + resp.status), true);
-      return;
-    }
-    const data = await resp.json();
-    const map = {};
-    const reportedDays = {};
-    const WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    (data.days || []).forEach(day => {
-      const wd = WD[new Date(day.date + 'T12:00:00Z').getUTCDay()];
-      const specials = day.specials || [];
-      if (specials.length) reportedDays[wd] = true;
-      specials.forEach(s => {
-        const k = canonSpecial(s.name);
-        if (!k) return;
-        (map[k] || (map[k] = [])).push({ d: wd, avail: s.avail, sold: s.sold, x: s.x });
-      });
-    });
-    shiftSpecialsMap = { entries: map, reportedDays: reportedDays };
-    const nights = Object.keys(reportedDays).length;
-    if (nights === 0) {
-      setShiftStatus('connected, but 0 of 7 nights have specials in RPI Shift for this week — if reports exist, the worker\'s KV binding points at the wrong namespace', true);
+    if (!range) {
+      fetchProblem = 'could not read week dates from the upload';
     } else {
-      const WDALL = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-      const missing = WDALL.filter(w => !reportedDays[w]);
-      setShiftStatus('connected · specials found for ' + nights + ' of 7 nights' +
-        (missing.length ? ' · no shift report: ' + missing.join(', ') : ''), false);
+      const resp = await fetch(`${WORKER_URL}/specials?start=${range.start}&end=${range.end}`, {
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        fetchProblem = resp.status === 404
+          ? 'worker is running OLD code without the /specials route — redeploy worker.js'
+          : (err.error || 'server error ' + resp.status);
+      } else {
+        const data = await resp.json();
+        (data.days || []).forEach(day => {
+          const wd = WD[new Date(day.date + 'T12:00:00Z').getUTCDay()];
+          const specials = day.specials || [];
+          if (specials.length) reportedDays[wd] = true;
+          specials.forEach(s => {
+            const k = canonSpecial(s.name);
+            if (!k) return;
+            (map[k] || (map[k] = [])).push({ d: wd, avail: s.avail, sold: s.sold, x: s.x });
+          });
+        });
+        nights = Object.keys(reportedDays).length;
+      }
     }
+  } catch (e) {
+    fetchProblem = 'could not reach the worker (' + e.message + ')';
+  }
+
+  // 2) Merge manual entries from the upload — manual OVERRIDES shift for the
+  //    same dish+night (typing it at upload time is a deliberate correction),
+  //    and fills dark nights (Mon/Tue) that have no shift report.
+  const manual = (currentData && currentData.manualSpecials) || [];
+  manual.forEach(m => {
+    if (!m || !m.name || !m.d) return;
+    const k = canonSpecial(m.name);
+    if (!k) return;
+    if (!map[k]) map[k] = [];
+    map[k] = map[k].filter(e => e.d !== m.d);   // manual wins over shift
+    map[k].push({ d: m.d, avail: m.avail ?? null, sold: m.sold ?? null, x: !!m.x });
+    reportedDays[m.d] = true;
+  });
+
+  // 3) Status + render
+  const hasAny = Object.keys(map).length > 0;
+  if (hasAny) {
+    shiftSpecialsMap = { entries: map, reportedDays: reportedDays };
+    const WDALL = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const missing = WDALL.filter(w => !reportedDays[w]);
+    let msg = fetchProblem
+      ? 'shift fetch failed (' + fetchProblem + ') · showing ' + manual.length + ' manual entries only'
+      : 'connected · specials found for ' + nights + ' of 7 nights' +
+        (manual.length ? ' · ' + manual.length + ' manual' : '') +
+        (missing.length ? ' · no data: ' + missing.join(', ') : '');
+    setShiftStatus(msg, !!fetchProblem);
     renderDashboard();
-  } catch (e) { setShiftStatus('could not reach the worker (' + e.message + ')', true); }
+  } else if (fetchProblem) {
+    setShiftStatus(fetchProblem, true);
+  } else {
+    setShiftStatus('connected, but 0 of 7 nights have specials in RPI Shift for this week and no manual entries — if reports exist, the worker\'s KV binding points at the wrong namespace', true);
+  }
 }
 
 function shiftEntriesFor(itemName) {
