@@ -330,6 +330,7 @@ async function loadData() {
     currentData = await resp.json();
     loading.style.display = 'none';
     renderDashboard();
+    loadShiftSpecials();               // nightly counts from RPI Shift, arrives async
   } catch (err) {
     loading.style.display = 'none';
     errBox.style.display = 'block';
@@ -337,6 +338,82 @@ async function loadData() {
       <p class="small">If this keeps happening, let Adam know.</p>
       <button class="retry-btn" onclick="loadData()">Try again</button>`;
   }
+}
+
+// ── RPI Shift daily specials ───────────────────────────────────────────────
+// Canonicalize dish names so shift-report spellings ("Poulet en Croûte",
+// "Oyster Rockefeller", "USDA Prime French Dip", "Bouillabaisse Provençale")
+// match Toast spellings ("Poulet en Croute", "Oysters Rockefeller", ...).
+function canonSpecial(name) {
+  return String(name||'').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')   // strip accents
+    .replace(/\busda prime\b/g, '')
+    .replace(/provencale?/g, 'provencal')
+    .replace(/bourguignon/g, 'bourgignon')
+    .replace(/bouillabaisse/g, 'bouillabaise')
+    .replace(/oysters/g, 'oyster')
+    .replace(/[^a-z ]/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+
+function parseRange(dateRange) {
+  // "July 27, 2026 - August 2, 2026" → {start:'2026-07-27', end:'2026-08-02'}
+  if (!dateRange) return null;
+  const months = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+  const parts = dateRange.split(/[-\u2013\u2014]/).map(p => p.trim());
+  if (parts.length < 2) return null;
+  const parse = (p, fallbackYear) => {
+    const m = p.match(/([A-Za-z]+)\s+(\d{1,2}),?\s*(\d{4})?/);
+    if (!m) return null;
+    const mon = months[m[1].toLowerCase().slice(0,3)];
+    if (!mon) return null;
+    const year = m[3] ? parseInt(m[3]) : fallbackYear;
+    if (!year) return null;
+    return year + '-' + String(mon).padStart(2,'0') + '-' + String(m[2]).padStart(2,'0');
+  };
+  const endYearM = parts[1].match(/(\d{4})/);
+  const endYear = endYearM ? parseInt(endYearM[1]) : null;
+  const start = parse(parts[0], endYear);
+  const end = parse(parts[1], endYear);
+  return (start && end) ? { start, end } : null;
+}
+
+let shiftSpecialsMap = null;   // canon name → [{d:'Mon', avail, sold, x}]
+
+async function loadShiftSpecials() {
+  shiftSpecialsMap = null;
+  try {
+    const range = parseRange(currentData && currentData.dateRange);
+    if (!range) return;
+    const resp = await fetch(`${WORKER_URL}/specials?start=${range.start}&end=${range.end}`, {
+      headers: { 'Authorization': `Bearer ${getToken()}` }
+    });
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const map = {};
+    const WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    (data.days || []).forEach(day => {
+      const wd = WD[new Date(day.date + 'T12:00:00Z').getUTCDay()];
+      (day.specials || []).forEach(s => {
+        const k = canonSpecial(s.name);
+        if (!k) return;
+        (map[k] || (map[k] = [])).push({ d: wd, avail: s.avail, sold: s.sold, x: s.x });
+      });
+    });
+    if (Object.keys(map).length) {
+      shiftSpecialsMap = map;
+      renderDashboard();               // re-render with shift data attached
+    }
+  } catch (e) { /* shift data is additive — fail silently */ }
+}
+
+function shiftEntriesFor(itemName) {
+  if (!shiftSpecialsMap) return null;
+  const ck = canonSpecial(itemName);
+  if (shiftSpecialsMap[ck]) return shiftSpecialsMap[ck];
+  const keys = Object.keys(shiftSpecialsMap);
+  const hit = keys.find(k => k.includes(ck) || ck.includes(k));
+  return hit ? shiftSpecialsMap[hit] : null;
 }
 
 // ── Render ─────────────────────────────────────────────────────────────────
@@ -487,10 +564,23 @@ function renderDashboard() {
           dHtml = `<div class="hm-delta" style="color:${flatCol};">\u2605 new</div>`;
         }
       }
+      let shiftHtml = '';
+      if (cat.key === 'pdj') {
+        const entries = shiftEntriesFor(item.name);
+        if (entries && entries.length) {
+          const parts = entries.map(en => {
+            const sold = (en.sold !== null && en.sold !== '') ? en.sold : '\u2014';
+            const avail = (en.avail !== null && en.avail !== '') ? '/' + en.avail : '';
+            return en.d + ' ' + sold + avail + (en.x ? ' \u00b7 86' : '');
+          });
+          shiftHtml = `<div class="hm-meta" style="color:${metaCol};margin-top:3px;border-top:1px solid ${light ? 'rgba(26,26,24,0.12)' : 'rgba(255,255,255,0.25)'};padding-top:3px;">Shift log: ${parts.join(' \u00b7 ')}</div>`;
+        }
+      }
       hmHtml += `<div class="hm-cell" style="background:${bg};border-left-color:${cat.color};">
         <div class="hm-name" style="color:${nameCol};">${name}</div>
         <div class="hm-meta" style="color:${metaCol};">${Math.round(item.qty)} sold \u00b7 ${fmt(item.rev)}</div>
         ${dHtml}
+        ${shiftHtml}
       </div>`;
     });
     hmHtml += `</div></div>`;
