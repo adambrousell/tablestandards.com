@@ -158,13 +158,13 @@ const CAT_COLORS = {
   cocktail:'#2150a0', wine:'#5c2d6e', food:'#c0452a',
   starter:'#2a5f3c', dessert:'#b8942a', spirit:'#4a7a8a',
   beer:'#7a5c2a', coffee:'#6b4e3d', na:'#888780',
-  events:'#7a3060', pdj:'#0f766e', lunch:'#556677',
+  events:'#7a3060', pdj:'#0f766e', lunch:'#556677', sides:'#9c6644',
 };
 const CAT_LABELS = {
-  cocktail:'Cocktails & martinis', wine:'Wine (glass & bottle)', food:'Entrées & sides',
+  cocktail:'Cocktails & martinis', wine:'Wine (glass & bottle)', food:'Entrées',
   starter:'Starters & raw bar', dessert:'Desserts', spirit:'Spirits',
   beer:'Beer', coffee:'Coffee & tea', na:'NA beverages',
-  events:'Private Events & Wine Dinner', pdj:'Weekly specials (Plats du Jour)', lunch:'Lunch',
+  events:'Private Events & Wine Dinner', pdj:'Weekly specials (Plats du Jour)', lunch:'Lunch', sides:'Sides',
 };
 
 // ── Auth (server-side) ─────────────────────────────────────────────────────
@@ -230,9 +230,11 @@ function categorize(name) {
   if (/poulet en croute|poulet en cro|oysters? rockefeller|french dip|crispy fish\s*(&\s*)?frites|bouillabais|prime short rib|short rib bourg|lobster frites/.test(n)) return 'pdj';
   // Events & wine dinner — checked before food so "P. Hanger Steak" etc. never leak in
   if (/^wd\s|wine dinner/.test(n)) return 'events';
-  if (/^p\s*\.|private event adult|private event child|event decor/.test(n)) return 'events';
+  if (/^p\s*\.|private event adult|private event child|event decor|grazing table|beer.*wine.*spritz|beverage package|\bpackage\b/.test(n)) return 'events';
   // Lunch-only items (Fri–Sun lunch menu)
   if (/omelette|eggs benedict|pan bagnat|chicken salad sandwich|salmon burger|crispy fish sandwich|^parfait$|lunch oyster/.test(n)) return 'lunch';
+  // Sides — dinner Sides section plus add-on side items
+  if (/pommes frites|pommes duchess|haricot vert|peppers carmen|corn & lardons|corn.*lardons|^side\s|side donuts/.test(n)) return 'sides';
   // Cocktails & martinis
   if (/espresso martini|salt air|filthy|metropolitan|jockey club|river pointe|the rpi|grasshopper|in fashion|saint joe|lychee|can't elope|pep in your|bee sting|negroni|strawberry fields|colada|hh:|martini happy hour|ancho problem|rhubarb|rhu-barbara/.test(n)) return 'cocktail';
   if (/aperol spritz|hugo spritz|french 75|paper plane|mimosa|bloody mary|lemon drop|mojito|moscow mule|vesper|garden state|cavaillon|berry spritz|cocogroni|sangria/.test(n)) return 'cocktail';
@@ -253,13 +255,13 @@ function categorize(name) {
   if (n === 'lunch') return 'beer';
   if (/\bespresso\b|\bcappuccino\b|\bmacchiato\b|\bcoffee\b|peppermint tea|chamomile tea|earl gr[ae]y|green tea|black tea/.test(n)) return 'coffee';
   if (/btl.*still water|btl.*sparkling water|\bcoke\b|diet coke|sprite|ginger ale|club soda|ginger beer|\btonic\b|shirley temple|lemonade|iced tea|apple juice|arnold palmer|pineapple juice|cranberry juice|fresh oj|milk/.test(n)) return 'na';
-  // Entrées & sides — dinner menu only (specials/lunch/events already routed above)
-  if (/wagyu|waygu|ratatouille|paillard|moules frites|lasagna|au poivre|pork chop|steak frites|roast chicken for|ny strip|new york strip|porterhouse|pommes frites|pommes duchess|haricot vert|peppers carmen|corn & lardons|corn.*lardons|salmon\b|saumon|medaillons|branzino|red snapper|snapper|kids tenders|kids cheeseburger|chicken fingers|side donuts/.test(n)) return 'food';
+  // Entrées — dinner menu only (specials/lunch/sides/events already routed above)
+  if (/wagyu|waygu|ratatouille|paillard|moules frites|lasagna|au poivre|pork chop|steak frites|roast chicken for|ny strip|new york strip|porterhouse|salmon\b|saumon|medaillons|branzino|red snapper|snapper|kids tenders|kids cheeseburger|chicken fingers/.test(n)) return 'food';
   // Starters & raw bar
   if (/bread service|little gem|garden salad|asparagus mimosa|escargots|^jambon|steak tartare|sardine toast|crepe aux|berries.*cream|caviar.*donut|crudo tasting|shrimp cocktail|tuna tartare|ceviche|fluke|dune fox|sloop point|salty rose|laughing gull|little darling|violet sky|swan point|sugar shack|love.*dozen|barnegat|salad de tomates|eggplant|peaches/.test(n)) return 'starter';
   // Desserts
   if (/carrot.*cake|meringue cake|chocolate cake|cheesecake|raspberry tart|creme brulee|banana split|brownie sundae|banana chip ice|brown butter ice|chocolate ice|strawberry ice|vanilla ice|mint ice|lemon sorbet|fromage/.test(n)) return 'dessert';
-  if (/custom cake|side |fet d'or/.test(n)) return 'food';
+  if (/custom cake|fet d'or/.test(n)) return 'food';
   return 'food';
 }
 
