@@ -181,6 +181,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 
     <div class="card">
       <div class="card-title"><span>Items ranked within each category</span> weekly specials pinned first, remaining categories by rank · <span style="font-size:11px;color:var(--text-3);font-family:'DM Sans',sans-serif;">click a header to collapse</span></div>
+      <div id="shift-status" style="font-size:11px;margin:-8px 0 12px;color:var(--text-3);"></div>
       <div id="heatmap"></div>
     </div>
   </div>
@@ -373,15 +374,27 @@ function parseRange(dateRange) {
 
 let shiftSpecialsMap = null;
 
+function setShiftStatus(msg, isError) {
+  const el = document.getElementById('shift-status');
+  if (!el) return;
+  el.textContent = msg ? ('Shift data: ' + msg) : '';
+  el.style.color = isError ? 'var(--down)' : 'var(--text-3)';
+}
+
 async function loadShiftSpecials() {
   shiftSpecialsMap = null;
   try {
     const range = parseRange(currentData && currentData.dateRange);
-    if (!range) return;
+    if (!range) { setShiftStatus('could not read week dates from the upload', true); return; }
     const resp = await fetch(`${WORKER_URL}/specials?start=${range.start}&end=${range.end}`, {
       headers: { 'Authorization': `Bearer ${getToken()}` }
     });
-    if (!resp.ok) return;
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      if (resp.status === 404) setShiftStatus('worker is running OLD code without the /specials route — redeploy worker.js', true);
+      else setShiftStatus(err.error || ('server error ' + resp.status), true);
+      return;
+    }
     const data = await resp.json();
     const map = {};
     const reportedDays = {};
@@ -397,8 +410,14 @@ async function loadShiftSpecials() {
       });
     });
     shiftSpecialsMap = { entries: map, reportedDays: reportedDays };
+    const nights = Object.keys(reportedDays).length;
+    if (nights === 0) {
+      setShiftStatus('connected, but 0 of 7 nights have specials in RPI Shift for this week — if reports exist, the worker\'s KV binding points at the wrong namespace', true);
+    } else {
+      setShiftStatus('connected · specials found for ' + nights + ' of 7 nights', false);
+    }
     renderDashboard();
-  } catch (e) { /* additive — fail silently */ }
+  } catch (e) { setShiftStatus('could not reach the worker (' + e.message + ')', true); }
 }
 
 function shiftEntriesFor(itemName) {
