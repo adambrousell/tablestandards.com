@@ -170,13 +170,13 @@ const WORKER_URL = 'https://rpi-pmix-backend.amusementstandards.workers.dev';
 
 const CAT_COLORS = {
   cocktail:'#2150a0', wine:'#5c2d6e', food:'#c0452a',
-  starter:'#2a5f3c', dessert:'#b8942a', spirit:'#4a7a8a',
+  starter:'#2a5f3c', rawbar:'#155e75', dessert:'#b8942a', spirit:'#4a7a8a',
   beer:'#7a5c2a', coffee:'#6b4e3d', na:'#888780',
   events:'#7a3060', pdj:'#0f766e', lunch:'#556677', sides:'#9c6644',
 };
 const CAT_LABELS = {
   cocktail:'Cocktails & martinis', wine:'Wine (glass & bottle)', food:'Entrées',
-  starter:'Starters & raw bar', dessert:'Desserts', spirit:'Spirits',
+  starter:'Starters', rawbar:'Raw bar (Les Fruits de Mer)', dessert:'Desserts', spirit:'Spirits',
   beer:'Beer', coffee:'Coffee & tea', na:'NA beverages',
   events:'Private Events & Wine Dinner', pdj:'Weekly specials (Plats du Jour)', lunch:'Lunch', sides:'Sides',
 };
@@ -271,8 +271,12 @@ function categorize(name) {
   if (/btl.*still water|btl.*sparkling water|\bcoke\b|diet coke|sprite|ginger ale|club soda|ginger beer|\btonic\b|shirley temple|lemonade|iced tea|apple juice|arnold palmer|pineapple juice|cranberry juice|fresh oj|milk/.test(n)) return 'na';
   // Entrées — dinner menu only (specials/lunch/sides/events already routed above)
   if (/wagyu|waygu|ratatouille|paillard|moules frites|lasagna|au poivre|pork chop|steak frites|roast chicken for|ny strip|new york strip|porterhouse|salmon\b|saumon|medaillons|branzino|red snapper|snapper|kids tenders|kids cheeseburger|chicken fingers/.test(n)) return 'food';
-  // Starters & raw bar
-  if (/bread service|little gem|garden salad|asparagus mimosa|escargots|^jambon|steak tartare|sardine toast|crepe aux|berries.*cream|caviar.*donut|crudo tasting|shrimp cocktail|tuna tartare|ceviche|fluke|dune fox|sloop point|salty rose|laughing gull|little darling|violet sky|swan point|sugar shack|love.*dozen|barnegat|salad de tomates|eggplant|peaches/.test(n)) return 'starter';
+  // Raw bar (Les Fruits de Mer) — oysters auto-route via the ½-dozen catch,
+  // so rotating varieties land here without a code change
+  if (/1\s*\/\s*2\s*(dozen|dzn)|half\s*dozen|½\s*dozen/.test(n)) return 'rawbar';
+  if (/crudo tasting|shrimp cocktail|tuna tartare|ceviche|fluke|caviar.*donut|dune fox|sloop point|salty rose|laughing gull|little darling|violet sky|swan point|sugar shack|barnegat/.test(n)) return 'rawbar';
+  // Starters
+  if (/bread service|little gem|garden salad|asparagus mimosa|escargots|^jambon|steak tartare|sardine toast|crepe aux|berries.*cream|salad de tomates|eggplant|peaches/.test(n)) return 'starter';
   // Desserts
   if (/carrot.*cake|meringue cake|chocolate cake|cheesecake|raspberry tart|creme brulee|banana split|brownie sundae|banana chip ice|brown butter ice|chocolate ice|strawberry ice|vanilla ice|mint ice|lemon sorbet|fromage/.test(n)) return 'dessert';
   if (/custom cake|fet d'or/.test(n)) return 'food';
