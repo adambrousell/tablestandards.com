@@ -868,6 +868,7 @@ function renderTartareSection(cat, items, prevLookup, hasPrev, byRev) {
       const nameCol = light ? '#1a1a18' : '#ffffff';
       const metaCol = light ? 'rgba(26,26,24,0.6)' : 'rgba(255,255,255,0.8)';
       tiles.push({
+        day: wd,
         sortKey,
         html: `<div class="hm-day-cell" style="background:${bg};border-left-color:${cat.color};">
           <div class="hm-day-label" style="color:${metaCol};">${wd.toUpperCase()} ${dateLbl}</div>
@@ -877,8 +878,9 @@ function renderTartareSection(cat, items, prevLookup, hasPrev, byRev) {
       });
     }
   }
-  // Sort like every other category: highest sold first, blanks/no-data last
-  tiles.sort((a, b) => b.sortKey - a.sortKey);
+  // Show days in calendar order: Monday → Sunday, all seven visible.
+  const DAY_ORDER = { Mon:0, Tue:1, Wed:2, Thu:3, Fri:4, Sat:5, Sun:6 };
+  tiles.sort((a, b) => (DAY_ORDER[a.day] ?? 7) - (DAY_ORDER[b.day] ?? 7));
   html += tiles.map(t => t.html).join('');
   html += `</div></div>`;
   return html;
