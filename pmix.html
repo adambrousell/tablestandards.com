@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTIiIGZpbGw9IiMxNDEyMGUiLz48dGV4dCB4PSIzMiIgeT0iNDYiIGZvbnQtZmFtaWx5PSJHZW9yZ2lhLHNlcmlmIiBmb250LXNpemU9IjQyIiBmb250LXdlaWdodD0iNjAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjYjA4ZDNlIiBmb250LXN0eWxlPSJpdGFsaWMiPlI8L3RleHQ+PC9zdmc+">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTIiIGZpbGw9IiMxNDEyMGUiLz48dGV4dCB4PSIzMiIgeT0iNDYiIGZvbnQtZmFtaWx5PSJHZW9yZ2lhLHNlcmlmIiBmb250LXNpemU9IjQyIiBmb250LXdlaWdodD0iNjAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjYjA4ZDNlIiBmb250LXN0eWxlPSJpdGFsaWMiPlI8L3RleHQ+PC9zdmc+">
 <title>River Pointe Inn — Weekly Mix</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
@@ -595,7 +597,6 @@ function renderDashboard() {
     // Bar width is scaled to the #1 category so the top rank fills the track.
     // The % column still shows true share-of-total — the bar shows relative rank.
     const width = maxVal > 0 ? Math.max(1.5, val / maxVal * 100) : 0;
-    if (idx < 5) console.log('[bar]', r.label, 'val=' + val, 'max=' + maxVal, 'width=' + width.toFixed(1) + '%');
     const main = byRev ? fmt(r.rev) : Math.round(r.qty).toLocaleString();
     const sub  = byRev ? `${Math.round(r.qty).toLocaleString()} sold` : fmt(r.rev);
     return `<div class="cat-row" onclick="jumpToCategory('${r.key}')" title="View ${r.label} items">
