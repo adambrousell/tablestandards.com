@@ -1,1 +1,926 @@
- 
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>River Pointe Inn — Weekly Mix</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f7f5f0; --surface: #fff; --border: rgba(0,0,0,0.09); --border-strong: rgba(0,0,0,0.16);
+  --text: #1a1a18; --text-2: #6b6b67; --text-3: #9f9f9b;
+  --accent: #2a5f3c; --up: #1a7a3a; --down: #b83030; --r: 6px;
+}
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.5; }
+header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.logo { font-family: 'DM Serif Display', serif; font-size: 20px; }
+.logo span { font-style: italic; color: var(--text-2); font-size: 17px; }
+
+.login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--bg); }
+.login-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 40px; width: 100%; max-width: 380px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin: 0 20px; }
+.login-card h1 { font-family: 'DM Serif Display', serif; font-size: 24px; margin-bottom: 4px; }
+.login-card p { font-size: 13px; color: var(--text-3); margin-bottom: 24px; }
+.login-card input { width: 100%; border: 1px solid var(--border-strong); border-radius: var(--r); padding: 10px 12px; font-family: 'DM Sans', sans-serif; font-size: 15px; margin-bottom: 14px; outline: none; }
+.login-card input:focus { border-color: var(--accent); }
+.login-card button { width: 100%; background: var(--accent); color: #fff; border: none; border-radius: var(--r); padding: 11px; font-size: 14px; font-weight: 500; cursor: pointer; }
+.login-card button:hover { opacity: 0.88; }
+.login-error { color: var(--down); font-size: 12px; margin-bottom: 12px; min-height: 16px; }
+
+.main-content { display: none; }
+.main-content.authed { display: block; }
+
+.loading { text-align: center; padding: 60px 20px; color: var(--text-3); }
+.loading-spinner { display: inline-block; width: 26px; height: 26px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#dashboard { margin: 20px 32px 40px; display: none; }
+#dashboard.active { display: block; }
+@media (max-width: 700px) { #dashboard { margin: 16px 14px 40px; } }
+
+.header-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.week-label { font-size: 13px; color: var(--text-2); }
+.uploaded-label { font-size: 11px; color: var(--text-3); }
+.logout-btn { font-size: 12px; color: var(--text-3); background: transparent; border: 1px solid var(--border-strong); padding: 6px 12px; border-radius: var(--r); cursor: pointer; }
+.logout-btn:hover { color: var(--text-2); }
+
+.toggle-section { display: flex; gap: 8px; }
+.toggle-btn { background: var(--surface); color: var(--text-2); border: 1px solid var(--border-strong); border-radius: 20px; padding: 8px 20px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; font-weight: 500; }
+.toggle-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
+.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; }
+.kpi-label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+.kpi-val { font-family: 'DM Serif Display', serif; font-size: 24px; line-height: 1.1; color: var(--text); }
+.kpi-sub { font-size: 11px; color: var(--text-3); margin-top: 4px; }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 16px 18px; margin-bottom: 14px; }
+.card-title { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); margin-bottom: 14px; }
+.card-title span { font-family: 'DM Serif Display', serif; font-size: 15px; text-transform: none; letter-spacing: 0; color: var(--text); margin-right: 8px; }
+
+.cat-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; cursor: pointer; border-radius: 4px; }
+.cat-row:hover { background: #f1efe8; }
+.cat-row:last-child { border-bottom: none; }
+.hm-cat-section.flash { animation: hmflash 1.6s ease; }
+@keyframes hmflash { 0% { background: #fdf6dd; } 100% { background: transparent; } }
+.hm-cat-section { border-radius: 6px; scroll-margin-top: 70px; margin-bottom: 18px; }
+.cat-header-row { display: flex; align-items: center; gap: 10px; padding: 0 0 7px; border-bottom: 2px solid var(--border); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); font-weight: 500; }
+.cat-share { width: 44px; text-align: right; color: var(--text-2); font-size: 12px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.cat-rank { width: 22px; text-align: right; color: var(--text-3); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.cat-name { width: 190px; color: var(--text); font-weight: 500; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cat-bar { flex: 1; height: 18px; background: #efede6; border-radius: 3px; overflow: hidden; min-width: 40px; position: relative; }
+.cat-bar-fill { display: block; height: 100%; border-radius: 3px; transition: width 0.3s ease; min-width: 3px; }
+.cat-val { width: 84px; text-align: right; color: var(--text); font-variant-numeric: tabular-nums; font-weight: 500; flex-shrink: 0; }
+.cat-sub { width: 70px; text-align: right; color: var(--text-3); font-size: 11px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.cat-delta { width: 58px; text-align: right; font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.cat-delta.up { color: var(--up); }
+.cat-delta.down { color: var(--down); }
+.cat-delta.flat { color: var(--text-3); }
+@media (max-width: 700px) {
+  /* header + spacing */
+  header { padding: 12px 14px; }
+  .logo { font-size: 17px; }
+  .logo span { font-size: 14px; }
+  .header-bar { flex-direction: column; align-items: stretch; gap: 10px; }
+  .toggle-section { width: 100%; }
+  .toggle-btn { flex: 1; text-align: center; padding: 10px 0; font-size: 14px; }
+  .kpi-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .kpi { padding: 10px 10px; }
+  .kpi-val { font-size: 18px; }
+  .kpi-sub { display: none; }
+  .card { padding: 12px 12px; }
+
+  /* Ranked table: two-row layout per category — name/value/share on top row,
+     full-width bar below. Bar scales to the top rank so #1 fills the track. */
+  .cat-header-row { display: none; }
+  .cat-row {
+    display: grid;
+    grid-template-columns: 22px 1fr auto auto auto;
+    grid-template-areas: "rank name share val delta" "bar bar bar bar bar";
+    gap: 4px 8px;
+    padding: 10px 0;
+  }
+  .cat-rank { grid-area: rank; width: auto; font-size: 12px; text-align: left; padding-top: 1px; }
+  .cat-name { grid-area: name; width: auto; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-top: 1px; }
+  .cat-share{ grid-area: share; display: inline; width: auto; font-size: 11px; padding-top: 3px; color: var(--text-3); }
+  .cat-val  { grid-area: val;  width: auto; font-size: 13px; padding-top: 1px; }
+  .cat-delta{ grid-area: delta; width: auto; font-size: 11px; padding-top: 3px; padding-left: 6px; }
+  .cat-bar  { grid-area: bar; height: 12px; margin-top: 2px; min-width: 0; }
+  .cat-sub { display: none; }
+
+  /* Heatmap tiles */
+  .hm-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .hm-cell { padding: 10px 12px; min-height: 44px; }
+  .hm-cat-header { flex-wrap: wrap; row-gap: 2px; }
+  .hm-cat-rev { width: 100%; margin-left: 17px; order: 3; }
+}
+@media (max-width: 420px) {
+  .hm-grid { grid-template-columns: 1fr; }
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .kpi:nth-child(3) { grid-column: 1 / -1; }
+}
+
+.hm-cat-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer; user-select: none; min-height: 32px; }
+.hm-cat-label { font-size: 13px; font-weight: 500; color: var(--text); }
+.hm-cat-rev { font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.hm-cat-toggle { font-size: 11px; color: var(--text-3); margin-left: auto; }
+.leg-dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+.hm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 5px; }
+.hm-grid.collapsed { display: none; }
+.hm-cell { border-radius: 4px; padding: 10px 12px; border-left: 4px solid transparent; }
+.hm-name { font-size: 12px; font-weight: 500; line-height: 1.35; }
+.hm-meta { font-size: 11px; font-weight: 400; margin-top: 3px; line-height: 1.35; font-variant-numeric: tabular-nums; }
+.hm-delta { font-size: 11px; font-weight: 500; margin-top: 3px; line-height: 1.35; font-variant-numeric: tabular-nums; }
+.hm-shift-rows { margin-top: 6px; padding-top: 5px; border-top: 1px solid rgba(255,255,255,0.25); }
+.hm-shift-row { display: flex; align-items: baseline; gap: 6px; font-size: 11px; line-height: 1.5; font-variant-numeric: tabular-nums; }
+.hm-shift-day { width: 30px; font-weight: 600; flex-shrink: 0; }
+.hm-day-cell { border-radius: 4px; padding: 9px 11px; border-left: 4px solid transparent; }
+.hm-day-label { font-size: 11px; font-weight: 600; letter-spacing: 0.03em; }
+.hm-day-val { font-size: 15px; font-weight: 500; margin-top: 2px; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.hm-day-sub { font-size: 10px; margin-top: 1px; }
+.hm-pinned-badge { display: inline-block; font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); background: #e8f2ec; border: 1px solid #c7dccf; border-radius: 10px; padding: 1px 7px; margin-left: 6px; vertical-align: middle; }
+.kpi-delta { display: inline-block; font-size: 11px; font-weight: 500; padding: 1px 7px; border-radius: 10px; margin-top: 5px; }
+.kpi-delta.up { background: #e8f5ed; color: var(--up); }
+.kpi-delta.down { background: #faeaea; color: var(--down); }
+.kpi-delta.flat { background: #f1efe8; color: var(--text-3); }
+
+.error-box { text-align: center; padding: 60px 20px; color: var(--down); }
+.error-box p.small { font-size: 12px; color: var(--text-3); margin-top: 10px; }
+.retry-btn { margin-top: 16px; background: var(--accent); color: #fff; border: none; border-radius: var(--r); padding: 9px 22px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div class="login-screen" id="login-screen">
+  <div class="login-card">
+    <h1>Weekly Product Mix</h1>
+    <p>River Pointe Inn — kitchen view</p>
+    <div id="login-error" class="login-error"></div>
+    <input type="password" id="password-input" placeholder="Password" autocomplete="current-password">
+    <button onclick="authenticate()">View this week</button>
+  </div>
+</div>
+
+<div class="main-content" id="main-content">
+  <header>
+    <div class="logo">River Pointe Inn <span>— weekly mix</span></div>
+    <button class="logout-btn" onclick="logout()">Log out</button>
+  </header>
+
+  <div id="loading" class="loading" style="display:none;">
+    <div class="loading-spinner"></div>
+    <p style="margin-top:12px;">Loading this week's mix...</p>
+  </div>
+
+  <div id="error-box" class="error-box" style="display:none;"></div>
+
+  <div id="dashboard">
+    <div class="header-bar">
+      <div>
+        <div class="week-label" id="week-label"></div>
+        <div class="uploaded-label" id="uploaded-label"></div>
+      </div>
+      <div class="toggle-section">
+        <button class="toggle-btn" id="tg-revenue" onclick="setView('revenue')">By revenue</button>
+        <button class="toggle-btn active" id="tg-quantity" onclick="setView('quantity')">By quantity</button>
+      </div>
+    </div>
+
+    <div id="kpi-grid" class="kpi-grid"></div>
+
+    <div class="card">
+      <div class="card-title"><span id="ranking-title">Categories ranked by quantity</span> highest → lowest · bar scaled to top rank · % = share of week's total</div>
+      <div id="ranking-list"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>Items ranked within each category</span> weekly specials pinned first, remaining categories by rank · <span style="font-size:11px;color:var(--text-3);font-family:'DM Sans',sans-serif;">click a header to collapse</span></div>
+      <div id="shift-status" style="font-size:11px;margin:-8px 0 12px;color:var(--text-3);"></div>
+      <div id="heatmap"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const WORKER_URL = 'https://rpi-pmix-backend.amusementstandards.workers.dev';
+
+const PDJ_NIGHT_BY_DISH = {
+  'poulet en croute': 'Mon',
+  'oyster rockefeller': 'Tue',
+  'french dip': 'Wed',
+  'crispy fish frites': 'Thu',
+  'bouillabaise provencal': 'Fri',
+  'prime short rib bourgignon': 'Sat',
+  'lobster frites': 'Sun',
+};
+const WD_LONG = { Mon:'Monday', Tue:'Tuesday', Wed:'Wednesday', Thu:'Thursday', Fri:'Friday', Sat:'Saturday', Sun:'Sunday' };
+
+const CAT_COLORS = {
+  cocktail:'#2150a0', wine:'#5c2d6e', food:'#c0452a',
+  starter:'#2a5f3c', rawbar:'#155e75', dessert:'#b8942a', spirit:'#4a7a8a',
+  beer:'#7a5c2a', coffee:'#6b4e3d', na:'#888780',
+  events:'#7a3060', pdj:'#0f766e', tartare:'#8f2d44', lunch:'#556677', sides:'#9c6644',
+};
+const CAT_LABELS = {
+  cocktail:'Cocktails & martinis', wine:'Wine (glass & bottle)', food:'Entrées',
+  starter:'Starters', rawbar:'Raw bar (Les Fruits de Mer)', dessert:'Desserts', spirit:'Spirits',
+  beer:'Beer', coffee:'Coffee & tea', na:'NA beverages',
+  events:'Private Events & Wine Dinner', pdj:'Weekly specials (Plats du Jour)', tartare:'Steak Tartare (nightly)', lunch:'Lunch only items', sides:'Sides',
+};
+
+function getToken() { return sessionStorage.getItem('rpi_chef_token') || ''; }
+
+async function authenticate() {
+  const pwd = document.getElementById('password-input').value;
+  if (!pwd) { showLoginError('Enter password'); return; }
+  const btn = document.querySelector('.login-card button');
+  btn.disabled = true; btn.textContent = 'Checking...';
+  try {
+    const resp = await fetch(`${WORKER_URL}/auth`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pwd })
+    });
+    const data = await resp.json();
+    if (!resp.ok) { showLoginError(data.error || 'Login failed'); return; }
+    sessionStorage.setItem('rpi_chef_token', data.token);
+    document.getElementById('password-input').value = '';
+    showMainContent();
+  } catch (err) {
+    showLoginError('Could not reach server — check your connection');
+  } finally {
+    btn.disabled = false; btn.textContent = 'View this week';
+  }
+}
+
+function showLoginError(msg) {
+  document.getElementById('login-error').textContent = msg;
+  setTimeout(() => { document.getElementById('login-error').textContent = ''; }, 4000);
+}
+
+function logout() {
+  sessionStorage.removeItem('rpi_chef_token');
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('main-content').classList.remove('authed');
+  document.getElementById('dashboard').classList.remove('active');
+  document.getElementById('password-input').value = '';
+}
+
+function showMainContent() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-content').classList.add('authed');
+  loadData();
+}
+
+document.getElementById('password-input').addEventListener('keypress', e => {
+  if (e.key === 'Enter') authenticate();
+});
+window.addEventListener('load', () => {
+  if (getToken()) showMainContent();
+});
+
+function categorize(name) {
+  const n = name.toLowerCase();
+  if (/plat[e]?\s*d[eu]\s*jour|\bd[eu]\s*jour\b|^pdj\b/.test(n)) return 'pdj';
+  if (/poulet en croute|poulet en cro|oysters? rockefeller|french dip|crispy fish\s*(&\s*)?frites|bouillabais|prime short rib|short rib bourg|lobster frites/.test(n)) return 'pdj';
+  if (/^wd\s|wine dinner/.test(n)) return 'events';
+  if (/^p\s*\.|private event adult|private event child|event decor|grazing table|beer.*wine.*spritz|beverage package|\bpackage\b/.test(n)) return 'events';
+  if (/steak tartare/.test(n)) return 'tartare';
+  if (/omelette|eggs benedict|pan bagnat|chicken salad sandwich|salmon burger|crispy fish sandwich|^parfait$|lunch oyster/.test(n)) return 'lunch';
+  if (/pommes frites|pommes duchess|haricot vert|peppers carmen|corn & lardons|corn.*lardons|^side\s|side donuts/.test(n)) return 'sides';
+  if (/espresso martini|salt air|filthy|metropolitan|jockey club|river pointe|the rpi|grasshopper|in fashion|saint joe|lychee|can't elope|pep in your|bee sting|negroni|strawberry fields|colada|hh:|martini happy hour|ancho problem|rhubarb|rhu-barbara/.test(n)) return 'cocktail';
+  if (/aperol spritz|hugo spritz|french 75|paper plane|mimosa|bloody mary|lemon drop|mojito|moscow mule|vesper|garden state|cavaillon|berry spritz|cocogroni|sangria/.test(n)) return 'cocktail';
+  if (/na almost|na pear|na espresso|na summer/.test(n)) return 'cocktail';
+  if (/d[’']?yquem|latour pauillac|somm selection/.test(n)) return 'wine';
+  if (/^gl:|^gl\s|cremant|brut ros|moet|drappier|folle blanche|albarino|ladoucette|drouhin.*secondes|pouilly|peyrassol|moulin.*vent|cotes du rh|guyon 2022|routestock|route stock|chappellet mountain|haut l'artigue|haut-l|pazo das bruxas|gros plant|jean aubron|saint-cyrgues|costières/.test(n)) return 'wine';
+  if (/wine by the bottle|btg bottle|sancerre|meursault|chablis|puligny|cabernet sauv|pride mountain|ridge.*lytton|kistler|o'shaugh|aubert.*carneros|turley|ducru|chauvin 2019|smith haut lafitte|leon beyer|melville|chevillon|cathiard|camus-bruchon|agrapart|sulauze|domaine pierre martin|francois de la roche|lauverjat|manarine|lafarge|domaine guyon|drouhin.*cotes de beaune|joseph drouhin|o'shaughnessy|maître de chai|le petit ducru|le petite smith|pessac|picpoul|lieu dit|fess parker|daniel rion|petitot|hautes co|philéandre|lynch bages|cantenac|sociando|solitude|la rame|saint cyr|morgon|giacometti|patrimonio|arnot-roberts|fullerton|jk carriere|hundred acre|screaming eagle|lavieille|isabelle garrault|julie et patrick/.test(n)) return 'wine';
+  if (/^\d{3,4}[:\s]|^b\d{2,4}\b|^2\d{3}[:\s]/.test(n)) return 'wine';
+  if (/\b(vodka|belvedere|grey goose|ketel one|tito's|tito\b|hendrick|beefeater|bombay sapphire|botanist|fords gin|plymouth gin|tanqueray|absolut|monkey 47|asbury park gin|wodka)\b/.test(n)) return 'spirit';
+  if (/\bcasamigos|don julio|fortaleza|lalo\b|pueblo viejo|casa dragones|del maguey|clase azul|g4 blanco|g4 reposado|g4 anejo|tanteo/.test(n)) return 'spirit';
+  if (/\bangels envy|blanton|buffalo trace|bulleit|dewars|high west|jack daniel|jameson|johnnie walker|laguavulin|macallan|maker's mark|michter|oban 14|sazerac rye|whistlepig|widow jane|woodford reserve|basil hayden|four roses|penelope|glenlivet|old rip van winkle/.test(n)) return 'spirit';
+  if (/chartreuse|\bcognac\b|pierre ferrand|grand marnier|fernet|lazzaroni|molinari sambuca|nonino amaro|averna amaro|limoncello|bailey|campari|taylor fladgate|\bport\b|braulio|frangelico|\brum\b|havana|havanna|captain morgan|ron zacapa|bacardi|st\. agrestis|varnelli/.test(n)) return 'spirit';
+  if (/\bcodigo\b/.test(n)) return 'spirit';
+  if (/beer done|vliet|birdsmouth|kronenbourg|other half|grimm|athletic brewing/.test(n)) return 'beer';
+  if (n === 'lunch') return 'beer';
+  if (/\bespresso\b|\bcappuccino\b|\bmacchiato\b|\bcoffee\b|peppermint tea|chamomile tea|earl gr[ae]y|green tea|black tea/.test(n)) return 'coffee';
+  if (/btl.*still water|btl.*sparkling water|\bcoke\b|diet coke|sprite|ginger ale|club soda|ginger beer|\btonic\b|shirley temple|lemonade|iced tea|apple juice|arnold palmer|pineapple juice|cranberry juice|fresh oj|milk/.test(n)) return 'na';
+  if (/wagyu|waygu|ratatouille|paillard|moules frites|lasagna|au poivre|pork chop|steak frites|roast chicken for|ny strip|new york strip|porterhouse|salmon\b|saumon|medaillons|branzino|red snapper|snapper|kids tenders|kids cheeseburger|chicken fingers/.test(n)) return 'food';
+  if (/1\s*\/\s*2\s*(dozen|dzn)|half\s*dozen|½\s*dozen/.test(n)) return 'rawbar';
+  if (/crudo tasting|shrimp cocktail|tuna tartare|ceviche|fluke|caviar.*donut|dune fox|sloop point|salty rose|laughing gull|little darling|violet sky|swan point|sugar shack|barnegat/.test(n)) return 'rawbar';
+  if (/bread service|little gem|garden salad|asparagus mimosa|escargots|^jambon|sardine toast|crepe aux|berries.*cream|salad de tomates|eggplant|peaches/.test(n)) return 'starter';
+  if (/carrot.*cake|meringue cake|chocolate cake|cheesecake|raspberry tart|creme brulee|banana split|brownie sundae|banana chip ice|brown butter ice|chocolate ice|strawberry ice|vanilla ice|mint ice|lemon sorbet|fromage/.test(n)) return 'dessert';
+  if (/custom cake|fet d'or/.test(n)) return 'food';
+  return 'food';
+}
+
+function isMiscRow(name) {
+  const n = name.trim();
+  if (/^open\s*(food|drink)|open item|^tip$|don'?t make/i.test(n)) return true;
+  if (/^(appetizers?|entrees?|entrées?|sides|sandwiches|specials|desserts?|hors d'?oeuvres|petit d[ée]jeuner|beverages?)$/i.test(n)) return true;
+  return false;
+}
+
+function isStaffOrComp(name) {
+  return /[-–]\s*(staff|comp|void|comped|employee|mgr|manager)/i.test(name);
+}
+
+const sumRev = arr => (arr||[]).reduce((s,i)=>s+i.qty*i.price, 0);
+const sumQty = arr => (arr||[]).reduce((s,i)=>s+i.qty, 0);
+const fmt = n => n.toLocaleString('en-US', { style:'currency', currency:'USD', maximumFractionDigits:0 });
+
+let currentData = null;
+let currentView = 'quantity';
+
+async function loadData() {
+  const loading = document.getElementById('loading');
+  const errBox = document.getElementById('error-box');
+  loading.style.display = 'block';
+  errBox.style.display = 'none';
+  document.getElementById('dashboard').classList.remove('active');
+
+  try {
+    const resp = await fetch(`${WORKER_URL}/latest`, {
+      headers: { 'Authorization': `Bearer ${getToken()}` }
+    });
+    if (resp.status === 401) {
+      logout();
+      showLoginError('Session expired — log in again');
+      return;
+    }
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error || `Server error ${resp.status}`);
+    }
+    currentData = await resp.json();
+    loading.style.display = 'none';
+    renderDashboard();
+    loadShiftSpecials();
+  } catch (err) {
+    loading.style.display = 'none';
+    errBox.style.display = 'block';
+    errBox.innerHTML = `<p>Couldn't load this week's data: ${err.message}</p>
+      <p class="small">If this keeps happening, let Adam know.</p>
+      <button class="retry-btn" onclick="loadData()">Try again</button>`;
+  }
+}
+
+function canonSpecial(name) {
+  return String(name||'').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/\busda prime\b/g, '')
+    .replace(/provencale?/g, 'provencal')
+    .replace(/bourguignon/g, 'bourgignon')
+    .replace(/bouillabaisse/g, 'bouillabaise')
+    .replace(/oysters/g, 'oyster')
+    .replace(/[^a-z ]/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+
+function parseRange(dateRange) {
+  if (!dateRange) return null;
+  const months = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+  const parse = (p, fallbackYear) => {
+    const m = p.match(/([A-Za-z]+)\s+(\d{1,2}),?\s*(\d{4})?/);
+    if (!m) return null;
+    const mon = months[m[1].toLowerCase().slice(0,3)];
+    if (!mon) return null;
+    const year = m[3] ? parseInt(m[3]) : fallbackYear;
+    if (!year) return null;
+    return year + '-' + String(mon).padStart(2,'0') + '-' + String(m[2]).padStart(2,'0');
+  };
+  const parts = dateRange.split(/[-\u2013\u2014]/).map(p => p.trim()).filter(Boolean);
+  if (parts.length >= 2) {
+    const endYearM = parts[1].match(/(\d{4})/);
+    const endYear = endYearM ? parseInt(endYearM[1]) : null;
+    const start = parse(parts[0], endYear);
+    const end = parse(parts[1], endYear);
+    if (start && end) return { start, end };
+  }
+  // Fallback: upload stored only the start date (older upload-page parser).
+  // Toast pmix weeks run Mon–Sun, so derive end = start + 6 days.
+  const start = parse(dateRange, null);
+  if (!start) return null;
+  const d = new Date(start + 'T12:00:00Z');
+  d.setUTCDate(d.getUTCDate() + 6);
+  return { start, end: d.toISOString().slice(0, 10) };
+}
+
+let shiftSpecialsMap = null;
+
+function setShiftStatus(msg, isError) {
+  const el = document.getElementById('shift-status');
+  if (!el) return;
+  el.textContent = msg ? ('Shift data: ' + msg) : '';
+  el.style.color = isError ? 'var(--down)' : 'var(--text-3)';
+}
+
+async function loadShiftSpecials() {
+  shiftSpecialsMap = null;
+  const map = {};
+  const reportedDays = {};
+  const WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let nights = 0, fetchProblem = null;
+
+  // 1) Pull nightly counts from RPI Shift
+  try {
+    const range = parseRange(currentData && currentData.dateRange);
+    if (!range) {
+      fetchProblem = 'could not read week dates from the upload';
+    } else {
+      const resp = await fetch(`${WORKER_URL}/specials?start=${range.start}&end=${range.end}`, {
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        fetchProblem = resp.status === 404
+          ? 'worker is running OLD code without the /specials route — redeploy worker.js'
+          : (err.error || 'server error ' + resp.status);
+      } else {
+        const data = await resp.json();
+        (data.days || []).forEach(day => {
+          const wd = WD[new Date(day.date + 'T12:00:00Z').getUTCDay()];
+          const specials = day.specials || [];
+          if (specials.length) reportedDays[wd] = true;
+          specials.forEach(s => {
+            const k = canonSpecial(s.name);
+            if (!k) return;
+            (map[k] || (map[k] = [])).push({ d: wd, avail: s.avail, sold: s.sold, x: s.x });
+          });
+        });
+        nights = Object.keys(reportedDays).length;
+      }
+    }
+  } catch (e) {
+    fetchProblem = 'could not reach the worker (' + e.message + ')';
+  }
+
+  // 2) Merge manual entries from the upload — manual OVERRIDES shift for the
+  //    same dish+night (typing it at upload time is a deliberate correction),
+  //    and fills dark nights (Mon/Tue) that have no shift report.
+  const manual = (currentData && currentData.manualSpecials) || [];
+  manual.forEach(m => {
+    if (!m || !m.name || !m.d) return;
+    const k = canonSpecial(m.name);
+    if (!k) return;
+    if (!map[k]) map[k] = [];
+    map[k] = map[k].filter(e => e.d !== m.d);   // manual wins over shift
+    map[k].push({ d: m.d, avail: m.avail ?? null, sold: m.sold ?? null, x: !!m.x });
+    reportedDays[m.d] = true;
+  });
+
+  // 3) Status + render
+  const hasAny = Object.keys(map).length > 0;
+  if (hasAny) {
+    shiftSpecialsMap = { entries: map, reportedDays: reportedDays };
+    const WDALL = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const missing = WDALL.filter(w => !reportedDays[w]);
+    let msg = fetchProblem
+      ? 'shift fetch failed (' + fetchProblem + ') · showing ' + manual.length + ' manual entries only'
+      : 'connected · specials found for ' + nights + ' of 7 nights' +
+        (manual.length ? ' · ' + manual.length + ' manual' : '') +
+        (missing.length ? ' · no data: ' + missing.join(', ') : '');
+    setShiftStatus(msg, !!fetchProblem);
+    renderDashboard();
+  } else if (fetchProblem) {
+    setShiftStatus(fetchProblem, true);
+  } else {
+    setShiftStatus('connected, but 0 of 7 nights have specials in RPI Shift for this week and no manual entries — if reports exist, the worker\'s KV binding points at the wrong namespace', true);
+  }
+}
+
+function shiftEntriesFor(itemName) {
+  if (!shiftSpecialsMap) return null;
+  const entries = shiftSpecialsMap.entries;
+  const ck = canonSpecial(itemName);
+  if (entries[ck]) return entries[ck];
+  const keys = Object.keys(entries);
+  const hit = keys.find(k => k.includes(ck) || ck.includes(k));
+  return hit ? entries[hit] : null;
+}
+
+function normalizeKey(name) {
+  return name.toLowerCase().replace(/^hh:\s*/i, '').replace(/\s+/g, ' ').trim();
+}
+function deltaClass(v) { return v > 2 ? 'up' : v < -2 ? 'down' : 'flat'; }
+function deltaArrow(v) { return v > 2 ? '\u25b2' : v < -2 ? '\u25bc' : '\u2014'; }
+function deltaTag(cur, prev, cls) {
+  if (prev === null || prev === undefined || prev === 0) return '';
+  const d = (cur - prev) / prev * 100;
+  if (Math.abs(d) < 0.5) return `<span class="${cls} flat" style="opacity:0.6;">same</span>`;
+  return `<span class="${cls} ${deltaClass(d)}">${deltaArrow(d)} ${Math.abs(Math.round(d))}%</span>`;
+}
+
+function hexBlend(hex, w) {
+  const c = hex.replace('#','');
+  const mix = ch => Math.round(255*(1-w) + parseInt(ch,16)*w).toString(16).padStart(2,'0');
+  return '#' + mix(c.substr(0,2)) + mix(c.substr(2,2)) + mix(c.substr(4,2));
+}
+function isLightBg(hex) {
+  const c = hex.replace('#','');
+  const lum = 0.299*parseInt(c.substr(0,2),16) + 0.587*parseInt(c.substr(2,2),16) + 0.114*parseInt(c.substr(4,2),16);
+  return lum > 150;
+}
+
+function renderDashboard() {
+  if (!currentData) return;
+  const keep = i => !isStaffOrComp(i.name) && !isMiscRow(i.name);
+  const items = (currentData.items || []).filter(keep);
+  const prevItems = (currentData.prevItems || []).filter(keep);
+  const hasPrev = prevItems.length > 0;
+
+  let weekText = 'Week of ' + (currentData.dateRange || '\u2014');
+  if (hasPrev && currentData.prevDateRange) weekText += '  \u00b7  vs ' + currentData.prevDateRange;
+  document.getElementById('week-label').textContent = weekText;
+  if (currentData.uploadedAt) {
+    const d = new Date(currentData.uploadedAt);
+    document.getElementById('uploaded-label').textContent =
+      'Updated ' + d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' }) +
+      ' ' + d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+  }
+
+  const cats = {}, prevCats = {};
+  items.forEach(i => { const c = categorize(i.name); (cats[c]||(cats[c]=[])).push(i); });
+  prevItems.forEach(i => { const c = categorize(i.name); (prevCats[c]||(prevCats[c]=[])).push(i); });
+
+  const prevLookup = {};
+  prevItems.forEach(i => {
+    const k = normalizeKey(i.name);
+    if (!prevLookup[k]) prevLookup[k] = { qty: 0, rev: 0 };
+    prevLookup[k].qty += i.qty;
+    prevLookup[k].rev += i.qty * i.price;
+  });
+
+  const ranking = Object.keys(cats).map(key => ({
+    key, label: CAT_LABELS[key], color: CAT_COLORS[key],
+    qty: sumQty(cats[key]), rev: sumRev(cats[key]),
+    prevQty: sumQty(prevCats[key]), prevRev: sumRev(prevCats[key]),
+  })).filter(r => r.qty > 0);
+
+  const byRev = currentView === 'revenue';
+  const sorted = [...ranking].sort((a,b) => byRev ? b.rev - a.rev : b.qty - a.qty);
+
+  const totalRev = ranking.reduce((s,r)=>s+r.rev, 0);
+  const totalQty = ranking.reduce((s,r)=>s+r.qty, 0);
+  const prevTotalRev = Object.keys(prevCats).reduce((s,k)=>s+sumRev(prevCats[k]), 0);
+  const prevTotalQty = Object.keys(prevCats).reduce((s,k)=>s+sumQty(prevCats[k]), 0);
+  const topCat = sorted[0];
+
+  document.getElementById('kpi-grid').innerHTML = [
+    { label:'Est. revenue', val:fmt(totalRev), sub:`${items.length} items`,
+      delta: hasPrev ? deltaTag(totalRev, prevTotalRev, 'kpi-delta') : '' },
+    { label:'Total sold', val:Math.round(totalQty).toLocaleString(), sub:`${ranking.length} categories`,
+      delta: hasPrev ? deltaTag(totalQty, prevTotalQty, 'kpi-delta') : '' },
+    { label:'Top category', val:topCat ? topCat.label.split(' ')[0] : '\u2014',
+      sub:topCat ? (byRev ? fmt(topCat.rev) : `${Math.round(topCat.qty).toLocaleString()} sold`) : '', delta:'' },
+  ].map(k => `<div class="kpi"><div class="kpi-label">${k.label}</div><div class="kpi-val">${k.val}</div><div class="kpi-sub">${k.sub}</div>${k.delta||''}</div>`).join('');
+
+  document.getElementById('ranking-title').textContent =
+    byRev ? 'Categories ranked by revenue' : 'Categories ranked by quantity';
+  const totalMetric = byRev ? totalRev : totalQty;
+  const headerHtml = `<div class="cat-header-row">
+    <span class="cat-rank">#</span>
+    <span class="cat-name">Category</span>
+    <span class="cat-bar" style="background:transparent;height:auto;">Share of total</span>
+    <span class="cat-share">%</span>
+    <span class="cat-val">${byRev ? 'Revenue' : 'Qty sold'}</span>
+    <span class="cat-sub">${byRev ? 'Qty sold' : 'Revenue'}</span>
+    ${hasPrev ? '<span class="cat-delta" style="color:var(--text-3);">vs last wk</span>' : ''}
+  </div>`;
+  const maxVal = sorted.length ? (byRev ? sorted[0].rev : sorted[0].qty) : 1;
+  document.getElementById('ranking-list').innerHTML = headerHtml + sorted.map((r, idx) => {
+    const val = byRev ? r.rev : r.qty;
+    const prevVal = byRev ? r.prevRev : r.prevQty;
+    const share = totalMetric > 0 ? val / totalMetric * 100 : 0;
+    // Bar width is scaled to the #1 category so the top rank fills the track.
+    // The % column still shows true share-of-total — the bar shows relative rank.
+    const width = maxVal > 0 ? Math.max(1.5, val / maxVal * 100) : 0;
+    const main = byRev ? fmt(r.rev) : Math.round(r.qty).toLocaleString();
+    const sub  = byRev ? `${Math.round(r.qty).toLocaleString()} sold` : fmt(r.rev);
+    return `<div class="cat-row" onclick="jumpToCategory('${r.key}')" title="View ${r.label} items">
+      <span class="cat-rank">${idx+1}</span>
+      <span class="cat-name">${r.label}</span>
+      <span class="cat-bar"><span class="cat-bar-fill" style="width:${width}%;background:${r.color};"></span></span>
+      <span class="cat-share">${share < 1 ? share.toFixed(1) : Math.round(share)}%</span>
+      <span class="cat-val">${main}</span>
+      <span class="cat-sub">${sub}</span>
+      ${hasPrev ? (deltaTag(val, prevVal, 'cat-delta') || '<span class="cat-delta flat">new</span>') : ''}
+    </div>`;
+  }).join('');
+
+  // Item-breakdown order: Weekly specials pinned first (chef's operational
+  // priority), everything else in ranked order. Stable sort preserves rank.
+  const PIN_ORDER = { pdj: 0, tartare: 1 };   // nightly-tracked categories pinned on top
+  const hmOrder = sorted.slice().sort((a, b) => {
+    const pa = (a.key in PIN_ORDER) ? PIN_ORDER[a.key] : 99;
+    const pb = (b.key in PIN_ORDER) ? PIN_ORDER[b.key] : 99;
+    if (pa !== pb) return pa - pb;
+    return 0;   // stable — non-pinned keep ranked order
+  });
+  let hmHtml = '';
+  hmOrder.forEach(cat => {
+    if (cat.key === 'tartare') {
+      hmHtml += renderTartareSection(cat, cats[cat.key], prevLookup, hasPrev, byRev);
+      return;
+    }
+    if (cat.key === 'pdj') {
+      hmHtml += renderPdjSection(cat, cats[cat.key], prevLookup, hasPrev, byRev);
+      return;
+    }
+    const grp = [...cats[cat.key]]
+      .map(i => ({ ...i, rev: i.qty * i.price }))
+      .sort((a,b) => byRev ? b.rev - a.rev : b.qty - a.qty);
+    const maxR = byRev ? (grp[0]?.rev || 1) : (grp[0]?.qty || 1);
+    const id = 'hmg-' + cat.key;
+    const pinBadge = (cat.key === 'tartare') ? '<span class="hm-pinned-badge">Pinned</span>' : '';
+    hmHtml += `<div class="hm-cat-section">
+      <div class="hm-cat-header" onclick="toggleHmGroup('${id}')">
+        <span class="leg-dot" style="background:${cat.color}"></span>
+        <span class="hm-cat-label">${cat.label}</span>${pinBadge}
+        <span class="hm-cat-rev">${fmt(cat.rev)} \u00b7 ${Math.round(cat.qty).toLocaleString()} sold \u00b7 ${grp.length} items</span>
+        <span class="hm-cat-toggle" id="${id}-toggle">\u25bc</span>
+      </div>
+      <div class="hm-grid" id="${id}">`;
+    grp.forEach(item => {
+      const metric = byRev ? item.rev : item.qty;
+      const weight = 0.25 + (metric / maxR) * 0.75;
+      const bg = hexBlend(cat.color, weight);
+      const light = isLightBg(bg);
+      const nameCol = light ? '#1a1a18' : '#ffffff';
+      const metaCol = light ? 'rgba(26,26,24,0.65)' : 'rgba(255,255,255,0.8)';
+      const upCol   = light ? '#1a7a3a' : '#a8ffbe';
+      const dnCol   = light ? '#b83030' : '#ffb3b3';
+      const flatCol = light ? 'rgba(26,26,24,0.5)' : 'rgba(255,255,255,0.65)';
+      const name = item.name.replace(/^(GL:|HH:|\d{3,4}[:\s]|B\d{2,4}[:\s]?)\s*/i,'');
+      const prev = hasPrev ? prevLookup[normalizeKey(item.name)] : null;
+      let dHtml = '';
+      if (hasPrev) {
+        if (prev && prev.qty > 0) {
+          const d = (item.qty - prev.qty) / prev.qty * 100;
+          const dc = deltaClass(d);
+          const dCol = dc === 'up' ? upCol : dc === 'down' ? dnCol : flatCol;
+          dHtml = `<div class="hm-delta" style="color:${dCol};">${deltaArrow(d)} ${Math.abs(Math.round(d))}% wow</div>`;
+        } else {
+          dHtml = `<div class="hm-delta" style="color:${flatCol};">\u2605 new</div>`;
+        }
+      }
+      let shiftHtml = '';
+      // (PDJ tiles are rendered by renderPdjTile below — this block is unused for pdj now.)
+      hmHtml += `<div class="hm-cell" style="background:${bg};border-left-color:${cat.color};">
+        <div class="hm-name" style="color:${nameCol};">${name}</div>
+        <div class="hm-meta" style="color:${metaCol};">${Math.round(item.qty)} sold \u00b7 ${fmt(item.rev)}</div>
+        ${dHtml}
+        ${shiftHtml}
+      </div>`;
+    });
+    hmHtml += `</div></div>`;
+  });
+  document.getElementById('heatmap').innerHTML = hmHtml;
+
+  document.getElementById('dashboard').classList.add('active');
+}
+
+function renderPdjSection(cat, items, prevLookup, hasPrev, byRev) {
+  const range = parseRange(currentData.dateRange);
+  const dateOf = (wd) => {
+    if (!range) return null;
+    const WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const start = new Date(range.start + 'T12:00:00Z');
+    const end   = new Date(range.end   + 'T12:00:00Z');
+    for (const d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate()+1)) {
+      if (WD[d.getUTCDay()] === wd) return (d.getUTCMonth()+1) + '/' + d.getUTCDate();
+    }
+    return null;
+  };
+
+  // Order tiles by night (Mon → Sun) so the section reads like the week
+  const NIGHT_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const enriched = items.map(i => ({
+    ...i, rev: i.qty * i.price, night: PDJ_NIGHT_BY_DISH[canonSpecial(i.name)] || null
+  })).sort((a, b) => {
+    const ai = a.night ? NIGHT_ORDER.indexOf(a.night) : 99;
+    const bi = b.night ? NIGHT_ORDER.indexOf(b.night) : 99;
+    if (ai !== bi) return ai - bi;
+    return byRev ? b.rev - a.rev : b.qty - a.qty;
+  });
+
+  const id = 'hmg-' + cat.key;
+  let html = `<div class="hm-cat-section">
+    <div class="hm-cat-header" onclick="toggleHmGroup('${id}')">
+      <span class="leg-dot" style="background:${cat.color}"></span>
+      <span class="hm-cat-label">${cat.label}</span><span class="hm-pinned-badge">Pinned</span>
+      <span class="hm-cat-rev">${fmt(cat.rev)} \u00b7 ${Math.round(cat.qty).toLocaleString()} sold \u00b7 ${enriched.length} nights</span>
+      <span class="hm-cat-toggle" id="${id}-toggle">\u25bc</span>
+    </div>
+    <div class="hm-grid" id="${id}">`;
+
+  enriched.forEach(item => {
+    const night = item.night;                                // Mon..Sun or null
+    const dateLbl = night ? dateOf(night) : null;
+    const entries = shiftSpecialsMap ? (shiftEntriesFor(item.name) || []) : [];
+    const en = night ? entries.find(e => e.d === night) : entries[0];
+
+    // Read the night's shift-log values
+    let soldN = null, availN = null, wasX = false;
+    if (en) {
+      const s = parseFloat(en.sold), a = parseFloat(en.avail);
+      if (!isNaN(s)) soldN = s;
+      if (!isNaN(a)) availN = a;
+      wasX = !!en.x;
+    }
+
+    // Toast weekly qty is effectively the night's qty (dish runs one night only)
+    const toastQty = Math.round(item.qty);
+    const displaySold = (soldN !== null) ? soldN : toastQty;
+    const soldOut = availN !== null && soldN !== null && soldN >= availN;
+    const disagree = soldN !== null && Math.abs(soldN - toastQty) >= 1;
+
+    // Tile intensity from tonight's absolute sold vs the week's biggest
+    const maxSold = Math.max(...enriched.map(x => Math.round(x.qty)), 1);
+    const weight = 0.35 + (displaySold / maxSold) * 0.65;
+    const bg = hexBlend(cat.color, weight);
+    const light = isLightBg(bg);
+    const nameCol = light ? '#1a1a18' : '#ffffff';
+    const metaCol = light ? 'rgba(26,26,24,0.65)' : 'rgba(255,255,255,0.82)';
+    const softCol = light ? 'rgba(26,26,24,0.5)'  : 'rgba(255,255,255,0.7)';
+    const upCol   = light ? '#1a7a3a' : '#a8ffbe';
+    const dnCol   = light ? '#b83030' : '#ffb3b3';
+    const flatCol = softCol;
+
+    // WoW delta (same-week last week, same dish)
+    let dHtml = '';
+    if (hasPrev) {
+      const prev = prevLookup[normalizeKey(item.name)];
+      if (prev && prev.qty > 0) {
+        const dv = (item.qty - prev.qty) / prev.qty * 100;
+        const dc = deltaClass(dv);
+        const dCol = dc === 'up' ? upCol : dc === 'down' ? dnCol : flatCol;
+        dHtml = `<div class="hm-delta" style="color:${dCol};">${deltaArrow(dv)} ${Math.abs(Math.round(dv))}% wow</div>`;
+      } else {
+        dHtml = `<div class="hm-delta" style="color:${flatCol};">\u2605 new</div>`;
+      }
+    }
+
+    // Header line: "WEDNESDAY · 7/29" or fall back if no schedule match
+    const headerText = night
+      ? (WD_LONG[night].toUpperCase() + (dateLbl ? '  \u00b7  ' + dateLbl : ''))
+      : 'NIGHT UNKNOWN';
+
+    // Body: hero sold number + qualifiers
+    let heroVal, heroSub = '';
+    if (wasX) { heroVal = '86'; heroSub = 'sold out early'; }
+    else if (availN !== null) {
+      heroVal = displaySold + ' of ' + availN + ' sold';
+      heroSub = soldOut ? 'sold out' : (availN - displaySold) + ' left over';
+    } else {
+      heroVal = displaySold + ' sold';
+      heroSub = (soldN === null) ? 'count not entered' : '';
+    }
+    const reconLine = disagree
+      ? `Toast ${toastQty} \u00b7 Shift ${soldN} \u2014 check counts`
+      : '';
+
+    html += `<div class="hm-cell" style="background:${bg};border-left-color:${cat.color};">
+      <div class="hm-day-label" style="color:${softCol};">${headerText}</div>
+      <div class="hm-name" style="color:${nameCol};margin-top:2px;">${item.name.replace(/^(GL:|HH:)\s*/i,'')}</div>
+      <div class="hm-day-val" style="color:${nameCol};margin-top:4px;">${heroVal}</div>
+      ${heroSub ? `<div class="hm-day-sub" style="color:${metaCol};">${heroSub}</div>` : ''}
+      ${reconLine ? `<div class="hm-day-sub" style="color:${metaCol};">${reconLine}</div>` : ''}
+      ${dHtml}
+    </div>`;
+  });
+
+  html += `</div></div>`;
+  return html;
+}
+
+function renderTartareSection(cat, items, prevLookup, hasPrev, byRev) {
+  const item = (items && items[0]) ? { ...items[0], rev: items[0].qty * items[0].price } : null;
+  const id = 'hmg-' + cat.key;
+
+  // Reconcile Toast weekly total vs sum of logged nightly sold — used both in
+  // the header and (as a hint) on nights with no logged sold value.
+  const loggedEntries = shiftSpecialsMap ? (shiftEntriesFor('Steak Tartare') || []) : [];
+  const loggedSold = loggedEntries.reduce((s, e) => {
+    const v = parseFloat(e.sold); return s + (isNaN(v) ? 0 : v);
+  }, 0);
+  const loggedDays = loggedEntries.filter(e => e.sold !== null && e.sold !== '' && !isNaN(parseFloat(e.sold))).map(e => e.d);
+  const remainder = item ? Math.round(item.qty) - loggedSold : 0;
+  let reconLine = '';
+  if (item && loggedDays.length > 0 && loggedDays.length < 7) {
+    const WDALL2 = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const unknown = WDALL2.filter(w => !loggedDays.includes(w));
+    if (remainder > 0)      reconLine = `≈${remainder} across ${unknown.join('+')}`;
+    else if (remainder < 0) reconLine = `exceeds Toast by ${-remainder}`;
+  }
+
+  // Compact WoW badge in the header (replaces the deleted WEEK TOTAL square)
+  let wowText = '';
+  if (item && hasPrev) {
+    const prev = prevLookup[normalizeKey(item.name)];
+    if (prev && prev.qty > 0) {
+      const dv = (item.qty - prev.qty) / prev.qty * 100;
+      wowText = ` \u00b7 ${deltaArrow(dv)} ${Math.abs(Math.round(dv))}% wow`;
+    }
+  }
+  const soldTotal = item ? Math.round(item.qty).toLocaleString() : Math.round(cat.qty).toLocaleString();
+  const headerStat = `${fmt(cat.rev)} \u00b7 ${soldTotal} sold this week${wowText}${reconLine ? ' \u00b7 ' + reconLine : ''}`;
+
+  let html = `<div class="hm-cat-section">
+    <div class="hm-cat-header" onclick="toggleHmGroup('${id}')">
+      <span class="leg-dot" style="background:${cat.color}"></span>
+      <span class="hm-cat-label">${cat.label}</span><span class="hm-pinned-badge">Pinned</span>
+      <span class="hm-cat-rev">${headerStat}</span>
+      <span class="hm-cat-toggle" id="${id}-toggle">\u25bc</span>
+    </div>
+    <div class="hm-grid" id="${id}">`;
+
+  // Seven day tiles — built by weekday, then sorted highest sold → lowest
+  const range = parseRange(currentData.dateRange);
+  const entries = loggedEntries;
+  const byDay = {}; entries.forEach(en => { byDay[en.d] = en; });
+  const reported = shiftSpecialsMap ? (shiftSpecialsMap.reportedDays || {}) : {};
+  const tiles = [];
+  if (range) {
+    const WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const soldVals = entries.map(e => parseFloat(e.sold)).filter(v => !isNaN(v));
+    const maxSold = soldVals.length ? Math.max(...soldVals, 1) : 1;
+    const start = new Date(range.start + 'T12:00:00Z');
+    const end   = new Date(range.end   + 'T12:00:00Z');
+    for (const d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+      const wd = WD[d.getUTCDay()];
+      const dateLbl = (d.getUTCMonth()+1) + '/' + d.getUTCDate();
+      const en = byDay[wd];
+      let valHtml, subHtml = '', weight, sortKey;
+      if (en) {
+        const soldN = parseFloat(en.sold), availN = parseFloat(en.avail);
+        const hasSold = en.sold !== null && en.sold !== '' && !isNaN(soldN);
+        const hasAvail = en.avail !== null && en.avail !== '' && !isNaN(availN);
+        if (en.x) { valHtml = '86'; weight = 1.0; sortKey = -1; }
+        else if (hasSold) {
+          valHtml = en.sold + (hasAvail ? '/' + en.avail : '') + ' sold';
+          subHtml = (hasAvail && soldN >= availN) ? 'sold out' : '';
+          weight = 0.4 + (soldN / maxSold) * 0.6;
+          sortKey = soldN;
+        }
+        else if (hasAvail) { valHtml = '\u2014/' + en.avail; subHtml = 'sold not entered'; weight = 0.35; sortKey = -2; }
+        else { valHtml = '\u2014'; subHtml = 'not entered'; weight = 0.25; sortKey = -3; }
+      } else if (reported[wd]) {
+        valHtml = '\u2014'; subHtml = 'not listed'; weight = 0.2; sortKey = -4;
+      } else {
+        valHtml = '\u2014'; subHtml = 'no data'; weight = 0.14; sortKey = -5;
+      }
+      if (remainder > 0 && (!en || en.sold === null || en.sold === '' || isNaN(parseFloat(en.sold))) && !((en||{}).x)) {
+        subHtml = (subHtml ? subHtml + ' \u00b7 ' : '') + 'part of \u2248' + remainder + ' unlogged';
+      }
+      const bg = hexBlend(cat.color, weight);
+      const light = isLightBg(bg);
+      const nameCol = light ? '#1a1a18' : '#ffffff';
+      const metaCol = light ? 'rgba(26,26,24,0.6)' : 'rgba(255,255,255,0.8)';
+      tiles.push({
+        day: wd,
+        sortKey,
+        html: `<div class="hm-day-cell" style="background:${bg};border-left-color:${cat.color};">
+          <div class="hm-day-label" style="color:${metaCol};">${wd.toUpperCase()} ${dateLbl}</div>
+          <div class="hm-day-val" style="color:${nameCol};">${valHtml}</div>
+          ${subHtml ? `<div class="hm-day-sub" style="color:${metaCol};">${subHtml}</div>` : ''}
+        </div>`
+      });
+    }
+  }
+  // Show days in calendar order: Monday → Sunday, all seven visible.
+  const DAY_ORDER = { Mon:0, Tue:1, Wed:2, Thu:3, Fri:4, Sat:5, Sun:6 };
+  tiles.sort((a, b) => (DAY_ORDER[a.day] ?? 7) - (DAY_ORDER[b.day] ?? 7));
+  html += tiles.map(t => t.html).join('');
+  html += `</div></div>`;
+  return html;
+}
+
+function jumpToCategory(key) {
+  const grid = document.getElementById('hmg-' + key);
+  if (!grid) return;
+  grid.classList.remove('collapsed');
+  const tog = document.getElementById('hmg-' + key + '-toggle');
+  if (tog) tog.textContent = '\u25bc';
+  const section = grid.closest('.hm-cat-section');
+  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  section.classList.remove('flash');
+  void section.offsetWidth;
+  section.classList.add('flash');
+}
+
+function toggleHmGroup(id) {
+  const el = document.getElementById(id);
+  const tog = document.getElementById(id + '-toggle');
+  tog.textContent = el.classList.toggle('collapsed') ? '▶' : '▼';
+}
+
+function setView(view) {
+  currentView = view;
+  document.getElementById('tg-revenue').classList.toggle('active', view === 'revenue');
+  document.getElementById('tg-quantity').classList.toggle('active', view === 'quantity');
+  if (currentData) renderDashboard();
+}
+</script>
+</body>
+</html>
