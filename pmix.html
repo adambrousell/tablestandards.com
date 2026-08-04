@@ -91,13 +91,10 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .leg-dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
 .hm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 5px; }
 .hm-grid.collapsed { display: none; }
-.hm-cell { border-radius: 4px; padding: 9px 11px; }
-.hm-name { font-size: 11px; font-weight: 500; color: #fff; line-height: 1.3; }
-.hm-meta { font-size: 10px; color: rgba(255,255,255,0.8); margin-top: 2px; }
+.hm-cell { border-radius: 4px; padding: 9px 11px; border-left: 4px solid transparent; }
+.hm-name { font-size: 11px; font-weight: 500; line-height: 1.3; }
+.hm-meta { font-size: 10px; margin-top: 2px; }
 .hm-delta { font-size: 10px; margin-top: 2px; font-weight: 600; }
-.hm-delta.up { color: #a8ffbe; }
-.hm-delta.down { color: #ffb3b3; }
-.hm-delta.flat { color: rgba(255,255,255,0.65); }
 .kpi-delta { display: inline-block; font-size: 11px; font-weight: 500; padding: 1px 7px; border-radius: 10px; margin-top: 5px; }
 .kpi-delta.up { background: #e8f5ed; color: var(--up); }
 .kpi-delta.down { background: #faeaea; color: var(--down); }
@@ -350,6 +347,18 @@ function deltaTag(cur, prev, cls) {
   return `<span class="${cls} ${deltaClass(d)}">${deltaArrow(d)} ${Math.abs(Math.round(d))}%</span>`;
 }
 
+// Blend a category color toward white -> SOLID hex (keeps text readable at any intensity)
+function hexBlend(hex, w) {
+  const c = hex.replace('#','');
+  const mix = ch => Math.round(255*(1-w) + parseInt(ch,16)*w).toString(16).padStart(2,'0');
+  return '#' + mix(c.substr(0,2)) + mix(c.substr(2,2)) + mix(c.substr(4,2));
+}
+function isLightBg(hex) {
+  const c = hex.replace('#','');
+  const lum = 0.299*parseInt(c.substr(0,2),16) + 0.587*parseInt(c.substr(2,2),16) + 0.114*parseInt(c.substr(4,2),16);
+  return lum > 150;
+}
+
 function renderDashboard() {
   if (!currentData) return;
   const keep = i => !isStaffOrComp(i.name) && !isMiscRow(i.name);
@@ -453,21 +462,30 @@ function renderDashboard() {
       <div class="hm-grid" id="${id}">`;
     grp.forEach(item => {
       const metric = byRev ? item.rev : item.qty;
-      const opacity = (0.3 + (metric / maxR) * 0.7).toFixed(2);
+      const weight = 0.25 + (metric / maxR) * 0.75;          // 0.25 (light) -> 1.0 (full color)
+      const bg = hexBlend(cat.color, weight);
+      const light = isLightBg(bg);
+      const nameCol = light ? '#1a1a18' : '#ffffff';
+      const metaCol = light ? 'rgba(26,26,24,0.65)' : 'rgba(255,255,255,0.8)';
+      const upCol   = light ? '#1a7a3a' : '#a8ffbe';
+      const dnCol   = light ? '#b83030' : '#ffb3b3';
+      const flatCol = light ? 'rgba(26,26,24,0.5)' : 'rgba(255,255,255,0.65)';
       const name = item.name.replace(/^(GL:|HH:|\d{3,4}[:\s]|B\d{2,4}[:\s]?)\s*/i,'');
       const prev = hasPrev ? prevLookup[normalizeKey(item.name)] : null;
       let dHtml = '';
       if (hasPrev) {
         if (prev && prev.qty > 0) {
           const d = (item.qty - prev.qty) / prev.qty * 100;
-          dHtml = `<div class="hm-delta ${deltaClass(d)}">${deltaArrow(d)} ${Math.abs(Math.round(d))}% wow</div>`;
+          const dc = deltaClass(d);
+          const dCol = dc === 'up' ? upCol : dc === 'down' ? dnCol : flatCol;
+          dHtml = `<div class="hm-delta" style="color:${dCol};">${deltaArrow(d)} ${Math.abs(Math.round(d))}% wow</div>`;
         } else {
-          dHtml = `<div class="hm-delta flat">\u2605 new</div>`;
+          dHtml = `<div class="hm-delta" style="color:${flatCol};">\u2605 new</div>`;
         }
       }
-      hmHtml += `<div class="hm-cell" style="background:${cat.color};opacity:${opacity};">
-        <div class="hm-name">${name}</div>
-        <div class="hm-meta">${Math.round(item.qty)} sold \u00b7 ${fmt(item.rev)}</div>
+      hmHtml += `<div class="hm-cell" style="background:${bg};border-left-color:${cat.color};">
+        <div class="hm-name" style="color:${nameCol};">${name}</div>
+        <div class="hm-meta" style="color:${metaCol};">${Math.round(item.qty)} sold \u00b7 ${fmt(item.rev)}</div>
         ${dHtml}
       </div>`;
     });
