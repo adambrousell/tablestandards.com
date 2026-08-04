@@ -589,7 +589,10 @@ function renderDashboard() {
               else if (hasAvail)            parts.push(wd + ' \u2014/' + en.avail);
               else                          parts.push(wd + ' not entered');
             } else if (reported[wd]) {
-              // dish wasn't run that night — skip silently
+              // A shift report exists but this dish isn't in it.
+              // PDJ dishes rotate daily, so absence is normal — skip silently.
+              // Steak Tartare runs EVERY night, so absence is a gap worth showing.
+              if (cat.key === 'tartare') parts.push(wd + ' not listed');
             } else {
               parts.push(wd + ' no data');
             }
