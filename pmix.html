@@ -124,6 +124,13 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .hm-name { font-size: 12px; font-weight: 500; line-height: 1.35; }
 .hm-meta { font-size: 11px; font-weight: 400; margin-top: 3px; line-height: 1.35; font-variant-numeric: tabular-nums; }
 .hm-delta { font-size: 11px; font-weight: 500; margin-top: 3px; line-height: 1.35; font-variant-numeric: tabular-nums; }
+.hm-shift-rows { margin-top: 6px; padding-top: 5px; border-top: 1px solid rgba(255,255,255,0.25); }
+.hm-shift-row { display: flex; align-items: baseline; gap: 6px; font-size: 11px; line-height: 1.5; font-variant-numeric: tabular-nums; }
+.hm-shift-day { width: 30px; font-weight: 600; flex-shrink: 0; }
+.hm-day-cell { border-radius: 4px; padding: 9px 11px; border-left: 4px solid transparent; }
+.hm-day-label { font-size: 11px; font-weight: 600; letter-spacing: 0.03em; }
+.hm-day-val { font-size: 15px; font-weight: 500; margin-top: 2px; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.hm-day-sub { font-size: 10px; margin-top: 1px; }
 .hm-pinned-badge { display: inline-block; font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); background: #e8f2ec; border: 1px solid #c7dccf; border-radius: 10px; padding: 1px 7px; margin-left: 6px; vertical-align: middle; }
 .kpi-delta { display: inline-block; font-size: 11px; font-weight: 500; padding: 1px 7px; border-radius: 10px; margin-top: 5px; }
 .kpi-delta.up { background: #e8f5ed; color: var(--up); }
@@ -422,7 +429,10 @@ async function loadShiftSpecials() {
     if (nights === 0) {
       setShiftStatus('connected, but 0 of 7 nights have specials in RPI Shift for this week — if reports exist, the worker\'s KV binding points at the wrong namespace', true);
     } else {
-      setShiftStatus('connected · specials found for ' + nights + ' of 7 nights', false);
+      const WDALL = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+      const missing = WDALL.filter(w => !reportedDays[w]);
+      setShiftStatus('connected · specials found for ' + nights + ' of 7 nights' +
+        (missing.length ? ' · no shift report: ' + missing.join(', ') : ''), false);
     }
     renderDashboard();
   } catch (e) { setShiftStatus('could not reach the worker (' + e.message + ')', true); }
@@ -554,6 +564,10 @@ function renderDashboard() {
   });
   let hmHtml = '';
   hmOrder.forEach(cat => {
+    if (cat.key === 'tartare') {
+      hmHtml += renderTartareSection(cat, cats[cat.key], prevLookup, hasPrev, byRev);
+      return;
+    }
     const grp = [...cats[cat.key]]
       .map(i => ({ ...i, rev: i.qty * i.price }))
       .sort((a,b) => byRev ? b.rev - a.rev : b.qty - a.qty);
@@ -592,42 +606,25 @@ function renderDashboard() {
         }
       }
       let shiftHtml = '';
-      if ((cat.key === 'pdj' || cat.key === 'tartare') && shiftSpecialsMap) {
+      if (cat.key === 'pdj' && shiftSpecialsMap) {
+        // PDJ: clean per-night rows — only nights the dish actually appears.
+        // Dark nights are named once in the status line, not on every tile.
         const entries = shiftEntriesFor(item.name) || [];
-        const byDay = {};
-        entries.forEach(en => { byDay[en.d] = en; });
-        const reported = shiftSpecialsMap.reportedDays || {};
-        const range = parseRange(currentData.dateRange);
-        const WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-        const parts = [];
-        if (range) {
-          const start = new Date(range.start + 'T12:00:00Z');
-          const end   = new Date(range.end   + 'T12:00:00Z');
-          const d = new Date(start);
-          while (d <= end) {
-            const wd = WD[d.getUTCDay()];
-            const en = byDay[wd];
-            if (en) {
-              const hasSold  = en.sold  !== null && en.sold  !== '';
-              const hasAvail = en.avail !== null && en.avail !== '';
-              if (en.x) parts.push(wd + ' 86');
-              else if (hasSold && hasAvail) parts.push(wd + ' ' + en.sold + '/' + en.avail);
-              else if (hasSold)             parts.push(wd + ' ' + en.sold);
-              else if (hasAvail)            parts.push(wd + ' \u2014/' + en.avail);
-              else                          parts.push(wd + ' not entered');
-            } else if (reported[wd]) {
-              // A shift report exists but this dish isn't in it.
-              // PDJ dishes rotate daily, so absence is normal — skip silently.
-              // Steak Tartare runs EVERY night, so absence is a gap worth showing.
-              if (cat.key === 'tartare') parts.push(wd + ' not listed');
-            } else {
-              parts.push(wd + ' no data');
-            }
-            d.setUTCDate(d.getUTCDate() + 1);
-          }
-        }
-        if (parts.length) {
-          shiftHtml = `<div class="hm-meta" style="color:${metaCol};margin-top:3px;border-top:1px solid ${light ? 'rgba(26,26,24,0.12)' : 'rgba(255,255,255,0.25)'};padding-top:3px;">Shift log: ${parts.join(' \u00b7 ')}</div>`;
+        const rows = entries.map(en => {
+          const soldN  = parseFloat(en.sold);
+          const availN = parseFloat(en.avail);
+          const hasSold  = en.sold  !== null && en.sold  !== '' && !isNaN(soldN);
+          const hasAvail = en.avail !== null && en.avail !== '' && !isNaN(availN);
+          let val;
+          if (en.x) val = '86';
+          else if (hasSold && hasAvail) val = en.sold + ' of ' + en.avail + ' sold' + (soldN >= availN ? ' \u00b7 sold out' : '');
+          else if (hasSold) val = en.sold + ' sold';
+          else if (hasAvail) val = en.avail + ' prepped \u00b7 sold not entered';
+          else val = 'not entered';
+          return `<div class="hm-shift-row"><span class="hm-shift-day">${en.d}</span><span>${val}</span></div>`;
+        });
+        if (rows.length) {
+          shiftHtml = `<div class="hm-shift-rows" style="color:${metaCol};border-top-color:${light ? 'rgba(26,26,24,0.12)' : 'rgba(255,255,255,0.25)'};">${rows.join('')}</div>`;
         }
       }
       hmHtml += `<div class="hm-cell" style="background:${bg};border-left-color:${cat.color};">
@@ -642,6 +639,88 @@ function renderDashboard() {
   document.getElementById('heatmap').innerHTML = hmHtml;
 
   document.getElementById('dashboard').classList.add('active');
+}
+
+function renderTartareSection(cat, items, prevLookup, hasPrev, byRev) {
+  const item = (items && items[0]) ? { ...items[0], rev: items[0].qty * items[0].price } : null;
+  const id = 'hmg-' + cat.key;
+  let html = `<div class="hm-cat-section">
+    <div class="hm-cat-header" onclick="toggleHmGroup('${id}')">
+      <span class="leg-dot" style="background:${cat.color}"></span>
+      <span class="hm-cat-label">${cat.label}</span><span class="hm-pinned-badge">Pinned</span>
+      <span class="hm-cat-rev">${fmt(cat.rev)} \u00b7 ${Math.round(cat.qty).toLocaleString()} sold this week</span>
+      <span class="hm-cat-toggle" id="${id}-toggle">\u25bc</span>
+    </div>
+    <div class="hm-grid" id="${id}">`;
+
+  // Square 1: weekly Toast summary (keeps the WoW delta)
+  if (item) {
+    let dHtml = '';
+    if (hasPrev) {
+      const prev = prevLookup[normalizeKey(item.name)];
+      if (prev && prev.qty > 0) {
+        const dv = (item.qty - prev.qty) / prev.qty * 100;
+        const dc = deltaClass(dv);
+        const dCol = dc === 'up' ? '#a8ffbe' : dc === 'down' ? '#ffb3b3' : 'rgba(255,255,255,0.65)';
+        dHtml = `<div class="hm-delta" style="color:${dCol};">${deltaArrow(dv)} ${Math.abs(Math.round(dv))}% wow</div>`;
+      }
+    }
+    html += `<div class="hm-day-cell" style="background:${cat.color};border-left-color:${cat.color};">
+      <div class="hm-day-label" style="color:rgba(255,255,255,0.75);">WEEK TOTAL</div>
+      <div class="hm-day-val" style="color:#ffffff;">${Math.round(item.qty)} sold</div>
+      <div class="hm-day-sub" style="color:rgba(255,255,255,0.8);">${fmt(item.rev)} (Toast)</div>
+      ${dHtml}
+    </div>`;
+  }
+
+  // Squares 2–8: one per night, in week order
+  const range = parseRange(currentData.dateRange);
+  const entries = shiftSpecialsMap ? (shiftEntriesFor('Steak Tartare') || []) : [];
+  const byDay = {}; entries.forEach(en => { byDay[en.d] = en; });
+  const reported = shiftSpecialsMap ? (shiftSpecialsMap.reportedDays || {}) : {};
+  if (range) {
+    const WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const soldVals = entries.map(e => parseFloat(e.sold)).filter(v => !isNaN(v));
+    const maxSold = soldVals.length ? Math.max(...soldVals, 1) : 1;
+    const start = new Date(range.start + 'T12:00:00Z');
+    const end   = new Date(range.end   + 'T12:00:00Z');
+    const d = new Date(start);
+    while (d <= end) {
+      const wd = WD[d.getUTCDay()];
+      const dateLbl = (d.getUTCMonth()+1) + '/' + d.getUTCDate();
+      const en = byDay[wd];
+      let valHtml, subHtml = '', weight;
+      if (en) {
+        const soldN = parseFloat(en.sold), availN = parseFloat(en.avail);
+        const hasSold = en.sold !== null && en.sold !== '' && !isNaN(soldN);
+        const hasAvail = en.avail !== null && en.avail !== '' && !isNaN(availN);
+        if (en.x) { valHtml = '86'; weight = 1.0; }
+        else if (hasSold) {
+          valHtml = en.sold + (hasAvail ? '/' + en.avail : '') + ' sold';
+          subHtml = (hasAvail && soldN >= availN) ? 'sold out' : '';
+          weight = 0.4 + (soldN / maxSold) * 0.6;
+        }
+        else if (hasAvail) { valHtml = '\u2014/' + en.avail; subHtml = 'sold not entered'; weight = 0.35; }
+        else { valHtml = '\u2014'; subHtml = 'not entered'; weight = 0.25; }
+      } else if (reported[wd]) {
+        valHtml = '\u2014'; subHtml = 'not listed'; weight = 0.2;
+      } else {
+        valHtml = '\u2014'; subHtml = 'no data'; weight = 0.14;
+      }
+      const bg = hexBlend(cat.color, weight);
+      const light = isLightBg(bg);
+      const nameCol = light ? '#1a1a18' : '#ffffff';
+      const metaCol = light ? 'rgba(26,26,24,0.6)' : 'rgba(255,255,255,0.8)';
+      html += `<div class="hm-day-cell" style="background:${bg};border-left-color:${cat.color};">
+        <div class="hm-day-label" style="color:${metaCol};">${wd.toUpperCase()} ${dateLbl}</div>
+        <div class="hm-day-val" style="color:${nameCol};">${valHtml}</div>
+        ${subHtml ? `<div class="hm-day-sub" style="color:${metaCol};">${subHtml}</div>` : ''}
+      </div>`;
+      d.setUTCDate(d.getUTCDate() + 1);
+    }
+  }
+  html += `</div></div>`;
+  return html;
 }
 
 function jumpToCategory(key) {
