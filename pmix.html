@@ -235,7 +235,7 @@ function categorize(name) {
   if (/omelette|eggs benedict|pan bagnat|chicken salad sandwich|salmon burger|crispy fish sandwich|^parfait$|lunch oyster/.test(n)) return 'lunch';
   // Cocktails & martinis
   if (/espresso martini|salt air|filthy|metropolitan|jockey club|river pointe|the rpi|grasshopper|in fashion|saint joe|lychee|can't elope|pep in your|bee sting|negroni|strawberry fields|colada|hh:|martini happy hour|ancho problem|rhubarb|rhu-barbara/.test(n)) return 'cocktail';
-  if (/aperol spritz|hugo spritz|french 75|paper plane|mimosa|bloody mary|lemon drop|mojito|moscow mule|vesper|garden state|cavaillon|berry spritz|cocogroni/.test(n)) return 'cocktail';
+  if (/aperol spritz|hugo spritz|french 75|paper plane|mimosa|bloody mary|lemon drop|mojito|moscow mule|vesper|garden state|cavaillon|berry spritz|cocogroni|sangria/.test(n)) return 'cocktail';
   if (/na almost|na pear|na espresso|na summer/.test(n)) return 'cocktail';
   // Wine — incl. somm selections & rare pours that ring as spirits-style lines
   if (/d[’']?yquem|latour pauillac|somm selection/.test(n)) return 'wine';
@@ -246,7 +246,8 @@ function categorize(name) {
   if (/\b(vodka|belvedere|grey goose|ketel one|tito's|tito\b|hendrick|beefeater|bombay sapphire|botanist|fords gin|plymouth gin|tanqueray|absolut|monkey 47|asbury park gin|wodka)\b/.test(n)) return 'spirit';
   if (/\bcasamigos|don julio|fortaleza|lalo\b|pueblo viejo|casa dragones|del maguey|clase azul|g4 blanco|g4 reposado|g4 anejo|tanteo/.test(n)) return 'spirit';
   if (/\bangels envy|blanton|buffalo trace|bulleit|dewars|high west|jack daniel|jameson|johnnie walker|laguavulin|macallan|maker's mark|michter|oban 14|sazerac rye|whistlepig|widow jane|woodford reserve|basil hayden|four roses|penelope|glenlivet|old rip van winkle/.test(n)) return 'spirit';
-  if (/chartreuse|cognac park|lazzaroni|molinari sambuca|nonino amaro|averna amaro|limoncello|bailey|campari|taylor fladgate|\bport\b|braulio|frangelico|\brum\b|havana|havanna|captain morgan|ron zacapa|bacardi|st\. agrestis|varnelli/.test(n)) return 'spirit';
+  if (/chartreuse|\bcognac\b|pierre ferrand|grand marnier|fernet|lazzaroni|molinari sambuca|nonino amaro|averna amaro|limoncello|bailey|campari|taylor fladgate|\bport\b|braulio|frangelico|\brum\b|havana|havanna|captain morgan|ron zacapa|bacardi|st\. agrestis|varnelli/.test(n)) return 'spirit';
+  if (/\bcodigo\b/.test(n)) return 'spirit';
   // Beer / coffee / NA
   if (/beer done|vliet|birdsmouth|kronenbourg|other half|grimm|athletic brewing/.test(n)) return 'beer';
   if (n === 'lunch') return 'beer';
@@ -258,8 +259,13 @@ function categorize(name) {
   if (/bread service|little gem|garden salad|asparagus mimosa|escargots|^jambon|steak tartare|sardine toast|crepe aux|berries.*cream|caviar.*donut|crudo tasting|shrimp cocktail|tuna tartare|ceviche|fluke|dune fox|sloop point|salty rose|laughing gull|little darling|violet sky|swan point|sugar shack|love.*dozen|barnegat|salad de tomates|eggplant|peaches/.test(n)) return 'starter';
   // Desserts
   if (/carrot.*cake|meringue cake|chocolate cake|cheesecake|raspberry tart|creme brulee|banana split|brownie sundae|banana chip ice|brown butter ice|chocolate ice|strawberry ice|vanilla ice|mint ice|lemon sorbet|fromage/.test(n)) return 'dessert';
-  if (/open drink|open food|open item|custom cake|side |^tip$|fet d'or/.test(n)) return 'food';
+  if (/custom cake|side |fet d'or/.test(n)) return 'food';
   return 'food';
+}
+
+// Non-menu rows the chef can't act on — hidden from the view entirely
+function isMiscRow(name) {
+  return /^open\s*(food|drink)|open item|^tip$|don'?t make/i.test(name.trim());
 }
 
 function isStaffOrComp(name) {
@@ -310,7 +316,7 @@ async function loadData() {
 // ── Render ─────────────────────────────────────────────────────────────────
 function renderDashboard() {
   if (!currentData) return;
-  const items = (currentData.items || []).filter(i => !isStaffOrComp(i.name));
+  const items = (currentData.items || []).filter(i => !isStaffOrComp(i.name) && !isMiscRow(i.name));
   document.getElementById('week-label').textContent = 'Week of ' + (currentData.dateRange || '—');
   if (currentData.uploadedAt) {
     const d = new Date(currentData.uploadedAt);
