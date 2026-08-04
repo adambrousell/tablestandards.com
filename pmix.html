@@ -65,10 +65,14 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .cat-rank { width: 22px; text-align: right; color: var(--text-3); font-variant-numeric: tabular-nums; flex-shrink: 0; }
 .cat-name { width: 190px; color: var(--text); font-weight: 500; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cat-bar { flex: 1; height: 18px; background: #efede6; border-radius: 3px; overflow: hidden; min-width: 40px; }
-.cat-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s ease; min-width: 2px; }
+.cat-bar-fill { display: block; height: 100%; border-radius: 3px; transition: width 0.3s ease; min-width: 2px; }
 .cat-val { width: 84px; text-align: right; color: var(--text); font-variant-numeric: tabular-nums; font-weight: 500; flex-shrink: 0; }
 .cat-sub { width: 70px; text-align: right; color: var(--text-3); font-size: 11px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
-@media (max-width: 700px) { .cat-name { width: 120px; } .cat-sub { display: none; } }
+.cat-delta { width: 58px; text-align: right; font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.cat-delta.up { color: var(--up); }
+.cat-delta.down { color: var(--down); }
+.cat-delta.flat { color: var(--text-3); }
+@media (max-width: 700px) { .cat-name { width: 110px; } .cat-sub { display: none; } }
 
 /* Item ranking inside each category (sorted high → low) */
 .item-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 12px; }
@@ -88,6 +92,14 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .hm-cell { border-radius: 4px; padding: 9px 11px; }
 .hm-name { font-size: 11px; font-weight: 500; color: #fff; line-height: 1.3; }
 .hm-meta { font-size: 10px; color: rgba(255,255,255,0.8); margin-top: 2px; }
+.hm-delta { font-size: 10px; margin-top: 2px; font-weight: 600; }
+.hm-delta.up { color: #a8ffbe; }
+.hm-delta.down { color: #ffb3b3; }
+.hm-delta.flat { color: rgba(255,255,255,0.65); }
+.kpi-delta { display: inline-block; font-size: 11px; font-weight: 500; padding: 1px 7px; border-radius: 10px; margin-top: 5px; }
+.kpi-delta.up { background: #e8f5ed; color: var(--up); }
+.kpi-delta.down { background: #faeaea; color: var(--down); }
+.kpi-delta.flat { background: #f1efe8; color: var(--text-3); }
 
 .error-box { text-align: center; padding: 60px 20px; color: var(--down); }
 .error-box p.small { font-size: 12px; color: var(--text-3); margin-top: 10px; }
@@ -316,10 +328,27 @@ async function loadData() {
 }
 
 // ── Render ─────────────────────────────────────────────────────────────────
+function normalizeKey(name) {
+  return name.toLowerCase().replace(/^hh:\s*/i, '').replace(/\s+/g, ' ').trim();
+}
+function deltaClass(v) { return v > 2 ? 'up' : v < -2 ? 'down' : 'flat'; }
+function deltaArrow(v) { return v > 2 ? '\u25b2' : v < -2 ? '\u25bc' : '\u2014'; }
+function deltaTag(cur, prev, cls) {
+  if (prev === null || prev === undefined || prev === 0) return '';
+  const d = (cur - prev) / prev * 100;
+  return `<span class="${cls} ${deltaClass(d)}">${deltaArrow(d)} ${Math.abs(Math.round(d))}%</span>`;
+}
+
 function renderDashboard() {
   if (!currentData) return;
-  const items = (currentData.items || []).filter(i => !isStaffOrComp(i.name) && !isMiscRow(i.name));
-  document.getElementById('week-label').textContent = 'Week of ' + (currentData.dateRange || '—');
+  const keep = i => !isStaffOrComp(i.name) && !isMiscRow(i.name);
+  const items = (currentData.items || []).filter(keep);
+  const prevItems = (currentData.prevItems || []).filter(keep);
+  const hasPrev = prevItems.length > 0;
+
+  let weekText = 'Week of ' + (currentData.dateRange || '\u2014');
+  if (hasPrev && currentData.prevDateRange) weekText += '  \u00b7  vs ' + currentData.prevDateRange;
+  document.getElementById('week-label').textContent = weekText;
   if (currentData.uploadedAt) {
     const d = new Date(currentData.uploadedAt);
     document.getElementById('uploaded-label').textContent =
@@ -327,12 +356,23 @@ function renderDashboard() {
       ' ' + d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
   }
 
-  const cats = {};
+  const cats = {}, prevCats = {};
   items.forEach(i => { const c = categorize(i.name); (cats[c]||(cats[c]=[])).push(i); });
+  prevItems.forEach(i => { const c = categorize(i.name); (prevCats[c]||(prevCats[c]=[])).push(i); });
+
+  // Item-level lookup for last week (aggregated by normalized name)
+  const prevLookup = {};
+  prevItems.forEach(i => {
+    const k = normalizeKey(i.name);
+    if (!prevLookup[k]) prevLookup[k] = { qty: 0, rev: 0 };
+    prevLookup[k].qty += i.qty;
+    prevLookup[k].rev += i.qty * i.price;
+  });
 
   const ranking = Object.keys(cats).map(key => ({
     key, label: CAT_LABELS[key], color: CAT_COLORS[key],
     qty: sumQty(cats[key]), rev: sumRev(cats[key]),
+    prevQty: sumQty(prevCats[key]), prevRev: sumRev(prevCats[key]),
   })).filter(r => r.qty > 0);
 
   const byRev = currentView === 'revenue';
@@ -340,21 +380,26 @@ function renderDashboard() {
 
   const totalRev = ranking.reduce((s,r)=>s+r.rev, 0);
   const totalQty = ranking.reduce((s,r)=>s+r.qty, 0);
+  const prevTotalRev = Object.keys(prevCats).reduce((s,k)=>s+sumRev(prevCats[k]), 0);
+  const prevTotalQty = Object.keys(prevCats).reduce((s,k)=>s+sumQty(prevCats[k]), 0);
   const topCat = sorted[0];
 
   document.getElementById('kpi-grid').innerHTML = [
-    { label:'Est. revenue', val:fmt(totalRev), sub:`${items.length} items` },
-    { label:'Total sold', val:Math.round(totalQty).toLocaleString(), sub:`${ranking.length} categories` },
-    { label:'Top category', val:topCat ? topCat.label.split(' ')[0] : '—',
-      sub:topCat ? (byRev ? fmt(topCat.rev) : `${Math.round(topCat.qty).toLocaleString()} sold`) : '' },
-  ].map(k => `<div class="kpi"><div class="kpi-label">${k.label}</div><div class="kpi-val">${k.val}</div><div class="kpi-sub">${k.sub}</div></div>`).join('');
+    { label:'Est. revenue', val:fmt(totalRev), sub:`${items.length} items`,
+      delta: hasPrev ? deltaTag(totalRev, prevTotalRev, 'kpi-delta') : '' },
+    { label:'Total sold', val:Math.round(totalQty).toLocaleString(), sub:`${ranking.length} categories`,
+      delta: hasPrev ? deltaTag(totalQty, prevTotalQty, 'kpi-delta') : '' },
+    { label:'Top category', val:topCat ? topCat.label.split(' ')[0] : '\u2014',
+      sub:topCat ? (byRev ? fmt(topCat.rev) : `${Math.round(topCat.qty).toLocaleString()} sold`) : '', delta:'' },
+  ].map(k => `<div class="kpi"><div class="kpi-label">${k.label}</div><div class="kpi-val">${k.val}</div><div class="kpi-sub">${k.sub}</div>${k.delta||''}</div>`).join('');
 
-  // Category ranking, highest → lowest
+  // Category ranking, highest \u2192 lowest, with WoW
   document.getElementById('ranking-title').textContent =
     byRev ? 'Categories ranked by revenue' : 'Categories ranked by quantity';
   const maxVal = byRev ? sorted[0].rev : sorted[0].qty;
   document.getElementById('ranking-list').innerHTML = sorted.map((r, idx) => {
     const val = byRev ? r.rev : r.qty;
+    const prevVal = byRev ? r.prevRev : r.prevQty;
     const pct = Math.max(2, Math.round(val / maxVal * 100));
     const main = byRev ? fmt(r.rev) : Math.round(r.qty).toLocaleString();
     const sub  = byRev ? `${Math.round(r.qty).toLocaleString()} sold` : fmt(r.rev);
@@ -364,10 +409,11 @@ function renderDashboard() {
       <span class="cat-bar"><span class="cat-bar-fill" style="width:${pct}%;background:${r.color};"></span></span>
       <span class="cat-val">${main}</span>
       <span class="cat-sub">${sub}</span>
+      ${hasPrev ? (deltaTag(val, prevVal, 'cat-delta') || '<span class="cat-delta flat">new</span>') : ''}
     </div>`;
   }).join('');
 
-  // Per-category item breakdown, sorted high → low by the active metric
+  // Per-category item breakdown with WoW per item
   let hmHtml = '';
   sorted.forEach(cat => {
     const grp = [...cats[cat.key]]
@@ -379,17 +425,28 @@ function renderDashboard() {
       <div class="hm-cat-header" onclick="toggleHmGroup('${id}')">
         <span class="leg-dot" style="background:${cat.color}"></span>
         <span class="hm-cat-label">${cat.label}</span>
-        <span class="hm-cat-rev">${fmt(cat.rev)} · ${Math.round(cat.qty).toLocaleString()} sold · ${grp.length} items</span>
-        <span class="hm-cat-toggle" id="${id}-toggle">▼</span>
+        <span class="hm-cat-rev">${fmt(cat.rev)} \u00b7 ${Math.round(cat.qty).toLocaleString()} sold \u00b7 ${grp.length} items</span>
+        <span class="hm-cat-toggle" id="${id}-toggle">\u25bc</span>
       </div>
       <div class="hm-grid" id="${id}">`;
     grp.forEach(item => {
       const metric = byRev ? item.rev : item.qty;
       const opacity = (0.3 + (metric / maxR) * 0.7).toFixed(2);
       const name = item.name.replace(/^(GL:|HH:|\d{3,4}[:\s]|B\d{2,4}[:\s]?)\s*/i,'');
+      const prev = hasPrev ? prevLookup[normalizeKey(item.name)] : null;
+      let dHtml = '';
+      if (hasPrev) {
+        if (prev && prev.qty > 0) {
+          const d = (item.qty - prev.qty) / prev.qty * 100;
+          dHtml = `<div class="hm-delta ${deltaClass(d)}">${deltaArrow(d)} ${Math.abs(Math.round(d))}% wow</div>`;
+        } else {
+          dHtml = `<div class="hm-delta flat">\u2605 new</div>`;
+        }
+      }
       hmHtml += `<div class="hm-cell" style="background:${cat.color};opacity:${opacity};">
         <div class="hm-name">${name}</div>
-        <div class="hm-meta">${Math.round(item.qty)} sold · ${fmt(item.rev)}</div>
+        <div class="hm-meta">${Math.round(item.qty)} sold \u00b7 ${fmt(item.rev)}</div>
+        ${dHtml}
       </div>`;
     });
     hmHtml += `</div></div>`;
