@@ -90,28 +90,34 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   .kpi-val { font-size: 18px; }
   .kpi-sub { display: none; }
   .card { padding: 12px 12px; }
-  /* ranked table: on mobile the bar was the losing column — give it real room */
-  .cat-name { width: 92px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .cat-sub { display: none; }
-  .cat-share { display: none; }
-  .cat-val { width: 48px; font-size: 12px; }
-  .cat-delta { width: 38px; font-size: 10px; }
-  .cat-rank { width: 14px; font-size: 11px; }
-  .cat-row { gap: 6px; padding: 10px 0; }
-  .cat-header-row { gap: 6px; }
-  .cat-bar { min-width: 60px; }
-  /* heatmap: tiles go full-width rows for thumb-scrolling */
+
+  /* Ranked table: two-row layout per category — name/value on top row, full-width bar below.
+     Bar gets the ENTIRE row width instead of fighting the label for space. */
+  .cat-header-row { display: none; }   /* column headers don't fit meaningfully on mobile */
+  .cat-row {
+    display: grid;
+    grid-template-columns: 22px 1fr auto auto;
+    grid-template-areas: "rank name val delta" "bar bar bar bar";
+    gap: 4px 8px;
+    padding: 10px 0;
+  }
+  .cat-rank { grid-area: rank; width: auto; font-size: 12px; text-align: left; padding-top: 1px; }
+  .cat-name { grid-area: name; width: auto; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-top: 1px; }
+  .cat-val  { grid-area: val;  width: auto; font-size: 13px; padding-top: 1px; }
+  .cat-delta{ grid-area: delta; width: auto; font-size: 11px; padding-top: 3px; padding-left: 6px; }
+  .cat-bar  { grid-area: bar; height: 12px; margin-top: 2px; min-width: 0; }
+  .cat-sub, .cat-share { display: none; }
+
+  /* Heatmap tiles */
   .hm-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
   .hm-cell { padding: 10px 12px; min-height: 44px; }
   .hm-cat-header { flex-wrap: wrap; row-gap: 2px; }
   .hm-cat-rev { width: 100%; margin-left: 17px; order: 3; }
 }
 @media (max-width: 420px) {
-  /* phones: single-column tiles, everything readable one-handed */
   .hm-grid { grid-template-columns: 1fr; }
   .kpi-grid { grid-template-columns: 1fr 1fr; }
   .kpi:nth-child(3) { grid-column: 1 / -1; }
-  .cat-name { width: 92px; }
 }
 
 .hm-cat-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer; user-select: none; min-height: 32px; }
