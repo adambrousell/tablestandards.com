@@ -90,15 +90,16 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   .kpi-val { font-size: 18px; }
   .kpi-sub { display: none; }
   .card { padding: 12px 12px; }
-  /* ranked table: drop columns that don't fit, keep name/bar/value/delta */
-  .cat-name { width: 105px; font-size: 12px; }
+  /* ranked table: on mobile the bar was the losing column — give it real room */
+  .cat-name { width: 92px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .cat-sub { display: none; }
   .cat-share { display: none; }
-  .cat-val { width: 62px; font-size: 12px; }
-  .cat-delta { width: 46px; font-size: 10px; }
-  .cat-rank { width: 16px; font-size: 11px; }
+  .cat-val { width: 48px; font-size: 12px; }
+  .cat-delta { width: 38px; font-size: 10px; }
+  .cat-rank { width: 14px; font-size: 11px; }
   .cat-row { gap: 6px; padding: 10px 0; }
   .cat-header-row { gap: 6px; }
+  .cat-bar { min-width: 60px; }
   /* heatmap: tiles go full-width rows for thumb-scrolling */
   .hm-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
   .hm-cell { padding: 10px 12px; min-height: 44px; }
@@ -196,6 +197,17 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 
 <script>
 const WORKER_URL = 'https://rpi-pmix-backend.amusementstandards.workers.dev';
+
+const PDJ_NIGHT_BY_DISH = {
+  'poulet en croute': 'Mon',
+  'oyster rockefeller': 'Tue',
+  'french dip': 'Wed',
+  'crispy fish frites': 'Thu',
+  'bouillabaise provencal': 'Fri',
+  'prime short rib bourgignon': 'Sat',
+  'lobster frites': 'Sun',
+};
+const WD_LONG = { Mon:'Monday', Tue:'Tuesday', Wed:'Wednesday', Thu:'Thursday', Fri:'Friday', Sat:'Saturday', Sun:'Sunday' };
 
 const CAT_COLORS = {
   cocktail:'#2150a0', wine:'#5c2d6e', food:'#c0452a',
@@ -488,6 +500,7 @@ function deltaArrow(v) { return v > 2 ? '\u25b2' : v < -2 ? '\u25bc' : '\u2014';
 function deltaTag(cur, prev, cls) {
   if (prev === null || prev === undefined || prev === 0) return '';
   const d = (cur - prev) / prev * 100;
+  if (Math.abs(d) < 0.5) return `<span class="${cls} flat" style="opacity:0.6;">same</span>`;
   return `<span class="${cls} ${deltaClass(d)}">${deltaArrow(d)} ${Math.abs(Math.round(d))}%</span>`;
 }
 
@@ -600,12 +613,16 @@ function renderDashboard() {
       hmHtml += renderTartareSection(cat, cats[cat.key], prevLookup, hasPrev, byRev);
       return;
     }
+    if (cat.key === 'pdj') {
+      hmHtml += renderPdjSection(cat, cats[cat.key], prevLookup, hasPrev, byRev);
+      return;
+    }
     const grp = [...cats[cat.key]]
       .map(i => ({ ...i, rev: i.qty * i.price }))
       .sort((a,b) => byRev ? b.rev - a.rev : b.qty - a.qty);
     const maxR = byRev ? (grp[0]?.rev || 1) : (grp[0]?.qty || 1);
     const id = 'hmg-' + cat.key;
-    const pinBadge = (cat.key === 'pdj' || cat.key === 'tartare') ? '<span class="hm-pinned-badge">Pinned</span>' : '';
+    const pinBadge = (cat.key === 'tartare') ? '<span class="hm-pinned-badge">Pinned</span>' : '';
     hmHtml += `<div class="hm-cat-section">
       <div class="hm-cat-header" onclick="toggleHmGroup('${id}')">
         <span class="leg-dot" style="background:${cat.color}"></span>
@@ -638,27 +655,7 @@ function renderDashboard() {
         }
       }
       let shiftHtml = '';
-      if (cat.key === 'pdj' && shiftSpecialsMap) {
-        // PDJ: clean per-night rows — only nights the dish actually appears.
-        // Dark nights are named once in the status line, not on every tile.
-        const entries = shiftEntriesFor(item.name) || [];
-        const rows = entries.map(en => {
-          const soldN  = parseFloat(en.sold);
-          const availN = parseFloat(en.avail);
-          const hasSold  = en.sold  !== null && en.sold  !== '' && !isNaN(soldN);
-          const hasAvail = en.avail !== null && en.avail !== '' && !isNaN(availN);
-          let val;
-          if (en.x) val = '86';
-          else if (hasSold && hasAvail) val = en.sold + ' of ' + en.avail + ' sold' + (soldN >= availN ? ' \u00b7 sold out' : '');
-          else if (hasSold) val = en.sold + ' sold';
-          else if (hasAvail) val = en.avail + ' prepped \u00b7 sold not entered';
-          else val = 'not entered';
-          return `<div class="hm-shift-row"><span class="hm-shift-day">${en.d}</span><span>${val}</span></div>`;
-        });
-        if (rows.length) {
-          shiftHtml = `<div class="hm-shift-rows" style="color:${metaCol};border-top-color:${light ? 'rgba(26,26,24,0.12)' : 'rgba(255,255,255,0.25)'};">${rows.join('')}</div>`;
-        }
-      }
+      // (PDJ tiles are rendered by renderPdjTile below — this block is unused for pdj now.)
       hmHtml += `<div class="hm-cell" style="background:${bg};border-left-color:${cat.color};">
         <div class="hm-name" style="color:${nameCol};">${name}</div>
         <div class="hm-meta" style="color:${metaCol};">${Math.round(item.qty)} sold \u00b7 ${fmt(item.rev)}</div>
@@ -673,84 +670,216 @@ function renderDashboard() {
   document.getElementById('dashboard').classList.add('active');
 }
 
-function renderTartareSection(cat, items, prevLookup, hasPrev, byRev) {
-  const item = (items && items[0]) ? { ...items[0], rev: items[0].qty * items[0].price } : null;
+function renderPdjSection(cat, items, prevLookup, hasPrev, byRev) {
+  const range = parseRange(currentData.dateRange);
+  const dateOf = (wd) => {
+    if (!range) return null;
+    const WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const start = new Date(range.start + 'T12:00:00Z');
+    const end   = new Date(range.end   + 'T12:00:00Z');
+    for (const d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate()+1)) {
+      if (WD[d.getUTCDay()] === wd) return (d.getUTCMonth()+1) + '/' + d.getUTCDate();
+    }
+    return null;
+  };
+
+  // Order tiles by night (Mon → Sun) so the section reads like the week
+  const NIGHT_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const enriched = items.map(i => ({
+    ...i, rev: i.qty * i.price, night: PDJ_NIGHT_BY_DISH[canonSpecial(i.name)] || null
+  })).sort((a, b) => {
+    const ai = a.night ? NIGHT_ORDER.indexOf(a.night) : 99;
+    const bi = b.night ? NIGHT_ORDER.indexOf(b.night) : 99;
+    if (ai !== bi) return ai - bi;
+    return byRev ? b.rev - a.rev : b.qty - a.qty;
+  });
+
   const id = 'hmg-' + cat.key;
   let html = `<div class="hm-cat-section">
     <div class="hm-cat-header" onclick="toggleHmGroup('${id}')">
       <span class="leg-dot" style="background:${cat.color}"></span>
       <span class="hm-cat-label">${cat.label}</span><span class="hm-pinned-badge">Pinned</span>
-      <span class="hm-cat-rev">${fmt(cat.rev)} \u00b7 ${Math.round(cat.qty).toLocaleString()} sold this week</span>
+      <span class="hm-cat-rev">${fmt(cat.rev)} \u00b7 ${Math.round(cat.qty).toLocaleString()} sold \u00b7 ${enriched.length} nights</span>
       <span class="hm-cat-toggle" id="${id}-toggle">\u25bc</span>
     </div>
     <div class="hm-grid" id="${id}">`;
 
-  // Square 1: weekly Toast summary (keeps the WoW delta)
-  if (item) {
+  enriched.forEach(item => {
+    const night = item.night;                                // Mon..Sun or null
+    const dateLbl = night ? dateOf(night) : null;
+    const entries = shiftSpecialsMap ? (shiftEntriesFor(item.name) || []) : [];
+    const en = night ? entries.find(e => e.d === night) : entries[0];
+
+    // Read the night's shift-log values
+    let soldN = null, availN = null, wasX = false;
+    if (en) {
+      const s = parseFloat(en.sold), a = parseFloat(en.avail);
+      if (!isNaN(s)) soldN = s;
+      if (!isNaN(a)) availN = a;
+      wasX = !!en.x;
+    }
+
+    // Toast weekly qty is effectively the night's qty (dish runs one night only)
+    const toastQty = Math.round(item.qty);
+    const displaySold = (soldN !== null) ? soldN : toastQty;
+    const soldOut = availN !== null && soldN !== null && soldN >= availN;
+    const disagree = soldN !== null && Math.abs(soldN - toastQty) >= 1;
+
+    // Tile intensity from tonight's absolute sold vs the week's biggest
+    const maxSold = Math.max(...enriched.map(x => Math.round(x.qty)), 1);
+    const weight = 0.35 + (displaySold / maxSold) * 0.65;
+    const bg = hexBlend(cat.color, weight);
+    const light = isLightBg(bg);
+    const nameCol = light ? '#1a1a18' : '#ffffff';
+    const metaCol = light ? 'rgba(26,26,24,0.65)' : 'rgba(255,255,255,0.82)';
+    const softCol = light ? 'rgba(26,26,24,0.5)'  : 'rgba(255,255,255,0.7)';
+    const upCol   = light ? '#1a7a3a' : '#a8ffbe';
+    const dnCol   = light ? '#b83030' : '#ffb3b3';
+    const flatCol = softCol;
+
+    // WoW delta (same-week last week, same dish)
     let dHtml = '';
     if (hasPrev) {
       const prev = prevLookup[normalizeKey(item.name)];
       if (prev && prev.qty > 0) {
         const dv = (item.qty - prev.qty) / prev.qty * 100;
         const dc = deltaClass(dv);
-        const dCol = dc === 'up' ? '#a8ffbe' : dc === 'down' ? '#ffb3b3' : 'rgba(255,255,255,0.65)';
+        const dCol = dc === 'up' ? upCol : dc === 'down' ? dnCol : flatCol;
         dHtml = `<div class="hm-delta" style="color:${dCol};">${deltaArrow(dv)} ${Math.abs(Math.round(dv))}% wow</div>`;
+      } else {
+        dHtml = `<div class="hm-delta" style="color:${flatCol};">\u2605 new</div>`;
       }
     }
-    html += `<div class="hm-day-cell" style="background:${cat.color};border-left-color:${cat.color};">
-      <div class="hm-day-label" style="color:rgba(255,255,255,0.75);">WEEK TOTAL</div>
-      <div class="hm-day-val" style="color:#ffffff;">${Math.round(item.qty)} sold</div>
-      <div class="hm-day-sub" style="color:rgba(255,255,255,0.8);">${fmt(item.rev)} (Toast)</div>
+
+    // Header line: "WEDNESDAY · 7/29" or fall back if no schedule match
+    const headerText = night
+      ? (WD_LONG[night].toUpperCase() + (dateLbl ? '  \u00b7  ' + dateLbl : ''))
+      : 'NIGHT UNKNOWN';
+
+    // Body: hero sold number + qualifiers
+    let heroVal, heroSub = '';
+    if (wasX) { heroVal = '86'; heroSub = 'sold out early'; }
+    else if (availN !== null) {
+      heroVal = displaySold + ' of ' + availN + ' sold';
+      heroSub = soldOut ? 'sold out' : (availN - displaySold) + ' left over';
+    } else {
+      heroVal = displaySold + ' sold';
+      heroSub = (soldN === null) ? 'count not entered' : '';
+    }
+    const reconLine = disagree
+      ? `Toast ${toastQty} \u00b7 Shift ${soldN} \u2014 check counts`
+      : '';
+
+    html += `<div class="hm-cell" style="background:${bg};border-left-color:${cat.color};">
+      <div class="hm-day-label" style="color:${softCol};">${headerText}</div>
+      <div class="hm-name" style="color:${nameCol};margin-top:2px;">${item.name.replace(/^(GL:|HH:)\s*/i,'')}</div>
+      <div class="hm-day-val" style="color:${nameCol};margin-top:4px;">${heroVal}</div>
+      ${heroSub ? `<div class="hm-day-sub" style="color:${metaCol};">${heroSub}</div>` : ''}
+      ${reconLine ? `<div class="hm-day-sub" style="color:${metaCol};">${reconLine}</div>` : ''}
       ${dHtml}
     </div>`;
+  });
+
+  html += `</div></div>`;
+  return html;
+}
+
+function renderTartareSection(cat, items, prevLookup, hasPrev, byRev) {
+  const item = (items && items[0]) ? { ...items[0], rev: items[0].qty * items[0].price } : null;
+  const id = 'hmg-' + cat.key;
+
+  // Reconcile Toast weekly total vs sum of logged nightly sold — used both in
+  // the header and (as a hint) on nights with no logged sold value.
+  const loggedEntries = shiftSpecialsMap ? (shiftEntriesFor('Steak Tartare') || []) : [];
+  const loggedSold = loggedEntries.reduce((s, e) => {
+    const v = parseFloat(e.sold); return s + (isNaN(v) ? 0 : v);
+  }, 0);
+  const loggedDays = loggedEntries.filter(e => e.sold !== null && e.sold !== '' && !isNaN(parseFloat(e.sold))).map(e => e.d);
+  const remainder = item ? Math.round(item.qty) - loggedSold : 0;
+  let reconLine = '';
+  if (item && loggedDays.length > 0 && loggedDays.length < 7) {
+    const WDALL2 = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const unknown = WDALL2.filter(w => !loggedDays.includes(w));
+    if (remainder > 0)      reconLine = `≈${remainder} across ${unknown.join('+')}`;
+    else if (remainder < 0) reconLine = `exceeds Toast by ${-remainder}`;
   }
 
-  // Squares 2–8: one per night, in week order
+  // Compact WoW badge in the header (replaces the deleted WEEK TOTAL square)
+  let wowText = '';
+  if (item && hasPrev) {
+    const prev = prevLookup[normalizeKey(item.name)];
+    if (prev && prev.qty > 0) {
+      const dv = (item.qty - prev.qty) / prev.qty * 100;
+      wowText = ` \u00b7 ${deltaArrow(dv)} ${Math.abs(Math.round(dv))}% wow`;
+    }
+  }
+  const soldTotal = item ? Math.round(item.qty).toLocaleString() : Math.round(cat.qty).toLocaleString();
+  const headerStat = `${fmt(cat.rev)} \u00b7 ${soldTotal} sold this week${wowText}${reconLine ? ' \u00b7 ' + reconLine : ''}`;
+
+  let html = `<div class="hm-cat-section">
+    <div class="hm-cat-header" onclick="toggleHmGroup('${id}')">
+      <span class="leg-dot" style="background:${cat.color}"></span>
+      <span class="hm-cat-label">${cat.label}</span><span class="hm-pinned-badge">Pinned</span>
+      <span class="hm-cat-rev">${headerStat}</span>
+      <span class="hm-cat-toggle" id="${id}-toggle">\u25bc</span>
+    </div>
+    <div class="hm-grid" id="${id}">`;
+
+  // Seven day tiles — built by weekday, then sorted highest sold → lowest
   const range = parseRange(currentData.dateRange);
-  const entries = shiftSpecialsMap ? (shiftEntriesFor('Steak Tartare') || []) : [];
+  const entries = loggedEntries;
   const byDay = {}; entries.forEach(en => { byDay[en.d] = en; });
   const reported = shiftSpecialsMap ? (shiftSpecialsMap.reportedDays || {}) : {};
+  const tiles = [];
   if (range) {
     const WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
     const soldVals = entries.map(e => parseFloat(e.sold)).filter(v => !isNaN(v));
     const maxSold = soldVals.length ? Math.max(...soldVals, 1) : 1;
     const start = new Date(range.start + 'T12:00:00Z');
     const end   = new Date(range.end   + 'T12:00:00Z');
-    const d = new Date(start);
-    while (d <= end) {
+    for (const d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
       const wd = WD[d.getUTCDay()];
       const dateLbl = (d.getUTCMonth()+1) + '/' + d.getUTCDate();
       const en = byDay[wd];
-      let valHtml, subHtml = '', weight;
+      let valHtml, subHtml = '', weight, sortKey;
       if (en) {
         const soldN = parseFloat(en.sold), availN = parseFloat(en.avail);
         const hasSold = en.sold !== null && en.sold !== '' && !isNaN(soldN);
         const hasAvail = en.avail !== null && en.avail !== '' && !isNaN(availN);
-        if (en.x) { valHtml = '86'; weight = 1.0; }
+        if (en.x) { valHtml = '86'; weight = 1.0; sortKey = -1; }
         else if (hasSold) {
           valHtml = en.sold + (hasAvail ? '/' + en.avail : '') + ' sold';
           subHtml = (hasAvail && soldN >= availN) ? 'sold out' : '';
           weight = 0.4 + (soldN / maxSold) * 0.6;
+          sortKey = soldN;
         }
-        else if (hasAvail) { valHtml = '\u2014/' + en.avail; subHtml = 'sold not entered'; weight = 0.35; }
-        else { valHtml = '\u2014'; subHtml = 'not entered'; weight = 0.25; }
+        else if (hasAvail) { valHtml = '\u2014/' + en.avail; subHtml = 'sold not entered'; weight = 0.35; sortKey = -2; }
+        else { valHtml = '\u2014'; subHtml = 'not entered'; weight = 0.25; sortKey = -3; }
       } else if (reported[wd]) {
-        valHtml = '\u2014'; subHtml = 'not listed'; weight = 0.2;
+        valHtml = '\u2014'; subHtml = 'not listed'; weight = 0.2; sortKey = -4;
       } else {
-        valHtml = '\u2014'; subHtml = 'no data'; weight = 0.14;
+        valHtml = '\u2014'; subHtml = 'no data'; weight = 0.14; sortKey = -5;
+      }
+      if (remainder > 0 && (!en || en.sold === null || en.sold === '' || isNaN(parseFloat(en.sold))) && !((en||{}).x)) {
+        subHtml = (subHtml ? subHtml + ' \u00b7 ' : '') + 'part of \u2248' + remainder + ' unlogged';
       }
       const bg = hexBlend(cat.color, weight);
       const light = isLightBg(bg);
       const nameCol = light ? '#1a1a18' : '#ffffff';
       const metaCol = light ? 'rgba(26,26,24,0.6)' : 'rgba(255,255,255,0.8)';
-      html += `<div class="hm-day-cell" style="background:${bg};border-left-color:${cat.color};">
-        <div class="hm-day-label" style="color:${metaCol};">${wd.toUpperCase()} ${dateLbl}</div>
-        <div class="hm-day-val" style="color:${nameCol};">${valHtml}</div>
-        ${subHtml ? `<div class="hm-day-sub" style="color:${metaCol};">${subHtml}</div>` : ''}
-      </div>`;
-      d.setUTCDate(d.getUTCDate() + 1);
+      tiles.push({
+        sortKey,
+        html: `<div class="hm-day-cell" style="background:${bg};border-left-color:${cat.color};">
+          <div class="hm-day-label" style="color:${metaCol};">${wd.toUpperCase()} ${dateLbl}</div>
+          <div class="hm-day-val" style="color:${nameCol};">${valHtml}</div>
+          ${subHtml ? `<div class="hm-day-sub" style="color:${metaCol};">${subHtml}</div>` : ''}
+        </div>`
+      });
     }
   }
+  // Sort like every other category: highest sold first, blanks/no-data last
+  tiles.sort((a, b) => b.sortKey - a.sortKey);
+  html += tiles.map(t => t.html).join('');
   html += `</div></div>`;
   return html;
 }
