@@ -128,7 +128,7 @@ function parsePaste(raw) {
   const lines = raw.split('\n').map(l => l.replace(/[\u00A0\u2007\u202F]/g, ' ').replace(/\s+/g, ' ').trim()).filter(Boolean);
   const items = [];
   let dateRange = '';
-  const dateMatch = raw.match(/Date range\s+([\w\s,\-–\/]+?\d{4})/i);
+  const dateMatch = raw.match(/Date range\s+([A-Za-z]+\s+\d{1,2},?\s*\d{4}\s*[-–—]\s*[A-Za-z]+\s+\d{1,2},?\s*\d{4}|[\w\s,\/]+?\d{4})/i);
   if (dateMatch) dateRange = dateMatch[1].trim();
 
   for (const line of lines) {
