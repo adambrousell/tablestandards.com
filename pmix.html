@@ -69,8 +69,8 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .cat-share { width: 44px; text-align: right; color: var(--text-2); font-size: 12px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
 .cat-rank { width: 22px; text-align: right; color: var(--text-3); font-variant-numeric: tabular-nums; flex-shrink: 0; }
 .cat-name { width: 190px; color: var(--text); font-weight: 500; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cat-bar { flex: 1; height: 18px; background: #efede6; border-radius: 3px; overflow: hidden; min-width: 40px; }
-.cat-bar-fill { display: block; height: 100%; border-radius: 3px; transition: width 0.3s ease; min-width: 2px; }
+.cat-bar { flex: 1; height: 18px; background: #efede6; border-radius: 3px; overflow: hidden; min-width: 40px; position: relative; }
+.cat-bar-fill { display: block; height: 100%; border-radius: 3px; transition: width 0.3s ease; min-width: 3px; }
 .cat-val { width: 84px; text-align: right; color: var(--text); font-variant-numeric: tabular-nums; font-weight: 500; flex-shrink: 0; }
 .cat-sub { width: 70px; text-align: right; color: var(--text-3); font-size: 11px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
 .cat-delta { width: 58px; text-align: right; font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; flex-shrink: 0; }
@@ -91,22 +91,23 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   .kpi-sub { display: none; }
   .card { padding: 12px 12px; }
 
-  /* Ranked table: two-row layout per category — name/value on top row, full-width bar below.
-     Bar gets the ENTIRE row width instead of fighting the label for space. */
-  .cat-header-row { display: none; }   /* column headers don't fit meaningfully on mobile */
+  /* Ranked table: two-row layout per category — name/value/share on top row,
+     full-width bar below. Bar scales to the top rank so #1 fills the track. */
+  .cat-header-row { display: none; }
   .cat-row {
     display: grid;
-    grid-template-columns: 22px 1fr auto auto;
-    grid-template-areas: "rank name val delta" "bar bar bar bar";
+    grid-template-columns: 22px 1fr auto auto auto;
+    grid-template-areas: "rank name share val delta" "bar bar bar bar bar";
     gap: 4px 8px;
     padding: 10px 0;
   }
   .cat-rank { grid-area: rank; width: auto; font-size: 12px; text-align: left; padding-top: 1px; }
   .cat-name { grid-area: name; width: auto; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-top: 1px; }
+  .cat-share{ grid-area: share; display: inline; width: auto; font-size: 11px; padding-top: 3px; color: var(--text-3); }
   .cat-val  { grid-area: val;  width: auto; font-size: 13px; padding-top: 1px; }
   .cat-delta{ grid-area: delta; width: auto; font-size: 11px; padding-top: 3px; padding-left: 6px; }
   .cat-bar  { grid-area: bar; height: 12px; margin-top: 2px; min-width: 0; }
-  .cat-sub, .cat-share { display: none; }
+  .cat-sub { display: none; }
 
   /* Heatmap tiles */
   .hm-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
@@ -189,7 +190,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <div id="kpi-grid" class="kpi-grid"></div>
 
     <div class="card">
-      <div class="card-title"><span id="ranking-title">Categories ranked by quantity</span> highest → lowest · bar = share of week's total</div>
+      <div class="card-title"><span id="ranking-title">Categories ranked by quantity</span> highest → lowest · bar scaled to top rank · % = share of week's total</div>
       <div id="ranking-list"></div>
     </div>
 
@@ -586,11 +587,14 @@ function renderDashboard() {
     <span class="cat-sub">${byRev ? 'Qty sold' : 'Revenue'}</span>
     ${hasPrev ? '<span class="cat-delta" style="color:var(--text-3);">vs last wk</span>' : ''}
   </div>`;
+  const maxVal = sorted.length ? (byRev ? sorted[0].rev : sorted[0].qty) : 1;
   document.getElementById('ranking-list').innerHTML = headerHtml + sorted.map((r, idx) => {
     const val = byRev ? r.rev : r.qty;
     const prevVal = byRev ? r.prevRev : r.prevQty;
     const share = totalMetric > 0 ? val / totalMetric * 100 : 0;
-    const width = Math.max(1.5, share);
+    // Bar width is scaled to the #1 category so the top rank fills the track.
+    // The % column still shows true share-of-total — the bar shows relative rank.
+    const width = maxVal > 0 ? Math.max(1.5, val / maxVal * 100) : 0;
     const main = byRev ? fmt(r.rev) : Math.round(r.qty).toLocaleString();
     const sub  = byRev ? `${Math.round(r.qty).toLocaleString()} sold` : fmt(r.rev);
     return `<div class="cat-row" onclick="jumpToCategory('${r.key}')" title="View ${r.label} items">
