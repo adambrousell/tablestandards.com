@@ -283,9 +283,14 @@ function categorize(name) {
   return 'food';
 }
 
-// Non-menu rows the chef can't act on — hidden from the view entirely
+// Non-menu rows the chef can't act on — hidden from the view entirely.
+// Includes Toast section-subtotal rows (e.g. Take Out's "Appetizers") that
+// are blended rollups, not dishes — counting them double-counts revenue.
 function isMiscRow(name) {
-  return /^open\s*(food|drink)|open item|^tip$|don'?t make/i.test(name.trim());
+  const n = name.trim();
+  if (/^open\s*(food|drink)|open item|^tip$|don'?t make/i.test(n)) return true;
+  if (/^(appetizers?|entrees?|entrées?|sides|sandwiches|specials|desserts?|hors d'?oeuvres|petit d[ée]jeuner|beverages?)$/i.test(n)) return true;
+  return false;
 }
 
 function isStaffOrComp(name) {
