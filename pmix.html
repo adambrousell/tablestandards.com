@@ -159,13 +159,13 @@ const CAT_COLORS = {
   cocktail:'#2150a0', wine:'#5c2d6e', food:'#c0452a',
   starter:'#2a5f3c', rawbar:'#155e75', dessert:'#b8942a', spirit:'#4a7a8a',
   beer:'#7a5c2a', coffee:'#6b4e3d', na:'#888780',
-  events:'#7a3060', pdj:'#0f766e', lunch:'#556677', sides:'#9c6644',
+  events:'#7a3060', pdj:'#0f766e', tartare:'#8f2d44', lunch:'#556677', sides:'#9c6644',
 };
 const CAT_LABELS = {
   cocktail:'Cocktails & martinis', wine:'Wine (glass & bottle)', food:'Entrées',
   starter:'Starters', rawbar:'Raw bar (Les Fruits de Mer)', dessert:'Desserts', spirit:'Spirits',
   beer:'Beer', coffee:'Coffee & tea', na:'NA beverages',
-  events:'Private Events & Wine Dinner', pdj:'Weekly specials (Plats du Jour)', lunch:'Lunch only items', sides:'Sides',
+  events:'Private Events & Wine Dinner', pdj:'Weekly specials (Plats du Jour)', tartare:'Steak Tartare (nightly)', lunch:'Lunch only items', sides:'Sides',
 };
 
 function getToken() { return sessionStorage.getItem('rpi_chef_token') || ''; }
@@ -225,6 +225,7 @@ function categorize(name) {
   if (/poulet en croute|poulet en cro|oysters? rockefeller|french dip|crispy fish\s*(&\s*)?frites|bouillabais|prime short rib|short rib bourg|lobster frites/.test(n)) return 'pdj';
   if (/^wd\s|wine dinner/.test(n)) return 'events';
   if (/^p\s*\.|private event adult|private event child|event decor|grazing table|beer.*wine.*spritz|beverage package|\bpackage\b/.test(n)) return 'events';
+  if (/steak tartare/.test(n)) return 'tartare';
   if (/omelette|eggs benedict|pan bagnat|chicken salad sandwich|salmon burger|crispy fish sandwich|^parfait$|lunch oyster/.test(n)) return 'lunch';
   if (/pommes frites|pommes duchess|haricot vert|peppers carmen|corn & lardons|corn.*lardons|^side\s|side donuts/.test(n)) return 'sides';
   if (/espresso martini|salt air|filthy|metropolitan|jockey club|river pointe|the rpi|grasshopper|in fashion|saint joe|lychee|can't elope|pep in your|bee sting|negroni|strawberry fields|colada|hh:|martini happy hour|ancho problem|rhubarb|rhu-barbara/.test(n)) return 'cocktail';
@@ -246,7 +247,7 @@ function categorize(name) {
   if (/wagyu|waygu|ratatouille|paillard|moules frites|lasagna|au poivre|pork chop|steak frites|roast chicken for|ny strip|new york strip|porterhouse|salmon\b|saumon|medaillons|branzino|red snapper|snapper|kids tenders|kids cheeseburger|chicken fingers/.test(n)) return 'food';
   if (/1\s*\/\s*2\s*(dozen|dzn)|half\s*dozen|½\s*dozen/.test(n)) return 'rawbar';
   if (/crudo tasting|shrimp cocktail|tuna tartare|ceviche|fluke|caviar.*donut|dune fox|sloop point|salty rose|laughing gull|little darling|violet sky|swan point|sugar shack|barnegat/.test(n)) return 'rawbar';
-  if (/bread service|little gem|garden salad|asparagus mimosa|escargots|^jambon|steak tartare|sardine toast|crepe aux|berries.*cream|salad de tomates|eggplant|peaches/.test(n)) return 'starter';
+  if (/bread service|little gem|garden salad|asparagus mimosa|escargots|^jambon|sardine toast|crepe aux|berries.*cream|salad de tomates|eggplant|peaches/.test(n)) return 'starter';
   if (/carrot.*cake|meringue cake|chocolate cake|cheesecake|raspberry tart|creme brulee|banana split|brownie sundae|banana chip ice|brown butter ice|chocolate ice|strawberry ice|vanilla ice|mint ice|lemon sorbet|fromage/.test(n)) return 'dessert';
   if (/custom cake|fet d'or/.test(n)) return 'food';
   return 'food';
@@ -483,10 +484,12 @@ function renderDashboard() {
 
   // Item-breakdown order: Weekly specials pinned first (chef's operational
   // priority), everything else in ranked order. Stable sort preserves rank.
+  const PIN_ORDER = { pdj: 0, tartare: 1 };   // nightly-tracked categories pinned on top
   const hmOrder = sorted.slice().sort((a, b) => {
-    if (a.key === 'pdj' && b.key !== 'pdj') return -1;
-    if (b.key === 'pdj' && a.key !== 'pdj') return 1;
-    return 0;
+    const pa = (a.key in PIN_ORDER) ? PIN_ORDER[a.key] : 99;
+    const pb = (b.key in PIN_ORDER) ? PIN_ORDER[b.key] : 99;
+    if (pa !== pb) return pa - pb;
+    return 0;   // stable — non-pinned keep ranked order
   });
   let hmHtml = '';
   hmOrder.forEach(cat => {
@@ -495,7 +498,7 @@ function renderDashboard() {
       .sort((a,b) => byRev ? b.rev - a.rev : b.qty - a.qty);
     const maxR = byRev ? (grp[0]?.rev || 1) : (grp[0]?.qty || 1);
     const id = 'hmg-' + cat.key;
-    const pinBadge = (cat.key === 'pdj') ? '<span class="hm-pinned-badge">Pinned</span>' : '';
+    const pinBadge = (cat.key === 'pdj' || cat.key === 'tartare') ? '<span class="hm-pinned-badge">Pinned</span>' : '';
     hmHtml += `<div class="hm-cat-section">
       <div class="hm-cat-header" onclick="toggleHmGroup('${id}')">
         <span class="leg-dot" style="background:${cat.color}"></span>
@@ -528,7 +531,7 @@ function renderDashboard() {
         }
       }
       let shiftHtml = '';
-      if (cat.key === 'pdj' && shiftSpecialsMap) {
+      if ((cat.key === 'pdj' || cat.key === 'tartare') && shiftSpecialsMap) {
         const entries = shiftEntriesFor(item.name) || [];
         const byDay = {};
         entries.forEach(en => { byDay[en.d] = en; });
