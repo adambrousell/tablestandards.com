@@ -134,6 +134,21 @@ textarea{resize:vertical;min-height:72px;line-height:1.55}
 .note-del:hover{color:var(--red-deep)}
 .notes-empty{font-size:13px;color:var(--ink-faint);font-style:italic;padding:6px 0}
 
+/* DAILY ROTATION */
+.rotation-box{background:var(--cream-warm);border:1px solid var(--border-light);border-left:3px solid var(--gold-light);border-radius:0 6px 6px 0;padding:12px 15px}
+.rotation-quote{font-family:'Playfair Display',serif;font-size:15px;font-style:italic;color:var(--ink);line-height:1.7}
+.rotation-source{font-size:10px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint);margin-top:5px}
+.rotation-focus{margin-top:11px;padding-top:11px;border-top:1px solid var(--border-light)}
+.rotation-focus-label{font-size:10px;font-weight:500;letter-spacing:.09em;text-transform:uppercase;color:var(--gold);margin-bottom:5px}
+.rotation-focus-item{font-size:13px;color:var(--ink-mid);line-height:1.65;padding-left:13px;position:relative}
+.rotation-focus-item::before{content:'–';position:absolute;left:0;color:var(--gold)}
+
+/* SPIEL */
+.spiel-card{background:var(--ink);border-radius:8px;padding:20px 22px;position:relative;overflow:hidden}
+.spiel-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gold-light)}
+#spiel-text{font-family:'Playfair Display',serif;font-size:16px;line-height:1.85;white-space:pre-wrap;word-wrap:break-word;margin:0;color:var(--cream)}
+.spiel-hint{font-size:11px;color:var(--ink-faint);font-style:italic;margin-top:6px}
+
 /* EMAIL */
 .email-preview-wrap{background:#f0ece6;border-radius:8px;padding:20px}
 .email-chrome{background:#fff;border-radius:6px;box-shadow:0 2px 12px rgba(26,22,18,.12),0 1px 3px rgba(26,22,18,.08);overflow:hidden;max-width:680px;margin:0 auto}
@@ -210,6 +225,8 @@ textarea{resize:vertical;min-height:72px;line-height:1.55}
   .email-check-grid{grid-template-columns:1fr}
   .grid-2.close-grid{grid-template-columns:1fr}
   #sync-badge{font-size:9px;padding:2px 6px}
+  .spiel-card{padding:16px 16px 16px 18px}
+  #spiel-text{font-size:15px;line-height:1.8}
 }
 @media print{
   .site-header,.tabs,.btn-row{display:none}
@@ -339,6 +356,31 @@ textarea{resize:vertical;min-height:72px;line-height:1.55}
         </div>
         <div class="divider"></div>
         <div class="field"><div class="field-label">Additional Pre-shift notes</div><textarea id="o-preshift" placeholder="Staff announcements, items to communicate, special instructions…"></textarea></div>
+
+        <div class="divider"></div>
+        <div class="field-label" style="margin-bottom:8px">Today's Quote &amp; Focus</div>
+        <div id="daily-rotation" class="rotation-box"></div>
+
+        <div class="divider"></div>
+        <div class="field-label" style="margin-bottom:8px">Standing Talking Points</div>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <input type="text" id="sp-input" placeholder="Something to repeat every night until it sticks…" style="flex:1" onkeydown="if(event.key==='Enter'){addStandingPoint();event.preventDefault()}">
+          <button class="tag-add-btn" onclick="addStandingPoint()">+ Keep</button>
+        </div>
+        <div id="standing-list" style="display:flex;flex-direction:column;gap:6px;min-height:32px"></div>
+
+        <div class="divider"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+          <div class="field-label" style="margin:0">Tonight's Spiel</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-secondary" onclick="buildSpiel()" style="padding:6px 14px;font-size:12px">↻ Build</button>
+            <button class="btn-secondary" id="spiel-copy-btn" onclick="copySpiel()" style="padding:6px 14px;font-size:12px;display:none">Copy</button>
+          </div>
+        </div>
+        <div id="spiel-wrap" style="display:none">
+          <div class="spiel-card"><pre id="spiel-text"></pre></div>
+          <div class="spiel-hint">Pulls date, weather, Resy count, specials, 86 list, VIPs, and the notes above. Updates itself as you edit.</div>
+        </div>
       </div>
     </div>
     <div class="btn-row"><button class="btn-primary" onclick="goTab(1)">Continue to Shift Report →</button></div>
@@ -587,6 +629,7 @@ var preShiftSummary = '';
 var openingSpecials = [];
 var shiftExtras     = [];
 var _plainTextEmail = '';
+var _spielOpen      = false;  // spiel card visible → keep it live as fields change
 
 // Polling / sync state
 var _lastKvTs   = null;   // ISO string — last savedAt we received from KV
@@ -613,6 +656,184 @@ var POLISH_SECTIONS = [
   ['s-batch','Batch'],
   ['s-maint','Maintenance / Orders']
 ];
+
+// ═══════════════════════════════════════════════
+// QUOTE OF THE DAY
+// Rotates one per service day, same on every device. 13 entries, so it
+// does not lock to a weekday. Add your own — order does not matter.
+// Verify any attribution before you put a name on it.
+// ═══════════════════════════════════════════════
+var QUOTES = [
+  {text:'Faites simple.', source:'Auguste Escoffier'},
+  {text:'Hospitality is what happens after the food arrives.', source:'House'},
+  {text:'The table is set long before the guest sits down.', source:'House'},
+  {text:'Nobody remembers the check. Everybody remembers how it felt.', source:'House'},
+  {text:'Anticipate. Do not react.', source:'House'},
+  {text:'A full water glass is a quiet promise kept.', source:'House'},
+  {text:'Sell the wine you would drink yourself.', source:'House'},
+  {text:'The room tells you what it needs. Listen to it.', source:'House'},
+  {text:'Speed is not hurry.', source:'House'},
+  {text:'Polish the thing nobody will notice. They notice.', source:'House'},
+  {text:'Own the mistake before the guest has to.', source:'House'},
+  {text:'Warmth first, precision second, and never one without the other.', source:'House'},
+  {text:'Melius semper — always better, never finished.', source:'House'}
+];
+
+// ═══════════════════════════════════════════════
+// ROTATING FOCUS POINTS
+// Three per night, advancing through the list. 11 entries with a stride
+// of 3 means the set keeps shifting instead of repeating weekly.
+// ═══════════════════════════════════════════════
+var FOCUS_PER_DAY = 3;
+var FOCUS_POINTS = [
+  'Greet every table within 60 seconds — eye contact counts.',
+  'Know tonight\'s specials cold: count, prep, allergens.',
+  'Lead with wine. Bin numbers are on the list if you need them.',
+  'Water glasses never below half.',
+  'Crumb and reset before dessert menus hit the table.',
+  'Hands full both directions — nothing goes back empty.',
+  'Uniform crisp, phones away, no gum.',
+  'Check back within two bites, not two minutes.',
+  'Pre-bus quietly. The guest should not watch you work.',
+  'If something goes sideways, find a manager before the guest does.',
+  'Walk the room like a guest before you walk it like staff.'
+];
+
+// Whole days since epoch for the service date — drives both rotations,
+// so every device on the same night shows the same quote and focus set.
+function rotationIndex(){
+  var d=v('o-date')||serviceDate();
+  var p=String(d).split('-');
+  var t=Date.UTC(+p[0],(+p[1]||1)-1,+p[2]||1);
+  if(isNaN(t)) return 0;
+  return Math.floor(t/86400000);
+}
+function mod(n,m){ return ((n%m)+m)%m; }
+function quoteOfDay(){ return QUOTES.length ? QUOTES[mod(rotationIndex(),QUOTES.length)] : null; }
+function focusOfDay(){
+  var L=FOCUS_POINTS.length; if(!L) return [];
+  var n=Math.min(FOCUS_PER_DAY,L), start=mod(rotationIndex()*n,L), out=[];
+  for(var i=0;i<n;i++) out.push(FOCUS_POINTS[(start+i)%L]);
+  return out;
+}
+function renderRotation(){
+  var el=document.getElementById('daily-rotation'); if(!el) return;
+  var q=quoteOfDay(), f=focusOfDay(), H=[];
+  if(q){ H.push('<div class="rotation-quote">“'+esc(q.text)+'”</div>');
+         H.push('<div class="rotation-source">'+esc(q.source||'House')+'</div>'); }
+  if(f.length){ H.push('<div class="rotation-focus"><div class="rotation-focus-label">Tonight\'s focus</div>'+
+    f.map(function(x){return '<div class="rotation-focus-item">'+esc(x)+'</div>';}).join('')+'</div>'); }
+  el.innerHTML=H.join('');
+}
+
+// ═══════════════════════════════════════════════
+// STANDING TALKING POINTS
+// Carry over night to night until removed. Kept under a date-independent
+// localStorage key and merged (never overwritten) across devices, so a
+// device that has not seen a point yet cannot wipe it.
+// ═══════════════════════════════════════════════
+var STANDING_KEY='rpi_standing_points';
+var standingPoints=[];      // [{id,text,added}]
+var removedStandingIds=[];  // tombstones so a removal survives a merge
+
+function loadStanding(){
+  try{ var r=localStorage.getItem(STANDING_KEY); if(r){ var o=JSON.parse(r);
+    standingPoints=o.points||[]; removedStandingIds=o.removed||[]; } }catch(e){}
+}
+function saveStanding(){
+  try{ localStorage.setItem(STANDING_KEY,JSON.stringify({points:standingPoints,removed:removedStandingIds})); }catch(e){}
+}
+function addStandingPoint(){
+  var inp=document.getElementById('sp-input'); if(!inp) return;
+  var txt=inp.value.trim(); if(!txt) return;
+  standingPoints.push({id:'sp'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),text:txt,added:serviceDate()});
+  inp.value=''; saveStanding(); renderStandingPoints(); debounceSave();
+}
+function removeStandingPoint(id){
+  if(removedStandingIds.indexOf(id)===-1) removedStandingIds.push(id);
+  standingPoints=standingPoints.filter(function(p){return p.id!==id;});
+  saveStanding(); renderStandingPoints(); debounceSave();
+}
+function renderStandingPoints(){
+  var el=document.getElementById('standing-list'); if(!el) return;
+  if(!standingPoints.length){ el.innerHTML='<div class="notes-empty">Nothing standing — add a point above and it will appear in every spiel.</div>'; return; }
+  el.innerHTML=standingPoints.map(function(p){
+    return '<div class="note-entry"><div class="note-meta">'+esc(p.added||'')+'</div><div class="note-text">'+esc(p.text)+
+      '</div><button class="note-del" onclick="removeStandingPoint(\''+p.id+'\')" aria-label="Remove">×</button></div>';
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════
+// PRE-SHIFT SPIEL
+// Fixed skeleton, tonight's variables. Edit the wording below —
+// the {tokens} fill themselves in from the form.
+// ═══════════════════════════════════════════════
+var SPIEL_TEMPLATE =
+'Good evening, everyone — {date}.\n\n'+
+'{quote}\n\n'+
+'Weather: {weather}\n\n'+
+'On the books: {resy}\n\n'+
+'SPECIALS\n{specials}\n\n'+
+'86 AT OPEN\n{eightysix}\n\n'+
+'GUESTS TO WATCH\n{vips}\n\n'+
+'FROM TONIGHT\'S MEETING\n{notes}\n\n'+
+'TONIGHT\'S FOCUS\n{focus}\n'+
+'{standing}'+
+'\nLet\'s have a great night. Melius semper.';
+
+function spielList(arr,empty){ return arr.length ? arr.map(function(x){return '– '+x;}).join('\n') : '– '+empty; }
+// Function replacements: user text can contain $ patterns that a string
+// replacement would mangle.
+function fill(s,token,val){ return s.replace(token,function(){return val;}); }
+
+function buildSpiel(){
+  var specials=openingSpecials.filter(function(s){return s.name;}).map(function(s){
+    return s.name+(s.count?' — '+s.count+' available':'');
+  });
+  shiftExtras.filter(function(s){return s.name;}).forEach(function(s){
+    specials.push(s.name+(s.avail?' — '+s.avail+' available':''));
+  });
+  var e86=eighties.filter(Boolean);
+  var notes=preShiftNotes.map(function(n){return n.text;});
+  var extra=(v('o-preshift')||'').trim();
+  if(extra) extra.split('\n').forEach(function(l){ if(l.trim()) notes.push(l.trim()); });
+
+  var q=quoteOfDay();
+  var quoteBlock=q?('“'+q.text+'”\n— '+(q.source||'House')):'';
+  var standing=standingPoints.map(function(p){return p.text;});
+  var standingBlock=standing.length?('\nSTANDING\n'+spielList(standing,'')+'\n'):'';
+
+  var out=SPIEL_TEMPLATE;
+  out=fill(out,'{date}',fmtDate(v('o-date'))||'tonight');
+  out=fill(out,'{quote}',quoteBlock);
+  out=fill(out,'{weather}',v('o-weather')||'not logged');
+  out=fill(out,'{resy}',v('s-resy')?v('s-resy')+' covers on Resy':'count not entered yet');
+  out=fill(out,'{specials}',spielList(specials,'None entered yet.'));
+  out=fill(out,'{eightysix}',spielList(e86,'Nothing 86 — full menu.'));
+  out=fill(out,'{vips}',spielList(vips,'None flagged.'));
+  out=fill(out,'{notes}',spielList(notes,'Nothing logged.'));
+  out=fill(out,'{focus}',spielList(focusOfDay(),'None set.'));
+  out=fill(out,'{standing}',standingBlock);
+  out=out.replace(/\n{3,}/g,'\n\n').trim();   // collapse gaps left by empty blocks
+
+  var t=document.getElementById('spiel-text'); if(t) t.textContent=out;
+  var w=document.getElementById('spiel-wrap'); if(w) w.style.display='block';
+  var cb=document.getElementById('spiel-copy-btn'); if(cb) cb.style.display='inline-flex';
+  _spielOpen=true;
+}
+
+function refreshSpiel(){ if(_spielOpen) buildSpiel(); }
+
+function copySpiel(){
+  var t=document.getElementById('spiel-text'); if(!t) return;
+  navigator.clipboard.writeText(t.textContent).then(function(){
+    var b=document.getElementById('spiel-copy-btn'); if(!b) return;
+    b.textContent='✓ Copied'; setTimeout(function(){b.textContent='Copy';},2000);
+  }).catch(function(){
+    var b=document.getElementById('spiel-copy-btn'); if(b) b.textContent='Copy failed';
+    setTimeout(function(){ if(b) b.textContent='Copy'; },2000);
+  });
+}
 
 // ═══════════════════════════════════════════════
 // DATE HELPERS
@@ -680,6 +901,7 @@ function collect() {
     toggleState: toggleState,
     preShiftNotes: preShiftNotes, preShiftSummary: preShiftSummary,
     vips: vips, shiftNotes: shiftNotes, deletedNoteFPs: deletedNoteFPs,
+    standingPoints: standingPoints, removedStandingIds: removedStandingIds,
     openingSpecials: openingSpecials, shiftExtras: shiftExtras, eighties: eighties
   };
 }
@@ -728,7 +950,26 @@ function applyFields(d) {
   }
   if (d.openingSpecials&&d.openingSpecials.length) { openingSpecials=d.openingSpecials; renderOpeningSpecials(); renderShiftSpecials(); }
   if (d.shiftExtras&&d.shiftExtras.length) { shiftExtras=d.shiftExtras; renderShiftSpecials(); }
+
+  // Standing points MERGE, never replace — an incoming payload that has not
+  // seen a point yet must not delete it. Tombstones win over additions.
+  if (d.removedStandingIds&&d.removedStandingIds.length) {
+    d.removedStandingIds.forEach(function(id){ if(removedStandingIds.indexOf(id)===-1) removedStandingIds.push(id); });
+  }
+  if (d.standingPoints&&d.standingPoints.length) {
+    var haveIds=standingPoints.map(function(p){return p.id;});
+    d.standingPoints.forEach(function(p){
+      if(!p||!p.id) return;
+      if(removedStandingIds.indexOf(p.id)!==-1) return;
+      if(haveIds.indexOf(p.id)===-1){ standingPoints.push(p); haveIds.push(p.id); }
+    });
+  }
+  standingPoints=standingPoints.filter(function(p){ return removedStandingIds.indexOf(p.id)===-1; });
+  saveStanding(); renderStandingPoints();
+
   _applying = false;
+  renderRotation();
+  refreshSpiel();   // keep the spiel current after a remote sync
 }
 
 // ═══════════════════════════════════════════════
@@ -747,6 +988,8 @@ function debounceSave() {
   if (_applying) return;
   _dirty = true; _editSeq++;   // SYNC FIX: mark unsaved local edits
   saveDraftLocal();
+  renderRotation();            // date change swaps the quote and focus set
+  refreshSpiel();              // spiel tracks the form while it's on screen
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(cfSaveShift, 1500);
 }
@@ -900,6 +1143,7 @@ function goTab(n) {
     if(i===n) d.classList.add('active');
   });
   window.scrollTo({top:0,behavior:'smooth'});
+  if(n===0) refreshSpiel();
   if(n===2) generateExec();
 }
 
@@ -1062,6 +1306,7 @@ async function fetchWeather(){
     var p=day||periods[0];
     inp.value=p.shortForecast+' — High '+p.temperature+'°'+p.temperatureUnit+(night?', low '+night.temperature+'°'+night.temperatureUnit:'')+', winds '+p.windSpeed+' '+p.windDirection;
     if(btn){btn.textContent='✓ Done';setTimeout(function(){btn.textContent='⟳ Auto-fill';},2000);}
+    refreshSpiel();
   } catch(e){inp.value='';inp.placeholder='Could not fetch — enter manually';if(btn)btn.textContent='⟳ Retry';}
 }
 
@@ -1166,9 +1411,6 @@ function appendPreShiftToEmployees(btn){
 }
 
 // ═══════════════════════════════════════════════
-// EMAIL GENERATE
-// ═══════════════════════════════════════════════
-// ═══════════════════════════════════════════════
 // REPORT ENRICHMENT HELPERS
 // ═══════════════════════════════════════════════
 function numOr(x){ var n=parseInt(String(x==null?'':x).replace(/[^0-9-]/g,''),10); return isNaN(n)?null:n; }
@@ -1188,6 +1430,9 @@ function collectFlags(){
   return {no:no, unset:unset};
 }
 
+// ═══════════════════════════════════════════════
+// EMAIL GENERATE
+// ═══════════════════════════════════════════════
 function generate(){
   var date=v('o-date'),mgr=v('o-manager')||'Manager',closer=v('s-closer'),wthr=v('o-weather')||'—';
   var sales=v('s-sales')||'—',avg=v('s-avg')||'—',cvrs=v('s-covers')||'—',resy=v('s-resy')||'—';
@@ -1403,12 +1648,17 @@ async function generateExec(){
   // Restore toggles from localStorage first
   try{var tr=localStorage.getItem(toggleKey());if(tr){var ts=JSON.parse(tr);Object.keys(ts).forEach(function(k){applyToggle(k,ts[k]);});}}catch(e){}
 
+  // Standing points load BEFORE the draft restore, so the merge in
+  // applyFields has the local set to union against
+  loadStanding();
+
   // Restore draft from localStorage
   loadDraftLocal();
 
   // Seed default specials if none
   if(!openingSpecials.length){var ds=DAY_SPECIALS[serviceDay()];if(ds)openingSpecials.push({name:ds,count:'',sold:'',eightysixed:false});openingSpecials.push({name:'Steak Tartare',count:'',sold:'',eightysixed:false});}
   renderOpeningSpecials(); renderShiftSpecials(); renderShiftNotes(); renderPreShiftNotes(); renderEighties(); renderVips();
+  renderRotation(); renderStandingPoints();
 
   // Initial KV load — overrides local if KV is newer
   try {
