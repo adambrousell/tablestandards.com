@@ -51,6 +51,14 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .toggle-btn { background: var(--surface); color: var(--text-2); border: 1px solid var(--border-strong); border-radius: 20px; padding: 8px 20px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; font-weight: 500; }
 .toggle-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
+/* Uncategorized-item warning — surfaces Toast mapping problems instead of
+   letting unknown items silently inflate the Entrées category. */
+.warn-box { background: #fdf6dd; border: 1px solid #e6d9a8; border-radius: var(--r); padding: 12px 14px; margin-bottom: 14px; font-size: 12.5px; color: #4f4326; line-height: 1.6; }
+.warn-box b { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; color: #6b5a2a; }
+.warn-box .warn-items { color: var(--text); }
+.warn-box code { background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 3px; font-size: 11.5px; font-family: ui-monospace, Menlo, Consolas, monospace; }
+.warn-box .warn-hint { color: #7a6a3a; font-size: 11.5px; margin-top: 5px; }
+
 .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
 .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; }
 .kpi-label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
@@ -142,6 +150,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .hm-day-val { font-size: 15px; font-weight: 500; margin-top: 2px; font-variant-numeric: tabular-nums; line-height: 1.2; }
 .hm-day-sub { font-size: 10px; margin-top: 1px; }
 .hm-pinned-badge { display: inline-block; font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); background: #e8f2ec; border: 1px solid #c7dccf; border-radius: 10px; padding: 1px 7px; margin-left: 6px; vertical-align: middle; }
+.hm-warn-badge { display: inline-block; font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8a6d1a; background: #fdf6dd; border: 1px solid #e6d9a8; border-radius: 10px; padding: 1px 7px; margin-left: 6px; vertical-align: middle; }
 .kpi-delta { display: inline-block; font-size: 11px; font-weight: 500; padding: 1px 7px; border-radius: 10px; margin-top: 5px; }
 .kpi-delta.up { background: #e8f5ed; color: var(--up); }
 .kpi-delta.down { background: #faeaea; color: var(--down); }
@@ -189,6 +198,8 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
       </div>
     </div>
 
+    <div id="uncat-banner"></div>
+
     <div id="kpi-grid" class="kpi-grid"></div>
 
     <div class="card">
@@ -207,6 +218,38 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 <script>
 const WORKER_URL = 'https://rpi-pmix-backend.amusementstandards.workers.dev';
 
+/* ------------------------------------------------------------------
+   CONFIG FLAGS
+   ------------------------------------------------------------------ */
+// Fees (plating fee, corkage, cake fee) get their own category so they stop
+// polluting Entrées. Flip to true to drop them from the dashboard entirely.
+const EXCLUDE_FEES_FROM_TOTALS = false;
+// Kids items currently roll up into Entrées. Flip to true to split them out
+// so they stop dragging down the entrée average check.
+const KIDS_OWN_CATEGORY = false;
+
+/* ------------------------------------------------------------------
+   MANUAL OVERRIDES
+   Anything Toast has in the wrong sales category goes here. Key = the item
+   name lowercased with accents stripped and curly apostrophes straightened
+   (see normName). This runs BEFORE all pattern matching, so it always wins.
+   ------------------------------------------------------------------ */
+const ITEM_OVERRIDES = {
+  // Spirits / aperitifs that Toast filed under Entrées
+  'cocchi americano bianco': 'spirit',
+  'crown royal': 'spirit',
+  "boodle's gin": 'spirit',
+  'boodles gin': 'spirit',
+  'asbury park small batch bourbon': 'spirit',
+  'mr. black': 'spirit',
+  'mr black': 'spirit',
+  'glenmorangie 14': 'spirit',
+  // NA beverage filed under Entrées
+  'leitz na sparkling rose': 'na',
+  // Service charge, not food
+  'plating fee': 'fees',
+};
+
 const PDJ_NIGHT_BY_DISH = {
   'poulet en croute': 'Mon',
   'oyster rockefeller': 'Tue',
@@ -223,12 +266,14 @@ const CAT_COLORS = {
   starter:'#2a5f3c', rawbar:'#155e75', dessert:'#b8942a', spirit:'#4a7a8a',
   beer:'#7a5c2a', coffee:'#6b4e3d', na:'#888780',
   events:'#7a3060', pdj:'#0f766e', tartare:'#8f2d44', lunch:'#556677', sides:'#9c6644',
+  kids:'#a0522d', fees:'#6b6b67', uncat:'#8a6d1a',
 };
 const CAT_LABELS = {
   cocktail:'Cocktails & martinis', wine:'Wine (glass & bottle)', food:'Entrées',
   starter:'Starters', rawbar:'Raw bar (Les Fruits de Mer)', dessert:'Desserts', spirit:'Spirits',
   beer:'Beer', coffee:'Coffee & tea', na:'NA beverages',
   events:'Private Events & Wine Dinner', pdj:'Weekly specials (Plats du Jour)', tartare:'Steak Tartare (nightly)', lunch:'Lunch only items', sides:'Sides',
+  kids:'Kids menu', fees:'Fees & service charges', uncat:'Uncategorized — needs mapping',
 };
 
 function getToken() { return sessionStorage.getItem('rpi_chef_token') || ''; }
@@ -282,38 +327,85 @@ window.addEventListener('load', () => {
   if (getToken()) showMainContent();
 });
 
+/* Normalize once so every rule below sees the same shape: lowercase, accents
+   stripped (Rose vs Rosé), curly apostrophes straightened (Boodle's vs
+   Boodle’s), whitespace collapsed. Toast exports are inconsistent on all three. */
+function normName(name) {
+  return String(name || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\u2018\u2019\u02bc]/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function categorize(name) {
-  const n = name.toLowerCase();
+  const n = normName(name);
+
+  // 0) Manual overrides always win.
+  if (ITEM_OVERRIDES[n]) return ITEM_OVERRIDES[n];
+
+  // 1) Fees and non-product charges — never food revenue.
+  if (/\b(plating fee|corkage|cake fee|cakeage|split (plate|charge)|service charge|delivery fee|setup fee|room fee)\b/.test(n)) return 'fees';
+
+  // 2) Nightly / weekly specials.
   if (/plat[e]?\s*d[eu]\s*jour|\bd[eu]\s*jour\b|^pdj\b/.test(n)) return 'pdj';
   if (/poulet en croute|poulet en cro|oysters? rockefeller|french dip|crispy fish\s*(&\s*)?frites|bouillabais|prime short rib|short rib bourg|lobster frites/.test(n)) return 'pdj';
   if (/^wd\s|wine dinner/.test(n)) return 'events';
   if (/^p\s*\.|private event adult|private event child|event decor|grazing table|beer.*wine.*spritz|beverage package|\bpackage\b/.test(n)) return 'events';
   if (/steak tartare/.test(n)) return 'tartare';
+
+  // 3) Daypart / sides.
   if (/omelette|eggs benedict|pan bagnat|chicken salad sandwich|salmon burger|crispy fish sandwich|^parfait$|lunch oyster/.test(n)) return 'lunch';
   if (/pommes frites|pommes duchess|haricot vert|peppers carmen|corn & lardons|corn.*lardons|^side\s|side donuts/.test(n)) return 'sides';
+
+  // 4) Cocktails.
   if (/espresso martini|salt air|filthy|metropolitan|jockey club|river pointe|the rpi|grasshopper|in fashion|saint joe|lychee|can't elope|pep in your|bee sting|negroni|strawberry fields|colada|hh:|martini happy hour|ancho problem|rhubarb|rhu-barbara/.test(n)) return 'cocktail';
   if (/aperol spritz|hugo spritz|french 75|paper plane|mimosa|bloody mary|lemon drop|mojito|moscow mule|vesper|garden state|cavaillon|berry spritz|cocogroni|sangria/.test(n)) return 'cocktail';
   if (/na almost|na pear|na espresso|na summer/.test(n)) return 'cocktail';
-  if (/d[’']?yquem|latour pauillac|somm selection/.test(n)) return 'wine';
-  if (/^gl:|^gl\s|cremant|brut ros|moet|drappier|folle blanche|albarino|ladoucette|drouhin.*secondes|pouilly|peyrassol|moulin.*vent|cotes du rh|guyon 2022|routestock|route stock|chappellet mountain|haut l'artigue|haut-l|pazo das bruxas|gros plant|jean aubron|saint-cyrgues|costières/.test(n)) return 'wine';
-  if (/wine by the bottle|btg bottle|sancerre|meursault|chablis|puligny|cabernet sauv|pride mountain|ridge.*lytton|kistler|o'shaugh|aubert.*carneros|turley|ducru|chauvin 2019|smith haut lafitte|leon beyer|melville|chevillon|cathiard|camus-bruchon|agrapart|sulauze|domaine pierre martin|francois de la roche|lauverjat|manarine|lafarge|domaine guyon|drouhin.*cotes de beaune|joseph drouhin|o'shaughnessy|maître de chai|le petit ducru|le petite smith|pessac|picpoul|lieu dit|fess parker|daniel rion|petitot|hautes co|philéandre|lynch bages|cantenac|sociando|solitude|la rame|saint cyr|morgon|giacometti|patrimonio|arnot-roberts|fullerton|jk carriere|hundred acre|screaming eagle|lavieille|isabelle garrault|julie et patrick/.test(n)) return 'wine';
+
+  // 5) NA wine / NA beer / zero-proof bottles — MUST run before the wine and
+  //    beer rules or "NA Sparkling Rose" gets counted as a wine sale.
+  if (/^na\s|\bna\s+(sparkling|wine|rose|red|white|brut|beer)\b|non[- ]?alcoholic|zero proof|\bleitz\b|\bgruvi\b|\blyre'?s\b|\bseedlip\b|\bghia\b|\bfre\b/.test(n)) return 'na';
+
+  // 6) Wine.
+  if (/d[']?yquem|latour pauillac|somm selection/.test(n)) return 'wine';
+  if (/^gl:|^gl\s|cremant|brut ros|moet|drappier|folle blanche|albarino|ladoucette|drouhin.*secondes|pouilly|peyrassol|moulin.*vent|cotes du rh|guyon 2022|routestock|route stock|chappellet mountain|haut l'artigue|haut-l|pazo das bruxas|gros plant|jean aubron|saint-cyrgues|costieres/.test(n)) return 'wine';
+  if (/wine by the bottle|btg bottle|sancerre|meursault|chablis|puligny|cabernet sauv|pride mountain|ridge.*lytton|kistler|o'shaugh|aubert.*carneros|turley|ducru|chauvin 2019|smith haut lafitte|leon beyer|melville|chevillon|cathiard|camus-bruchon|agrapart|sulauze|domaine pierre martin|francois de la roche|lauverjat|manarine|lafarge|domaine guyon|drouhin.*cotes de beaune|joseph drouhin|o'shaughnessy|maitre de chai|le petit ducru|le petite smith|pessac|picpoul|lieu dit|fess parker|daniel rion|petitot|hautes co|phileandre|lynch bages|cantenac|sociando|solitude|la rame|saint cyr|morgon|giacometti|patrimonio|arnot-roberts|fullerton|jk carriere|hundred acre|screaming eagle|lavieille|isabelle garrault|julie et patrick/.test(n)) return 'wine';
+  if (/\bsherry\b|\bmadeira\b|oloroso|amontillado|fino\b/.test(n)) return 'wine';
   if (/^\d{3,4}[:\s]|^b\d{2,4}\b|^2\d{3}[:\s]/.test(n)) return 'wine';
-  if (/\b(vodka|belvedere|grey goose|ketel one|tito's|tito\b|hendrick|beefeater|bombay sapphire|botanist|fords gin|plymouth gin|tanqueray|absolut|monkey 47|asbury park gin|wodka)\b/.test(n)) return 'spirit';
-  if (/\bcasamigos|don julio|fortaleza|lalo\b|pueblo viejo|casa dragones|del maguey|clase azul|g4 blanco|g4 reposado|g4 anejo|tanteo/.test(n)) return 'spirit';
-  if (/\bangels envy|blanton|buffalo trace|bulleit|dewars|high west|jack daniel|jameson|johnnie walker|laguavulin|macallan|maker's mark|michter|oban 14|sazerac rye|whistlepig|widow jane|woodford reserve|basil hayden|four roses|penelope|glenlivet|old rip van winkle/.test(n)) return 'spirit';
-  if (/chartreuse|\bcognac\b|pierre ferrand|grand marnier|fernet|lazzaroni|molinari sambuca|nonino amaro|averna amaro|limoncello|bailey|campari|taylor fladgate|\bport\b|braulio|frangelico|\brum\b|havana|havanna|captain morgan|ron zacapa|bacardi|st\. agrestis|varnelli/.test(n)) return 'spirit';
-  if (/\bcodigo\b/.test(n)) return 'spirit';
-  if (/beer done|vliet|birdsmouth|kronenbourg|other half|grimm|athletic brewing/.test(n)) return 'beer';
-  if (n === 'lunch') return 'beer';
+
+  // 7) Spirits — named brands first, then generic category words.
+  if (/\b(vodka|belvedere|grey goose|ketel one|tito's|tito\b|hendrick|beefeater|bombay sapphire|botanist|fords gin|plymouth gin|tanqueray|absolut|monkey 47|asbury park gin|wodka|boodle)\b/.test(n)) return 'spirit';
+  if (/\bcasamigos|don julio|fortaleza|lalo\b|pueblo viejo|casa dragones|del maguey|clase azul|g4 blanco|g4 reposado|g4 anejo|tanteo|\bcodigo\b/.test(n)) return 'spirit';
+  if (/\bangels envy|blanton|buffalo trace|bulleit|dewars|high west|jack daniel|jameson|johnnie walker|laguavulin|lagavulin|macallan|maker's mark|michter|oban 14|sazerac rye|whistlepig|widow jane|woodford reserve|basil hayden|four roses|penelope|glenlivet|glenmorangie|glenfiddich|old rip van winkle|crown royal|knob creek|elijah craig|eagle rare|weller|wild turkey|jim beam|rittenhouse|redbreast|hibiki|nikka|ardbeg|talisker|balvenie|springbank/.test(n)) return 'spirit';
+  if (/chartreuse|\bcognac\b|pierre ferrand|grand marnier|fernet|lazzaroni|molinari sambuca|nonino amaro|averna amaro|limoncello|bailey|campari|taylor fladgate|\bport\b|braulio|frangelico|\brum\b|havana|havanna|captain morgan|ron zacapa|bacardi|st\. agrestis|varnelli|hennessy|remy martin|courvoisier|cointreau|chambord|disaronno|drambuie|kahlua|mr\.? black/.test(n)) return 'spirit';
+  if (/\bcocchi\b|\blillet\b|\bdubonnet\b|punt e mes|carpano|\bdolin\b|\bsuze\b|\bcynar\b|montenegro|meletti|cardamaro|\bbyrrh\b|\bamericano bianco\b/.test(n)) return 'spirit';
+  if (/\b(bourbon|whiskey|whisky|scotch|single malt|gin|tequila|mezcal|armagnac|grappa|liqueur|amaro|amaretto|aperitif|vermouth|sambuca|absinthe|calvados|eau de vie)\b/.test(n)) return 'spirit';
+
+  // 8) Coffee / NA / beer.
   if (/\bespresso\b|\bcappuccino\b|\bmacchiato\b|\bcoffee\b|peppermint tea|chamomile tea|earl gr[ae]y|green tea|black tea/.test(n)) return 'coffee';
   if (/btl.*still water|btl.*sparkling water|\bcoke\b|diet coke|sprite|ginger ale|club soda|ginger beer|\btonic\b|shirley temple|lemonade|iced tea|apple juice|arnold palmer|pineapple juice|cranberry juice|fresh oj|milk/.test(n)) return 'na';
+  if (/beer done|vliet|birdsmouth|kronenbourg|other half|grimm|athletic brewing/.test(n)) return 'beer';
+  if (n === 'lunch') return 'beer';
+  // Generic beer words run AFTER the NA rule so "ginger ale" isn't a beer.
+  if (/\b(ipa|lager|pilsner|pale ale|amber ale|stout|porter|hefeweizen|saison|cider|draft|draught)\b/.test(n)) return 'beer';
+
+  // 9) Kids.
+  if (KIDS_OWN_CATEGORY && /^kids?\b|kids cheeseburger|kids tenders|chicken fingers/.test(n)) return 'kids';
+
+  // 10) Food.
   if (/wagyu|waygu|ratatouille|paillard|moules frites|lasagna|au poivre|pork chop|steak frites|roast chicken for|ny strip|new york strip|porterhouse|salmon\b|saumon|medaillons|branzino|red snapper|snapper|kids tenders|kids cheeseburger|chicken fingers/.test(n)) return 'food';
-  if (/1\s*\/\s*2\s*(dozen|dzn)|half\s*dozen|½\s*dozen/.test(n)) return 'rawbar';
+  if (/1\s*\/\s*2\s*(dozen|dzn)|half\s*dozen|1\/2\s*dozen/.test(n)) return 'rawbar';
   if (/crudo tasting|shrimp cocktail|tuna tartare|ceviche|fluke|caviar.*donut|dune fox|sloop point|salty rose|laughing gull|little darling|violet sky|swan point|sugar shack|barnegat/.test(n)) return 'rawbar';
   if (/bread service|little gem|garden salad|asparagus mimosa|escargots|^jambon|sardine toast|crepe aux|berries.*cream|salad de tomates|eggplant|peaches/.test(n)) return 'starter';
   if (/carrot.*cake|meringue cake|chocolate cake|cheesecake|raspberry tart|creme brulee|banana split|brownie sundae|banana chip ice|brown butter ice|chocolate ice|strawberry ice|vanilla ice|mint ice|lemon sorbet|fromage/.test(n)) return 'dessert';
   if (/custom cake|fet d'or/.test(n)) return 'food';
-  return 'food';
+
+  // 11) Fallback. Previously this returned 'food', which is why every unknown
+  //     item — spirits, NA wine, fees — silently landed in Entrées. Unknown
+  //     items now surface in the banner so they get mapped instead of buried.
+  return 'uncat';
 }
 
 function isMiscRow(name) {
@@ -524,9 +616,38 @@ function isLightBg(hex) {
   return lum > 150;
 }
 
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+}
+
+// Anything that lands in 'uncat' gets called out at the top of the dashboard,
+// with a paste-ready override line so it takes one edit to fix permanently.
+function renderUncatBanner(uncatItems) {
+  const el = document.getElementById('uncat-banner');
+  if (!el) return;
+  if (!uncatItems || !uncatItems.length) { el.innerHTML = ''; return; }
+  const list = [...uncatItems]
+    .sort((a,b) => (b.qty*b.price) - (a.qty*a.price))
+    .map(i => `${escapeHtml(i.name)} <span style="color:var(--text-3);">(${Math.round(i.qty)} sold · ${fmt(i.qty*i.price)})</span>`)
+    .join(' &middot; ');
+  const snippet = [...uncatItems]
+    .map(i => `'${normName(i.name)}': 'spirit',`)
+    .join('\n');
+  el.innerHTML = `<div class="warn-box">
+    <b>${uncatItems.length} item${uncatItems.length === 1 ? '' : 's'} couldn't be categorized</b>
+    <div class="warn-items">${list}</div>
+    <div class="warn-hint">These are excluded from every other category until they're mapped. Fix the sales category in Toast, or add them to <code>ITEM_OVERRIDES</code> at the top of this file:</div>
+    <div class="warn-hint"><code>${escapeHtml(snippet).replace(/\n/g, '<br>')}</code></div>
+  </div>`;
+}
+
 function renderDashboard() {
   if (!currentData) return;
-  const keep = i => !isStaffOrComp(i.name) && !isMiscRow(i.name);
+  const keep = i => {
+    if (isStaffOrComp(i.name) || isMiscRow(i.name)) return false;
+    if (EXCLUDE_FEES_FROM_TOTALS && categorize(i.name) === 'fees') return false;
+    return true;
+  };
   const items = (currentData.items || []).filter(keep);
   const prevItems = (currentData.prevItems || []).filter(keep);
   const hasPrev = prevItems.length > 0;
@@ -545,6 +666,8 @@ function renderDashboard() {
   items.forEach(i => { const c = categorize(i.name); (cats[c]||(cats[c]=[])).push(i); });
   prevItems.forEach(i => { const c = categorize(i.name); (prevCats[c]||(prevCats[c]=[])).push(i); });
 
+  renderUncatBanner(cats['uncat'] || []);
+
   const prevLookup = {};
   prevItems.forEach(i => {
     const k = normalizeKey(i.name);
@@ -554,7 +677,7 @@ function renderDashboard() {
   });
 
   const ranking = Object.keys(cats).map(key => ({
-    key, label: CAT_LABELS[key], color: CAT_COLORS[key],
+    key, label: CAT_LABELS[key] || key, color: CAT_COLORS[key] || '#8a8577',
     qty: sumQty(cats[key]), rev: sumRev(cats[key]),
     prevQty: sumQty(prevCats[key]), prevRev: sumRev(prevCats[key]),
   })).filter(r => r.qty > 0);
@@ -566,7 +689,8 @@ function renderDashboard() {
   const totalQty = ranking.reduce((s,r)=>s+r.qty, 0);
   const prevTotalRev = Object.keys(prevCats).reduce((s,k)=>s+sumRev(prevCats[k]), 0);
   const prevTotalQty = Object.keys(prevCats).reduce((s,k)=>s+sumQty(prevCats[k]), 0);
-  const topCat = sorted[0];
+  // "Top category" should never report a bookkeeping bucket as the headline.
+  const topCat = sorted.find(r => r.key !== 'uncat' && r.key !== 'fees') || sorted[0];
 
   document.getElementById('kpi-grid').innerHTML = [
     { label:'Est. revenue', val:fmt(totalRev), sub:`${items.length} items`,
@@ -611,8 +735,8 @@ function renderDashboard() {
   }).join('');
 
   // Item-breakdown order: Weekly specials pinned first (chef's operational
-  // priority), everything else in ranked order. Stable sort preserves rank.
-  const PIN_ORDER = { pdj: 0, tartare: 1 };   // nightly-tracked categories pinned on top
+  // priority), then uncategorized (so it gets fixed), everything else ranked.
+  const PIN_ORDER = { pdj: 0, tartare: 1, uncat: 2 };
   const hmOrder = sorted.slice().sort((a, b) => {
     const pa = (a.key in PIN_ORDER) ? PIN_ORDER[a.key] : 99;
     const pb = (b.key in PIN_ORDER) ? PIN_ORDER[b.key] : 99;
@@ -634,7 +758,7 @@ function renderDashboard() {
       .sort((a,b) => byRev ? b.rev - a.rev : b.qty - a.qty);
     const maxR = byRev ? (grp[0]?.rev || 1) : (grp[0]?.qty || 1);
     const id = 'hmg-' + cat.key;
-    const pinBadge = (cat.key === 'tartare') ? '<span class="hm-pinned-badge">Pinned</span>' : '';
+    const pinBadge = (cat.key === 'uncat') ? '<span class="hm-warn-badge">Fix in Toast</span>' : '';
     hmHtml += `<div class="hm-cat-section">
       <div class="hm-cat-header" onclick="toggleHmGroup('${id}')">
         <span class="leg-dot" style="background:${cat.color}"></span>
@@ -666,13 +790,10 @@ function renderDashboard() {
           dHtml = `<div class="hm-delta" style="color:${flatCol};">\u2605 new</div>`;
         }
       }
-      let shiftHtml = '';
-      // (PDJ tiles are rendered by renderPdjTile below — this block is unused for pdj now.)
       hmHtml += `<div class="hm-cell" style="background:${bg};border-left-color:${cat.color};">
         <div class="hm-name" style="color:${nameCol};">${name}</div>
         <div class="hm-meta" style="color:${metaCol};">${Math.round(item.qty)} sold \u00b7 ${fmt(item.rev)}</div>
         ${dHtml}
-        ${shiftHtml}
       </div>`;
     });
     hmHtml += `</div></div>`;
