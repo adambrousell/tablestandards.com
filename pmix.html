@@ -82,6 +82,17 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .cat-name { width: 190px; color: var(--text); font-weight: 500; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cat-bar { flex: 1; height: 18px; background: #e6e3d8; border-radius: 3px; overflow: hidden; min-width: 40px; position: relative; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04); }
 .cat-bar-fill { display: block; height: 100%; border-radius: 3px; transition: width 0.3s ease; min-width: 3px; }
+/* Quarter ticks, drawn over the fill, so a bar length reads as a magnitude
+   rather than just "longer than the row below it." */
+.cat-bar::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(to right,
+    transparent 0, transparent calc(25% - 1px),
+    rgba(0,0,0,0.10) calc(25% - 1px), rgba(0,0,0,0.10) 25%);
+}
+/* Header cell above the bar track — needs its own class so it doesn't inherit
+   the track's background, height, or inset shadow. */
+.cat-axis { flex: 1; min-width: 40px; }
 .cat-val { width: 84px; text-align: right; color: var(--text); font-variant-numeric: tabular-nums; font-weight: 500; flex-shrink: 0; }
 .cat-sub { width: 70px; text-align: right; color: var(--text-3); font-size: 11px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
 .cat-delta { width: 58px; text-align: right; font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; flex-shrink: 0; }
@@ -204,7 +215,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <div id="kpi-grid" class="kpi-grid"></div>
 
     <div class="card">
-      <div class="card-title"><span id="ranking-title">Categories ranked by quantity</span> highest → lowest · bar scaled to top rank · % = share of week's total</div>
+      <div class="card-title"><span id="ranking-title">Categories ranked by quantity</span> bar length is relative to the #1 category · the % column is share of the week's total</div>
       <div id="ranking-list"></div>
     </div>
 
@@ -743,7 +754,7 @@ function renderDashboard() {
   const headerHtml = `<div class="cat-header-row">
     <span class="cat-rank">#</span>
     <span class="cat-name">Category</span>
-    <span class="cat-bar" style="background:transparent;height:auto;">Share of total</span>
+    <span class="cat-axis">Relative to #1</span>
     <span class="cat-share">%</span>
     <span class="cat-val">${byRev ? 'Revenue' : 'Qty sold'}</span>
     <span class="cat-sub">${byRev ? 'Qty sold' : 'Revenue'}</span>
@@ -762,7 +773,7 @@ function renderDashboard() {
     return `<div class="cat-row" onclick="jumpToCategory('${r.key}')" title="View ${r.label} items">
       <span class="cat-rank">${idx+1}</span>
       <span class="cat-name">${r.label}</span>
-      <span class="cat-bar"><span class="cat-bar-fill" style="width:${width}%;background:${r.color};"></span></span>
+      <span class="cat-bar" title="${main} \u00b7 ${share < 1 ? share.toFixed(1) : Math.round(share)}% of the week \u00b7 bar scaled to #1 (${byRev ? fmt(maxVal) : Math.round(maxVal).toLocaleString()})"><span class="cat-bar-fill" style="width:${width}%;background:${r.color};"></span></span>
       <span class="cat-share">${share < 1 ? share.toFixed(1) : Math.round(share)}%</span>
       <span class="cat-val">${main}</span>
       <span class="cat-sub">${sub}</span>
