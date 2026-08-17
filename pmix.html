@@ -58,6 +58,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .warn-box .warn-items { color: var(--text); }
 .warn-box code { background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 3px; font-size: 11.5px; font-family: ui-monospace, Menlo, Consolas, monospace; }
 .warn-box .warn-hint { color: #7a6a3a; font-size: 11.5px; margin-top: 5px; }
+.warn-box .warn-keys { color: #7a6a3a; font-size: 11px; margin-top: 4px; }
 
 .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
 .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; }
@@ -244,11 +245,40 @@ const ITEM_OVERRIDES = {
   'mr. black': 'spirit',
   'mr black': 'spirit',
   'glenmorangie 14': 'spirit',
+  // Irish whiskey — the brand regex below misses it
+  "bushmill's": 'spirit',
+  'bushmills': 'spirit',
   // NA beverage filed under Entrées
   'leitz na sparkling rose': 'na',
+  // Catch-all "Wine" button in Toast — bottles rung with no SKU attached.
+  // Mapped here so the revenue lands in wine, but the real fix is removing
+  // the button in Toast: as rung, the bottle never reaches depletion.
+  'wine': 'wine',
+  // Paid add-on, not an entrée. If this is a comp'd garnish instead, move it
+  // to ITEM_EXCLUDES below.
+  'shaved parm': 'sides',
   // Service charge, not food
   'plating fee': 'fees',
 };
+
+/* ------------------------------------------------------------------
+   EXCLUDED ROWS
+   Kitchen notes and $0 modifier rings that are not sales at all. These are
+   dropped before categorization so they stop refilling the uncategorized
+   banner every week and burying the real misses.
+   ------------------------------------------------------------------ */
+const ITEM_EXCLUDES = new Set([
+  'no make',
+]);
+const EXCLUDE_PATTERNS = [
+  /\bseat\s*\d+\b/,                 // "Tartar Sauce Seat 4" — seat note, not a sale
+  /^no make\b|^don'?t make\b/,
+];
+function isExcludedRow(name) {
+  const n = normName(name);
+  if (ITEM_EXCLUDES.has(n)) return true;
+  return EXCLUDE_PATTERNS.some(re => re.test(n));
+}
 
 const PDJ_NIGHT_BY_DISH = {
   'poulet en croute': 'Mon',
@@ -378,7 +408,7 @@ function categorize(name) {
   // 7) Spirits — named brands first, then generic category words.
   if (/\b(vodka|belvedere|grey goose|ketel one|tito's|tito\b|hendrick|beefeater|bombay sapphire|botanist|fords gin|plymouth gin|tanqueray|absolut|monkey 47|asbury park gin|wodka|boodle)\b/.test(n)) return 'spirit';
   if (/\bcasamigos|don julio|fortaleza|lalo\b|pueblo viejo|casa dragones|del maguey|clase azul|g4 blanco|g4 reposado|g4 anejo|tanteo|\bcodigo\b/.test(n)) return 'spirit';
-  if (/\bangels envy|blanton|buffalo trace|bulleit|dewars|high west|jack daniel|jameson|johnnie walker|laguavulin|lagavulin|macallan|maker's mark|michter|oban 14|sazerac rye|whistlepig|widow jane|woodford reserve|basil hayden|four roses|penelope|glenlivet|glenmorangie|glenfiddich|old rip van winkle|crown royal|knob creek|elijah craig|eagle rare|weller|wild turkey|jim beam|rittenhouse|redbreast|hibiki|nikka|ardbeg|talisker|balvenie|springbank/.test(n)) return 'spirit';
+  if (/\bangels envy|blanton|buffalo trace|bulleit|bushmill|dewars|high west|jack daniel|jameson|johnnie walker|laguavulin|lagavulin|macallan|maker's mark|michter|oban 14|sazerac rye|whistlepig|widow jane|woodford reserve|basil hayden|four roses|penelope|glenlivet|glenmorangie|glenfiddich|old rip van winkle|crown royal|knob creek|elijah craig|eagle rare|weller|wild turkey|jim beam|rittenhouse|redbreast|hibiki|nikka|ardbeg|talisker|balvenie|springbank/.test(n)) return 'spirit';
   if (/chartreuse|\bcognac\b|pierre ferrand|grand marnier|fernet|lazzaroni|molinari sambuca|nonino amaro|averna amaro|limoncello|bailey|campari|taylor fladgate|\bport\b|braulio|frangelico|\brum\b|havana|havanna|captain morgan|ron zacapa|bacardi|st\. agrestis|varnelli|hennessy|remy martin|courvoisier|cointreau|chambord|disaronno|drambuie|kahlua|mr\.? black/.test(n)) return 'spirit';
   if (/\bcocchi\b|\blillet\b|\bdubonnet\b|punt e mes|carpano|\bdolin\b|\bsuze\b|\bcynar\b|montenegro|meletti|cardamaro|\bbyrrh\b|\bamericano bianco\b/.test(n)) return 'spirit';
   if (/\b(bourbon|whiskey|whisky|scotch|single malt|gin|tequila|mezcal|armagnac|grappa|liqueur|amaro|amaretto|aperitif|vermouth|sambuca|absinthe|calvados|eau de vie)\b/.test(n)) return 'spirit';
@@ -399,7 +429,9 @@ function categorize(name) {
   if (/1\s*\/\s*2\s*(dozen|dzn)|half\s*dozen|1\/2\s*dozen/.test(n)) return 'rawbar';
   if (/crudo tasting|shrimp cocktail|tuna tartare|ceviche|fluke|caviar.*donut|dune fox|sloop point|salty rose|laughing gull|little darling|violet sky|swan point|sugar shack|barnegat/.test(n)) return 'rawbar';
   if (/bread service|little gem|garden salad|asparagus mimosa|escargots|^jambon|sardine toast|crepe aux|berries.*cream|salad de tomates|eggplant|peaches/.test(n)) return 'starter';
-  if (/carrot.*cake|meringue cake|chocolate cake|cheesecake|raspberry tart|creme brulee|banana split|brownie sundae|banana chip ice|brown butter ice|chocolate ice|strawberry ice|vanilla ice|mint ice|lemon sorbet|fromage/.test(n)) return 'dessert';
+  // Sorbet and gelato match by form, not by flavor — otherwise every new
+  // flavor falls through to uncategorized the week it goes on the menu.
+  if (/carrot.*cake|meringue cake|chocolate cake|cheesecake|raspberry tart|creme brulee|banana split|brownie sundae|banana chip ice|brown butter ice|chocolate ice|strawberry ice|vanilla ice|mint ice|\bsorbet\b|\bgelato\b|fromage/.test(n)) return 'dessert';
   if (/custom cake|fet d'or/.test(n)) return 'food';
 
   // 11) Fallback. Previously this returned 'food', which is why every unknown
@@ -621,7 +653,9 @@ function escapeHtml(s) {
 }
 
 // Anything that lands in 'uncat' gets called out at the top of the dashboard,
-// with a paste-ready override line so it takes one edit to fix permanently.
+// with a paste-ready override block. The category is left as '???' on purpose:
+// a plausible-looking default would be silently wrong on most lines, and the
+// only way to catch it would be to read every one — which defeats the point.
 function renderUncatBanner(uncatItems) {
   const el = document.getElementById('uncat-banner');
   if (!el) return;
@@ -631,20 +665,22 @@ function renderUncatBanner(uncatItems) {
     .map(i => `${escapeHtml(i.name)} <span style="color:var(--text-3);">(${Math.round(i.qty)} sold · ${fmt(i.qty*i.price)})</span>`)
     .join(' &middot; ');
   const snippet = [...uncatItems]
-    .map(i => `'${normName(i.name)}': 'spirit',`)
+    .map(i => `'${normName(i.name)}': '???',`)
     .join('\n');
+  const validKeys = Object.keys(CAT_LABELS).filter(k => k !== 'uncat').join('  ');
   el.innerHTML = `<div class="warn-box">
     <b>${uncatItems.length} item${uncatItems.length === 1 ? '' : 's'} couldn't be categorized</b>
     <div class="warn-items">${list}</div>
-    <div class="warn-hint">These are excluded from every other category until they're mapped. Fix the sales category in Toast, or add them to <code>ITEM_OVERRIDES</code> at the top of this file:</div>
+    <div class="warn-hint">These are excluded from every other category until they're mapped. Fix the sales category in Toast, or add them to <code>ITEM_OVERRIDES</code> at the top of this file. If a line is a $0 modifier ring or a kitchen note rather than a sale, add it to <code>ITEM_EXCLUDES</code> instead.</div>
     <div class="warn-hint"><code>${escapeHtml(snippet).replace(/\n/g, '<br>')}</code></div>
+    <div class="warn-keys">Replace <code>'???'</code> with one of: <code>${escapeHtml(validKeys)}</code></div>
   </div>`;
 }
 
 function renderDashboard() {
   if (!currentData) return;
   const keep = i => {
-    if (isStaffOrComp(i.name) || isMiscRow(i.name)) return false;
+    if (isStaffOrComp(i.name) || isMiscRow(i.name) || isExcludedRow(i.name)) return false;
     if (EXCLUDE_FEES_FROM_TOTALS && categorize(i.name) === 'fees') return false;
     return true;
   };
