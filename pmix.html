@@ -259,16 +259,29 @@ const ITEM_OVERRIDES = {
   // Irish whiskey — the brand regex below misses it
   "bushmill's": 'spirit',
   'bushmills': 'spirit',
+  // Tequila. The generic \btequila\b rule can't see it — the brand name never
+  // says what it is.
+  'dos artes blanco': 'spirit',
   // NA beverage filed under Entrées
   'leitz na sparkling rose': 'na',
+  // Zero-proof build of the Bloody. Sits above the cocktail rules on purpose:
+  // the bloody mary pattern would otherwise claim it as a full-proof sale.
+  'virgin bloody': 'na',
   // Catch-all "Wine" button in Toast — bottles rung with no SKU attached.
   // Mapped here so the revenue lands in wine, but the real fix is removing
   // the button in Toast: as rung, the bottle never reaches depletion.
   'wine': 'wine',
+  // Lunch-only item. Toast spells it without the French ending, so the
+  // daypart regex below misses this exact string.
+  'omelet': 'lunch',
   // Paid add-on, not an entrée. If this is a comp'd garnish instead, move it
   // to ITEM_EXCLUDES below.
   'shaved parm': 'sides',
-  // Service charge, not food
+  // Service charges, not food. Both of these ring at $0 in the export — they
+  // add quantity to the fees bucket without revenue behind it. If that skews
+  // the bucket, move the pair to ITEM_EXCLUDES.
+  'gratuity': 'fees',
+  'penny': 'fees',
   'plating fee': 'fees',
 };
 
@@ -396,8 +409,9 @@ function categorize(name) {
   if (/^p\s*\.|private event adult|private event child|event decor|grazing table|beer.*wine.*spritz|beverage package|\bpackage\b/.test(n)) return 'events';
   if (/steak tartare/.test(n)) return 'tartare';
 
-  // 3) Daypart / sides.
-  if (/omelette|eggs benedict|pan bagnat|chicken salad sandwich|salmon burger|crispy fish sandwich|^parfait$|lunch oyster/.test(n)) return 'lunch';
+  // 3) Daypart / sides. Omelet spelling is loose on purpose — Toast rings it
+  //    as "Omelet" but the menu prints "Omelette", and both are lunch only.
+  if (/omelet(te)?s?|eggs benedict|pan bagnat|chicken salad sandwich|salmon burger|crispy fish sandwich|^parfait$|lunch oyster/.test(n)) return 'lunch';
   if (/pommes frites|pommes duchess|haricot vert|peppers carmen|corn & lardons|corn.*lardons|^side\s|side donuts/.test(n)) return 'sides';
 
   // 4) Cocktails.
