@@ -267,6 +267,10 @@ const ITEM_OVERRIDES = {
   // Zero-proof build of the Bloody. Sits above the cocktail rules on purpose:
   // the bloody mary pattern would otherwise claim it as a full-proof sale.
   'virgin bloody': 'na',
+  // Week of Aug 24 uncategorized items — now fixed
+  'virgin mary': 'na',
+  'honey deuce': 'cocktail',
+  'crudo': 'rawbar',
   // Catch-all "Wine" button in Toast — bottles rung with no SKU attached.
   // Mapped here so the revenue lands in wine, but the real fix is removing
   // the button in Toast: as rung, the bottle never reaches depletion.
@@ -383,7 +387,7 @@ window.addEventListener('load', () => {
 
 /* Normalize once so every rule below sees the same shape: lowercase, accents
    stripped (Rose vs Rosé), curly apostrophes straightened (Boodle's vs
-   Boodle’s), whitespace collapsed. Toast exports are inconsistent on all three. */
+   Boodle's), whitespace collapsed. Toast exports are inconsistent on all three. */
 function normName(name) {
   return String(name || '')
     .toLowerCase()
