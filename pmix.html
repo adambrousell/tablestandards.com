@@ -93,6 +93,8 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 /* Header cell above the bar track — needs its own class so it doesn't inherit
    the track's background, height, or inset shadow. */
 .cat-axis { flex: 1; min-width: 40px; }
+.axis-scale { display: flex; justify-content: space-between; width: 100%; font-variant-numeric: tabular-nums; }
+.axis-scale span { font-size: 9px; color: var(--text-3); letter-spacing: 0; }
 .cat-val { width: 84px; text-align: right; color: var(--text); font-variant-numeric: tabular-nums; font-weight: 500; flex-shrink: 0; }
 .cat-sub { width: 70px; text-align: right; color: var(--text-3); font-size: 11px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
 .cat-delta { width: 58px; text-align: right; font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; flex-shrink: 0; }
@@ -215,7 +217,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     <div id="kpi-grid" class="kpi-grid"></div>
 
     <div class="card">
-      <div class="card-title"><span id="ranking-title">Categories ranked by quantity</span> bar length is relative to the #1 category · the % column is share of the week's total</div>
+      <div class="card-title"><span id="ranking-title">Categories ranked by quantity</span> bar length is the actual value on the scale above · the % column is share of the week's total</div>
       <div id="ranking-list"></div>
     </div>
 
@@ -238,7 +240,7 @@ const WORKER_URL = 'https://rpi-pmix-backend.amusementstandards.workers.dev';
 const EXCLUDE_FEES_FROM_TOTALS = false;
 // Kids items currently roll up into Entrées. Flip to true to split them out
 // so they stop dragging down the entrée average check.
-const KIDS_OWN_CATEGORY = false;
+const KIDS_OWN_CATEGORY = true;
 
 /* ------------------------------------------------------------------
    MANUAL OVERRIDES
@@ -483,6 +485,24 @@ function isStaffOrComp(name) {
 const sumRev = arr => (arr||[]).reduce((s,i)=>s+i.qty*i.price, 0);
 const sumQty = arr => (arr||[]).reduce((s,i)=>s+i.qty, 0);
 const fmt = n => n.toLocaleString('en-US', { style:'currency', currency:'USD', maximumFractionDigits:0 });
+
+// Round a value UP to a "nice" number (1, 2, 2.5, 5 x 10^n) so the bar-track
+// ceiling is a clean round figure and the quarter ticks land on round values.
+function niceCeil(v) {
+  if (!v || v <= 0) return 1;
+  const exp = Math.floor(Math.log10(v));
+  const base = Math.pow(10, exp);
+  const frac = v / base;
+  const nice = frac <= 1 ? 1 : frac <= 2 ? 2 : frac <= 2.5 ? 2.5 : frac <= 5 ? 5 : 10;
+  return nice * base;
+}
+// Compact axis label: 1,000 -> "1k", 12,500 -> "$12.5k".
+function axisLabel(v, money) {
+  let s;
+  if (v >= 1000) s = (v / 1000).toFixed(v % 1000 ? 1 : 0) + 'k';
+  else s = String(Math.round(v));
+  return money ? '$' + s : s;
+}
 
 let currentData = null;
 let currentView = 'quantity';
@@ -769,29 +789,35 @@ function renderDashboard() {
   document.getElementById('ranking-title').textContent =
     byRev ? 'Categories ranked by revenue' : 'Categories ranked by quantity';
   const totalMetric = byRev ? totalRev : totalQty;
+  // Absolute axis: the track runs 0 -> a round ceiling just above the top
+  // category's value, so bar length reads as a real magnitude (against the
+  // labeled ticks below) instead of "fraction of whatever #1 is this week."
+  const maxVal = sorted.length ? (byRev ? sorted[0].rev : sorted[0].qty) : 1;
+  const axisMax = niceCeil(maxVal);
+  const axisTicks = [0, 0.25, 0.5, 0.75, 1]
+    .map(f => `<span>${axisLabel(axisMax * f, byRev)}</span>`).join('');
   const headerHtml = `<div class="cat-header-row">
     <span class="cat-rank">#</span>
     <span class="cat-name">Category</span>
-    <span class="cat-axis">Relative to #1</span>
+    <span class="cat-axis"><span class="axis-scale">${axisTicks}</span></span>
     <span class="cat-share">%</span>
     <span class="cat-val">${byRev ? 'Revenue' : 'Qty sold'}</span>
     <span class="cat-sub">${byRev ? 'Qty sold' : 'Revenue'}</span>
     ${hasPrev ? '<span class="cat-delta" style="color:var(--text-3);">vs last wk</span>' : ''}
   </div>`;
-  const maxVal = sorted.length ? (byRev ? sorted[0].rev : sorted[0].qty) : 1;
   document.getElementById('ranking-list').innerHTML = headerHtml + sorted.map((r, idx) => {
     const val = byRev ? r.rev : r.qty;
     const prevVal = byRev ? r.prevRev : r.prevQty;
     const share = totalMetric > 0 ? val / totalMetric * 100 : 0;
-    // Bar width is scaled to the #1 category so the top rank fills the track.
-    // The % column still shows true share-of-total — the bar shows relative rank.
-    const width = maxVal > 0 ? Math.max(1.5, val / maxVal * 100) : 0;
+    // Bar width is the value as a fraction of the round axis ceiling — an
+    // absolute scale. Two bars that differ by 20% differ by 20% on the track.
+    const width = axisMax > 0 ? Math.max(1.5, val / axisMax * 100) : 0;
     const main = byRev ? fmt(r.rev) : Math.round(r.qty).toLocaleString();
     const sub  = byRev ? `${Math.round(r.qty).toLocaleString()} sold` : fmt(r.rev);
     return `<div class="cat-row" onclick="jumpToCategory('${r.key}')" title="View ${r.label} items">
       <span class="cat-rank">${idx+1}</span>
       <span class="cat-name">${r.label}</span>
-      <span class="cat-bar" title="${main} \u00b7 ${share < 1 ? share.toFixed(1) : Math.round(share)}% of the week \u00b7 bar scaled to #1 (${byRev ? fmt(maxVal) : Math.round(maxVal).toLocaleString()})"><span class="cat-bar-fill" style="width:${width}%;background:${r.color};"></span></span>
+      <span class="cat-bar" title="${main} \u00b7 ${share < 1 ? share.toFixed(1) : Math.round(share)}% of the week's total \u00b7 axis 0\u2013${byRev ? fmt(axisMax) : Math.round(axisMax).toLocaleString()}"><span class="cat-bar-fill" style="width:${width}%;background:${r.color};"></span></span>
       <span class="cat-share">${share < 1 ? share.toFixed(1) : Math.round(share)}%</span>
       <span class="cat-val">${main}</span>
       <span class="cat-sub">${sub}</span>
