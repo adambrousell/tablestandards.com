@@ -82,16 +82,12 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .cat-name { width: 190px; color: var(--text); font-weight: 500; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cat-bar { flex: 1; height: 18px; background: #e6e3d8; border-radius: 3px; overflow: hidden; min-width: 40px; position: relative; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04); }
 .cat-bar-fill { display: block; height: 100%; border-radius: 3px; transition: width 0.3s ease; min-width: 3px; }
-/* Quarter ticks, drawn over the fill, so a bar length reads as a magnitude
-   rather than just "longer than the row below it." */
 .cat-bar::after {
   content: ''; position: absolute; inset: 0; pointer-events: none;
   background: repeating-linear-gradient(to right,
     transparent 0, transparent calc(25% - 1px),
     rgba(0,0,0,0.10) calc(25% - 1px), rgba(0,0,0,0.10) 25%);
 }
-/* Header cell above the bar track — needs its own class so it doesn't inherit
-   the track's background, height, or inset shadow. */
 .cat-axis { flex: 1; min-width: 40px; }
 .axis-scale { display: flex; justify-content: space-between; width: 100%; font-variant-numeric: tabular-nums; }
 .axis-scale span { font-size: 9px; color: var(--text-3); letter-spacing: 0; }
@@ -102,7 +98,6 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .cat-delta.down { color: var(--down); }
 .cat-delta.flat { color: var(--text-3); }
 @media (max-width: 700px) {
-  /* header + spacing */
   header { padding: 12px 14px; }
   .logo { font-size: 17px; }
   .logo span { font-size: 14px; }
@@ -115,8 +110,6 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   .kpi-sub { display: none; }
   .card { padding: 12px 12px; }
 
-  /* Ranked table: two-row layout per category — name/value/share on top row,
-     full-width bar below. Bar scales to the top rank so #1 fills the track. */
   .cat-header-row { display: none; }
   .cat-row {
     display: grid;
@@ -133,7 +126,6 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   .cat-bar  { grid-area: bar; height: 12px; margin-top: 2px; min-width: 0; }
   .cat-sub { display: none; }
 
-  /* Heatmap tiles */
   .hm-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
   .hm-cell { padding: 10px 12px; min-height: 44px; }
   .hm-cat-header { flex-wrap: wrap; row-gap: 2px; }
@@ -232,22 +224,10 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 <script>
 const WORKER_URL = 'https://rpi-pmix-backend.amusementstandards.workers.dev';
 
-/* ------------------------------------------------------------------
-   CONFIG FLAGS
-   ------------------------------------------------------------------ */
-// Fees (plating fee, corkage, cake fee) get their own category so they stop
-// polluting Entrées. Flip to true to drop them from the dashboard entirely.
 const EXCLUDE_FEES_FROM_TOTALS = false;
-// Kids items currently roll up into Entrées. Flip to true to split them out
-// so they stop dragging down the entrée average check.
 const KIDS_OWN_CATEGORY = true;
 
-/* ------------------------------------------------------------------
-   MANUAL OVERRIDES
-   Anything Toast has in the wrong sales category goes here. Key = the item
-   name lowercased with accents stripped and curly apostrophes straightened
-   (see normName). This runs BEFORE all pattern matching, so it always wins.
-   ------------------------------------------------------------------ */
+/* UPDATED: Fixed uncategorized items */
 const ITEM_OVERRIDES = {
   // Spirits / aperitifs that Toast filed under Entrées
   'cocchi americano bianco': 'spirit',
@@ -261,9 +241,12 @@ const ITEM_OVERRIDES = {
   // Irish whiskey — the brand regex below misses it
   "bushmill's": 'spirit',
   'bushmills': 'spirit',
-  // Tequila. The generic \btequila\b rule can't see it — the brand name never
-  // says what it is.
+  // Tequila. The generic \btequila\b rule can't see it — the brand name never says what it is.
   'dos artes blanco': 'spirit',
+  // Bourbon & Japanese whisky recently rung under Entrées
+  'van winkle 12 year': 'spirit',
+  'st george spiced pear': 'spirit',
+  'suntory toki': 'spirit',
   // NA beverage filed under Entrées
   'leitz na sparkling rose': 'na',
   // Zero-proof build of the Bloody. Sits above the cocktail rules on purpose:
@@ -274,31 +257,25 @@ const ITEM_OVERRIDES = {
   'honey deuce': 'cocktail',
   'crudo': 'rawbar',
   // Catch-all "Wine" button in Toast — bottles rung with no SKU attached.
-  // Mapped here so the revenue lands in wine, but the real fix is removing
-  // the button in Toast: as rung, the bottle never reaches depletion.
   'wine': 'wine',
-  // Lunch-only item. Toast spells it without the French ending, so the
-  // daypart regex below misses this exact string.
+  // Lunch-only item
   'omelet': 'lunch',
-  // Paid add-on, not an entrée. If this is a comp'd garnish instead, move it
-  // to ITEM_EXCLUDES below.
+  // Paid add-ons, not entrées
   'shaved parm': 'sides',
-  // Service charges, not food. Both of these ring at $0 in the export — they
-  // add quantity to the fees bucket without revenue behind it. If that skews
-  // the bucket, move the pair to ITEM_EXCLUDES.
+  'add extra piece': 'starter',
+  'gluten free bun side plate': 'sides',
+  // Party / event charges
+  'minimum met': 'events',
+  // Service charges, not food
   'gratuity': 'fees',
   'penny': 'fees',
   'plating fee': 'fees',
 };
 
-/* ------------------------------------------------------------------
-   EXCLUDED ROWS
-   Kitchen notes and $0 modifier rings that are not sales at all. These are
-   dropped before categorization so they stop refilling the uncategorized
-   banner every week and burying the real misses.
-   ------------------------------------------------------------------ */
+/* UPDATED: Added "do not make" to excludes */
 const ITEM_EXCLUDES = new Set([
   'no make',
+  'do not make',
 ]);
 const EXCLUDE_PATTERNS = [
   /\bseat\s*\d+\b/,                 // "Tartar Sauce Seat 4" — seat note, not a sale
@@ -387,9 +364,6 @@ window.addEventListener('load', () => {
   if (getToken()) showMainContent();
 });
 
-/* Normalize once so every rule below sees the same shape: lowercase, accents
-   stripped (Rose vs Rosé), curly apostrophes straightened (Boodle's vs
-   Boodle's), whitespace collapsed. Toast exports are inconsistent on all three. */
 function normName(name) {
   return String(name || '')
     .toLowerCase()
@@ -415,8 +389,7 @@ function categorize(name) {
   if (/^p\s*\.|private event adult|private event child|event decor|grazing table|beer.*wine.*spritz|beverage package|\bpackage\b/.test(n)) return 'events';
   if (/steak tartare/.test(n)) return 'tartare';
 
-  // 3) Daypart / sides. Omelet spelling is loose on purpose — Toast rings it
-  //    as "Omelet" but the menu prints "Omelette", and both are lunch only.
+  // 3) Daypart / sides. Omelet spelling is loose on purpose
   if (/omelet(te)?s?|eggs benedict|pan bagnat|chicken salad sandwich|salmon burger|crispy fish sandwich|^parfait$|lunch oyster/.test(n)) return 'lunch';
   if (/pommes frites|pommes duchess|haricot vert|peppers carmen|corn & lardons|corn.*lardons|^side\s|side donuts/.test(n)) return 'sides';
 
@@ -425,8 +398,7 @@ function categorize(name) {
   if (/aperol spritz|hugo spritz|french 75|paper plane|mimosa|bloody mary|lemon drop|mojito|moscow mule|vesper|garden state|cavaillon|berry spritz|cocogroni|sangria/.test(n)) return 'cocktail';
   if (/na almost|na pear|na espresso|na summer/.test(n)) return 'cocktail';
 
-  // 5) NA wine / NA beer / zero-proof bottles — MUST run before the wine and
-  //    beer rules or "NA Sparkling Rose" gets counted as a wine sale.
+  // 5) NA wine / NA beer / zero-proof bottles
   if (/^na\s|\bna\s+(sparkling|wine|rose|red|white|brut|beer)\b|non[- ]?alcoholic|zero proof|\bleitz\b|\bgruvi\b|\blyre'?s\b|\bseedlip\b|\bghia\b|\bfre\b/.test(n)) return 'na';
 
   // 6) Wine.
@@ -436,7 +408,7 @@ function categorize(name) {
   if (/\bsherry\b|\bmadeira\b|oloroso|amontillado|fino\b/.test(n)) return 'wine';
   if (/^\d{3,4}[:\s]|^b\d{2,4}\b|^2\d{3}[:\s]/.test(n)) return 'wine';
 
-  // 7) Spirits — named brands first, then generic category words.
+  // 7) Spirits
   if (/\b(vodka|belvedere|grey goose|ketel one|tito's|tito\b|hendrick|beefeater|bombay sapphire|botanist|fords gin|plymouth gin|tanqueray|absolut|monkey 47|asbury park gin|wodka|boodle)\b/.test(n)) return 'spirit';
   if (/\bcasamigos|don julio|fortaleza|lalo\b|pueblo viejo|casa dragones|del maguey|clase azul|g4 blanco|g4 reposado|g4 anejo|tanteo|\bcodigo\b/.test(n)) return 'spirit';
   if (/\bangels envy|blanton|buffalo trace|bulleit|bushmill|dewars|high west|jack daniel|jameson|johnnie walker|laguavulin|lagavulin|macallan|maker's mark|michter|oban 14|sazerac rye|whistlepig|widow jane|woodford reserve|basil hayden|four roses|penelope|glenlivet|glenmorangie|glenfiddich|old rip van winkle|crown royal|knob creek|elijah craig|eagle rare|weller|wild turkey|jim beam|rittenhouse|redbreast|hibiki|nikka|ardbeg|talisker|balvenie|springbank/.test(n)) return 'spirit';
@@ -449,7 +421,6 @@ function categorize(name) {
   if (/btl.*still water|btl.*sparkling water|\bcoke\b|diet coke|sprite|ginger ale|club soda|ginger beer|\btonic\b|shirley temple|lemonade|iced tea|apple juice|arnold palmer|pineapple juice|cranberry juice|fresh oj|milk/.test(n)) return 'na';
   if (/beer done|vliet|birdsmouth|kronenbourg|other half|grimm|athletic brewing/.test(n)) return 'beer';
   if (n === 'lunch') return 'beer';
-  // Generic beer words run AFTER the NA rule so "ginger ale" isn't a beer.
   if (/\b(ipa|lager|pilsner|pale ale|amber ale|stout|porter|hefeweizen|saison|cider|draft|draught)\b/.test(n)) return 'beer';
 
   // 9) Kids.
@@ -460,14 +431,10 @@ function categorize(name) {
   if (/1\s*\/\s*2\s*(dozen|dzn)|half\s*dozen|1\/2\s*dozen/.test(n)) return 'rawbar';
   if (/crudo tasting|shrimp cocktail|tuna tartare|ceviche|fluke|caviar.*donut|dune fox|sloop point|salty rose|laughing gull|little darling|violet sky|swan point|sugar shack|barnegat/.test(n)) return 'rawbar';
   if (/bread service|little gem|garden salad|asparagus mimosa|escargots|^jambon|sardine toast|crepe aux|berries.*cream|salad de tomates|eggplant|peaches/.test(n)) return 'starter';
-  // Sorbet and gelato match by form, not by flavor — otherwise every new
-  // flavor falls through to uncategorized the week it goes on the menu.
   if (/carrot.*cake|meringue cake|chocolate cake|cheesecake|raspberry tart|creme brulee|banana split|brownie sundae|banana chip ice|brown butter ice|chocolate ice|strawberry ice|vanilla ice|mint ice|\bsorbet\b|\bgelato\b|fromage/.test(n)) return 'dessert';
   if (/custom cake|fet d'or/.test(n)) return 'food';
 
-  // 11) Fallback. Previously this returned 'food', which is why every unknown
-  //     item — spirits, NA wine, fees — silently landed in Entrées. Unknown
-  //     items now surface in the banner so they get mapped instead of buried.
+  // 11) Fallback.
   return 'uncat';
 }
 
@@ -486,8 +453,6 @@ const sumRev = arr => (arr||[]).reduce((s,i)=>s+i.qty*i.price, 0);
 const sumQty = arr => (arr||[]).reduce((s,i)=>s+i.qty, 0);
 const fmt = n => n.toLocaleString('en-US', { style:'currency', currency:'USD', maximumFractionDigits:0 });
 
-// Round a value UP to a "nice" number (1, 2, 2.5, 5 x 10^n) so the bar-track
-// ceiling is a clean round figure and the quarter ticks land on round values.
 function niceCeil(v) {
   if (!v || v <= 0) return 1;
   const exp = Math.floor(Math.log10(v));
@@ -496,7 +461,7 @@ function niceCeil(v) {
   const nice = frac <= 1 ? 1 : frac <= 2 ? 2 : frac <= 2.5 ? 2.5 : frac <= 5 ? 5 : 10;
   return nice * base;
 }
-// Compact axis label: 1,000 -> "1k", 12,500 -> "$12.5k".
+
 function axisLabel(v, money) {
   let s;
   if (v >= 1000) s = (v / 1000).toFixed(v % 1000 ? 1 : 0) + 'k';
@@ -572,8 +537,6 @@ function parseRange(dateRange) {
     const end = parse(parts[1], endYear);
     if (start && end) return { start, end };
   }
-  // Fallback: upload stored only the start date (older upload-page parser).
-  // Toast pmix weeks run Mon–Sun, so derive end = start + 6 days.
   const start = parse(dateRange, null);
   if (!start) return null;
   const d = new Date(start + 'T12:00:00Z');
@@ -597,7 +560,6 @@ async function loadShiftSpecials() {
   const WD = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   let nights = 0, fetchProblem = null;
 
-  // 1) Pull nightly counts from RPI Shift
   try {
     const range = parseRange(currentData && currentData.dateRange);
     if (!range) {
@@ -630,21 +592,17 @@ async function loadShiftSpecials() {
     fetchProblem = 'could not reach the worker (' + e.message + ')';
   }
 
-  // 2) Merge manual entries from the upload — manual OVERRIDES shift for the
-  //    same dish+night (typing it at upload time is a deliberate correction),
-  //    and fills dark nights (Mon/Tue) that have no shift report.
   const manual = (currentData && currentData.manualSpecials) || [];
   manual.forEach(m => {
     if (!m || !m.name || !m.d) return;
     const k = canonSpecial(m.name);
     if (!k) return;
     if (!map[k]) map[k] = [];
-    map[k] = map[k].filter(e => e.d !== m.d);   // manual wins over shift
+    map[k] = map[k].filter(e => e.d !== m.d);
     map[k].push({ d: m.d, avail: m.avail ?? null, sold: m.sold ?? null, x: !!m.x });
     reportedDays[m.d] = true;
   });
 
-  // 3) Status + render
   const hasAny = Object.keys(map).length > 0;
   if (hasAny) {
     shiftSpecialsMap = { entries: map, reportedDays: reportedDays };
@@ -701,10 +659,6 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
 }
 
-// Anything that lands in 'uncat' gets called out at the top of the dashboard,
-// with a paste-ready override block. The category is left as '???' on purpose:
-// a plausible-looking default would be silently wrong on most lines, and the
-// only way to catch it would be to read every one — which defeats the point.
 function renderUncatBanner(uncatItems) {
   const el = document.getElementById('uncat-banner');
   if (!el) return;
@@ -774,7 +728,6 @@ function renderDashboard() {
   const totalQty = ranking.reduce((s,r)=>s+r.qty, 0);
   const prevTotalRev = Object.keys(prevCats).reduce((s,k)=>s+sumRev(prevCats[k]), 0);
   const prevTotalQty = Object.keys(prevCats).reduce((s,k)=>s+sumQty(prevCats[k]), 0);
-  // "Top category" should never report a bookkeeping bucket as the headline.
   const topCat = sorted.find(r => r.key !== 'uncat' && r.key !== 'fees') || sorted[0];
 
   document.getElementById('kpi-grid').innerHTML = [
@@ -789,9 +742,6 @@ function renderDashboard() {
   document.getElementById('ranking-title').textContent =
     byRev ? 'Categories ranked by revenue' : 'Categories ranked by quantity';
   const totalMetric = byRev ? totalRev : totalQty;
-  // Absolute axis: the track runs 0 -> a round ceiling just above the top
-  // category's value, so bar length reads as a real magnitude (against the
-  // labeled ticks below) instead of "fraction of whatever #1 is this week."
   const maxVal = sorted.length ? (byRev ? sorted[0].rev : sorted[0].qty) : 1;
   const axisMax = niceCeil(maxVal);
   const axisTicks = [0, 0.25, 0.5, 0.75, 1]
@@ -809,8 +759,6 @@ function renderDashboard() {
     const val = byRev ? r.rev : r.qty;
     const prevVal = byRev ? r.prevRev : r.prevQty;
     const share = totalMetric > 0 ? val / totalMetric * 100 : 0;
-    // Bar width is the value as a fraction of the round axis ceiling — an
-    // absolute scale. Two bars that differ by 20% differ by 20% on the track.
     const width = axisMax > 0 ? Math.max(1.5, val / axisMax * 100) : 0;
     const main = byRev ? fmt(r.rev) : Math.round(r.qty).toLocaleString();
     const sub  = byRev ? `${Math.round(r.qty).toLocaleString()} sold` : fmt(r.rev);
@@ -825,14 +773,12 @@ function renderDashboard() {
     </div>`;
   }).join('');
 
-  // Item-breakdown order: Weekly specials pinned first (chef's operational
-  // priority), then uncategorized (so it gets fixed), everything else ranked.
   const PIN_ORDER = { pdj: 0, tartare: 1, uncat: 2 };
   const hmOrder = sorted.slice().sort((a, b) => {
     const pa = (a.key in PIN_ORDER) ? PIN_ORDER[a.key] : 99;
     const pb = (b.key in PIN_ORDER) ? PIN_ORDER[b.key] : 99;
     if (pa !== pb) return pa - pb;
-    return 0;   // stable — non-pinned keep ranked order
+    return 0;
   });
   let hmHtml = '';
   hmOrder.forEach(cat => {
@@ -907,7 +853,6 @@ function renderPdjSection(cat, items, prevLookup, hasPrev, byRev) {
     return null;
   };
 
-  // Order tiles by night (Mon → Sun) so the section reads like the week
   const NIGHT_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   const enriched = items.map(i => ({
     ...i, rev: i.qty * i.price, night: PDJ_NIGHT_BY_DISH[canonSpecial(i.name)] || null
@@ -929,12 +874,11 @@ function renderPdjSection(cat, items, prevLookup, hasPrev, byRev) {
     <div class="hm-grid" id="${id}">`;
 
   enriched.forEach(item => {
-    const night = item.night;                                // Mon..Sun or null
+    const night = item.night;
     const dateLbl = night ? dateOf(night) : null;
     const entries = shiftSpecialsMap ? (shiftEntriesFor(item.name) || []) : [];
     const en = night ? entries.find(e => e.d === night) : entries[0];
 
-    // Read the night's shift-log values
     let soldN = null, availN = null, wasX = false;
     if (en) {
       const s = parseFloat(en.sold), a = parseFloat(en.avail);
@@ -943,13 +887,11 @@ function renderPdjSection(cat, items, prevLookup, hasPrev, byRev) {
       wasX = !!en.x;
     }
 
-    // Toast weekly qty is effectively the night's qty (dish runs one night only)
     const toastQty = Math.round(item.qty);
     const displaySold = (soldN !== null) ? soldN : toastQty;
     const soldOut = availN !== null && soldN !== null && soldN >= availN;
     const disagree = soldN !== null && Math.abs(soldN - toastQty) >= 1;
 
-    // Tile intensity from tonight's absolute sold vs the week's biggest
     const maxSold = Math.max(...enriched.map(x => Math.round(x.qty)), 1);
     const weight = 0.35 + (displaySold / maxSold) * 0.65;
     const bg = hexBlend(cat.color, weight);
@@ -961,7 +903,6 @@ function renderPdjSection(cat, items, prevLookup, hasPrev, byRev) {
     const dnCol   = light ? '#b83030' : '#ffb3b3';
     const flatCol = softCol;
 
-    // WoW delta (same-week last week, same dish)
     let dHtml = '';
     if (hasPrev) {
       const prev = prevLookup[normalizeKey(item.name)];
@@ -975,12 +916,10 @@ function renderPdjSection(cat, items, prevLookup, hasPrev, byRev) {
       }
     }
 
-    // Header line: "WEDNESDAY · 7/29" or fall back if no schedule match
     const headerText = night
       ? (WD_LONG[night].toUpperCase() + (dateLbl ? '  \u00b7  ' + dateLbl : ''))
       : 'NIGHT UNKNOWN';
 
-    // Body: hero sold number + qualifiers
     let heroVal, heroSub = '';
     if (wasX) { heroVal = '86'; heroSub = 'sold out early'; }
     else if (availN !== null) {
@@ -1012,8 +951,6 @@ function renderTartareSection(cat, items, prevLookup, hasPrev, byRev) {
   const item = (items && items[0]) ? { ...items[0], rev: items[0].qty * items[0].price } : null;
   const id = 'hmg-' + cat.key;
 
-  // Reconcile Toast weekly total vs sum of logged nightly sold — used both in
-  // the header and (as a hint) on nights with no logged sold value.
   const loggedEntries = shiftSpecialsMap ? (shiftEntriesFor('Steak Tartare') || []) : [];
   const loggedSold = loggedEntries.reduce((s, e) => {
     const v = parseFloat(e.sold); return s + (isNaN(v) ? 0 : v);
@@ -1028,7 +965,6 @@ function renderTartareSection(cat, items, prevLookup, hasPrev, byRev) {
     else if (remainder < 0) reconLine = `exceeds Toast by ${-remainder}`;
   }
 
-  // Compact WoW badge in the header (replaces the deleted WEEK TOTAL square)
   let wowText = '';
   if (item && hasPrev) {
     const prev = prevLookup[normalizeKey(item.name)];
@@ -1049,7 +985,6 @@ function renderTartareSection(cat, items, prevLookup, hasPrev, byRev) {
     </div>
     <div class="hm-grid" id="${id}">`;
 
-  // Seven day tiles — built by weekday, then sorted highest sold → lowest
   const range = parseRange(currentData.dateRange);
   const entries = loggedEntries;
   const byDay = {}; entries.forEach(en => { byDay[en.d] = en; });
@@ -1102,7 +1037,6 @@ function renderTartareSection(cat, items, prevLookup, hasPrev, byRev) {
       });
     }
   }
-  // Show days in calendar order: Monday → Sunday, all seven visible.
   const DAY_ORDER = { Mon:0, Tue:1, Wed:2, Thu:3, Fri:4, Sat:5, Sun:6 };
   tiles.sort((a, b) => (DAY_ORDER[a.day] ?? 7) - (DAY_ORDER[b.day] ?? 7));
   html += tiles.map(t => t.html).join('');
