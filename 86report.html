@@ -364,7 +364,7 @@ function populateDistSelects() {
 async function loadItems() {
   if (WORKER_URL) {
     try {
-      const r = await fetch(WORKER_URL + '/api/86');
+      const r = await fetch(WORKER_URL + '/wine86');
       items = await r.json();
     } catch (e) {
       items = JSON.parse(localStorage.getItem('rpi_86_report') || '[]');
@@ -399,7 +399,7 @@ async function saveItems() {
   localStorage.setItem('rpi_86_report', JSON.stringify(items));
   if (WORKER_URL) {
     try {
-      await fetch(WORKER_URL + '/api/86', {
+      await fetch(WORKER_URL + '/wine86', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(items)
