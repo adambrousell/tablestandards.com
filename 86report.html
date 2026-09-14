@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>86 Report — River Pointe Inn</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #14120e;
+    --bg-raised: #1c1915;
+    --bg-hover: #242019;
+    --gold: #b08d3e;
+    --gold-dim: #8a6e30;
+    --gold-bright: #d4ab4a;
+    --cream: #e8dcc8;
+    --cream-dim: #a89a82;
+    --red-86: #c0392b;
+    --red-dim: rgba(192,57,43,0.15);
+    --green: #27ae60;
+    --green-dim: rgba(39,174,96,0.12);
+    --border: rgba(176,141,62,0.12);
+    --border-strong: rgba(176,141,62,0.25);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--cream);
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.5;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  .page { max-width: 760px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+  /* ── Header ── */
+  .header {
+    text-align: center;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border-strong);
+    margin-bottom: 1.5rem;
+  }
+  .header h1 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 700;
+    font-size: 2.2rem;
+    color: var(--gold);
+    letter-spacing: 0.02em;
+  }
+  .header .sub { font-size: 0.92rem; color: var(--cream-dim); margin-top: 0.25rem; }
+
+  /* ── Summary ── */
+  .summary {
+    display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+    margin-bottom: 1.75rem;
+    font-family: 'Fraunces', Georgia, serif; font-size: 0.9rem;
+  }
+  .stat { padding: 0.3rem 0.9rem; border-radius: 6px; font-weight: 600; }
+  .stat-total { color: var(--red-86); background: var(--red-dim); }
+  .stat-ordered { color: var(--green); background: var(--green-dim); }
+  .stat-unassigned { color: var(--gold); background: rgba(176,141,62,0.1); }
+
+  /* ── Distributor sections ── */
+  .dist-section { margin-bottom: 1.75rem; }
+  .dist-header {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 700; font-size: 1.2rem; color: var(--gold);
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-strong);
+    margin-bottom: 0.15rem;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .dist-header .count { font-size: 0.85rem; font-weight: 400; color: var(--cream-dim); }
+
+  .unassigned-section { margin-bottom: 2rem; }
+  .unassigned-header {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 700; font-size: 1.15rem; color: var(--red-86);
+    padding: 0.5rem 0;
+    border-bottom: 2px solid rgba(192,57,43,0.3);
+    margin-bottom: 0.15rem;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  /* ── Wine table ── */
+  .wine-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+  .wine-table th {
+    text-align: left; font-size: 0.78rem; color: var(--cream-dim);
+    font-weight: 400; padding: 0.45rem 0.5rem;
+    border-bottom: 1px solid var(--border); letter-spacing: 0.03em;
+  }
+  .wine-table td {
+    padding: 0.55rem 0.5rem; border-bottom: 1px solid var(--border); vertical-align: top;
+  }
+  .wine-table tr:last-child td { border-bottom: none; }
+
+  .col-bin { width: 55px; color: var(--cream-dim); font-size: 0.88rem; }
+  .col-price { width: 60px; text-align: right; color: var(--cream-dim); }
+  .col-ordered { width: 65px; text-align: center; }
+  .col-actions { width: 36px; text-align: center; }
+
+  .wine-name-cell { color: var(--cream); }
+  .wine-note { font-size: 0.82rem; color: var(--cream-dim); font-style: italic; }
+
+  .cb-ordered {
+    appearance: none; -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border: 1.5px solid var(--border-strong); border-radius: 3px;
+    background: var(--bg); cursor: pointer; position: relative; vertical-align: middle;
+  }
+  .cb-ordered:checked { background: var(--green); border-color: var(--green); }
+  .cb-ordered:checked::after {
+    content: '\2713'; position: absolute; top: -1px; left: 2.5px;
+    font-size: 13px; color: #fff; font-weight: 700;
+  }
+  .row-ordered .wine-name-cell,
+  .row-ordered .col-bin,
+  .row-ordered .col-price {
+    opacity: 0.4; text-decoration: line-through; text-decoration-color: var(--cream-dim);
+  }
+
+  .assign-select {
+    font-family: 'EB Garamond', Georgia, serif; font-size: 0.85rem;
+    color: var(--gold); background: var(--bg);
+    border: 1px solid var(--border-strong); border-radius: 4px;
+    padding: 0.2rem 0.3rem; cursor: pointer;
+  }
+  .assign-select option { background: var(--bg-raised); }
+
+  .btn-remove {
+    font-size: 0.78rem; color: var(--cream-dim); background: none;
+    border: none; cursor: pointer; padding: 0.15rem 0.35rem;
+    border-radius: 3px; opacity: 0.35; transition: opacity 0.15s;
+  }
+  .btn-remove:hover { opacity: 1; color: var(--red-86); }
+
+  /* ── Add form ── */
+  .add-section { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-strong); }
+  .add-toggle {
+    font-family: 'Fraunces', Georgia, serif; font-size: 1rem; font-weight: 600;
+    color: var(--gold); background: transparent;
+    border: 1px solid var(--border-strong); border-radius: 6px;
+    padding: 0.6rem 1.2rem; cursor: pointer; width: 100%; transition: all 0.15s;
+  }
+  .add-toggle:hover { background: var(--bg-raised); border-color: var(--gold-dim); }
+
+  .add-form {
+    display: none; margin-top: 1rem;
+    background: var(--bg-raised); border: 1px solid var(--border-strong);
+    border-radius: 8px; padding: 1.25rem;
+  }
+  .add-form.open { display: block; }
+
+  .form-row { margin-bottom: 0.75rem; }
+  .form-row label { display: block; font-size: 0.82rem; color: var(--cream-dim); margin-bottom: 0.2rem; }
+  .form-row input, .form-row select {
+    width: 100%; font-family: 'EB Garamond', Georgia, serif; font-size: 1rem;
+    color: var(--cream); background: var(--bg);
+    border: 1px solid var(--border-strong); border-radius: 4px; padding: 0.5rem 0.65rem;
+  }
+  .form-row input::placeholder { color: var(--cream-dim); opacity: 0.5; }
+  .form-row input:focus, .form-row select:focus { outline: none; border-color: var(--gold-dim); }
+  .form-row select option { background: var(--bg-raised); }
+
+  .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.65rem; }
+  .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; }
+
+  .btn-submit {
+    font-family: 'Fraunces', Georgia, serif; font-size: 1rem; font-weight: 600;
+    color: var(--bg); background: var(--gold); border: none; border-radius: 6px;
+    padding: 0.6rem 1.5rem; cursor: pointer; width: 100%; margin-top: 0.5rem;
+    transition: background 0.15s;
+  }
+  .btn-submit:hover { background: var(--gold-bright); }
+
+  .empty-state { text-align: center; padding: 3rem 1rem; color: var(--cream-dim); }
+  .empty-state .icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+
+  @media (max-width: 540px) {
+    .page { padding: 1.25rem 0.75rem 3rem; }
+    .header h1 { font-size: 1.8rem; }
+    .form-grid-3 { grid-template-columns: 1fr 1fr; }
+    .col-price { display: none; }
+    .wine-table th.th-price { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <h1>86 Report</h1>
+    <div class="sub">River Pointe Inn</div>
+  </div>
+
+  <div class="summary" id="summary"></div>
+  <div id="content"></div>
+
+  <div class="add-section">
+    <button class="add-toggle" onclick="toggleForm()">+ Add Wine</button>
+    <div class="add-form" id="addForm">
+      <div class="form-row">
+        <label>Wine name</label>
+        <input type="text" id="fName" placeholder="Chateau Kirwan">
+      </div>
+      <div class="form-grid-3">
+        <div class="form-row">
+          <label>Bin #</label>
+          <input type="text" id="fBin" placeholder="0580">
+        </div>
+        <div class="form-row">
+          <label>Vintage</label>
+          <input type="text" id="fVintage" placeholder="2016">
+        </div>
+        <div class="form-row">
+          <label>Price</label>
+          <input type="text" id="fPrice" placeholder="248">
+        </div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-row">
+          <label>Distributor</label>
+          <select id="fDist"><option value="">— Assign later —</option></select>
+        </div>
+        <div class="form-row">
+          <label>Added by</label>
+          <input type="text" id="fBy" placeholder="Name">
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Note (optional)</label>
+        <input type="text" id="fNote" placeholder="OOS, vintage change, also sold by Allied, etc.">
+      </div>
+      <button class="btn-submit" onclick="addItem()">Add to 86 Report</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const WORKER_URL = ''; // e.g. 'https://rpi-86.yourdomain.workers.dev'
+
+const DISTRIBUTORS = [
+  'Allied','Artisinal','Banville','Bonhomie Wine Imports','Bowler','Coeur',
+  'De Maison','Dreyfus Ashby','Dueled','Fedway','Frederick Wildman',
+  'Grand Cru','Independence','Jenny & Francois','Kermit Lynch','M.S. Walker',
+  'Polaner','Rosenthal','Skurnik','Soilair','T Edward','Touton',
+  'Vintage Imports','Wilson Daniels','Winebow'
+];
+
+let items = [];
+
+// ── Distributor dropdown ──
+function populateDistSelects() {
+  const sel = document.getElementById('fDist');
+  DISTRIBUTORS.forEach(d => {
+    const o = document.createElement('option');
+    o.value = d; o.textContent = d;
+    sel.appendChild(o);
+  });
+}
+
+// ── Persistence ──
+async function loadItems() {
+  if (WORKER_URL) {
+    try {
+      const r = await fetch(WORKER_URL + '/api/86');
+      items = await r.json();
+    } catch (e) {
+      items = JSON.parse(localStorage.getItem('rpi_86_report') || '[]');
+    }
+  } else {
+    items = JSON.parse(localStorage.getItem('rpi_86_report') || '[]');
+  }
+  render();
+}
+
+async function saveItems() {
+  localStorage.setItem('rpi_86_report', JSON.stringify(items));
+  if (WORKER_URL) {
+    try {
+      await fetch(WORKER_URL + '/api/86', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(items)
+      });
+    } catch (e) { console.error('Worker save failed', e); }
+  }
+}
+
+// ── Render ──
+function render() {
+  const content = document.getElementById('content');
+  const summaryEl = document.getElementById('summary');
+
+  if (!items.length) {
+    content.innerHTML = '<div class="empty-state"><div class="icon">✓</div><p>No wines on the 86 report.</p></div>';
+    summaryEl.innerHTML = '';
+    return;
+  }
+
+  const total = items.length;
+  const ordered = items.filter(w => w.ordered).length;
+  const unassigned = items.filter(w => !w.distributor);
+  const assigned = items.filter(w => w.distributor);
+
+  summaryEl.innerHTML = `
+    <span class="stat stat-total">${total} wine${total !== 1 ? 's' : ''} 86'd</span>
+    ${ordered ? `<span class="stat stat-ordered">${ordered} ordered</span>` : ''}
+    ${unassigned.length ? `<span class="stat stat-unassigned">${unassigned.length} unassigned</span>` : ''}
+  `;
+
+  let html = '';
+
+  // Unassigned first
+  if (unassigned.length) {
+    html += `<div class="unassigned-section">
+      <div class="unassigned-header"><span>Needs Distributor Assignment</span><span class="count">${unassigned.length}</span></div>
+      ${buildTable(unassigned, true)}
+    </div>`;
+  }
+
+  // Group by distributor
+  const grouped = {};
+  assigned.forEach(w => {
+    if (!grouped[w.distributor]) grouped[w.distributor] = [];
+    grouped[w.distributor].push(w);
+  });
+
+  Object.keys(grouped).sort().forEach(dist => {
+    const wines = grouped[dist];
+    html += `<div class="dist-section">
+      <div class="dist-header"><span>${esc(dist)}</span><span class="count">${wines.length}</span></div>
+      ${buildTable(wines, false)}
+    </div>`;
+  });
+
+  content.innerHTML = html;
+}
+
+function buildTable(wines, showAssign) {
+  const sorted = [...wines].sort((a, b) => {
+    if (a.ordered && !b.ordered) return 1;
+    if (!a.ordered && b.ordered) return -1;
+    return new Date(b.addedAt) - new Date(a.addedAt);
+  });
+
+  const rows = sorted.map(w => {
+    const rc = w.ordered ? 'row-ordered' : '';
+    const assignTd = showAssign
+      ? `<td><select class="assign-select" onchange="assignDist('${w.id}',this.value)"><option value="">Assign</option>${DISTRIBUTORS.map(d => '<option value="'+esc(d)+'">'+esc(d)+'</option>').join('')}</select></td>`
+      : '';
+    return `<tr class="${rc}">
+      <td class="col-bin">${esc(w.bin||'')}</td>
+      <td><div class="wine-name-cell">${esc(w.name)}${w.vintage ? ' '+esc(w.vintage) : ''}</div>${w.note ? '<div class="wine-note">'+esc(w.note)+'</div>' : ''}</td>
+      <td class="col-price">${w.price ? '$'+esc(w.price) : ''}</td>
+      <td class="col-ordered"><input type="checkbox" class="cb-ordered" ${w.ordered?'checked':''} onchange="toggleOrdered('${w.id}',this.checked)" title="Ordered"></td>
+      ${assignTd}
+      <td class="col-actions"><button class="btn-remove" onclick="removeItem('${w.id}')" title="Remove">\u2715</button></td>
+    </tr>`;
+  }).join('');
+
+  return `<table class="wine-table"><thead><tr>
+    <th>Bin</th><th>Wine</th><th class="th-price" style="text-align:right">Price</th><th>Ordered</th>
+    ${showAssign ? '<th>Assign</th>' : ''}<th></th>
+  </tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function esc(s) {
+  if (!s) return '';
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ── Actions ──
+function addItem() {
+  const name = document.getElementById('fName').value.trim();
+  if (!name) return;
+  items.push({
+    id: 'w86_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+    name, bin: document.getElementById('fBin').value.trim(),
+    vintage: document.getElementById('fVintage').value.trim(),
+    price: document.getElementById('fPrice').value.trim(),
+    distributor: document.getElementById('fDist').value,
+    note: document.getElementById('fNote').value.trim(),
+    addedBy: document.getElementById('fBy').value.trim(),
+    addedAt: new Date().toISOString(),
+    ordered: false
+  });
+  saveItems(); render();
+  ['fName','fBin','fVintage','fPrice','fNote'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('fDist').value = '';
+}
+
+function toggleOrdered(id, checked) {
+  const w = items.find(x => x.id === id);
+  if (w) { w.ordered = checked; w.orderedAt = checked ? new Date().toISOString() : null; saveItems(); render(); }
+}
+
+function assignDist(id, dist) {
+  const w = items.find(x => x.id === id);
+  if (w && dist) { w.distributor = dist; saveItems(); render(); }
+}
+
+function removeItem(id) {
+  if (!confirm('Remove from 86 report?')) return;
+  items = items.filter(w => w.id !== id);
+  saveItems(); render();
+}
+
+function toggleForm() { document.getElementById('addForm').classList.toggle('open'); }
+
+// ── Polling ──
+if (WORKER_URL) setInterval(loadItems, 15000);
+
+// ── Accept push from rpi.html ──
+window.addEventListener('message', e => {
+  if (e.data?.type === 'rpi_86_add') { items.push(e.data.item); saveItems(); render(); }
+});
+
+populateDistSelects();
+loadItems();
+</script>
+</body>
+</html>
