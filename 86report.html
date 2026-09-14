@@ -66,18 +66,24 @@ body{font-family:'Josefin Sans',sans-serif;background:var(--cream);color:var(--i
 .wine-table tr:hover{background:var(--cream-warm)}
 .col-bin{width:55px;font-family:'DM Mono',monospace;font-size:12px;color:var(--ink-soft)}
 .col-price{width:60px;text-align:right;font-family:'DM Mono',monospace;font-size:13px;color:var(--ink-soft)}
-.col-ordered{width:50px;text-align:center}
+.col-ordered{width:90px;text-align:center}
 .col-actions{width:60px;text-align:right;white-space:nowrap}
 
 .wine-name-cell{color:var(--ink);font-size:14px}
 .wine-note{font-size:12px;color:var(--ink-faint);font-style:italic;margin-top:2px}
 
-/* Ordered checkbox */
-.cb-ordered{appearance:none;-webkit-appearance:none;width:20px;height:20px;border:1.5px solid var(--border);border-radius:4px;background:#fff;cursor:pointer;position:relative;vertical-align:middle;transition:all .15s}
-.cb-ordered:hover{border-color:var(--gold)}
-.cb-ordered:checked{background:var(--green-deep);border-color:var(--green-deep)}
-.cb-ordered:checked::after{content:'\2713';position:absolute;top:0;left:3px;font-size:14px;color:#fff;font-weight:700}
+/* Needs order — red accent */
+.row-needs-order{border-left:3px solid var(--red-deep)}
+.row-needs-order .wine-name-cell{color:var(--red-deep)}
 
+/* Status toggle button */
+.status-btn{font-family:'DM Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;padding:4px 10px;border-radius:100px;border:none;cursor:pointer;transition:all .15s;touch-action:manipulation;white-space:nowrap}
+.status-btn.needs-order{background:var(--red-pale);color:var(--red-deep);border:1px solid #e8b8b8}
+.status-btn.needs-order:hover{background:#f0d0d0}
+.status-btn.on-order{background:var(--green-pale);color:var(--green-deep);border:1px solid #a8d5b5}
+.status-btn.on-order:hover{background:#d4eadc}
+
+/* Ordered row */
 .row-ordered .wine-name-cell,.row-ordered .col-bin,.row-ordered .col-price{opacity:.35;text-decoration:line-through;text-decoration-color:var(--ink-faint)}
 
 /* Assign dropdown */
@@ -395,7 +401,8 @@ function render(){
   var total=items.length,ordered=items.filter(function(w){return w.ordered;}).length;
   var unassigned=items.filter(function(w){return !w.distributor;});
   var assigned=items.filter(function(w){return w.distributor;});
-  summaryEl.innerHTML='<span class="stat stat-total">'+total+' wine'+(total!==1?'s':'')+' 86\'d</span>'+(ordered?'<span class="stat stat-ordered">'+ordered+' ordered</span>':'')+(unassigned.length?'<span class="stat stat-unassigned">'+unassigned.length+' unassigned</span>':'');
+  var needsOrder=total-ordered;
+  summaryEl.innerHTML='<span class="stat stat-total">'+total+' wine'+(total!==1?'s':'')+' 86\'d</span>'+(needsOrder?'<span class="stat" style="background:var(--red-pale);color:var(--red-deep);border:1px solid #e8b8b8">'+needsOrder+' needs order</span>':'')+(ordered?'<span class="stat stat-ordered">'+ordered+' on order</span>':'')+(unassigned.length?'<span class="stat stat-unassigned">'+unassigned.length+' unassigned</span>':'');
   var html='';
   if(unassigned.length){html+='<div class="section"><div class="unassigned-header"><span class="dist-name">Needs Distributor Assignment</span><span class="dist-count">'+unassigned.length+'</span></div>'+buildTable(unassigned,true)+'</div>';}
   var grouped={};assigned.forEach(function(w){if(!grouped[w.distributor])grouped[w.distributor]=[];grouped[w.distributor].push(w);});
@@ -408,12 +415,15 @@ function buildTable(wines,showAssign){
   var sorted=[].concat(wines).sort(function(a,b){if(a.ordered&&!b.ordered)return 1;if(!a.ordered&&b.ordered)return -1;return new Date(b.addedAt)-new Date(a.addedAt);});
   var dOpts=[].concat(distributors).sort(function(a,b){return a.localeCompare(b);}).map(function(d){return '<option value="'+esc(d)+'">'+esc(d)+'</option>';}).join('');
   var rows=sorted.map(function(w){
-    var rc=w.ordered?'row-ordered':'';
+    var rc=w.ordered?'row-ordered':'row-needs-order';
+    var statusBtn=w.ordered
+      ?'<button class="status-btn on-order" onclick="toggleOrdered(\''+w.id+'\',false)">ON ORDER</button>'
+      :'<button class="status-btn needs-order" onclick="toggleOrdered(\''+w.id+'\',true)">NEEDS ORDER</button>';
     var assignTd=showAssign?'<td><select class="assign-select" onchange="assignDist(\''+w.id+'\',this.value)"><option value="">Assign</option>'+dOpts+'</select></td>':'';
     var adminBtns=isAdmin?'<button class="btn-sm edit" onclick="openEditModal(\''+w.id+'\')" title="Edit">✎</button>':'';
-    return '<tr class="'+rc+'"><td class="col-bin">'+esc(w.bin||'')+'</td><td><div class="wine-name-cell">'+esc(w.name)+(w.vintage?' '+esc(w.vintage):'')+'</div>'+(w.note?'<div class="wine-note">'+esc(w.note)+'</div>':'')+'</td><td class="col-price">'+(w.price?'$'+esc(w.price):'')+'</td><td class="col-ordered"><input type="checkbox" class="cb-ordered" '+(w.ordered?'checked':'')+' onchange="toggleOrdered(\''+w.id+'\',this.checked)" title="Ordered"></td>'+assignTd+'<td class="col-actions">'+adminBtns+'<button class="btn-sm remove" onclick="removeItem(\''+w.id+'\')" title="Remove">✕</button></td></tr>';
+    return '<tr class="'+rc+'"><td class="col-bin">'+esc(w.bin||'')+'</td><td><div class="wine-name-cell">'+esc(w.name)+(w.vintage?' '+esc(w.vintage):'')+'</div>'+(w.note?'<div class="wine-note">'+esc(w.note)+'</div>':'')+'</td><td class="col-price">'+(w.price?'$'+esc(w.price):'')+'</td><td class="col-ordered">'+statusBtn+'</td>'+assignTd+'<td class="col-actions">'+adminBtns+'<button class="btn-sm remove" onclick="removeItem(\''+w.id+'\')" title="Remove">✕</button></td></tr>';
   }).join('');
-  return '<table class="wine-table"><thead><tr><th>Bin</th><th>Wine</th><th class="th-price" style="text-align:right">Price</th><th>Ordered</th>'+(showAssign?'<th>Assign</th>':'')+'<th></th></tr></thead><tbody>'+rows+'</tbody></table>';
+  return '<table class="wine-table"><thead><tr><th>Bin</th><th>Wine</th><th class="th-price" style="text-align:right">Price</th><th>Status</th>'+(showAssign?'<th>Assign</th>':'')+'<th></th></tr></thead><tbody>'+rows+'</tbody></table>';
 }
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
