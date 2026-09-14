@@ -2,308 +2,248 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>86 Report — River Pointe Inn</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231a1612'/><text x='50' y='68' font-family='serif' font-size='42' font-weight='bold' fill='%23c9a96e' text-anchor='middle'>86</text></svg>">
+<meta name="theme-color" content="#1a1612">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Josefin+Sans:wght@300;400;600;700&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #14120e;
-    --bg-raised: #1c1915;
-    --bg-hover: #242019;
-    --gold: #b08d3e;
-    --gold-dim: #8a6e30;
-    --gold-bright: #d4ab4a;
-    --cream: #e8dcc8;
-    --cream-dim: #a89a82;
-    --red-86: #c0392b;
-    --red-dim: rgba(192,57,43,0.15);
-    --green: #27ae60;
-    --green-dim: rgba(39,174,96,0.12);
-    --border: rgba(176,141,62,0.12);
-    --border-strong: rgba(176,141,62,0.25);
-  }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body {
-    background: var(--bg); color: var(--cream);
-    font-family: 'EB Garamond', Georgia, serif;
-    font-size: 17px; line-height: 1.5; min-height: 100vh;
-    -webkit-font-smoothing: antialiased;
-  }
-  .page { max-width:760px; margin:0 auto; padding:2rem 1.25rem 4rem; }
+:root {
+  --ink:#1a1612;--ink-mid:#3d3530;--ink-soft:#7a6e68;--ink-faint:#b8ada7;
+  --cream:#faf8f5;--cream-warm:#f3efe9;--cream-mid:#e8e2da;
+  --gold:#8a6d3b;--gold-light:#c9a96e;--gold-pale:#f5edd8;
+  --red-deep:#6b2323;--red-pale:#f9eded;
+  --green-deep:#1e3d2a;--green-pale:#e8f2ec;
+  --border:#ddd6cc;--border-light:#ede8e2;
+  --shadow:0 1px 3px rgba(26,22,18,.06),0 4px 16px rgba(26,22,18,.04);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Josefin Sans',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;font-size:14px;line-height:1.6}
 
-  /* Header */
-  .header { text-align:center; padding-bottom:1.25rem; border-bottom:1px solid var(--border-strong); margin-bottom:1rem; }
-  .header h1 { font-family:'Fraunces',Georgia,serif; font-weight:700; font-size:2.2rem; color:var(--gold); letter-spacing:0.02em; }
-  .header .sub { font-size:0.92rem; color:var(--cream-dim); margin-top:0.25rem; }
+/* HEADER */
+.site-header{background:var(--ink);color:var(--cream);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100}
+.site-header .brand{font-family:'Playfair Display',serif;font-size:20px;font-weight:400;letter-spacing:.04em;color:var(--gold-light)}
+.site-header .brand span{color:rgba(250,248,245,.45);font-style:italic;font-size:14px;margin-left:10px}
+.header-right{display:flex;align-items:center;gap:10px}
+.btn-admin{font-family:'Josefin Sans',sans-serif;font-size:12px;padding:4px 12px;border-radius:100px;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(250,248,245,.5);cursor:pointer;transition:all .15s}
+.btn-admin:hover{border-color:var(--gold-light);color:var(--gold-light)}
+.btn-admin.active{background:rgba(201,169,110,.15);border-color:var(--gold-light);color:var(--gold-light)}
+.admin-badge{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.06em;padding:2px 8px;border-radius:100px;background:rgba(201,169,110,.15);color:var(--gold-light)}
 
-  /* Admin bar */
-  .admin-bar { display:flex; justify-content:flex-end; align-items:center; gap:0.75rem; margin-bottom:1rem; }
-  .btn-admin {
-    font-family:'EB Garamond',Georgia,serif; font-size:0.85rem;
-    color:var(--cream-dim); background:transparent; border:1px solid var(--border);
-    border-radius:5px; padding:0.3rem 0.75rem; cursor:pointer; transition:all 0.15s;
-  }
-  .btn-admin:hover { border-color:var(--gold-dim); color:var(--gold); }
-  .btn-admin.active { color:var(--gold); border-color:var(--gold-dim); background:rgba(176,141,62,0.08); }
-  .admin-badge {
-    font-family:'Fraunces',Georgia,serif; font-size:0.75rem; font-weight:600;
-    color:var(--gold); background:rgba(176,141,62,0.1); border-radius:4px;
-    padding:0.15rem 0.5rem;
-  }
+/* LAYOUT */
+.app{max-width:860px;margin:0 auto;padding:2rem 1.5rem 4rem}
 
-  /* PIN overlay */
-  .pin-overlay {
-    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75);
-    z-index:9999; align-items:center; justify-content:center;
-  }
-  .pin-overlay.open { display:flex; }
-  .pin-box {
-    background:var(--bg-raised); border:1px solid var(--border-strong);
-    border-radius:10px; padding:1.5rem; width:90%; max-width:320px; text-align:center;
-  }
-  .pin-box h3 { font-family:'Fraunces',Georgia,serif; color:var(--gold); margin-bottom:1rem; }
-  .pin-input {
-    font-family:'EB Garamond',Georgia,serif; font-size:1.4rem; text-align:center;
-    letter-spacing:0.3em; width:100%; padding:0.6rem; color:var(--cream);
-    background:var(--bg); border:1px solid var(--border-strong); border-radius:6px;
-  }
-  .pin-input:focus { outline:none; border-color:var(--gold-dim); }
-  .pin-error { font-size:0.85rem; color:var(--red-86); margin-top:0.5rem; min-height:1.3em; }
+/* SUMMARY BAR */
+.summary-bar{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:1.5rem}
+.stat{font-family:'Josefin Sans',sans-serif;font-size:13px;font-weight:600;padding:6px 16px;border-radius:100px}
+.stat-total{background:var(--red-pale);color:var(--red-deep);border:1px solid #e8b8b8}
+.stat-ordered{background:var(--green-pale);color:var(--green-deep);border:1px solid #a8d5b5}
+.stat-unassigned{background:var(--gold-pale);color:var(--gold);border:1px solid #e0c98a}
 
-  /* Summary */
-  .summary { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; margin-bottom:1.75rem; font-family:'Fraunces',Georgia,serif; font-size:0.9rem; }
-  .stat { padding:0.3rem 0.9rem; border-radius:6px; font-weight:600; }
-  .stat-total { color:var(--red-86); background:var(--red-dim); }
-  .stat-ordered { color:var(--green); background:var(--green-dim); }
-  .stat-unassigned { color:var(--gold); background:rgba(176,141,62,0.1); }
+/* SECTIONS */
+.section{background:#fff;border:1px solid var(--border-light);border-radius:8px;margin-bottom:16px;overflow:hidden;box-shadow:var(--shadow);animation:fadeUp .3s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.section-head{padding:12px 20px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px;background:var(--cream-warm)}
+.section-icon{width:28px;height:28px;border-radius:6px;background:var(--ink);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.section-icon svg{width:14px;height:14px;stroke:var(--gold-light);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.section-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:600;letter-spacing:.02em;color:var(--ink)}
+.section-body{padding:20px}
 
-  /* Distributor sections */
-  .dist-section { margin-bottom:1.75rem; }
-  .dist-header {
-    font-family:'Fraunces',Georgia,serif; font-weight:700; font-size:1.2rem; color:var(--gold);
-    padding:0.5rem 0; border-bottom:1px solid var(--border-strong); margin-bottom:0.15rem;
-    display:flex; align-items:center; justify-content:space-between;
-  }
-  .dist-header .count { font-size:0.85rem; font-weight:400; color:var(--cream-dim); }
-  .unassigned-section { margin-bottom:2rem; }
-  .unassigned-header {
-    font-family:'Fraunces',Georgia,serif; font-weight:700; font-size:1.15rem; color:var(--red-86);
-    padding:0.5rem 0; border-bottom:2px solid rgba(192,57,43,0.3); margin-bottom:0.15rem;
-    display:flex; align-items:center; justify-content:space-between;
-  }
+/* DISTRIBUTOR HEADERS */
+.dist-header{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:var(--cream-warm);border-bottom:1px solid var(--border-light)}
+.dist-name{font-family:'Playfair Display',serif;font-size:15px;font-weight:600;color:var(--ink)}
+.dist-count{font-family:'DM Mono',monospace;font-size:11px;color:var(--ink-faint)}
+.unassigned-header{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:var(--red-pale);border-bottom:1px solid #e8b8b8}
+.unassigned-header .dist-name{color:var(--red-deep)}
 
-  /* Wine table */
-  .wine-table { width:100%; border-collapse:collapse; font-size:0.95rem; }
-  .wine-table th { text-align:left; font-size:0.78rem; color:var(--cream-dim); font-weight:400; padding:0.45rem 0.5rem; border-bottom:1px solid var(--border); letter-spacing:0.03em; }
-  .wine-table td { padding:0.55rem 0.5rem; border-bottom:1px solid var(--border); vertical-align:top; }
-  .wine-table tr:last-child td { border-bottom:none; }
-  .col-bin { width:55px; color:var(--cream-dim); font-size:0.88rem; }
-  .col-price { width:60px; text-align:right; color:var(--cream-dim); }
-  .col-ordered { width:50px; text-align:center; }
-  .col-actions { width:60px; text-align:right; white-space:nowrap; }
+/* WINE TABLE */
+.wine-table{width:100%;border-collapse:collapse;font-size:14px}
+.wine-table th{text-align:left;font-size:10px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-faint);padding:8px 12px;border-bottom:1px solid var(--border-light)}
+.wine-table td{padding:10px 12px;border-bottom:1px solid var(--border-light);vertical-align:top}
+.wine-table tr:last-child td{border-bottom:none}
+.wine-table tr:hover{background:var(--cream-warm)}
+.col-bin{width:55px;font-family:'DM Mono',monospace;font-size:12px;color:var(--ink-soft)}
+.col-price{width:60px;text-align:right;font-family:'DM Mono',monospace;font-size:13px;color:var(--ink-soft)}
+.col-ordered{width:50px;text-align:center}
+.col-actions{width:60px;text-align:right;white-space:nowrap}
 
-  .wine-name-cell { color:var(--cream); }
-  .wine-note { font-size:0.82rem; color:var(--cream-dim); font-style:italic; }
+.wine-name-cell{color:var(--ink);font-size:14px}
+.wine-note{font-size:12px;color:var(--ink-faint);font-style:italic;margin-top:2px}
 
-  .cb-ordered {
-    appearance:none; -webkit-appearance:none; width:18px; height:18px;
-    border:1.5px solid var(--border-strong); border-radius:3px; background:var(--bg);
-    cursor:pointer; position:relative; vertical-align:middle;
-  }
-  .cb-ordered:checked { background:var(--green); border-color:var(--green); }
-  .cb-ordered:checked::after { content:'\2713'; position:absolute; top:-1px; left:2.5px; font-size:13px; color:#fff; font-weight:700; }
+/* Ordered checkbox */
+.cb-ordered{appearance:none;-webkit-appearance:none;width:20px;height:20px;border:1.5px solid var(--border);border-radius:4px;background:#fff;cursor:pointer;position:relative;vertical-align:middle;transition:all .15s}
+.cb-ordered:hover{border-color:var(--gold)}
+.cb-ordered:checked{background:var(--green-deep);border-color:var(--green-deep)}
+.cb-ordered:checked::after{content:'\2713';position:absolute;top:0;left:3px;font-size:14px;color:#fff;font-weight:700}
 
-  .row-ordered .wine-name-cell, .row-ordered .col-bin, .row-ordered .col-price {
-    opacity:0.4; text-decoration:line-through; text-decoration-color:var(--cream-dim);
-  }
+.row-ordered .wine-name-cell,.row-ordered .col-bin,.row-ordered .col-price{opacity:.35;text-decoration:line-through;text-decoration-color:var(--ink-faint)}
 
-  .assign-select {
-    font-family:'EB Garamond',Georgia,serif; font-size:0.85rem; color:var(--gold);
-    background:var(--bg); border:1px solid var(--border-strong); border-radius:4px;
-    padding:0.2rem 0.3rem; cursor:pointer;
-  }
-  .assign-select option { background:var(--bg-raised); }
+/* Assign dropdown */
+.assign-select{font-family:'Josefin Sans',sans-serif;font-size:12px;color:var(--gold);background:#fff;border:1px solid var(--border);border-radius:6px;padding:4px 6px;cursor:pointer}
+.assign-select:focus{outline:none;border-color:var(--gold)}
+.assign-select option{background:#fff;color:var(--ink)}
 
-  /* Action buttons */
-  .btn-sm {
-    font-size:0.78rem; color:var(--cream-dim); background:none; border:none;
-    cursor:pointer; padding:0.15rem 0.35rem; border-radius:3px; opacity:0.4; transition:opacity 0.15s;
-  }
-  .btn-sm:hover { opacity:1; }
-  .btn-sm.edit:hover { color:var(--gold); }
-  .btn-sm.remove:hover { color:var(--red-86); }
+/* Action buttons */
+.btn-sm{font-size:13px;color:var(--ink-faint);background:none;border:none;cursor:pointer;padding:2px 4px;border-radius:3px;opacity:.4;transition:all .15s}
+.btn-sm:hover{opacity:1}
+.btn-sm.edit:hover{color:var(--gold)}
+.btn-sm.remove:hover{color:var(--red-deep)}
 
-  /* ── Edit modal ── */
-  .modal-overlay {
-    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75);
-    z-index:9998; align-items:center; justify-content:center;
-  }
-  .modal-overlay.open { display:flex; }
-  .modal-box {
-    background:var(--bg-raised); border:1px solid var(--border-strong);
-    border-radius:10px; padding:1.5rem; width:90%; max-width:440px;
-  }
-  .modal-box h3 { font-family:'Fraunces',Georgia,serif; color:var(--gold); margin-bottom:1rem; font-size:1.15rem; }
+/* PIN OVERLAY */
+.pin-overlay{display:none;position:fixed;inset:0;background:rgba(26,22,18,.5);z-index:9999;align-items:center;justify-content:center}
+.pin-overlay.open{display:flex}
+.pin-box{background:#fff;border:1px solid var(--border);border-radius:10px;padding:28px;width:90%;max-width:320px;text-align:center;box-shadow:0 8px 40px rgba(26,22,18,.15)}
+.pin-box h3{font-family:'Playfair Display',serif;font-size:18px;color:var(--ink);margin-bottom:16px}
+.pin-input{font-family:'DM Mono',monospace;font-size:28px;text-align:center;letter-spacing:.4em;width:100%;padding:10px;color:var(--ink);background:var(--cream);border:1px solid var(--border);border-radius:8px}
+.pin-input:focus{outline:none;border-color:var(--gold)}
+.pin-error{font-size:13px;color:var(--red-deep);margin-top:8px;min-height:1.3em}
 
-  /* ── Distributor management panel ── */
-  .dist-mgmt {
-    display:none; margin-bottom:1.5rem; background:var(--bg-raised);
-    border:1px solid var(--border-strong); border-radius:8px; padding:1.25rem;
-  }
-  .dist-mgmt.open { display:block; }
-  .dist-mgmt h3 { font-family:'Fraunces',Georgia,serif; color:var(--gold); margin-bottom:0.75rem; font-size:1.1rem; }
-  .dist-mgmt-list { list-style:none; max-height:260px; overflow-y:auto; margin-bottom:0.75rem; }
-  .dist-mgmt-item {
-    display:flex; justify-content:space-between; align-items:center;
-    padding:0.35rem 0; border-bottom:1px solid var(--border); font-size:0.95rem;
-  }
-  .dist-mgmt-item:last-child { border-bottom:none; }
-  .btn-dist-remove {
-    font-size:0.75rem; color:var(--cream-dim); background:none; border:none;
-    cursor:pointer; opacity:0.4; transition:opacity 0.15s;
-  }
-  .btn-dist-remove:hover { opacity:1; color:var(--red-86); }
-  .dist-add-row { display:flex; gap:0.5rem; }
-  .dist-add-row input {
-    flex:1; font-family:'EB Garamond',Georgia,serif; font-size:1rem;
-    color:var(--cream); background:var(--bg); border:1px solid var(--border-strong);
-    border-radius:4px; padding:0.4rem 0.6rem;
-  }
-  .dist-add-row input::placeholder { color:var(--cream-dim); opacity:0.5; }
-  .dist-add-row input:focus { outline:none; border-color:var(--gold-dim); }
-  .dist-add-row button {
-    font-family:'Fraunces',Georgia,serif; font-size:0.9rem; font-weight:600;
-    color:var(--bg); background:var(--gold); border:none; border-radius:4px;
-    padding:0.4rem 0.85rem; cursor:pointer;
-  }
+/* EDIT MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(26,22,18,.5);z-index:9998;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-box{background:#fff;border:1px solid var(--border);border-radius:10px;padding:24px;width:90%;max-width:440px;box-shadow:0 8px 40px rgba(26,22,18,.15)}
+.modal-box h3{font-family:'Playfair Display',serif;font-size:18px;color:var(--ink);margin-bottom:16px}
 
-  /* ── Add form ── */
-  .add-section { margin-top:2rem; padding-top:1.5rem; border-top:1px solid var(--border-strong); }
-  .add-toggle {
-    font-family:'Fraunces',Georgia,serif; font-size:1rem; font-weight:600; color:var(--gold);
-    background:transparent; border:1px solid var(--border-strong); border-radius:6px;
-    padding:0.6rem 1.2rem; cursor:pointer; width:100%; transition:all 0.15s;
-  }
-  .add-toggle:hover { background:var(--bg-raised); border-color:var(--gold-dim); }
-  .add-form {
-    display:none; margin-top:1rem; background:var(--bg-raised);
-    border:1px solid var(--border-strong); border-radius:8px; padding:1.25rem;
-  }
-  .add-form.open { display:block; }
+/* DISTRIBUTOR MANAGEMENT */
+.dist-mgmt{display:none;margin-bottom:16px}
+.dist-mgmt.open{display:block}
+.dist-mgmt-list{list-style:none;max-height:280px;overflow-y:auto;margin-bottom:12px}
+.dist-mgmt-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border-light);font-size:14px}
+.dist-mgmt-item:last-child{border-bottom:none}
+.btn-dist-remove{font-size:14px;color:var(--ink-faint);background:none;border:none;cursor:pointer;opacity:.4;transition:opacity .15s}
+.btn-dist-remove:hover{opacity:1;color:var(--red-deep)}
 
-  .form-row { margin-bottom:0.75rem; }
-  .form-row label { display:block; font-size:0.82rem; color:var(--cream-dim); margin-bottom:0.2rem; }
-  .form-row input, .form-row select {
-    width:100%; font-family:'EB Garamond',Georgia,serif; font-size:1rem;
-    color:var(--cream); background:var(--bg); border:1px solid var(--border-strong);
-    border-radius:4px; padding:0.5rem 0.65rem;
-  }
-  .form-row input::placeholder { color:var(--cream-dim); opacity:0.5; }
-  .form-row input:focus, .form-row select:focus { outline:none; border-color:var(--gold-dim); }
-  .form-row select option { background:var(--bg-raised); }
-  .form-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.65rem; }
-  .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:0.65rem; }
-  .btn-submit {
-    font-family:'Fraunces',Georgia,serif; font-size:1rem; font-weight:600;
-    color:var(--bg); background:var(--gold); border:none; border-radius:6px;
-    padding:0.6rem 1.5rem; cursor:pointer; width:100%; margin-top:0.5rem;
-  }
-  .btn-submit:hover { background:var(--gold-bright); }
+/* FORMS */
+.field{display:flex;flex-direction:column;gap:5px}
+.field-label{font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-soft)}
+input[type=text],input[type=number],select{font-family:'Josefin Sans',sans-serif;font-size:14px;color:var(--ink);background:var(--cream);border:1px solid var(--border);border-radius:6px;padding:8px 12px;width:100%;outline:none;transition:border-color .15s,background .15s}
+input:focus,select:focus{border-color:var(--gold);background:#fff}
+input::placeholder{color:var(--ink-faint)}
+select option{background:#fff}
 
-  .empty-state { text-align:center; padding:3rem 1rem; color:var(--cream-dim); }
-  .empty-state .icon { font-size:2.5rem; margin-bottom:0.5rem; }
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 
-  @media (max-width:540px) {
-    .page { padding:1.25rem 0.75rem 3rem; }
-    .header h1 { font-size:1.8rem; }
-    .form-grid-3 { grid-template-columns:1fr 1fr; }
-    .col-price { display:none; }
-    .wine-table th.th-price { display:none; }
-  }
+.btn-primary{display:inline-flex;align-items:center;gap:8px;font-family:'Josefin Sans',sans-serif;font-size:14px;font-weight:500;padding:11px 24px;background:var(--ink);color:var(--cream);border:none;border-radius:7px;cursor:pointer;transition:background .15s;width:100%;justify-content:center;touch-action:manipulation}
+.btn-primary:hover{background:var(--gold)}
+.btn-secondary{display:inline-flex;align-items:center;gap:8px;font-family:'Josefin Sans',sans-serif;font-size:14px;padding:11px 24px;background:#fff;color:var(--ink);border:1px solid var(--border);border-radius:7px;cursor:pointer;transition:border-color .15s;touch-action:manipulation}
+.btn-secondary:hover{border-color:var(--gold);background:var(--gold-pale)}
+
+.add-row-btn{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-soft);background:none;border:1px dashed var(--border);border-radius:6px;padding:7px 14px;cursor:pointer;width:100%;justify-content:center;transition:all .15s;touch-action:manipulation}
+.add-row-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+.empty-state{text-align:center;padding:40px 20px;color:var(--ink-faint)}
+.empty-state .icon{font-size:32px;margin-bottom:8px;color:var(--green-deep)}
+.empty-state p{font-family:'Playfair Display',serif;font-size:16px;font-style:italic}
+
+@media(max-width:640px){
+  .app{padding:1rem 1rem 4rem}
+  .site-header{padding:0 1rem}
+  .site-header .brand{font-size:17px}
+  .form-grid-3{grid-template-columns:1fr 1fr}
+  .col-price{display:none}
+  .wine-table th.th-price{display:none}
+  .section-body{padding:14px}
+  .section-head{padding:10px 14px}
+  .dist-header,.unassigned-header{padding:8px 14px}
+  .wine-table th,.wine-table td{padding:8px 10px}
+  .btn-primary,.btn-secondary{width:100%;justify-content:center}
+}
+@media print{.site-header{display:none}}
 </style>
 </head>
 <body>
-<div class="page">
-  <div class="header">
-    <h1>86 Report</h1>
-    <div class="sub">River Pointe Inn</div>
-  </div>
 
-  <!-- Admin controls -->
-  <div class="admin-bar">
-    <span class="admin-badge" id="adminBadge" style="display:none;">Admin</span>
-    <button class="btn-admin" id="btnDistMgmt" style="display:none;" onclick="toggleDistMgmt()">Distributors</button>
+<header class="site-header">
+  <div class="brand">River Pointe Inn <span>86 Report</span></div>
+  <div class="header-right">
+    <span class="admin-badge" id="adminBadge" style="display:none">Admin</span>
+    <button class="btn-admin" id="btnDistMgmt" style="display:none" onclick="toggleDistMgmt()">Distributors</button>
     <button class="btn-admin" id="btnAdminToggle" onclick="handleAdminToggle()">🔒</button>
   </div>
+</header>
 
-  <!-- PIN entry -->
-  <div class="pin-overlay" id="pinOverlay" onclick="if(event.target===this)closePinOverlay()">
-    <div class="pin-box">
-      <h3>Admin PIN</h3>
-      <input type="password" inputmode="numeric" maxlength="4" class="pin-input" id="pinInput" onkeyup="checkPin(event)" placeholder="····">
-      <div class="pin-error" id="pinError"></div>
-    </div>
+<!-- PIN overlay -->
+<div class="pin-overlay" id="pinOverlay" onclick="if(event.target===this)closePinOverlay()">
+  <div class="pin-box">
+    <h3>Admin PIN</h3>
+    <input type="password" inputmode="numeric" maxlength="4" class="pin-input" id="pinInput" onkeyup="checkPin(event)" placeholder="····">
+    <div class="pin-error" id="pinError"></div>
   </div>
+</div>
+
+<!-- Edit modal -->
+<div class="modal-overlay" id="editModal" onclick="if(event.target===this)closeEditModal()">
+  <div class="modal-box">
+    <h3>Edit Wine</h3>
+    <input type="hidden" id="editId">
+    <div class="field" style="margin-bottom:10px"><div class="field-label">Wine name</div><input type="text" id="editName"></div>
+    <div class="form-grid-3" style="margin-bottom:10px">
+      <div class="field"><div class="field-label">Bin #</div><input type="text" id="editBin"></div>
+      <div class="field"><div class="field-label">Vintage</div><input type="text" id="editVintage"></div>
+      <div class="field"><div class="field-label">Price</div><input type="text" id="editPrice"></div>
+    </div>
+    <div class="form-grid-2" style="margin-bottom:10px">
+      <div class="field"><div class="field-label">Distributor</div><select id="editDist"></select></div>
+      <div class="field"><div class="field-label">Added by</div><input type="text" id="editBy"></div>
+    </div>
+    <div class="field" style="margin-bottom:14px"><div class="field-label">Note</div><input type="text" id="editNote"></div>
+    <button class="btn-primary" onclick="saveEdit()">Save Changes</button>
+  </div>
+</div>
+
+<div class="app">
+  <div class="summary-bar" id="summary"></div>
 
   <!-- Distributor management panel -->
   <div class="dist-mgmt" id="distMgmt">
-    <h3>Manage Distributors</h3>
-    <ul class="dist-mgmt-list" id="distMgmtList"></ul>
-    <div class="dist-add-row">
-      <input type="text" id="newDistName" placeholder="New distributor name" onkeydown="if(event.key==='Enter')addDistributor()">
-      <button onclick="addDistributor()">Add</button>
+    <div class="section">
+      <div class="section-head">
+        <div class="section-icon"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+        <div class="section-title">Manage Distributors</div>
+      </div>
+      <div class="section-body">
+        <ul class="dist-mgmt-list" id="distMgmtList"></ul>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="newDistName" placeholder="New distributor name" style="flex:1" onkeydown="if(event.key==='Enter')addDistributor()">
+          <button class="btn-primary" onclick="addDistributor()" style="width:auto;padding:8px 20px">+ Add</button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Edit modal -->
-  <div class="modal-overlay" id="editModal" onclick="if(event.target===this)closeEditModal()">
-    <div class="modal-box">
-      <h3>Edit Wine</h3>
-      <input type="hidden" id="editId">
-      <div class="form-row"><label>Wine name</label><input type="text" id="editName"></div>
-      <div class="form-grid-3">
-        <div class="form-row"><label>Bin #</label><input type="text" id="editBin"></div>
-        <div class="form-row"><label>Vintage</label><input type="text" id="editVintage"></div>
-        <div class="form-row"><label>Price</label><input type="text" id="editPrice"></div>
-      </div>
-      <div class="form-grid-2">
-        <div class="form-row"><label>Distributor</label><select id="editDist"></select></div>
-        <div class="form-row"><label>Added by</label><input type="text" id="editBy"></div>
-      </div>
-      <div class="form-row"><label>Note</label><input type="text" id="editNote"></div>
-      <button class="btn-submit" onclick="saveEdit()">Save Changes</button>
-    </div>
-  </div>
-
-  <div class="summary" id="summary"></div>
   <div id="content"></div>
 
-  <div class="add-section">
-    <button class="add-toggle" onclick="toggleForm()">+ Add Wine</button>
-    <div class="add-form" id="addForm">
-      <div class="form-row"><label>Wine name</label><input type="text" id="fName" placeholder="Chateau Kirwan"></div>
-      <div class="form-grid-3">
-        <div class="form-row"><label>Bin #</label><input type="text" id="fBin" placeholder="0580"></div>
-        <div class="form-row"><label>Vintage</label><input type="text" id="fVintage" placeholder="2016"></div>
-        <div class="form-row"><label>Price</label><input type="text" id="fPrice" placeholder="248"></div>
+  <!-- Add form -->
+  <div class="section" style="margin-top:8px">
+    <div class="section-head" style="cursor:pointer" onclick="toggleForm()">
+      <div class="section-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+      <div class="section-title">Add Wine</div>
+    </div>
+    <div class="section-body" id="addForm" style="display:none">
+      <div class="field" style="margin-bottom:10px"><div class="field-label">Wine name</div><input type="text" id="fName" placeholder="Chateau Kirwan"></div>
+      <div class="form-grid-3" style="margin-bottom:10px">
+        <div class="field"><div class="field-label">Bin #</div><input type="text" id="fBin" placeholder="0580"></div>
+        <div class="field"><div class="field-label">Vintage</div><input type="text" id="fVintage" placeholder="2016"></div>
+        <div class="field"><div class="field-label">Price</div><input type="text" id="fPrice" placeholder="248"></div>
       </div>
-      <div class="form-grid-2">
-        <div class="form-row"><label>Distributor</label><select id="fDist"><option value="">— Assign later —</option></select></div>
-        <div class="form-row"><label>Added by</label><input type="text" id="fBy" placeholder="Name"></div>
+      <div class="form-grid-2" style="margin-bottom:10px">
+        <div class="field"><div class="field-label">Distributor</div><select id="fDist"><option value="">— Assign later —</option></select></div>
+        <div class="field"><div class="field-label">Added by</div><input type="text" id="fBy" placeholder="Name"></div>
       </div>
-      <div class="form-row"><label>Note (optional)</label><input type="text" id="fNote" placeholder="OOS, vintage change, also sold by Allied, etc."></div>
-      <button class="btn-submit" onclick="addItem()">Add to 86 Report</button>
+      <div class="field" style="margin-bottom:14px"><div class="field-label">Note (optional)</div><input type="text" id="fNote" placeholder="OOS, vintage change, also sold by Allied, etc."></div>
+      <button class="btn-primary" onclick="addItem()">Add to 86 Report</button>
     </div>
   </div>
 </div>
 
 <script>
-const WORKER_URL = ''; // e.g. 'https://rpi-shift.yourdomain.workers.dev'
-const ADMIN_PIN  = '8686'; // Change this
+var WORKER_URL = ''; // e.g. 'https://rpi-shift-api.amusementstandards.workers.dev'
+var ADMIN_PIN  = '8686';
 
-// ── Seed data from Google Sheet (first-load only) ──
-const SEED_DATA = [
+var SEED_DATA = [
   {name:"Château La Rame",bin:"0642",vintage:"2023",price:"58",distributor:"Dueled",ordered:false},
   {name:"Blasson D'Issan",bin:"0530",vintage:"2016",price:"130",distributor:"Dueled",ordered:false},
   {name:"Château Chauvin",bin:"0579",vintage:"2015",price:"181",distributor:"Dueled",ordered:false},
@@ -383,314 +323,149 @@ const SEED_DATA = [
   {name:"Ridge Vineyards Cabernet Sauvignon",bin:"",vintage:"2022",price:"",distributor:"Fedway",ordered:true},
 ];
 
-// ── State ──
-let items = [];
-let distributors = [];
-let isAdmin = false;
+var items = [];
+var distributors = [];
+var isAdmin = false;
 
-// ── Admin ──
-function handleAdminToggle() {
-  if (isAdmin) { lockAdmin(); return; }
-  document.getElementById('pinOverlay').classList.add('open');
-  document.getElementById('pinInput').value = '';
-  document.getElementById('pinError').textContent = '';
-  setTimeout(() => document.getElementById('pinInput').focus(), 100);
-}
-function closePinOverlay() { document.getElementById('pinOverlay').classList.remove('open'); }
-function checkPin(e) {
-  const val = document.getElementById('pinInput').value;
-  if (val.length === 4) {
-    if (val === ADMIN_PIN) { unlockAdmin(); closePinOverlay(); }
-    else {
-      document.getElementById('pinError').textContent = 'Wrong PIN';
-      document.getElementById('pinInput').value = '';
-    }
-  }
-}
-function unlockAdmin() {
-  isAdmin = true;
-  document.getElementById('btnAdminToggle').textContent = '🔓';
-  document.getElementById('btnAdminToggle').classList.add('active');
-  document.getElementById('adminBadge').style.display = '';
-  document.getElementById('btnDistMgmt').style.display = '';
-  render();
-}
-function lockAdmin() {
-  isAdmin = false;
-  document.getElementById('btnAdminToggle').textContent = '🔒';
-  document.getElementById('btnAdminToggle').classList.remove('active');
-  document.getElementById('adminBadge').style.display = 'none';
-  document.getElementById('btnDistMgmt').style.display = 'none';
-  document.getElementById('distMgmt').classList.remove('open');
-  render();
-}
+// ═══════════════════════════════════════════════
+// ADMIN
+// ═══════════════════════════════════════════════
+function handleAdminToggle(){if(isAdmin){lockAdmin();return;}document.getElementById('pinOverlay').classList.add('open');document.getElementById('pinInput').value='';document.getElementById('pinError').textContent='';setTimeout(function(){document.getElementById('pinInput').focus();},100);}
+function closePinOverlay(){document.getElementById('pinOverlay').classList.remove('open');}
+function checkPin(e){var val=document.getElementById('pinInput').value;if(val.length===4){if(val===ADMIN_PIN){unlockAdmin();closePinOverlay();}else{document.getElementById('pinError').textContent='Wrong PIN';document.getElementById('pinInput').value='';}}}
+function unlockAdmin(){isAdmin=true;document.getElementById('btnAdminToggle').textContent='🔓';document.getElementById('btnAdminToggle').classList.add('active');document.getElementById('adminBadge').style.display='';document.getElementById('btnDistMgmt').style.display='';render();}
+function lockAdmin(){isAdmin=false;document.getElementById('btnAdminToggle').textContent='🔒';document.getElementById('btnAdminToggle').classList.remove('active');document.getElementById('adminBadge').style.display='none';document.getElementById('btnDistMgmt').style.display='none';document.getElementById('distMgmt').classList.remove('open');render();}
 
-// ── Distributors ──
-async function loadDistributors() {
-  if (WORKER_URL) {
-    try {
-      const r = await fetch(WORKER_URL + '/wine86/distributors');
-      distributors = await r.json();
-      populateAllDistSelects(); return;
-    } catch (e) { console.error('dist fetch failed', e); }
-  }
-  const stored = localStorage.getItem('rpi_86_dists');
-  distributors = stored ? JSON.parse(stored) : [
-    'Allied','Artisinal','Banville','Bonhomie Wine Imports','Bowler','Coeur',
-    'De Maison','Dreyfus Ashby','Dueled','Fedway','Frederick Wildman',
-    'Grand Cru','Independence','Jenny & Francois','Kermit Lynch','M.S. Walker',
-    'Polaner','Rosenthal','Skurnik','Soilair','T Edward','Touton',
-    'Vintage Imports','Wilson Daniels','Winebow'
-  ];
+// ═══════════════════════════════════════════════
+// DISTRIBUTORS
+// ═══════════════════════════════════════════════
+var DEFAULT_DISTS=['Allied','Artisinal','Banville','Bonhomie Wine Imports','Bowler','Coeur','De Maison','Dreyfus Ashby','Dueled','Fedway','Frederick Wildman','Grand Cru','Independence','Jenny & Francois','Kermit Lynch','M.S. Walker','Polaner','Rosenthal','Skurnik','Soilair','T Edward','Touton','Vintage Imports','Wilson Daniels','Winebow'];
+
+async function loadDistributors(){
+  if(WORKER_URL){try{var r=await fetch(WORKER_URL+'/wine86/distributors');distributors=await r.json();populateAllDistSelects();return;}catch(e){}}
+  var stored=localStorage.getItem('rpi_86_dists');
+  distributors=stored?JSON.parse(stored):[].concat(DEFAULT_DISTS);
   populateAllDistSelects();
 }
-
-function saveDistributors() {
-  localStorage.setItem('rpi_86_dists', JSON.stringify(distributors));
-  if (WORKER_URL) {
-    // Full replace — simpler than individual POST/DELETE for local changes
-    fetch(WORKER_URL + '/wine86/distributors', {
-      method: 'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({name: distributors.__lastAdded || ''})
-    }).catch(() => {});
-  }
+function populateAllDistSelects(){
+  var sorted=[].concat(distributors).sort(function(a,b){return a.localeCompare(b);});
+  ['fDist','editDist'].forEach(function(id){var sel=document.getElementById(id);if(!sel)return;var cur=sel.value;sel.innerHTML='<option value="">— Assign later —</option>';sorted.forEach(function(d){var o=document.createElement('option');o.value=d;o.textContent=d;sel.appendChild(o);});sel.value=cur;});
+}
+function toggleDistMgmt(){document.getElementById('distMgmt').classList.toggle('open');renderDistMgmt();}
+function renderDistMgmt(){
+  var list=document.getElementById('distMgmtList');
+  var sorted=[].concat(distributors).sort(function(a,b){return a.localeCompare(b);});
+  list.innerHTML=sorted.map(function(d){return '<li class="dist-mgmt-item"><span>'+esc(d)+'</span><button class="btn-dist-remove" onclick="removeDistributor(\''+esc(d).replace(/'/g,"\\'")+'\')">✕</button></li>';}).join('');
+}
+async function addDistributor(){
+  var inp=document.getElementById('newDistName');var name=inp.value.trim();if(!name)return;
+  if(distributors.some(function(d){return d.toLowerCase()===name.toLowerCase();})){inp.value='';return;}
+  if(WORKER_URL){try{var r=await fetch(WORKER_URL+'/wine86/distributors',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name})});var j=await r.json();if(j.distributors)distributors=j.distributors;}catch(e){distributors.push(name);}}else{distributors.push(name);}
+  distributors.sort(function(a,b){return a.localeCompare(b);});
+  localStorage.setItem('rpi_86_dists',JSON.stringify(distributors));
+  inp.value='';populateAllDistSelects();renderDistMgmt();render();
+}
+async function removeDistributor(name){
+  if(!confirm('Remove distributor "'+name+'"?'))return;
+  if(WORKER_URL){try{var r=await fetch(WORKER_URL+'/wine86/distributors/'+encodeURIComponent(name),{method:'DELETE'});var j=await r.json();if(j.distributors)distributors=j.distributors;}catch(e){distributors=distributors.filter(function(d){return d!==name;});}}else{distributors=distributors.filter(function(d){return d!==name;});}
+  localStorage.setItem('rpi_86_dists',JSON.stringify(distributors));
+  populateAllDistSelects();renderDistMgmt();render();
 }
 
-function populateAllDistSelects() {
-  const sorted = [...distributors].sort((a,b) => a.localeCompare(b));
-  ['fDist','editDist'].forEach(id => {
-    const sel = document.getElementById(id);
-    if (!sel) return;
-    const cur = sel.value;
-    sel.innerHTML = '<option value="">— Assign later —</option>';
-    sorted.forEach(d => { const o = document.createElement('option'); o.value = d; o.textContent = d; sel.appendChild(o); });
-    sel.value = cur;
-  });
-}
-
-function toggleDistMgmt() {
-  document.getElementById('distMgmt').classList.toggle('open');
-  renderDistMgmt();
-}
-function renderDistMgmt() {
-  const list = document.getElementById('distMgmtList');
-  const sorted = [...distributors].sort((a,b) => a.localeCompare(b));
-  list.innerHTML = sorted.map(d =>
-    `<li class="dist-mgmt-item"><span>${esc(d)}</span><button class="btn-dist-remove" onclick="removeDistributor('${esc(d).replace(/'/g,"\\'")}')">✕</button></li>`
-  ).join('');
-}
-async function addDistributor() {
-  const inp = document.getElementById('newDistName');
-  const name = inp.value.trim();
-  if (!name) return;
-  if (distributors.some(d => d.toLowerCase() === name.toLowerCase())) { inp.value = ''; return; }
-
-  if (WORKER_URL) {
-    try {
-      const r = await fetch(WORKER_URL + '/wine86/distributors', {
-        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name})
-      });
-      const j = await r.json();
-      if (j.distributors) distributors = j.distributors;
-    } catch (e) { distributors.push(name); }
-  } else {
-    distributors.push(name);
-  }
-  distributors.sort((a,b) => a.localeCompare(b));
-  localStorage.setItem('rpi_86_dists', JSON.stringify(distributors));
-  inp.value = '';
-  populateAllDistSelects();
-  renderDistMgmt();
+// ═══════════════════════════════════════════════
+// PERSISTENCE
+// ═══════════════════════════════════════════════
+async function loadItems(){
+  if(WORKER_URL){try{var r=await fetch(WORKER_URL+'/wine86');items=await r.json();}catch(e){items=JSON.parse(localStorage.getItem('rpi_86_report')||'[]');}}
+  else{items=JSON.parse(localStorage.getItem('rpi_86_report')||'[]');}
+  if(!items.length&&SEED_DATA.length){var now=new Date().toISOString();items=SEED_DATA.map(function(w,i){return{id:'w86_seed_'+i,name:w.name,bin:w.bin||'',vintage:w.vintage||'',price:w.price||'',distributor:w.distributor||'',note:w.note||'',addedBy:'Sheet import',addedAt:now,ordered:w.ordered||false,orderedAt:w.ordered?now:null};});await saveItems();}
   render();
 }
-async function removeDistributor(name) {
-  if (!confirm('Remove distributor "' + name + '"?')) return;
-  if (WORKER_URL) {
-    try {
-      const r = await fetch(WORKER_URL + '/wine86/distributors/' + encodeURIComponent(name), {method:'DELETE'});
-      const j = await r.json();
-      if (j.distributors) distributors = j.distributors;
-    } catch (e) { distributors = distributors.filter(d => d !== name); }
-  } else {
-    distributors = distributors.filter(d => d !== name);
-  }
-  localStorage.setItem('rpi_86_dists', JSON.stringify(distributors));
-  populateAllDistSelects();
-  renderDistMgmt();
-  render();
+async function saveItems(){
+  localStorage.setItem('rpi_86_report',JSON.stringify(items));
+  if(WORKER_URL){try{await fetch(WORKER_URL+'/wine86',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(items)});}catch(e){}}
 }
 
-// ── Wine list persistence ──
-async function loadItems() {
-  if (WORKER_URL) {
-    try { const r = await fetch(WORKER_URL + '/wine86'); items = await r.json(); }
-    catch (e) { items = JSON.parse(localStorage.getItem('rpi_86_report') || '[]'); }
-  } else {
-    items = JSON.parse(localStorage.getItem('rpi_86_report') || '[]');
-  }
-  if (!items.length && SEED_DATA.length) {
-    const now = new Date().toISOString();
-    items = SEED_DATA.map((w,i) => ({
-      id:'w86_seed_'+i, name:w.name, bin:w.bin||'', vintage:w.vintage||'',
-      price:w.price||'', distributor:w.distributor||'', note:w.note||'',
-      addedBy:'Sheet import', addedAt:now, ordered:w.ordered||false,
-      orderedAt:w.ordered?now:null,
-    }));
-    await saveItems();
-  }
-  render();
-}
-async function saveItems() {
-  localStorage.setItem('rpi_86_report', JSON.stringify(items));
-  if (WORKER_URL) {
-    try { await fetch(WORKER_URL+'/wine86',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(items)}); }
-    catch(e){}
-  }
-}
-
-// ── Render ──
-function render() {
-  const content = document.getElementById('content');
-  const summaryEl = document.getElementById('summary');
-
-  if (!items.length) {
-    content.innerHTML = '<div class="empty-state"><div class="icon">✓</div><p>No wines on the 86 report.</p></div>';
-    summaryEl.innerHTML = ''; return;
-  }
-
-  const total = items.length, ordered = items.filter(w=>w.ordered).length;
-  const unassigned = items.filter(w=>!w.distributor);
-  const assigned = items.filter(w=>w.distributor);
-
-  summaryEl.innerHTML = `
-    <span class="stat stat-total">${total} wine${total!==1?'s':''} 86'd</span>
-    ${ordered?`<span class="stat stat-ordered">${ordered} ordered</span>`:''}
-    ${unassigned.length?`<span class="stat stat-unassigned">${unassigned.length} unassigned</span>`:''}
-  `;
-
-  let html = '';
-  if (unassigned.length) {
-    html += `<div class="unassigned-section"><div class="unassigned-header"><span>Needs Distributor Assignment</span><span class="count">${unassigned.length}</span></div>${buildTable(unassigned,true)}</div>`;
-  }
-
-  const grouped = {};
-  assigned.forEach(w => { if (!grouped[w.distributor]) grouped[w.distributor]=[]; grouped[w.distributor].push(w); });
-  Object.keys(grouped).sort().forEach(dist => {
-    html += `<div class="dist-section"><div class="dist-header"><span>${esc(dist)}</span><span class="count">${grouped[dist].length}</span></div>${buildTable(grouped[dist],false)}</div>`;
+// ═══════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════
+function render(){
+  var content=document.getElementById('content');var summaryEl=document.getElementById('summary');
+  if(!items.length){content.innerHTML='<div class="section"><div class="section-body"><div class="empty-state"><div class="icon">✓</div><p>No wines on the 86 report.</p></div></div></div>';summaryEl.innerHTML='';return;}
+  var total=items.length,ordered=items.filter(function(w){return w.ordered;}).length;
+  var unassigned=items.filter(function(w){return !w.distributor;});
+  var assigned=items.filter(function(w){return w.distributor;});
+  summaryEl.innerHTML='<span class="stat stat-total">'+total+' wine'+(total!==1?'s':'')+' 86\'d</span>'+(ordered?'<span class="stat stat-ordered">'+ordered+' ordered</span>':'')+(unassigned.length?'<span class="stat stat-unassigned">'+unassigned.length+' unassigned</span>':'');
+  var html='';
+  if(unassigned.length){html+='<div class="section"><div class="unassigned-header"><span class="dist-name">Needs Distributor Assignment</span><span class="dist-count">'+unassigned.length+'</span></div>'+buildTable(unassigned,true)+'</div>';}
+  var grouped={};assigned.forEach(function(w){if(!grouped[w.distributor])grouped[w.distributor]=[];grouped[w.distributor].push(w);});
+  Object.keys(grouped).sort().forEach(function(dist){
+    html+='<div class="section"><div class="dist-header"><span class="dist-name">'+esc(dist)+'</span><span class="dist-count">'+grouped[dist].length+'</span></div>'+buildTable(grouped[dist],false)+'</div>';
   });
-  content.innerHTML = html;
+  content.innerHTML=html;
 }
-
-function buildTable(wines, showAssign) {
-  const sorted = [...wines].sort((a,b) => {
-    if (a.ordered&&!b.ordered) return 1; if (!a.ordered&&b.ordered) return -1;
-    return new Date(b.addedAt)-new Date(a.addedAt);
-  });
-  const dOpts = [...distributors].sort((a,b)=>a.localeCompare(b)).map(d=>'<option value="'+esc(d)+'">'+esc(d)+'</option>').join('');
-  const rows = sorted.map(w => {
-    const rc = w.ordered?'row-ordered':'';
-    const assignTd = showAssign ? `<td><select class="assign-select" onchange="assignDist('${w.id}',this.value)"><option value="">Assign</option>${dOpts}</select></td>` : '';
-    const adminBtns = isAdmin ? `<button class="btn-sm edit" onclick="openEditModal('${w.id}')" title="Edit">✎</button>` : '';
-    return `<tr class="${rc}">
-      <td class="col-bin">${esc(w.bin||'')}</td>
-      <td><div class="wine-name-cell">${esc(w.name)}${w.vintage?' '+esc(w.vintage):''}</div>${w.note?'<div class="wine-note">'+esc(w.note)+'</div>':''}</td>
-      <td class="col-price">${w.price?'$'+esc(w.price):''}</td>
-      <td class="col-ordered"><input type="checkbox" class="cb-ordered" ${w.ordered?'checked':''} onchange="toggleOrdered('${w.id}',this.checked)" title="Ordered"></td>
-      ${assignTd}
-      <td class="col-actions">${adminBtns}<button class="btn-sm remove" onclick="removeItem('${w.id}')" title="Remove">✕</button></td>
-    </tr>`;
+function buildTable(wines,showAssign){
+  var sorted=[].concat(wines).sort(function(a,b){if(a.ordered&&!b.ordered)return 1;if(!a.ordered&&b.ordered)return -1;return new Date(b.addedAt)-new Date(a.addedAt);});
+  var dOpts=[].concat(distributors).sort(function(a,b){return a.localeCompare(b);}).map(function(d){return '<option value="'+esc(d)+'">'+esc(d)+'</option>';}).join('');
+  var rows=sorted.map(function(w){
+    var rc=w.ordered?'row-ordered':'';
+    var assignTd=showAssign?'<td><select class="assign-select" onchange="assignDist(\''+w.id+'\',this.value)"><option value="">Assign</option>'+dOpts+'</select></td>':'';
+    var adminBtns=isAdmin?'<button class="btn-sm edit" onclick="openEditModal(\''+w.id+'\')" title="Edit">✎</button>':'';
+    return '<tr class="'+rc+'"><td class="col-bin">'+esc(w.bin||'')+'</td><td><div class="wine-name-cell">'+esc(w.name)+(w.vintage?' '+esc(w.vintage):'')+'</div>'+(w.note?'<div class="wine-note">'+esc(w.note)+'</div>':'')+'</td><td class="col-price">'+(w.price?'$'+esc(w.price):'')+'</td><td class="col-ordered"><input type="checkbox" class="cb-ordered" '+(w.ordered?'checked':'')+' onchange="toggleOrdered(\''+w.id+'\',this.checked)" title="Ordered"></td>'+assignTd+'<td class="col-actions">'+adminBtns+'<button class="btn-sm remove" onclick="removeItem(\''+w.id+'\')" title="Remove">✕</button></td></tr>';
   }).join('');
-  return `<table class="wine-table"><thead><tr><th>Bin</th><th>Wine</th><th class="th-price" style="text-align:right">Price</th><th>Ordered</th>${showAssign?'<th>Assign</th>':''}<th></th></tr></thead><tbody>${rows}</tbody></table>`;
+  return '<table class="wine-table"><thead><tr><th>Bin</th><th>Wine</th><th class="th-price" style="text-align:right">Price</th><th>Ordered</th>'+(showAssign?'<th>Assign</th>':'')+'<th></th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ═══════════════════════════════════════════════
+// EDIT MODAL
+// ═══════════════════════════════════════════════
+function openEditModal(id){var w=items.find(function(x){return x.id===id;});if(!w)return;document.getElementById('editId').value=w.id;document.getElementById('editName').value=w.name||'';document.getElementById('editBin').value=w.bin||'';document.getElementById('editVintage').value=w.vintage||'';document.getElementById('editPrice').value=w.price||'';document.getElementById('editNote').value=w.note||'';document.getElementById('editBy').value=w.addedBy||'';populateAllDistSelects();document.getElementById('editDist').value=w.distributor||'';document.getElementById('editModal').classList.add('open');}
+function closeEditModal(){document.getElementById('editModal').classList.remove('open');}
+async function saveEdit(){
+  var id=document.getElementById('editId').value;var w=items.find(function(x){return x.id===id;});if(!w)return;
+  w.name=document.getElementById('editName').value.trim();w.bin=document.getElementById('editBin').value.trim();w.vintage=document.getElementById('editVintage').value.trim();w.price=document.getElementById('editPrice').value.trim();w.distributor=document.getElementById('editDist').value;w.note=document.getElementById('editNote').value.trim();w.addedBy=document.getElementById('editBy').value.trim();
+  if(WORKER_URL){try{await fetch(WORKER_URL+'/wine86/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:w.name,bin:w.bin,vintage:w.vintage,price:w.price,distributor:w.distributor,note:w.note,addedBy:w.addedBy})});}catch(e){}}
+  await saveItems();closeEditModal();render();
 }
 
-function esc(s) { if(!s)return''; const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
-
-// ── Edit modal ──
-function openEditModal(id) {
-  const w = items.find(x=>x.id===id); if (!w) return;
-  document.getElementById('editId').value = w.id;
-  document.getElementById('editName').value = w.name||'';
-  document.getElementById('editBin').value = w.bin||'';
-  document.getElementById('editVintage').value = w.vintage||'';
-  document.getElementById('editPrice').value = w.price||'';
-  document.getElementById('editNote').value = w.note||'';
-  document.getElementById('editBy').value = w.addedBy||'';
-  populateAllDistSelects();
-  document.getElementById('editDist').value = w.distributor||'';
-  document.getElementById('editModal').classList.add('open');
-}
-function closeEditModal() { document.getElementById('editModal').classList.remove('open'); }
-async function saveEdit() {
-  const id = document.getElementById('editId').value;
-  const w = items.find(x=>x.id===id); if (!w) return;
-  w.name = document.getElementById('editName').value.trim();
-  w.bin = document.getElementById('editBin').value.trim();
-  w.vintage = document.getElementById('editVintage').value.trim();
-  w.price = document.getElementById('editPrice').value.trim();
-  w.distributor = document.getElementById('editDist').value;
-  w.note = document.getElementById('editNote').value.trim();
-  w.addedBy = document.getElementById('editBy').value.trim();
-
-  if (WORKER_URL) {
-    try {
-      await fetch(WORKER_URL+'/wine86/'+id, {
-        method:'PATCH', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({name:w.name,bin:w.bin,vintage:w.vintage,price:w.price,distributor:w.distributor,note:w.note,addedBy:w.addedBy})
-      });
-    } catch(e){}
-  }
-  await saveItems(); closeEditModal(); render();
-}
-
-// ── Actions ──
-function addItem() {
-  const name = document.getElementById('fName').value.trim(); if (!name) return;
-  const item = {
-    id:'w86_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),
-    name, bin:document.getElementById('fBin').value.trim(),
-    vintage:document.getElementById('fVintage').value.trim(),
-    price:document.getElementById('fPrice').value.trim(),
-    distributor:document.getElementById('fDist').value,
-    note:document.getElementById('fNote').value.trim(),
-    addedBy:document.getElementById('fBy').value.trim(),
-    addedAt:new Date().toISOString(), ordered:false
-  };
-  items.push(item); saveItems(); render();
-  ['fName','fBin','fVintage','fPrice','fNote'].forEach(id=>document.getElementById(id).value='');
+// ═══════════════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════════════
+function addItem(){
+  var name=document.getElementById('fName').value.trim();if(!name)return;
+  items.push({id:'w86_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),name:name,bin:document.getElementById('fBin').value.trim(),vintage:document.getElementById('fVintage').value.trim(),price:document.getElementById('fPrice').value.trim(),distributor:document.getElementById('fDist').value,note:document.getElementById('fNote').value.trim(),addedBy:document.getElementById('fBy').value.trim(),addedAt:new Date().toISOString(),ordered:false});
+  saveItems();render();
+  ['fName','fBin','fVintage','fPrice','fNote'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('fDist').value='';
 }
-
-function toggleOrdered(id, checked) {
-  const w = items.find(x=>x.id===id); if(!w) return;
-  w.ordered=checked; w.orderedAt=checked?new Date().toISOString():null;
-  if (WORKER_URL) {
-    fetch(WORKER_URL+'/wine86/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({ordered:checked})}).catch(()=>{});
-  }
-  saveItems(); render();
+function toggleOrdered(id,checked){
+  var w=items.find(function(x){return x.id===id;});if(!w)return;
+  w.ordered=checked;w.orderedAt=checked?new Date().toISOString():null;
+  if(WORKER_URL){fetch(WORKER_URL+'/wine86/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({ordered:checked})}).catch(function(){});}
+  saveItems();render();
 }
-function assignDist(id, dist) {
-  const w = items.find(x=>x.id===id); if(!w||!dist) return;
+function assignDist(id,dist){
+  var w=items.find(function(x){return x.id===id;});if(!w||!dist)return;
   w.distributor=dist;
-  if (WORKER_URL) {
-    fetch(WORKER_URL+'/wine86/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({distributor:dist})}).catch(()=>{});
-  }
-  saveItems(); render();
+  if(WORKER_URL){fetch(WORKER_URL+'/wine86/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({distributor:dist})}).catch(function(){});}
+  saveItems();render();
 }
-function removeItem(id) {
-  if (!confirm('Remove from 86 report?')) return;
-  items = items.filter(w=>w.id!==id);
-  if (WORKER_URL) { fetch(WORKER_URL+'/wine86/'+id,{method:'DELETE'}).catch(()=>{}); }
-  saveItems(); render();
+function removeItem(id){
+  if(!confirm('Remove from 86 report?'))return;
+  items=items.filter(function(w){return w.id!==id;});
+  if(WORKER_URL){fetch(WORKER_URL+'/wine86/'+id,{method:'DELETE'}).catch(function(){});}
+  saveItems();render();
 }
-function toggleForm() { document.getElementById('addForm').classList.toggle('open'); }
+function toggleForm(){var f=document.getElementById('addForm');f.style.display=f.style.display==='none'?'block':'none';}
 
-// ── Polling ──
-if (WORKER_URL) setInterval(loadItems, 15000);
+// Polling
+if(WORKER_URL)setInterval(loadItems,15000);
 
-// ── Accept push from rpi.html ──
-window.addEventListener('message', e => { if(e.data?.type==='rpi_86_add'){items.push(e.data.item);saveItems();render();} });
+// Accept push from rpi.html
+window.addEventListener('message',function(e){if(e.data&&e.data.type==='rpi_86_add'){items.push(e.data.item);saveItems();render();}});
 
-// ── Init ──
+// Init
 loadDistributors().then(loadItems);
 </script>
 </body>
