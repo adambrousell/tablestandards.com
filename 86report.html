@@ -240,6 +240,106 @@
 <script>
 const WORKER_URL = ''; // e.g. 'https://rpi-86.yourdomain.workers.dev'
 
+// ── Seed data parsed from the Google Sheet ──
+const SEED_DATA = [
+  // Dueled
+  {name:"Château La Rame",bin:"0642",vintage:"2023",price:"58",distributor:"Dueled",ordered:false},
+  {name:"Blasson D'Issan",bin:"0530",vintage:"2016",price:"130",distributor:"Dueled",ordered:false},
+  {name:"Château Chauvin",bin:"0579",vintage:"2015",price:"181",distributor:"Dueled",ordered:false},
+  {name:"Château Kirwan",bin:"0580",vintage:"2016",price:"248",distributor:"Dueled",ordered:false},
+  {name:"Château Haut-Batailley Verso",bin:"0513",vintage:"2017",price:"112",distributor:"Dueled",note:"From Bobby?",ordered:false},
+  // Wilson Daniels
+  {name:"Davies \"Keefer Ranch\" Russian River Valley",bin:"0826",vintage:"2022",price:"195",distributor:"Wilson Daniels",ordered:false},
+  {name:"Baron de Brane",bin:"0573",vintage:"2018",price:"137",distributor:"Wilson Daniels",ordered:false},
+  // Banville
+  {name:"Miner Family Chardonnay",bin:"",vintage:"2022",price:"",distributor:"Banville",ordered:false},
+  // Rosenthal
+  {name:"Côtes-du-Rhône, Domaine La Manarine",bin:"0639",vintage:"2023",price:"48",distributor:"Rosenthal",ordered:false},
+  // Frederick Wildman
+  {name:"Bourgogne Aligoté, Domaine Sylvain Cathiard & Fils",bin:"",vintage:"2023",price:"",distributor:"Frederick Wildman",ordered:true},
+  {name:"Bourgogne Epineuil, Domaine Dominique Gruhier",bin:"",vintage:"2023",price:"",distributor:"Frederick Wildman",ordered:true},
+  {name:"Bourgogne Tonnerre, Domaine Dominique Gruhier",bin:"",vintage:"2022",price:"",distributor:"Frederick Wildman",ordered:true},
+  {name:"Château Chauvin",bin:"",vintage:"2016",price:"",distributor:"Frederick Wildman",ordered:true},
+  {name:"Château Pavillon Beauregard Lalande-de-Pomerol",bin:"",vintage:"2020",price:"",distributor:"Frederick Wildman",ordered:true},
+  {name:"Domaine Michel Lafarge Les Pezerolles 1er Cru",bin:"",vintage:"2018",price:"",distributor:"Frederick Wildman",ordered:true},
+  {name:"Domaine Michel Lafarge L'exception",bin:"",vintage:"",price:"",distributor:"Frederick Wildman",ordered:true},
+  {name:"Bourgogne Aligoté \"Raisins Dorés\", Domaine Michel Lafarge",bin:"",vintage:"2022",price:"",distributor:"Frederick Wildman",ordered:true},
+  {name:"Vosne-Romanée, Domaine Sylvain Cathiard & Fils",bin:"1047",vintage:"2014",price:"650",distributor:"Frederick Wildman",ordered:false},
+  {name:"Bourgogne Aligoté, Domaine Sylvain Cathiard & Fils",bin:"0360",vintage:"2021",price:"135",distributor:"Frederick Wildman",ordered:false},
+  {name:"Château Haut-Batailley Verso",bin:"0545",vintage:"2019",price:"121",distributor:"Frederick Wildman",note:"Also sold by other importers",ordered:false},
+  {name:"Château de Sales",bin:"0531",vintage:"2022",price:"154",distributor:"Frederick Wildman",note:"Also sold by other importers",ordered:false},
+  {name:"Château Gloria",bin:"0591",vintage:"2020",price:"169",distributor:"Frederick Wildman",note:"Also sold by other importers",ordered:false},
+  // Skurnik
+  {name:"Sean Minor Cabernet Sauvignon North Coast",bin:"",vintage:"2023",price:"",distributor:"Skurnik",ordered:true},
+  {name:"Peter Michael Winery Pinot Noir \"Le Caprice\"",bin:"",vintage:"2023",price:"",distributor:"Skurnik",ordered:true},
+  {name:"Domaine Pierre Martin Sancerre \"Culs de Beaujeu\"",bin:"",vintage:"2023",price:"",distributor:"Skurnik",ordered:true},
+  {name:"O'Shaughnessy Cabernet Sauvignon Napa Valley",bin:"",vintage:"2022",price:"",distributor:"Skurnik",ordered:true},
+  {name:"O'Shaughnessy Cabernet Sauvignon Howell Mountain",bin:"",vintage:"2021",price:"",distributor:"Skurnik",ordered:true},
+  {name:"H. Billiot Grand Cru Brut Rosé",bin:"",vintage:"NV",price:"",distributor:"Skurnik",note:"OOS",ordered:true},
+  {name:"A Tribute to Grace Grenache",bin:"",vintage:"2023",price:"",distributor:"Skurnik",ordered:true},
+  {name:"Lieu Dit Sauvignon Blanc",bin:"",vintage:"",price:"",distributor:"Skurnik",ordered:true},
+  {name:"Kistler \"Les Noisetieres\" Sonoma Coast",bin:"0356",vintage:"2023",price:"208",distributor:"Skurnik",ordered:false},
+  {name:"Sancerre Chavignol, Domaine Pierre Martin",bin:"0234",vintage:"2024",price:"113",distributor:"Skurnik",ordered:false},
+  {name:"Chablis \"Saint-Pierre\", Jean et Sébastien Dauvissat",bin:"0206",vintage:"2024",price:"116",distributor:"Skurnik",ordered:false},
+  {name:"Santenay 1er Cru La Comme, Caroline Morey",bin:"0446",vintage:"2017",price:"300",distributor:"Skurnik",ordered:false},
+  // Dreyfus Ashby
+  {name:"Drouhin Roserock Zéphirine",bin:"",vintage:"2022",price:"",distributor:"Dreyfus Ashby",ordered:false},
+  {name:"Côtes de Beaune-Villages, Joseph Drouhin",bin:"",vintage:"2022",price:"",distributor:"Dreyfus Ashby",ordered:false},
+  {name:"Château Bélair-Monange",bin:"",vintage:"2016",price:"",distributor:"Dreyfus Ashby",ordered:false},
+  {name:"Domaine Drouhin Roserock Pinot Noir",bin:"",vintage:"2023",price:"",distributor:"Dreyfus Ashby",ordered:false},
+  // Bowler
+  {name:"Domaine Chandon De Brialles Bourgogne Gelée Royale",bin:"",vintage:"2016",price:"",distributor:"Bowler",ordered:false},
+  {name:"Lauverjat Sancerre",bin:"",vintage:"2024",price:"",distributor:"Bowler",ordered:false},
+  // Kermit Lynch
+  {name:"Domaine de Durban Gigondas",bin:"",vintage:"2024",price:"",distributor:"Kermit Lynch",ordered:false},
+  {name:"Domaine du Gros'Noré Bandol Rouge Antoinette",bin:"",vintage:"2010 or 2012",price:"",distributor:"Kermit Lynch",ordered:false},
+  {name:"Jean-Claude Regnaudot Maranges 1er Cru La Fussière",bin:"",vintage:"2022",price:"",distributor:"Kermit Lynch",ordered:false},
+  {name:"Patrick Bottex Vin du Bugey-Cerdon La Cueille",bin:"",vintage:"2024",price:"",distributor:"Kermit Lynch",note:"Order 24 bottles",ordered:false},
+  {name:"Meyer-Fonné Pinot Blanc Vieilles Vignes",bin:"",vintage:"2023",price:"",distributor:"Kermit Lynch",ordered:false},
+  {name:"Riesling \"Les Jardins\", Domaine Ostertag",bin:"0251",vintage:"2022",price:"95",distributor:"Kermit Lynch",ordered:false},
+  {name:"Languedoc Montpeyroux \"Les Cocalières\", Domaine d'Aupilhac",bin:"0645",vintage:"2017",price:"72",distributor:"Kermit Lynch",ordered:false},
+  // Jenny & Francois
+  {name:"Domaine Bersan Bourgogne Côtes d'Auxerre Pinot Noir",bin:"",vintage:"2023",price:"",distributor:"Jenny & Francois",ordered:false},
+  // Polaner
+  {name:"Domaine de Montille Monthélie",bin:"",vintage:"",price:"",distributor:"Polaner",ordered:true},
+  {name:"Kelley Fox Wines Pinot Noir Mirabai Dundee Hills",bin:"",vintage:"",price:"",distributor:"Polaner",ordered:true},
+  {name:"Fleurie, Domaine de la Grand'Cour",bin:"0655",vintage:"2024",price:"115",distributor:"Polaner",ordered:true},
+  {name:"Chinon \"Les Pensées de Pallus Rouge\", Domaine de Pallus",bin:"0633",vintage:"2020",price:"95",distributor:"Polaner",ordered:true},
+  {name:"Bourgogne, Ballot Millot",bin:"0451",vintage:"2023",price:"120",distributor:"Polaner",ordered:false},
+  // M.S. Walker
+  {name:"Mercurey \"Champ Ladoy\", Domaine Belleville",bin:"",vintage:"2021",price:"",distributor:"M.S. Walker",ordered:false},
+  {name:"Charmes-Chambertin Grand Cru, Domaine Dujac",bin:"0670",vintage:"2018",price:"1135",distributor:"M.S. Walker",ordered:false},
+  {name:"Charmes-Chambertin Grand Cru, Domaine Dujac",bin:"0671",vintage:"2019",price:"1195",distributor:"M.S. Walker",ordered:false},
+  // De Maison
+  {name:"Château d'Arcole",bin:"0542",vintage:"2020",price:"165",distributor:"De Maison",ordered:false},
+  // Allied
+  {name:"Lingua Franca AVNI Pinot Noir",bin:"",vintage:"2023",price:"",distributor:"Allied",ordered:true},
+  {name:"Stag's Leap Wine Cellars Artemis Cabernet Sauvignon",bin:"",vintage:"2022",price:"",distributor:"Allied",ordered:true},
+  {name:"Domaine Louis Michel Petit Chablis",bin:"",vintage:"2023",price:"",distributor:"Allied",note:"Order 12 bottles",ordered:true},
+  {name:"Domaine Louis Michel Chablis 1er Cru Vaillons",bin:"",vintage:"2023",price:"",distributor:"Allied",ordered:true},
+  {name:"Domaine Louis Michel et Fils Chablis 1er Cru Vaulorent",bin:"",vintage:"",price:"",distributor:"Allied",ordered:true},
+  {name:"Chablis Grand Cru Grenouilles, Louis Michel & Fils",bin:"0335",vintage:"2023",price:"315",distributor:"Allied",ordered:false},
+  // T Edward
+  {name:"Topette Val de Loire Sauvignon Blanc",bin:"",vintage:"",price:"",distributor:"T Edward",ordered:false},
+  {name:"Cornas \"Brise Cailloux\", Matthieu Barret",bin:"0560",vintage:"2011",price:"180",distributor:"T Edward",ordered:false},
+  // Coeur
+  {name:"Morgon \"Les Charmes\", Domaine Saint-Cyr",bin:"0658",vintage:"2023",price:"65",distributor:"Coeur",ordered:false},
+  {name:"Bourgogne Côte d'Or \"Les Lameroses\", Domaine Rougeot",bin:"0427",vintage:"2022",price:"160",distributor:"Coeur",ordered:false},
+  {name:"Côte de Brouilly \"100% Cotton\", Bonnet-Cotton",bin:"0657",vintage:"2022",price:"100",distributor:"Coeur",ordered:false},
+  // Touton
+  {name:"Château de Chantegrive Cuvée Graves",bin:"",vintage:"2021",price:"",distributor:"Touton",ordered:false},
+  {name:"Hautes-Côtes de Nuits, Cave des Hautes Côtes",bin:"",vintage:"",price:"",distributor:"Touton",ordered:false},
+  // Bonhomie Wine Imports
+  {name:"Domaine Petitot Savigny-les-Beaune Les Pimentiers Vieilles Vignes",bin:"",vintage:"2023",price:"",distributor:"Bonhomie Wine Imports",note:"1 CS",ordered:true},
+  {name:"Hautes-Côtes de Nuits \"Terres Burgondes\", Domaine Petitot",bin:"",vintage:"",price:"",distributor:"Bonhomie Wine Imports",ordered:false},
+  {name:"Savigny-lès-Beaune \"Les Pimentiers\" Vieilles Vignes, Domaine Petitot",bin:"0907",vintage:"2023",price:"149",distributor:"Bonhomie Wine Imports",ordered:false},
+  {name:"Muscadet \"Autolyse\", Domaine des Granits",bin:"0328",vintage:"2022",price:"75",distributor:"Bonhomie Wine Imports",ordered:false},
+  // Fedway
+  {name:"Ridge Vineyards Lytton Estate Petite Sirah",bin:"",vintage:"any",price:"",distributor:"Fedway",ordered:true},
+  {name:"Heitz Cellars Napa Valley Cabernet Sauvignon",bin:"",vintage:"2021",price:"",distributor:"Fedway",ordered:true},
+  {name:"Ridge Vineyards Cabernet Sauvignon",bin:"",vintage:"2022",price:"",distributor:"Fedway",ordered:true},
+];
+
 const DISTRIBUTORS = [
   'Allied','Artisinal','Banville','Bonhomie Wine Imports','Bowler','Coeur',
   'De Maison','Dreyfus Ashby','Dueled','Fedway','Frederick Wildman',
@@ -272,6 +372,26 @@ async function loadItems() {
   } else {
     items = JSON.parse(localStorage.getItem('rpi_86_report') || '[]');
   }
+
+  // First load: seed from Google Sheet data if empty
+  if (!items.length && SEED_DATA.length) {
+    const now = new Date().toISOString();
+    items = SEED_DATA.map((w, i) => ({
+      id: 'w86_seed_' + i,
+      name: w.name,
+      bin: w.bin || '',
+      vintage: w.vintage || '',
+      price: w.price || '',
+      distributor: w.distributor || '',
+      note: w.note || '',
+      addedBy: 'Sheet import',
+      addedAt: now,
+      ordered: w.ordered || false,
+      orderedAt: w.ordered ? now : null,
+    }));
+    await saveItems();
+  }
+
   render();
 }
 
