@@ -403,8 +403,9 @@ function categorize(name) {
   if (/^na\s|\bna\s+(sparkling|wine|rose|red|white|brut|beer)\b|non[- ]?alcoholic|zero proof|\bleitz\b|\bgruvi\b|\blyre'?s\b|\bseedlip\b|\bghia\b|\bfre\b/.test(n)) return 'na';
 
   // 6) Wine.
+  // FIX: Added ^btl:|^btl\s to catch all "BTL:" bottle entries from Toast
   if (/d[']?yquem|latour pauillac|somm selection/.test(n)) return 'wine';
-  if (/^gl:|^gl\s|cremant|brut ros|moet|drappier|folle blanche|albarino|ladoucette|drouhin.*secondes|pouilly|peyrassol|moulin.*vent|cotes du rh|guyon 2022|routestock|route stock|chappellet mountain|haut l'artigue|haut-l|pazo das bruxas|gros plant|jean aubron|saint-cyrgues|costieres/.test(n)) return 'wine';
+  if (/^gl:|^gl\s|^btl:|^btl\s|cremant|brut ros|moet|drappier|folle blanche|albarino|ladoucette|drouhin.*secondes|pouilly|peyrassol|moulin.*vent|cotes du rh|guyon 2022|routestock|route stock|chappellet mountain|haut l'artigue|haut-l|pazo das bruxas|gros plant|jean aubron|saint-cyrgues|costieres/.test(n)) return 'wine';
   if (/wine by the bottle|btg bottle|sancerre|meursault|chablis|puligny|cabernet sauv|pride mountain|ridge.*lytton|kistler|o'shaugh|aubert.*carneros|turley|ducru|chauvin 2019|smith haut lafitte|leon beyer|melville|chevillon|cathiard|camus-bruchon|agrapart|sulauze|domaine pierre martin|francois de la roche|lauverjat|manarine|lafarge|domaine guyon|drouhin.*cotes de beaune|joseph drouhin|o'shaughnessy|maitre de chai|le petit ducru|le petite smith|pessac|picpoul|lieu dit|fess parker|daniel rion|petitot|hautes co|phileandre|lynch bages|cantenac|sociando|solitude|la rame|saint cyr|morgon|giacometti|patrimonio|arnot-roberts|fullerton|jk carriere|hundred acre|screaming eagle|lavieille|isabelle garrault|julie et patrick/.test(n)) return 'wine';
   if (/\bsherry\b|\bmadeira\b|oloroso|amontillado|fino\b/.test(n)) return 'wine';
   if (/^\d{3,4}[:\s]|^b\d{2,4}\b|^2\d{3}[:\s]/.test(n)) return 'wine';
