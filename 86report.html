@@ -23,167 +23,203 @@
     --border: rgba(176,141,62,0.12);
     --border-strong: rgba(176,141,62,0.25);
   }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { margin:0; padding:0; box-sizing:border-box; }
   body {
-    background: var(--bg);
-    color: var(--cream);
+    background: var(--bg); color: var(--cream);
     font-family: 'EB Garamond', Georgia, serif;
-    font-size: 17px;
-    line-height: 1.5;
-    min-height: 100vh;
+    font-size: 17px; line-height: 1.5; min-height: 100vh;
     -webkit-font-smoothing: antialiased;
   }
-  .page { max-width: 760px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  .page { max-width:760px; margin:0 auto; padding:2rem 1.25rem 4rem; }
 
-  /* ── Header ── */
-  .header {
-    text-align: center;
-    padding-bottom: 1.25rem;
-    border-bottom: 1px solid var(--border-strong);
-    margin-bottom: 1.5rem;
-  }
-  .header h1 {
-    font-family: 'Fraunces', Georgia, serif;
-    font-weight: 700;
-    font-size: 2.2rem;
-    color: var(--gold);
-    letter-spacing: 0.02em;
-  }
-  .header .sub { font-size: 0.92rem; color: var(--cream-dim); margin-top: 0.25rem; }
+  /* Header */
+  .header { text-align:center; padding-bottom:1.25rem; border-bottom:1px solid var(--border-strong); margin-bottom:1rem; }
+  .header h1 { font-family:'Fraunces',Georgia,serif; font-weight:700; font-size:2.2rem; color:var(--gold); letter-spacing:0.02em; }
+  .header .sub { font-size:0.92rem; color:var(--cream-dim); margin-top:0.25rem; }
 
-  /* ── Summary ── */
-  .summary {
-    display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
-    margin-bottom: 1.75rem;
-    font-family: 'Fraunces', Georgia, serif; font-size: 0.9rem;
+  /* Admin bar */
+  .admin-bar { display:flex; justify-content:flex-end; align-items:center; gap:0.75rem; margin-bottom:1rem; }
+  .btn-admin {
+    font-family:'EB Garamond',Georgia,serif; font-size:0.85rem;
+    color:var(--cream-dim); background:transparent; border:1px solid var(--border);
+    border-radius:5px; padding:0.3rem 0.75rem; cursor:pointer; transition:all 0.15s;
   }
-  .stat { padding: 0.3rem 0.9rem; border-radius: 6px; font-weight: 600; }
-  .stat-total { color: var(--red-86); background: var(--red-dim); }
-  .stat-ordered { color: var(--green); background: var(--green-dim); }
-  .stat-unassigned { color: var(--gold); background: rgba(176,141,62,0.1); }
+  .btn-admin:hover { border-color:var(--gold-dim); color:var(--gold); }
+  .btn-admin.active { color:var(--gold); border-color:var(--gold-dim); background:rgba(176,141,62,0.08); }
+  .admin-badge {
+    font-family:'Fraunces',Georgia,serif; font-size:0.75rem; font-weight:600;
+    color:var(--gold); background:rgba(176,141,62,0.1); border-radius:4px;
+    padding:0.15rem 0.5rem;
+  }
 
-  /* ── Distributor sections ── */
-  .dist-section { margin-bottom: 1.75rem; }
+  /* PIN overlay */
+  .pin-overlay {
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75);
+    z-index:9999; align-items:center; justify-content:center;
+  }
+  .pin-overlay.open { display:flex; }
+  .pin-box {
+    background:var(--bg-raised); border:1px solid var(--border-strong);
+    border-radius:10px; padding:1.5rem; width:90%; max-width:320px; text-align:center;
+  }
+  .pin-box h3 { font-family:'Fraunces',Georgia,serif; color:var(--gold); margin-bottom:1rem; }
+  .pin-input {
+    font-family:'EB Garamond',Georgia,serif; font-size:1.4rem; text-align:center;
+    letter-spacing:0.3em; width:100%; padding:0.6rem; color:var(--cream);
+    background:var(--bg); border:1px solid var(--border-strong); border-radius:6px;
+  }
+  .pin-input:focus { outline:none; border-color:var(--gold-dim); }
+  .pin-error { font-size:0.85rem; color:var(--red-86); margin-top:0.5rem; min-height:1.3em; }
+
+  /* Summary */
+  .summary { display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; margin-bottom:1.75rem; font-family:'Fraunces',Georgia,serif; font-size:0.9rem; }
+  .stat { padding:0.3rem 0.9rem; border-radius:6px; font-weight:600; }
+  .stat-total { color:var(--red-86); background:var(--red-dim); }
+  .stat-ordered { color:var(--green); background:var(--green-dim); }
+  .stat-unassigned { color:var(--gold); background:rgba(176,141,62,0.1); }
+
+  /* Distributor sections */
+  .dist-section { margin-bottom:1.75rem; }
   .dist-header {
-    font-family: 'Fraunces', Georgia, serif;
-    font-weight: 700; font-size: 1.2rem; color: var(--gold);
-    padding: 0.5rem 0;
-    border-bottom: 1px solid var(--border-strong);
-    margin-bottom: 0.15rem;
-    display: flex; align-items: center; justify-content: space-between;
+    font-family:'Fraunces',Georgia,serif; font-weight:700; font-size:1.2rem; color:var(--gold);
+    padding:0.5rem 0; border-bottom:1px solid var(--border-strong); margin-bottom:0.15rem;
+    display:flex; align-items:center; justify-content:space-between;
   }
-  .dist-header .count { font-size: 0.85rem; font-weight: 400; color: var(--cream-dim); }
-
-  .unassigned-section { margin-bottom: 2rem; }
+  .dist-header .count { font-size:0.85rem; font-weight:400; color:var(--cream-dim); }
+  .unassigned-section { margin-bottom:2rem; }
   .unassigned-header {
-    font-family: 'Fraunces', Georgia, serif;
-    font-weight: 700; font-size: 1.15rem; color: var(--red-86);
-    padding: 0.5rem 0;
-    border-bottom: 2px solid rgba(192,57,43,0.3);
-    margin-bottom: 0.15rem;
-    display: flex; align-items: center; justify-content: space-between;
+    font-family:'Fraunces',Georgia,serif; font-weight:700; font-size:1.15rem; color:var(--red-86);
+    padding:0.5rem 0; border-bottom:2px solid rgba(192,57,43,0.3); margin-bottom:0.15rem;
+    display:flex; align-items:center; justify-content:space-between;
   }
 
-  /* ── Wine table ── */
-  .wine-table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
-  .wine-table th {
-    text-align: left; font-size: 0.78rem; color: var(--cream-dim);
-    font-weight: 400; padding: 0.45rem 0.5rem;
-    border-bottom: 1px solid var(--border); letter-spacing: 0.03em;
-  }
-  .wine-table td {
-    padding: 0.55rem 0.5rem; border-bottom: 1px solid var(--border); vertical-align: top;
-  }
-  .wine-table tr:last-child td { border-bottom: none; }
+  /* Wine table */
+  .wine-table { width:100%; border-collapse:collapse; font-size:0.95rem; }
+  .wine-table th { text-align:left; font-size:0.78rem; color:var(--cream-dim); font-weight:400; padding:0.45rem 0.5rem; border-bottom:1px solid var(--border); letter-spacing:0.03em; }
+  .wine-table td { padding:0.55rem 0.5rem; border-bottom:1px solid var(--border); vertical-align:top; }
+  .wine-table tr:last-child td { border-bottom:none; }
+  .col-bin { width:55px; color:var(--cream-dim); font-size:0.88rem; }
+  .col-price { width:60px; text-align:right; color:var(--cream-dim); }
+  .col-ordered { width:50px; text-align:center; }
+  .col-actions { width:60px; text-align:right; white-space:nowrap; }
 
-  .col-bin { width: 55px; color: var(--cream-dim); font-size: 0.88rem; }
-  .col-price { width: 60px; text-align: right; color: var(--cream-dim); }
-  .col-ordered { width: 65px; text-align: center; }
-  .col-actions { width: 36px; text-align: center; }
-
-  .wine-name-cell { color: var(--cream); }
-  .wine-note { font-size: 0.82rem; color: var(--cream-dim); font-style: italic; }
+  .wine-name-cell { color:var(--cream); }
+  .wine-note { font-size:0.82rem; color:var(--cream-dim); font-style:italic; }
 
   .cb-ordered {
-    appearance: none; -webkit-appearance: none;
-    width: 18px; height: 18px;
-    border: 1.5px solid var(--border-strong); border-radius: 3px;
-    background: var(--bg); cursor: pointer; position: relative; vertical-align: middle;
+    appearance:none; -webkit-appearance:none; width:18px; height:18px;
+    border:1.5px solid var(--border-strong); border-radius:3px; background:var(--bg);
+    cursor:pointer; position:relative; vertical-align:middle;
   }
-  .cb-ordered:checked { background: var(--green); border-color: var(--green); }
-  .cb-ordered:checked::after {
-    content: '\2713'; position: absolute; top: -1px; left: 2.5px;
-    font-size: 13px; color: #fff; font-weight: 700;
-  }
-  .row-ordered .wine-name-cell,
-  .row-ordered .col-bin,
-  .row-ordered .col-price {
-    opacity: 0.4; text-decoration: line-through; text-decoration-color: var(--cream-dim);
+  .cb-ordered:checked { background:var(--green); border-color:var(--green); }
+  .cb-ordered:checked::after { content:'\2713'; position:absolute; top:-1px; left:2.5px; font-size:13px; color:#fff; font-weight:700; }
+
+  .row-ordered .wine-name-cell, .row-ordered .col-bin, .row-ordered .col-price {
+    opacity:0.4; text-decoration:line-through; text-decoration-color:var(--cream-dim);
   }
 
   .assign-select {
-    font-family: 'EB Garamond', Georgia, serif; font-size: 0.85rem;
-    color: var(--gold); background: var(--bg);
-    border: 1px solid var(--border-strong); border-radius: 4px;
-    padding: 0.2rem 0.3rem; cursor: pointer;
+    font-family:'EB Garamond',Georgia,serif; font-size:0.85rem; color:var(--gold);
+    background:var(--bg); border:1px solid var(--border-strong); border-radius:4px;
+    padding:0.2rem 0.3rem; cursor:pointer;
   }
-  .assign-select option { background: var(--bg-raised); }
+  .assign-select option { background:var(--bg-raised); }
 
-  .btn-remove {
-    font-size: 0.78rem; color: var(--cream-dim); background: none;
-    border: none; cursor: pointer; padding: 0.15rem 0.35rem;
-    border-radius: 3px; opacity: 0.35; transition: opacity 0.15s;
+  /* Action buttons */
+  .btn-sm {
+    font-size:0.78rem; color:var(--cream-dim); background:none; border:none;
+    cursor:pointer; padding:0.15rem 0.35rem; border-radius:3px; opacity:0.4; transition:opacity 0.15s;
   }
-  .btn-remove:hover { opacity: 1; color: var(--red-86); }
+  .btn-sm:hover { opacity:1; }
+  .btn-sm.edit:hover { color:var(--gold); }
+  .btn-sm.remove:hover { color:var(--red-86); }
+
+  /* ── Edit modal ── */
+  .modal-overlay {
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75);
+    z-index:9998; align-items:center; justify-content:center;
+  }
+  .modal-overlay.open { display:flex; }
+  .modal-box {
+    background:var(--bg-raised); border:1px solid var(--border-strong);
+    border-radius:10px; padding:1.5rem; width:90%; max-width:440px;
+  }
+  .modal-box h3 { font-family:'Fraunces',Georgia,serif; color:var(--gold); margin-bottom:1rem; font-size:1.15rem; }
+
+  /* ── Distributor management panel ── */
+  .dist-mgmt {
+    display:none; margin-bottom:1.5rem; background:var(--bg-raised);
+    border:1px solid var(--border-strong); border-radius:8px; padding:1.25rem;
+  }
+  .dist-mgmt.open { display:block; }
+  .dist-mgmt h3 { font-family:'Fraunces',Georgia,serif; color:var(--gold); margin-bottom:0.75rem; font-size:1.1rem; }
+  .dist-mgmt-list { list-style:none; max-height:260px; overflow-y:auto; margin-bottom:0.75rem; }
+  .dist-mgmt-item {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:0.35rem 0; border-bottom:1px solid var(--border); font-size:0.95rem;
+  }
+  .dist-mgmt-item:last-child { border-bottom:none; }
+  .btn-dist-remove {
+    font-size:0.75rem; color:var(--cream-dim); background:none; border:none;
+    cursor:pointer; opacity:0.4; transition:opacity 0.15s;
+  }
+  .btn-dist-remove:hover { opacity:1; color:var(--red-86); }
+  .dist-add-row { display:flex; gap:0.5rem; }
+  .dist-add-row input {
+    flex:1; font-family:'EB Garamond',Georgia,serif; font-size:1rem;
+    color:var(--cream); background:var(--bg); border:1px solid var(--border-strong);
+    border-radius:4px; padding:0.4rem 0.6rem;
+  }
+  .dist-add-row input::placeholder { color:var(--cream-dim); opacity:0.5; }
+  .dist-add-row input:focus { outline:none; border-color:var(--gold-dim); }
+  .dist-add-row button {
+    font-family:'Fraunces',Georgia,serif; font-size:0.9rem; font-weight:600;
+    color:var(--bg); background:var(--gold); border:none; border-radius:4px;
+    padding:0.4rem 0.85rem; cursor:pointer;
+  }
 
   /* ── Add form ── */
-  .add-section { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-strong); }
+  .add-section { margin-top:2rem; padding-top:1.5rem; border-top:1px solid var(--border-strong); }
   .add-toggle {
-    font-family: 'Fraunces', Georgia, serif; font-size: 1rem; font-weight: 600;
-    color: var(--gold); background: transparent;
-    border: 1px solid var(--border-strong); border-radius: 6px;
-    padding: 0.6rem 1.2rem; cursor: pointer; width: 100%; transition: all 0.15s;
+    font-family:'Fraunces',Georgia,serif; font-size:1rem; font-weight:600; color:var(--gold);
+    background:transparent; border:1px solid var(--border-strong); border-radius:6px;
+    padding:0.6rem 1.2rem; cursor:pointer; width:100%; transition:all 0.15s;
   }
-  .add-toggle:hover { background: var(--bg-raised); border-color: var(--gold-dim); }
-
+  .add-toggle:hover { background:var(--bg-raised); border-color:var(--gold-dim); }
   .add-form {
-    display: none; margin-top: 1rem;
-    background: var(--bg-raised); border: 1px solid var(--border-strong);
-    border-radius: 8px; padding: 1.25rem;
+    display:none; margin-top:1rem; background:var(--bg-raised);
+    border:1px solid var(--border-strong); border-radius:8px; padding:1.25rem;
   }
-  .add-form.open { display: block; }
+  .add-form.open { display:block; }
 
-  .form-row { margin-bottom: 0.75rem; }
-  .form-row label { display: block; font-size: 0.82rem; color: var(--cream-dim); margin-bottom: 0.2rem; }
+  .form-row { margin-bottom:0.75rem; }
+  .form-row label { display:block; font-size:0.82rem; color:var(--cream-dim); margin-bottom:0.2rem; }
   .form-row input, .form-row select {
-    width: 100%; font-family: 'EB Garamond', Georgia, serif; font-size: 1rem;
-    color: var(--cream); background: var(--bg);
-    border: 1px solid var(--border-strong); border-radius: 4px; padding: 0.5rem 0.65rem;
+    width:100%; font-family:'EB Garamond',Georgia,serif; font-size:1rem;
+    color:var(--cream); background:var(--bg); border:1px solid var(--border-strong);
+    border-radius:4px; padding:0.5rem 0.65rem;
   }
-  .form-row input::placeholder { color: var(--cream-dim); opacity: 0.5; }
-  .form-row input:focus, .form-row select:focus { outline: none; border-color: var(--gold-dim); }
-  .form-row select option { background: var(--bg-raised); }
-
-  .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.65rem; }
-  .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; }
-
+  .form-row input::placeholder { color:var(--cream-dim); opacity:0.5; }
+  .form-row input:focus, .form-row select:focus { outline:none; border-color:var(--gold-dim); }
+  .form-row select option { background:var(--bg-raised); }
+  .form-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.65rem; }
+  .form-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:0.65rem; }
   .btn-submit {
-    font-family: 'Fraunces', Georgia, serif; font-size: 1rem; font-weight: 600;
-    color: var(--bg); background: var(--gold); border: none; border-radius: 6px;
-    padding: 0.6rem 1.5rem; cursor: pointer; width: 100%; margin-top: 0.5rem;
-    transition: background 0.15s;
+    font-family:'Fraunces',Georgia,serif; font-size:1rem; font-weight:600;
+    color:var(--bg); background:var(--gold); border:none; border-radius:6px;
+    padding:0.6rem 1.5rem; cursor:pointer; width:100%; margin-top:0.5rem;
   }
-  .btn-submit:hover { background: var(--gold-bright); }
+  .btn-submit:hover { background:var(--gold-bright); }
 
-  .empty-state { text-align: center; padding: 3rem 1rem; color: var(--cream-dim); }
-  .empty-state .icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+  .empty-state { text-align:center; padding:3rem 1rem; color:var(--cream-dim); }
+  .empty-state .icon { font-size:2.5rem; margin-bottom:0.5rem; }
 
-  @media (max-width: 540px) {
-    .page { padding: 1.25rem 0.75rem 3rem; }
-    .header h1 { font-size: 1.8rem; }
-    .form-grid-3 { grid-template-columns: 1fr 1fr; }
-    .col-price { display: none; }
-    .wine-table th.th-price { display: none; }
+  @media (max-width:540px) {
+    .page { padding:1.25rem 0.75rem 3rem; }
+    .header h1 { font-size:1.8rem; }
+    .form-grid-3 { grid-template-columns:1fr 1fr; }
+    .col-price { display:none; }
+    .wine-table th.th-price { display:none; }
   }
 </style>
 </head>
@@ -194,68 +230,89 @@
     <div class="sub">River Pointe Inn</div>
   </div>
 
+  <!-- Admin controls -->
+  <div class="admin-bar">
+    <span class="admin-badge" id="adminBadge" style="display:none;">Admin</span>
+    <button class="btn-admin" id="btnDistMgmt" style="display:none;" onclick="toggleDistMgmt()">Distributors</button>
+    <button class="btn-admin" id="btnAdminToggle" onclick="handleAdminToggle()">🔒</button>
+  </div>
+
+  <!-- PIN entry -->
+  <div class="pin-overlay" id="pinOverlay" onclick="if(event.target===this)closePinOverlay()">
+    <div class="pin-box">
+      <h3>Admin PIN</h3>
+      <input type="password" inputmode="numeric" maxlength="4" class="pin-input" id="pinInput" onkeyup="checkPin(event)" placeholder="····">
+      <div class="pin-error" id="pinError"></div>
+    </div>
+  </div>
+
+  <!-- Distributor management panel -->
+  <div class="dist-mgmt" id="distMgmt">
+    <h3>Manage Distributors</h3>
+    <ul class="dist-mgmt-list" id="distMgmtList"></ul>
+    <div class="dist-add-row">
+      <input type="text" id="newDistName" placeholder="New distributor name" onkeydown="if(event.key==='Enter')addDistributor()">
+      <button onclick="addDistributor()">Add</button>
+    </div>
+  </div>
+
+  <!-- Edit modal -->
+  <div class="modal-overlay" id="editModal" onclick="if(event.target===this)closeEditModal()">
+    <div class="modal-box">
+      <h3>Edit Wine</h3>
+      <input type="hidden" id="editId">
+      <div class="form-row"><label>Wine name</label><input type="text" id="editName"></div>
+      <div class="form-grid-3">
+        <div class="form-row"><label>Bin #</label><input type="text" id="editBin"></div>
+        <div class="form-row"><label>Vintage</label><input type="text" id="editVintage"></div>
+        <div class="form-row"><label>Price</label><input type="text" id="editPrice"></div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-row"><label>Distributor</label><select id="editDist"></select></div>
+        <div class="form-row"><label>Added by</label><input type="text" id="editBy"></div>
+      </div>
+      <div class="form-row"><label>Note</label><input type="text" id="editNote"></div>
+      <button class="btn-submit" onclick="saveEdit()">Save Changes</button>
+    </div>
+  </div>
+
   <div class="summary" id="summary"></div>
   <div id="content"></div>
 
   <div class="add-section">
     <button class="add-toggle" onclick="toggleForm()">+ Add Wine</button>
     <div class="add-form" id="addForm">
-      <div class="form-row">
-        <label>Wine name</label>
-        <input type="text" id="fName" placeholder="Chateau Kirwan">
-      </div>
+      <div class="form-row"><label>Wine name</label><input type="text" id="fName" placeholder="Chateau Kirwan"></div>
       <div class="form-grid-3">
-        <div class="form-row">
-          <label>Bin #</label>
-          <input type="text" id="fBin" placeholder="0580">
-        </div>
-        <div class="form-row">
-          <label>Vintage</label>
-          <input type="text" id="fVintage" placeholder="2016">
-        </div>
-        <div class="form-row">
-          <label>Price</label>
-          <input type="text" id="fPrice" placeholder="248">
-        </div>
+        <div class="form-row"><label>Bin #</label><input type="text" id="fBin" placeholder="0580"></div>
+        <div class="form-row"><label>Vintage</label><input type="text" id="fVintage" placeholder="2016"></div>
+        <div class="form-row"><label>Price</label><input type="text" id="fPrice" placeholder="248"></div>
       </div>
       <div class="form-grid-2">
-        <div class="form-row">
-          <label>Distributor</label>
-          <select id="fDist"><option value="">— Assign later —</option></select>
-        </div>
-        <div class="form-row">
-          <label>Added by</label>
-          <input type="text" id="fBy" placeholder="Name">
-        </div>
+        <div class="form-row"><label>Distributor</label><select id="fDist"><option value="">— Assign later —</option></select></div>
+        <div class="form-row"><label>Added by</label><input type="text" id="fBy" placeholder="Name"></div>
       </div>
-      <div class="form-row">
-        <label>Note (optional)</label>
-        <input type="text" id="fNote" placeholder="OOS, vintage change, also sold by Allied, etc.">
-      </div>
+      <div class="form-row"><label>Note (optional)</label><input type="text" id="fNote" placeholder="OOS, vintage change, also sold by Allied, etc."></div>
       <button class="btn-submit" onclick="addItem()">Add to 86 Report</button>
     </div>
   </div>
 </div>
 
 <script>
-const WORKER_URL = ''; // e.g. 'https://rpi-86.yourdomain.workers.dev'
+const WORKER_URL = ''; // e.g. 'https://rpi-shift.yourdomain.workers.dev'
+const ADMIN_PIN  = '8686'; // Change this
 
-// ── Seed data parsed from the Google Sheet ──
+// ── Seed data from Google Sheet (first-load only) ──
 const SEED_DATA = [
-  // Dueled
   {name:"Château La Rame",bin:"0642",vintage:"2023",price:"58",distributor:"Dueled",ordered:false},
   {name:"Blasson D'Issan",bin:"0530",vintage:"2016",price:"130",distributor:"Dueled",ordered:false},
   {name:"Château Chauvin",bin:"0579",vintage:"2015",price:"181",distributor:"Dueled",ordered:false},
   {name:"Château Kirwan",bin:"0580",vintage:"2016",price:"248",distributor:"Dueled",ordered:false},
   {name:"Château Haut-Batailley Verso",bin:"0513",vintage:"2017",price:"112",distributor:"Dueled",note:"From Bobby?",ordered:false},
-  // Wilson Daniels
   {name:"Davies \"Keefer Ranch\" Russian River Valley",bin:"0826",vintage:"2022",price:"195",distributor:"Wilson Daniels",ordered:false},
   {name:"Baron de Brane",bin:"0573",vintage:"2018",price:"137",distributor:"Wilson Daniels",ordered:false},
-  // Banville
   {name:"Miner Family Chardonnay",bin:"",vintage:"2022",price:"",distributor:"Banville",ordered:false},
-  // Rosenthal
   {name:"Côtes-du-Rhône, Domaine La Manarine",bin:"0639",vintage:"2023",price:"48",distributor:"Rosenthal",ordered:false},
-  // Frederick Wildman
   {name:"Bourgogne Aligoté, Domaine Sylvain Cathiard & Fils",bin:"",vintage:"2023",price:"",distributor:"Frederick Wildman",ordered:true},
   {name:"Bourgogne Epineuil, Domaine Dominique Gruhier",bin:"",vintage:"2023",price:"",distributor:"Frederick Wildman",ordered:true},
   {name:"Bourgogne Tonnerre, Domaine Dominique Gruhier",bin:"",vintage:"2022",price:"",distributor:"Frederick Wildman",ordered:true},
@@ -269,7 +326,6 @@ const SEED_DATA = [
   {name:"Château Haut-Batailley Verso",bin:"0545",vintage:"2019",price:"121",distributor:"Frederick Wildman",note:"Also sold by other importers",ordered:false},
   {name:"Château de Sales",bin:"0531",vintage:"2022",price:"154",distributor:"Frederick Wildman",note:"Also sold by other importers",ordered:false},
   {name:"Château Gloria",bin:"0591",vintage:"2020",price:"169",distributor:"Frederick Wildman",note:"Also sold by other importers",ordered:false},
-  // Skurnik
   {name:"Sean Minor Cabernet Sauvignon North Coast",bin:"",vintage:"2023",price:"",distributor:"Skurnik",ordered:true},
   {name:"Peter Michael Winery Pinot Noir \"Le Caprice\"",bin:"",vintage:"2023",price:"",distributor:"Skurnik",ordered:true},
   {name:"Domaine Pierre Martin Sancerre \"Culs de Beaujeu\"",bin:"",vintage:"2023",price:"",distributor:"Skurnik",ordered:true},
@@ -282,15 +338,12 @@ const SEED_DATA = [
   {name:"Sancerre Chavignol, Domaine Pierre Martin",bin:"0234",vintage:"2024",price:"113",distributor:"Skurnik",ordered:false},
   {name:"Chablis \"Saint-Pierre\", Jean et Sébastien Dauvissat",bin:"0206",vintage:"2024",price:"116",distributor:"Skurnik",ordered:false},
   {name:"Santenay 1er Cru La Comme, Caroline Morey",bin:"0446",vintage:"2017",price:"300",distributor:"Skurnik",ordered:false},
-  // Dreyfus Ashby
   {name:"Drouhin Roserock Zéphirine",bin:"",vintage:"2022",price:"",distributor:"Dreyfus Ashby",ordered:false},
   {name:"Côtes de Beaune-Villages, Joseph Drouhin",bin:"",vintage:"2022",price:"",distributor:"Dreyfus Ashby",ordered:false},
   {name:"Château Bélair-Monange",bin:"",vintage:"2016",price:"",distributor:"Dreyfus Ashby",ordered:false},
   {name:"Domaine Drouhin Roserock Pinot Noir",bin:"",vintage:"2023",price:"",distributor:"Dreyfus Ashby",ordered:false},
-  // Bowler
   {name:"Domaine Chandon De Brialles Bourgogne Gelée Royale",bin:"",vintage:"2016",price:"",distributor:"Bowler",ordered:false},
   {name:"Lauverjat Sancerre",bin:"",vintage:"2024",price:"",distributor:"Bowler",ordered:false},
-  // Kermit Lynch
   {name:"Domaine de Durban Gigondas",bin:"",vintage:"2024",price:"",distributor:"Kermit Lynch",ordered:false},
   {name:"Domaine du Gros'Noré Bandol Rouge Antoinette",bin:"",vintage:"2010 or 2012",price:"",distributor:"Kermit Lynch",ordered:false},
   {name:"Jean-Claude Regnaudot Maranges 1er Cru La Fussière",bin:"",vintage:"2022",price:"",distributor:"Kermit Lynch",ordered:false},
@@ -298,113 +351,200 @@ const SEED_DATA = [
   {name:"Meyer-Fonné Pinot Blanc Vieilles Vignes",bin:"",vintage:"2023",price:"",distributor:"Kermit Lynch",ordered:false},
   {name:"Riesling \"Les Jardins\", Domaine Ostertag",bin:"0251",vintage:"2022",price:"95",distributor:"Kermit Lynch",ordered:false},
   {name:"Languedoc Montpeyroux \"Les Cocalières\", Domaine d'Aupilhac",bin:"0645",vintage:"2017",price:"72",distributor:"Kermit Lynch",ordered:false},
-  // Jenny & Francois
   {name:"Domaine Bersan Bourgogne Côtes d'Auxerre Pinot Noir",bin:"",vintage:"2023",price:"",distributor:"Jenny & Francois",ordered:false},
-  // Polaner
   {name:"Domaine de Montille Monthélie",bin:"",vintage:"",price:"",distributor:"Polaner",ordered:true},
   {name:"Kelley Fox Wines Pinot Noir Mirabai Dundee Hills",bin:"",vintage:"",price:"",distributor:"Polaner",ordered:true},
   {name:"Fleurie, Domaine de la Grand'Cour",bin:"0655",vintage:"2024",price:"115",distributor:"Polaner",ordered:true},
   {name:"Chinon \"Les Pensées de Pallus Rouge\", Domaine de Pallus",bin:"0633",vintage:"2020",price:"95",distributor:"Polaner",ordered:true},
   {name:"Bourgogne, Ballot Millot",bin:"0451",vintage:"2023",price:"120",distributor:"Polaner",ordered:false},
-  // M.S. Walker
   {name:"Mercurey \"Champ Ladoy\", Domaine Belleville",bin:"",vintage:"2021",price:"",distributor:"M.S. Walker",ordered:false},
   {name:"Charmes-Chambertin Grand Cru, Domaine Dujac",bin:"0670",vintage:"2018",price:"1135",distributor:"M.S. Walker",ordered:false},
   {name:"Charmes-Chambertin Grand Cru, Domaine Dujac",bin:"0671",vintage:"2019",price:"1195",distributor:"M.S. Walker",ordered:false},
-  // De Maison
   {name:"Château d'Arcole",bin:"0542",vintage:"2020",price:"165",distributor:"De Maison",ordered:false},
-  // Allied
   {name:"Lingua Franca AVNI Pinot Noir",bin:"",vintage:"2023",price:"",distributor:"Allied",ordered:true},
   {name:"Stag's Leap Wine Cellars Artemis Cabernet Sauvignon",bin:"",vintage:"2022",price:"",distributor:"Allied",ordered:true},
   {name:"Domaine Louis Michel Petit Chablis",bin:"",vintage:"2023",price:"",distributor:"Allied",note:"Order 12 bottles",ordered:true},
   {name:"Domaine Louis Michel Chablis 1er Cru Vaillons",bin:"",vintage:"2023",price:"",distributor:"Allied",ordered:true},
   {name:"Domaine Louis Michel et Fils Chablis 1er Cru Vaulorent",bin:"",vintage:"",price:"",distributor:"Allied",ordered:true},
   {name:"Chablis Grand Cru Grenouilles, Louis Michel & Fils",bin:"0335",vintage:"2023",price:"315",distributor:"Allied",ordered:false},
-  // T Edward
   {name:"Topette Val de Loire Sauvignon Blanc",bin:"",vintage:"",price:"",distributor:"T Edward",ordered:false},
   {name:"Cornas \"Brise Cailloux\", Matthieu Barret",bin:"0560",vintage:"2011",price:"180",distributor:"T Edward",ordered:false},
-  // Coeur
   {name:"Morgon \"Les Charmes\", Domaine Saint-Cyr",bin:"0658",vintage:"2023",price:"65",distributor:"Coeur",ordered:false},
   {name:"Bourgogne Côte d'Or \"Les Lameroses\", Domaine Rougeot",bin:"0427",vintage:"2022",price:"160",distributor:"Coeur",ordered:false},
   {name:"Côte de Brouilly \"100% Cotton\", Bonnet-Cotton",bin:"0657",vintage:"2022",price:"100",distributor:"Coeur",ordered:false},
-  // Touton
   {name:"Château de Chantegrive Cuvée Graves",bin:"",vintage:"2021",price:"",distributor:"Touton",ordered:false},
   {name:"Hautes-Côtes de Nuits, Cave des Hautes Côtes",bin:"",vintage:"",price:"",distributor:"Touton",ordered:false},
-  // Bonhomie Wine Imports
   {name:"Domaine Petitot Savigny-les-Beaune Les Pimentiers Vieilles Vignes",bin:"",vintage:"2023",price:"",distributor:"Bonhomie Wine Imports",note:"1 CS",ordered:true},
   {name:"Hautes-Côtes de Nuits \"Terres Burgondes\", Domaine Petitot",bin:"",vintage:"",price:"",distributor:"Bonhomie Wine Imports",ordered:false},
   {name:"Savigny-lès-Beaune \"Les Pimentiers\" Vieilles Vignes, Domaine Petitot",bin:"0907",vintage:"2023",price:"149",distributor:"Bonhomie Wine Imports",ordered:false},
   {name:"Muscadet \"Autolyse\", Domaine des Granits",bin:"0328",vintage:"2022",price:"75",distributor:"Bonhomie Wine Imports",ordered:false},
-  // Fedway
   {name:"Ridge Vineyards Lytton Estate Petite Sirah",bin:"",vintage:"any",price:"",distributor:"Fedway",ordered:true},
   {name:"Heitz Cellars Napa Valley Cabernet Sauvignon",bin:"",vintage:"2021",price:"",distributor:"Fedway",ordered:true},
   {name:"Ridge Vineyards Cabernet Sauvignon",bin:"",vintage:"2022",price:"",distributor:"Fedway",ordered:true},
 ];
 
-const DISTRIBUTORS = [
-  'Allied','Artisinal','Banville','Bonhomie Wine Imports','Bowler','Coeur',
-  'De Maison','Dreyfus Ashby','Dueled','Fedway','Frederick Wildman',
-  'Grand Cru','Independence','Jenny & Francois','Kermit Lynch','M.S. Walker',
-  'Polaner','Rosenthal','Skurnik','Soilair','T Edward','Touton',
-  'Vintage Imports','Wilson Daniels','Winebow'
-];
-
+// ── State ──
 let items = [];
+let distributors = [];
+let isAdmin = false;
 
-// ── Distributor dropdown ──
-function populateDistSelects() {
-  const sel = document.getElementById('fDist');
-  DISTRIBUTORS.forEach(d => {
-    const o = document.createElement('option');
-    o.value = d; o.textContent = d;
-    sel.appendChild(o);
-  });
+// ── Admin ──
+function handleAdminToggle() {
+  if (isAdmin) { lockAdmin(); return; }
+  document.getElementById('pinOverlay').classList.add('open');
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinError').textContent = '';
+  setTimeout(() => document.getElementById('pinInput').focus(), 100);
 }
-
-// ── Persistence ──
-async function loadItems() {
-  if (WORKER_URL) {
-    try {
-      const r = await fetch(WORKER_URL + '/wine86');
-      items = await r.json();
-    } catch (e) {
-      items = JSON.parse(localStorage.getItem('rpi_86_report') || '[]');
+function closePinOverlay() { document.getElementById('pinOverlay').classList.remove('open'); }
+function checkPin(e) {
+  const val = document.getElementById('pinInput').value;
+  if (val.length === 4) {
+    if (val === ADMIN_PIN) { unlockAdmin(); closePinOverlay(); }
+    else {
+      document.getElementById('pinError').textContent = 'Wrong PIN';
+      document.getElementById('pinInput').value = '';
     }
-  } else {
-    items = JSON.parse(localStorage.getItem('rpi_86_report') || '[]');
   }
-
-  // First load: seed from Google Sheet data if empty
-  if (!items.length && SEED_DATA.length) {
-    const now = new Date().toISOString();
-    items = SEED_DATA.map((w, i) => ({
-      id: 'w86_seed_' + i,
-      name: w.name,
-      bin: w.bin || '',
-      vintage: w.vintage || '',
-      price: w.price || '',
-      distributor: w.distributor || '',
-      note: w.note || '',
-      addedBy: 'Sheet import',
-      addedAt: now,
-      ordered: w.ordered || false,
-      orderedAt: w.ordered ? now : null,
-    }));
-    await saveItems();
-  }
-
+}
+function unlockAdmin() {
+  isAdmin = true;
+  document.getElementById('btnAdminToggle').textContent = '🔓';
+  document.getElementById('btnAdminToggle').classList.add('active');
+  document.getElementById('adminBadge').style.display = '';
+  document.getElementById('btnDistMgmt').style.display = '';
+  render();
+}
+function lockAdmin() {
+  isAdmin = false;
+  document.getElementById('btnAdminToggle').textContent = '🔒';
+  document.getElementById('btnAdminToggle').classList.remove('active');
+  document.getElementById('adminBadge').style.display = 'none';
+  document.getElementById('btnDistMgmt').style.display = 'none';
+  document.getElementById('distMgmt').classList.remove('open');
   render();
 }
 
+// ── Distributors ──
+async function loadDistributors() {
+  if (WORKER_URL) {
+    try {
+      const r = await fetch(WORKER_URL + '/wine86/distributors');
+      distributors = await r.json();
+      populateAllDistSelects(); return;
+    } catch (e) { console.error('dist fetch failed', e); }
+  }
+  const stored = localStorage.getItem('rpi_86_dists');
+  distributors = stored ? JSON.parse(stored) : [
+    'Allied','Artisinal','Banville','Bonhomie Wine Imports','Bowler','Coeur',
+    'De Maison','Dreyfus Ashby','Dueled','Fedway','Frederick Wildman',
+    'Grand Cru','Independence','Jenny & Francois','Kermit Lynch','M.S. Walker',
+    'Polaner','Rosenthal','Skurnik','Soilair','T Edward','Touton',
+    'Vintage Imports','Wilson Daniels','Winebow'
+  ];
+  populateAllDistSelects();
+}
+
+function saveDistributors() {
+  localStorage.setItem('rpi_86_dists', JSON.stringify(distributors));
+  if (WORKER_URL) {
+    // Full replace — simpler than individual POST/DELETE for local changes
+    fetch(WORKER_URL + '/wine86/distributors', {
+      method: 'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name: distributors.__lastAdded || ''})
+    }).catch(() => {});
+  }
+}
+
+function populateAllDistSelects() {
+  const sorted = [...distributors].sort((a,b) => a.localeCompare(b));
+  ['fDist','editDist'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">— Assign later —</option>';
+    sorted.forEach(d => { const o = document.createElement('option'); o.value = d; o.textContent = d; sel.appendChild(o); });
+    sel.value = cur;
+  });
+}
+
+function toggleDistMgmt() {
+  document.getElementById('distMgmt').classList.toggle('open');
+  renderDistMgmt();
+}
+function renderDistMgmt() {
+  const list = document.getElementById('distMgmtList');
+  const sorted = [...distributors].sort((a,b) => a.localeCompare(b));
+  list.innerHTML = sorted.map(d =>
+    `<li class="dist-mgmt-item"><span>${esc(d)}</span><button class="btn-dist-remove" onclick="removeDistributor('${esc(d).replace(/'/g,"\\'")}')">✕</button></li>`
+  ).join('');
+}
+async function addDistributor() {
+  const inp = document.getElementById('newDistName');
+  const name = inp.value.trim();
+  if (!name) return;
+  if (distributors.some(d => d.toLowerCase() === name.toLowerCase())) { inp.value = ''; return; }
+
+  if (WORKER_URL) {
+    try {
+      const r = await fetch(WORKER_URL + '/wine86/distributors', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name})
+      });
+      const j = await r.json();
+      if (j.distributors) distributors = j.distributors;
+    } catch (e) { distributors.push(name); }
+  } else {
+    distributors.push(name);
+  }
+  distributors.sort((a,b) => a.localeCompare(b));
+  localStorage.setItem('rpi_86_dists', JSON.stringify(distributors));
+  inp.value = '';
+  populateAllDistSelects();
+  renderDistMgmt();
+  render();
+}
+async function removeDistributor(name) {
+  if (!confirm('Remove distributor "' + name + '"?')) return;
+  if (WORKER_URL) {
+    try {
+      const r = await fetch(WORKER_URL + '/wine86/distributors/' + encodeURIComponent(name), {method:'DELETE'});
+      const j = await r.json();
+      if (j.distributors) distributors = j.distributors;
+    } catch (e) { distributors = distributors.filter(d => d !== name); }
+  } else {
+    distributors = distributors.filter(d => d !== name);
+  }
+  localStorage.setItem('rpi_86_dists', JSON.stringify(distributors));
+  populateAllDistSelects();
+  renderDistMgmt();
+  render();
+}
+
+// ── Wine list persistence ──
+async function loadItems() {
+  if (WORKER_URL) {
+    try { const r = await fetch(WORKER_URL + '/wine86'); items = await r.json(); }
+    catch (e) { items = JSON.parse(localStorage.getItem('rpi_86_report') || '[]'); }
+  } else {
+    items = JSON.parse(localStorage.getItem('rpi_86_report') || '[]');
+  }
+  if (!items.length && SEED_DATA.length) {
+    const now = new Date().toISOString();
+    items = SEED_DATA.map((w,i) => ({
+      id:'w86_seed_'+i, name:w.name, bin:w.bin||'', vintage:w.vintage||'',
+      price:w.price||'', distributor:w.distributor||'', note:w.note||'',
+      addedBy:'Sheet import', addedAt:now, ordered:w.ordered||false,
+      orderedAt:w.ordered?now:null,
+    }));
+    await saveItems();
+  }
+  render();
+}
 async function saveItems() {
   localStorage.setItem('rpi_86_report', JSON.stringify(items));
   if (WORKER_URL) {
-    try {
-      await fetch(WORKER_URL + '/wine86', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(items)
-      });
-    } catch (e) { console.error('Worker save failed', e); }
+    try { await fetch(WORKER_URL+'/wine86',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(items)}); }
+    catch(e){}
   }
 }
 
@@ -415,132 +555,143 @@ function render() {
 
   if (!items.length) {
     content.innerHTML = '<div class="empty-state"><div class="icon">✓</div><p>No wines on the 86 report.</p></div>';
-    summaryEl.innerHTML = '';
-    return;
+    summaryEl.innerHTML = ''; return;
   }
 
-  const total = items.length;
-  const ordered = items.filter(w => w.ordered).length;
-  const unassigned = items.filter(w => !w.distributor);
-  const assigned = items.filter(w => w.distributor);
+  const total = items.length, ordered = items.filter(w=>w.ordered).length;
+  const unassigned = items.filter(w=>!w.distributor);
+  const assigned = items.filter(w=>w.distributor);
 
   summaryEl.innerHTML = `
-    <span class="stat stat-total">${total} wine${total !== 1 ? 's' : ''} 86'd</span>
-    ${ordered ? `<span class="stat stat-ordered">${ordered} ordered</span>` : ''}
-    ${unassigned.length ? `<span class="stat stat-unassigned">${unassigned.length} unassigned</span>` : ''}
+    <span class="stat stat-total">${total} wine${total!==1?'s':''} 86'd</span>
+    ${ordered?`<span class="stat stat-ordered">${ordered} ordered</span>`:''}
+    ${unassigned.length?`<span class="stat stat-unassigned">${unassigned.length} unassigned</span>`:''}
   `;
 
   let html = '';
-
-  // Unassigned first
   if (unassigned.length) {
-    html += `<div class="unassigned-section">
-      <div class="unassigned-header"><span>Needs Distributor Assignment</span><span class="count">${unassigned.length}</span></div>
-      ${buildTable(unassigned, true)}
-    </div>`;
+    html += `<div class="unassigned-section"><div class="unassigned-header"><span>Needs Distributor Assignment</span><span class="count">${unassigned.length}</span></div>${buildTable(unassigned,true)}</div>`;
   }
 
-  // Group by distributor
   const grouped = {};
-  assigned.forEach(w => {
-    if (!grouped[w.distributor]) grouped[w.distributor] = [];
-    grouped[w.distributor].push(w);
-  });
-
+  assigned.forEach(w => { if (!grouped[w.distributor]) grouped[w.distributor]=[]; grouped[w.distributor].push(w); });
   Object.keys(grouped).sort().forEach(dist => {
-    const wines = grouped[dist];
-    html += `<div class="dist-section">
-      <div class="dist-header"><span>${esc(dist)}</span><span class="count">${wines.length}</span></div>
-      ${buildTable(wines, false)}
-    </div>`;
+    html += `<div class="dist-section"><div class="dist-header"><span>${esc(dist)}</span><span class="count">${grouped[dist].length}</span></div>${buildTable(grouped[dist],false)}</div>`;
   });
-
   content.innerHTML = html;
 }
 
 function buildTable(wines, showAssign) {
-  const sorted = [...wines].sort((a, b) => {
-    if (a.ordered && !b.ordered) return 1;
-    if (!a.ordered && b.ordered) return -1;
-    return new Date(b.addedAt) - new Date(a.addedAt);
+  const sorted = [...wines].sort((a,b) => {
+    if (a.ordered&&!b.ordered) return 1; if (!a.ordered&&b.ordered) return -1;
+    return new Date(b.addedAt)-new Date(a.addedAt);
   });
-
+  const dOpts = [...distributors].sort((a,b)=>a.localeCompare(b)).map(d=>'<option value="'+esc(d)+'">'+esc(d)+'</option>').join('');
   const rows = sorted.map(w => {
-    const rc = w.ordered ? 'row-ordered' : '';
-    const assignTd = showAssign
-      ? `<td><select class="assign-select" onchange="assignDist('${w.id}',this.value)"><option value="">Assign</option>${DISTRIBUTORS.map(d => '<option value="'+esc(d)+'">'+esc(d)+'</option>').join('')}</select></td>`
-      : '';
+    const rc = w.ordered?'row-ordered':'';
+    const assignTd = showAssign ? `<td><select class="assign-select" onchange="assignDist('${w.id}',this.value)"><option value="">Assign</option>${dOpts}</select></td>` : '';
+    const adminBtns = isAdmin ? `<button class="btn-sm edit" onclick="openEditModal('${w.id}')" title="Edit">✎</button>` : '';
     return `<tr class="${rc}">
       <td class="col-bin">${esc(w.bin||'')}</td>
-      <td><div class="wine-name-cell">${esc(w.name)}${w.vintage ? ' '+esc(w.vintage) : ''}</div>${w.note ? '<div class="wine-note">'+esc(w.note)+'</div>' : ''}</td>
-      <td class="col-price">${w.price ? '$'+esc(w.price) : ''}</td>
+      <td><div class="wine-name-cell">${esc(w.name)}${w.vintage?' '+esc(w.vintage):''}</div>${w.note?'<div class="wine-note">'+esc(w.note)+'</div>':''}</td>
+      <td class="col-price">${w.price?'$'+esc(w.price):''}</td>
       <td class="col-ordered"><input type="checkbox" class="cb-ordered" ${w.ordered?'checked':''} onchange="toggleOrdered('${w.id}',this.checked)" title="Ordered"></td>
       ${assignTd}
-      <td class="col-actions"><button class="btn-remove" onclick="removeItem('${w.id}')" title="Remove">\u2715</button></td>
+      <td class="col-actions">${adminBtns}<button class="btn-sm remove" onclick="removeItem('${w.id}')" title="Remove">✕</button></td>
     </tr>`;
   }).join('');
-
-  return `<table class="wine-table"><thead><tr>
-    <th>Bin</th><th>Wine</th><th class="th-price" style="text-align:right">Price</th><th>Ordered</th>
-    ${showAssign ? '<th>Assign</th>' : ''}<th></th>
-  </tr></thead><tbody>${rows}</tbody></table>`;
+  return `<table class="wine-table"><thead><tr><th>Bin</th><th>Wine</th><th class="th-price" style="text-align:right">Price</th><th>Ordered</th>${showAssign?'<th>Assign</th>':''}<th></th></tr></thead><tbody>${rows}</tbody></table>`;
 }
 
-function esc(s) {
-  if (!s) return '';
-  const d = document.createElement('div');
-  d.textContent = s;
-  return d.innerHTML;
+function esc(s) { if(!s)return''; const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+// ── Edit modal ──
+function openEditModal(id) {
+  const w = items.find(x=>x.id===id); if (!w) return;
+  document.getElementById('editId').value = w.id;
+  document.getElementById('editName').value = w.name||'';
+  document.getElementById('editBin').value = w.bin||'';
+  document.getElementById('editVintage').value = w.vintage||'';
+  document.getElementById('editPrice').value = w.price||'';
+  document.getElementById('editNote').value = w.note||'';
+  document.getElementById('editBy').value = w.addedBy||'';
+  populateAllDistSelects();
+  document.getElementById('editDist').value = w.distributor||'';
+  document.getElementById('editModal').classList.add('open');
+}
+function closeEditModal() { document.getElementById('editModal').classList.remove('open'); }
+async function saveEdit() {
+  const id = document.getElementById('editId').value;
+  const w = items.find(x=>x.id===id); if (!w) return;
+  w.name = document.getElementById('editName').value.trim();
+  w.bin = document.getElementById('editBin').value.trim();
+  w.vintage = document.getElementById('editVintage').value.trim();
+  w.price = document.getElementById('editPrice').value.trim();
+  w.distributor = document.getElementById('editDist').value;
+  w.note = document.getElementById('editNote').value.trim();
+  w.addedBy = document.getElementById('editBy').value.trim();
+
+  if (WORKER_URL) {
+    try {
+      await fetch(WORKER_URL+'/wine86/'+id, {
+        method:'PATCH', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name:w.name,bin:w.bin,vintage:w.vintage,price:w.price,distributor:w.distributor,note:w.note,addedBy:w.addedBy})
+      });
+    } catch(e){}
+  }
+  await saveItems(); closeEditModal(); render();
 }
 
 // ── Actions ──
 function addItem() {
-  const name = document.getElementById('fName').value.trim();
-  if (!name) return;
-  items.push({
-    id: 'w86_' + Date.now() + '_' + Math.random().toString(36).slice(2,6),
-    name, bin: document.getElementById('fBin').value.trim(),
-    vintage: document.getElementById('fVintage').value.trim(),
-    price: document.getElementById('fPrice').value.trim(),
-    distributor: document.getElementById('fDist').value,
-    note: document.getElementById('fNote').value.trim(),
-    addedBy: document.getElementById('fBy').value.trim(),
-    addedAt: new Date().toISOString(),
-    ordered: false
-  });
-  saveItems(); render();
-  ['fName','fBin','fVintage','fPrice','fNote'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('fDist').value = '';
+  const name = document.getElementById('fName').value.trim(); if (!name) return;
+  const item = {
+    id:'w86_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),
+    name, bin:document.getElementById('fBin').value.trim(),
+    vintage:document.getElementById('fVintage').value.trim(),
+    price:document.getElementById('fPrice').value.trim(),
+    distributor:document.getElementById('fDist').value,
+    note:document.getElementById('fNote').value.trim(),
+    addedBy:document.getElementById('fBy').value.trim(),
+    addedAt:new Date().toISOString(), ordered:false
+  };
+  items.push(item); saveItems(); render();
+  ['fName','fBin','fVintage','fPrice','fNote'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fDist').value='';
 }
 
 function toggleOrdered(id, checked) {
-  const w = items.find(x => x.id === id);
-  if (w) { w.ordered = checked; w.orderedAt = checked ? new Date().toISOString() : null; saveItems(); render(); }
-}
-
-function assignDist(id, dist) {
-  const w = items.find(x => x.id === id);
-  if (w && dist) { w.distributor = dist; saveItems(); render(); }
-}
-
-function removeItem(id) {
-  if (!confirm('Remove from 86 report?')) return;
-  items = items.filter(w => w.id !== id);
+  const w = items.find(x=>x.id===id); if(!w) return;
+  w.ordered=checked; w.orderedAt=checked?new Date().toISOString():null;
+  if (WORKER_URL) {
+    fetch(WORKER_URL+'/wine86/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({ordered:checked})}).catch(()=>{});
+  }
   saveItems(); render();
 }
-
+function assignDist(id, dist) {
+  const w = items.find(x=>x.id===id); if(!w||!dist) return;
+  w.distributor=dist;
+  if (WORKER_URL) {
+    fetch(WORKER_URL+'/wine86/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({distributor:dist})}).catch(()=>{});
+  }
+  saveItems(); render();
+}
+function removeItem(id) {
+  if (!confirm('Remove from 86 report?')) return;
+  items = items.filter(w=>w.id!==id);
+  if (WORKER_URL) { fetch(WORKER_URL+'/wine86/'+id,{method:'DELETE'}).catch(()=>{}); }
+  saveItems(); render();
+}
 function toggleForm() { document.getElementById('addForm').classList.toggle('open'); }
 
 // ── Polling ──
 if (WORKER_URL) setInterval(loadItems, 15000);
 
 // ── Accept push from rpi.html ──
-window.addEventListener('message', e => {
-  if (e.data?.type === 'rpi_86_add') { items.push(e.data.item); saveItems(); render(); }
-});
+window.addEventListener('message', e => { if(e.data?.type==='rpi_86_add'){items.push(e.data.item);saveItems();render();} });
 
-populateDistSelects();
-loadItems();
+// ── Init ──
+loadDistributors().then(loadItems);
 </script>
 </body>
 </html>
