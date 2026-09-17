@@ -1118,6 +1118,7 @@ function goTab(n) {
   });
   window.scrollTo({top:0,behavior:'smooth'});
   if(n===0) refreshSpiel();
+  if(n===1) renderShiftSpecials();
   if(n===2) generateExec();
 }
 
@@ -1160,7 +1161,7 @@ function renderOpeningSpecials(){
     if(s.name&&COMMON_SPECIALS.indexOf(s.name)===-1) opts+='<option value="'+s.name+'" selected>'+s.name+'</option>';
     return '<div style="display:grid;grid-template-columns:1fr 90px 32px;gap:8px;margin-bottom:8px;align-items:center">'+
       '<select oninput="openingSpecials['+i+'].name=this.value;renderShiftSpecials();debounceSave()" style="font-size:14px"><option value="">— choose —</option>'+opts+'</select>'+
-      '<input type="number" placeholder="Qty" value="'+(s.count||'')+'" oninput="openingSpecials['+i+'].count=this.value;debounceSave()">'+
+      '<input type="number" placeholder="Qty" value="'+(s.count||'')+'" oninput="openingSpecials['+i+'].count=this.value;renderShiftSpecials();debounceSave()">'+
       '<button class="rm" onclick="openingSpecials.splice('+i+',1);renderOpeningSpecials();renderShiftSpecials();debounceSave()" aria-label="Remove">×</button></div>';
   }).join('');
 }
