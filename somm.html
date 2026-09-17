@@ -237,10 +237,10 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3.5 3.5 0 0 0 3.5-3.5v-6a3.5 3.5 0 1 0-7 0v6A3.5 3.5 0 0 0 12 15zm6-3.5a6 6 0 0 1-12 0H4a8 8 0 0 0 7 7.93V22h2v-2.57A8 8 0 0 0 20 11.5h-2z"/></svg>
       </button>
     </div>
-    <div class="micstate" id="micstate">Tap and ask — “big Napa cab for a steak table”</div>
+    <div class="micstate" id="micstate">Tap and ask — or type a bin number to look it up</div>
     <div class="phrasebox">
-      <input id="phrase" type="text" placeholder="…or type the request" autocomplete="off" enterkeyhint="go">
-      <button class="gobtn" id="gobtn" type="button">Pair</button>
+      <input id="phrase" type="text" placeholder="&ldquo;big Napa cab&rdquo; or a bin number" autocomplete="off" enterkeyhint="go">
+      <button class="gobtn" id="gobtn" type="button">Go</button>
     </div>
   </div>
 
@@ -266,7 +266,7 @@
         <input id="urlinput" type="text" placeholder="https://images.getbento.com/…/wine list.pdf">
         <button id="savebtn" type="button">Save</button>
       </div>
-      <p class="hint" id="urlhint">“Refresh list” searches the web for the newest PDF automatically. Paste a URL here only if you need to override it.</p>
+      <p class="hint" id="urlhint">"Refresh list" searches the web for the newest PDF automatically. Paste a URL here only if you need to override it.</p>
 
       <div class="countsbox">
         <label for="countsinput">Monthly cycle counts (CSV: bin, wine, count, par — par optional)</label>
@@ -276,7 +276,7 @@
         <div class="rowbtns">
           <button id="countsbtn" type="button">Upload counts</button>
         </div>
-        <p class="hint">Overstock is flagged where count beats par (or 12+ with no par). Ripe wines are judged from the list’s vintages. Both quietly steer pairings until next month’s count.</p>
+        <p class="hint">Overstock is flagged where count beats par (or 12+ with no par). Ripe wines are judged from the list's vintages. Both quietly steer pairings until next month's count.</p>
       </div>
     </div>
   </details>
@@ -376,7 +376,7 @@
         setListState(false, "No list on file yet");
       }
     }catch(e){
-      setListState(false, "Can’t reach the Worker");
+      setListState(false, "Can't reach the Worker");
     }
   }
 
@@ -442,7 +442,7 @@
   /* ── refresh: Worker hunts the web for the newest PDF ── */
   async function refreshList(){
     if (!workerReady()) return { ok:false };
-    setWorking(true, "Checking the web for today’s list…");
+    setWorking(true, "Checking the web for today's list…");
     try{
       var r = await fetch(WORKER_URL + "/refresh");
       var s = await r.json();
@@ -460,7 +460,9 @@
     if (state.busy || !workerReady()) return;
     clearError();
     els.results.classList.remove("show");
-    setWorking(true, "Reading the list & pairing…");
+    // Show contextual working text for bin lookups
+    var isBin = /^(?:bin\s*#?\s*|#)?\d{1,4}$/i.test(phrase.trim());
+    setWorking(true, isBin ? "Looking up that bin…" : "Reading the list & pairing…");
     try{
       var r = await fetch(WORKER_URL + "/pair?format=json&q=" + encodeURIComponent(phrase));
       if (!r.ok){
@@ -473,7 +475,7 @@
     }catch(err){
       console.error("recommend failed", err);
       showError(
-        "<b>Pairing failed.</b> Tap “Refresh list” to hunt for today’s PDF, or paste the new link under List source. (" +
+        "<b>Pairing failed.</b> Tap \u201CRefresh list\u201D to hunt for today's PDF, or paste the new link under List source. (" +
         esc(err.message || err) + ")"
       );
     }finally{
@@ -487,7 +489,6 @@
     if (w.push) meta += '<span class="tag pick">Cellar pick</span>';
     if (isBottle && w.tier) meta += '<span class="tag">' + esc(w.tier) + "</span>";
     if (isBottle && w.bin) meta += '<span class="tag bin">Bin ' + esc(w.bin) + "</span>";
-    if (isBottle && (w.page || w.page === 0)) meta += '<span class="tag">Page ' + esc(w.page) + "</span>";
     if (w.style) meta += '<span class="tag">' + esc(w.style) + "</span>";
     return (
       '<div class="card">' +
@@ -513,7 +514,7 @@
       : "";
 
     if (!g.length && !b.length){
-      showError("<b>Nothing matched that request on today’s list.</b> Try rephrasing — grape, region, weight, or the dish it’s pairing with.");
+      showError("<b>Nothing matched that request on today's list.</b> Try rephrasing — grape, region, weight, or the dish it's pairing with.");
       return;
     }
     els.results.classList.add("show");
@@ -542,12 +543,12 @@
       if (ev.error === "not-allowed"){
         els.micstate.textContent = "Mic blocked — type the request below instead";
       } else {
-        els.micstate.textContent = "Didn’t catch that — tap again or type below";
+        els.micstate.textContent = "Didn't catch that — tap again or type below";
       }
     };
     rec.onend = function(){ stopListening(); };
   } else {
-    els.micstate.textContent = "Voice isn’t available here — type the request below";
+    els.micstate.textContent = "Voice isn't available here — type the request below";
   }
   function startListening(){
     if (!rec || state.busy) return;
@@ -560,7 +561,7 @@
     listening = false;
     els.micring.classList.remove("listening");
     if (els.micstate.textContent === "Listening…"){
-      els.micstate.textContent = "Tap and ask — \u201Cbig Napa cab for a steak table\u201D";
+      els.micstate.textContent = "Tap and ask — or type a bin number to look it up";
     }
     if (rec){ try{ rec.stop(); }catch(e){} }
   }
@@ -587,14 +588,14 @@
     if (r && r.ok){
       els.micstate.textContent = "Fresh list found — ready to pair";
     } else {
-      showError("<b>Couldn’t find a newer PDF on the web.</b> Keeping the list on file. If the link changed today, paste the new one under List source.");
+      showError("<b>Couldn't find a newer PDF on the web.</b> Keeping the list on file. If the link changed today, paste the new one under List source.");
     }
   });
   els.savebtn.addEventListener("click", async function(){
     if (!workerReady()) return;
     var u = els.urlinput.value.trim();
     if (!/^https:\/\//.test(u) || !/\.pdf/i.test(u)){
-      showError("<b>That doesn’t look like a PDF link.</b> It should start with https:// and end in .pdf");
+      showError("<b>That doesn't look like a PDF link.</b> It should start with https:// and end in .pdf");
       return;
     }
     clearError();
@@ -606,7 +607,7 @@
       await loadStatus();
       els.micstate.textContent = "List saved — ready to pair";
     }catch(e){
-      showError("<b>Couldn’t save.</b> " + esc(e.message || e));
+      showError("<b>Couldn't save.</b> " + esc(e.message || e));
     }finally{
       setWorking(false);
     }
