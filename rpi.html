@@ -623,30 +623,28 @@ var toggleState     = {};
 var vips            = [];
 var eighties        = [];
 var shiftNotes      = [];
-var deletedNoteFPs  = [];   // tombstones: fingerprints of notes deleted locally, so /notes polling can't resurrect them
+var deletedNoteFPs  = [];
 var preShiftNotes   = [];
 var preShiftSummary = '';
 var openingSpecials = [];
 var shiftExtras     = [];
 var _plainTextEmail = '';
-var _spielOpen      = false;  // spiel card visible → keep it live as fields change
+var _spielOpen      = false;
 
-// Polling / sync state
-var _lastKvTs   = null;   // ISO string — last savedAt we received from KV
-var _isSaving   = false;  // prevent concurrent saves
-var _saveTimer  = null;   // debounce handle
-var _applying   = false;  // suppress input→save loop during remote apply
-var _dirty      = false;  // SYNC FIX: local edits not yet confirmed saved to KV
-var _editSeq    = 0;      // SYNC FIX: increments on every local edit
-var _polishing  = false;  // SYNC FIX: pause polling while an AI polish pass is writing fields
-var POLL_MS     = 10000;  // 10 s
+var _lastKvTs   = null;
+var _isSaving   = false;
+var _saveTimer  = null;
+var _applying   = false;
+var _dirty      = false;
+var _editSeq    = 0;
+var _polishing  = false;
+var POLL_MS     = 10000;
 
 var CF = 'https://rpi-shift-api.amusementstandards.workers.dev';
 
 var DAY_SPECIALS = {0:'Lobster Frites',1:'Poulet en Croûte',2:'Oyster Rockefeller',3:'USDA Prime French Dip',4:'Crispy Fish Frites',5:'Bouillabaisse Provençale',6:'Prime Short Rib Bourguignon'};
-var COMMON_SPECIALS = ['Poulet en Croûte','Oyster Rockefeller','USDA Prime French Dip','Crispy Fish Frites','Bouillabaisse Provençale','Prime Short Rib Bourguignon','Lobster Frites','Steak Tartare'];
+var COMMON_SPECIALS = ['Poulet en Croûte','Oyster Rockefeller','USDA Prime French Dip','Crispy Fish Frites','Bouillabaisse Provençale','Prime Short Rib Bourguignon','Lobster Frites','Steak Tartare','Dover Sole'];
 
-// Sections eligible for AI polish: [textarea id, section label]
 var POLISH_SECTIONS = [
   ['s-foh','FOH'],
   ['s-food','Food'],
@@ -659,9 +657,6 @@ var POLISH_SECTIONS = [
 
 // ═══════════════════════════════════════════════
 // QUOTE OF THE DAY
-// Rotates one per service day, same on every device. 13 entries, so it
-// does not lock to a weekday. Add your own — order does not matter.
-// Verify any attribution before you put a name on it.
 // ═══════════════════════════════════════════════
 var QUOTES = [
   {text:'Faites simple.', source:'Auguste Escoffier'},
@@ -679,11 +674,6 @@ var QUOTES = [
   {text:'Melius semper — always better, never finished.', source:'House'}
 ];
 
-// ═══════════════════════════════════════════════
-// ROTATING FOCUS POINTS
-// Three per night, advancing through the list. 11 entries with a stride
-// of 3 means the set keeps shifting instead of repeating weekly.
-// ═══════════════════════════════════════════════
 var FOCUS_PER_DAY = 3;
 var FOCUS_POINTS = [
   'Greet every table within 60 seconds — eye contact counts.',
@@ -699,8 +689,6 @@ var FOCUS_POINTS = [
   'Walk the room like a guest before you walk it like staff.'
 ];
 
-// Whole days since epoch for the service date — drives both rotations,
-// so every device on the same night shows the same quote and focus set.
 function rotationIndex(){
   var d=v('o-date')||serviceDate();
   var p=String(d).split('-');
@@ -719,7 +707,7 @@ function focusOfDay(){
 function renderRotation(){
   var el=document.getElementById('daily-rotation'); if(!el) return;
   var q=quoteOfDay(), f=focusOfDay(), H=[];
-  if(q){ H.push('<div class="rotation-quote">“'+esc(q.text)+'”</div>');
+  if(q){ H.push('<div class="rotation-quote">"'+esc(q.text)+'"</div>');
          H.push('<div class="rotation-source">'+esc(q.source||'House')+'</div>'); }
   if(f.length){ H.push('<div class="rotation-focus"><div class="rotation-focus-label">Tonight\'s focus</div>'+
     f.map(function(x){return '<div class="rotation-focus-item">'+esc(x)+'</div>';}).join('')+'</div>'); }
@@ -728,13 +716,10 @@ function renderRotation(){
 
 // ═══════════════════════════════════════════════
 // STANDING TALKING POINTS
-// Carry over night to night until removed. Kept under a date-independent
-// localStorage key and merged (never overwritten) across devices, so a
-// device that has not seen a point yet cannot wipe it.
 // ═══════════════════════════════════════════════
 var STANDING_KEY='rpi_standing_points';
-var standingPoints=[];      // [{id,text,added}]
-var removedStandingIds=[];  // tombstones so a removal survives a merge
+var standingPoints=[];
+var removedStandingIds=[];
 
 function loadStanding(){
   try{ var r=localStorage.getItem(STANDING_KEY); if(r){ var o=JSON.parse(r);
@@ -765,8 +750,6 @@ function renderStandingPoints(){
 
 // ═══════════════════════════════════════════════
 // PRE-SHIFT SPIEL
-// Fixed skeleton, tonight's variables. Edit the wording below —
-// the {tokens} fill themselves in from the form.
 // ═══════════════════════════════════════════════
 var SPIEL_TEMPLATE =
 'Good evening, everyone — {date}.\n\n'+
@@ -782,8 +765,6 @@ var SPIEL_TEMPLATE =
 '\nLet\'s have a great night. Melius semper.';
 
 function spielList(arr,empty){ return arr.length ? arr.map(function(x){return '– '+x;}).join('\n') : '– '+empty; }
-// Function replacements: user text can contain $ patterns that a string
-// replacement would mangle.
 function fill(s,token,val){ return s.replace(token,function(){return val;}); }
 
 function buildSpiel(){
@@ -799,7 +780,7 @@ function buildSpiel(){
   if(extra) extra.split('\n').forEach(function(l){ if(l.trim()) notes.push(l.trim()); });
 
   var q=quoteOfDay();
-  var quoteBlock=q?('“'+q.text+'”\n— '+(q.source||'House')):'';
+  var quoteBlock=q?('"'+q.text+'"\n— '+(q.source||'House')):'';
   var standing=standingPoints.map(function(p){return p.text;});
   var standingBlock=standing.length?('\nSTANDING\n'+spielList(standing,'')+'\n'):'';
 
@@ -814,7 +795,7 @@ function buildSpiel(){
   out=fill(out,'{notes}',spielList(notes,'Nothing logged.'));
   out=fill(out,'{focus}',spielList(focusOfDay(),'None set.'));
   out=fill(out,'{standing}',standingBlock);
-  out=out.replace(/\n{3,}/g,'\n\n').trim();   // collapse gaps left by empty blocks
+  out=out.replace(/\n{3,}/g,'\n\n').trim();
 
   var t=document.getElementById('spiel-text'); if(t) t.textContent=out;
   var w=document.getElementById('spiel-wrap'); if(w) w.style.display='block';
@@ -913,7 +894,6 @@ function applyFields(d) {
     ['s-covers',d.covers],['s-resy',d.resy],['s-foh',d.foh],['s-food',d.food],
     ['s-bev',d.bev],['s-emp',d.emp],['s-hire',d.hire],['s-batch',d.batch],
     ['s-maint',d.maint],['cl-cash-variance',d.cashVariance],['cl-notes',d.clNotes]];
-  // SYNC FIX: never overwrite the field the user is currently typing in
   map.forEach(function(f){ var e=document.getElementById(f[0]); if(e&&f[1]!=null&&f[1]!==''&&e!==document.activeElement) e.value=f[1]; });
   if (d.closer)  { var e=document.getElementById('s-closer');  if(e&&e!==document.activeElement) e.value=d.closer; }
   if (d.manager) { var e=document.getElementById('o-manager'); if(e&&e!==document.activeElement) e.value=d.manager; }
@@ -927,7 +907,6 @@ function applyFields(d) {
   if (d.vips&&d.vips.length) { vips=d.vips; renderVips(); }
   if (d.eighties&&d.eighties.length) { eighties=d.eighties; renderEighties(); }
 
-  // SYNC FIX: union deletion tombstones first so a delete on any device stays deleted everywhere
   if (d.deletedNoteFPs&&d.deletedNoteFPs.length) {
     d.deletedNoteFPs.forEach(function(fp){ if(deletedNoteFPs.indexOf(fp)===-1) deletedNoteFPs.push(fp); });
   }
@@ -937,12 +916,11 @@ function applyFields(d) {
     d.shiftNotes.forEach(function(n){
       if(n.date&&n.date!==today) return;
       var fp=noteFP(n);
-      if(deletedNoteFPs.indexOf(fp)!==-1) return;   // tombstoned — never resurrect
+      if(deletedNoteFPs.indexOf(fp)!==-1) return;
       if(seen.indexOf(fp)===-1){shiftNotes.push(n);seen.push(fp);}
     });
     renderShiftNotes();
   }
-  // SYNC FIX: drop any tombstoned note that slipped in from an older remote payload
   if (deletedNoteFPs.length) {
     var before=shiftNotes.length;
     shiftNotes=shiftNotes.filter(function(n){ return deletedNoteFPs.indexOf(noteFP(n))===-1; });
@@ -951,8 +929,6 @@ function applyFields(d) {
   if (d.openingSpecials&&d.openingSpecials.length) { openingSpecials=d.openingSpecials; renderOpeningSpecials(); renderShiftSpecials(); }
   if (d.shiftExtras&&d.shiftExtras.length) { shiftExtras=d.shiftExtras; renderShiftSpecials(); }
 
-  // Standing points MERGE, never replace — an incoming payload that has not
-  // seen a point yet must not delete it. Tombstones win over additions.
   if (d.removedStandingIds&&d.removedStandingIds.length) {
     d.removedStandingIds.forEach(function(id){ if(removedStandingIds.indexOf(id)===-1) removedStandingIds.push(id); });
   }
@@ -969,7 +945,7 @@ function applyFields(d) {
 
   _applying = false;
   renderRotation();
-  refreshSpiel();   // keep the spiel current after a remote sync
+  refreshSpiel();
 }
 
 // ═══════════════════════════════════════════════
@@ -982,14 +958,14 @@ function loadDraftLocal() {
 }
 
 // ═══════════════════════════════════════════════
-// DEBOUNCED SAVE  (1.5 s after last interaction)
+// DEBOUNCED SAVE
 // ═══════════════════════════════════════════════
 function debounceSave() {
   if (_applying) return;
-  _dirty = true; _editSeq++;   // SYNC FIX: mark unsaved local edits
+  _dirty = true; _editSeq++;
   saveDraftLocal();
-  renderRotation();            // date change swaps the quote and focus set
-  refreshSpiel();              // spiel tracks the form while it's on screen
+  renderRotation();
+  refreshSpiel();
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(cfSaveShift, 1500);
 }
@@ -1002,7 +978,7 @@ document.addEventListener('change', function(){ if(!_applying) debounceSave(); }
 async function cfSaveShift() {
   if (_isSaving) return;
   _isSaving = true;
-  var seqAtSave = _editSeq;   // SYNC FIX: snapshot edit sequence at collect time
+  var seqAtSave = _editSeq;
   saveDraftLocal();
   badge('syncing','↑ saving…');
   try {
@@ -1011,7 +987,7 @@ async function cfSaveShift() {
     var d = await r.json();
     if (d.ok) {
       _lastKvTs = p.savedAt;
-      if (_editSeq === seqAtSave) _dirty = false;   // SYNC FIX: only clear if nothing typed during the fetch
+      if (_editSeq === seqAtSave) _dirty = false;
       badge('ok','✓ saved'); setTimeout(function(){badge('','● live');},2000); showSyncStatus('Saved ✓');
     }
     else badge('error','⚠ err');
@@ -1020,23 +996,21 @@ async function cfSaveShift() {
 }
 
 // ═══════════════════════════════════════════════
-// KV — POLL  (every 10 s, applies if KV is newer,
-// but never while typing or with unsaved edits)
+// KV — POLL
 // ═══════════════════════════════════════════════
 function isEditing() {
   var ae = document.activeElement;
   return !!(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName));
 }
 async function cfPollShift() {
-  if (_polishing) return;            // SYNC FIX: never pull while an AI polish pass is writing fields
-  if (_isSaving || _dirty) return;   // SYNC FIX: never pull over unsaved local edits
-  if (isEditing()) return;           // SYNC FIX: never pull while a field is focused
+  if (_polishing) return;
+  if (_isSaving || _dirty) return;
+  if (isEditing()) return;
   try {
     var r = await fetch(CF+'/shift');
     var d = await r.json();
     if (!d||!d.savedAt) return;
     if (d.serviceDate&&d.serviceDate!==serviceDate()) return;
-    // SYNC FIX: re-check after the network round trip — user may have started typing or a polish may have begun
     if (_dirty || _polishing || isEditing()) return;
     var kvT  = new Date(d.savedAt).getTime();
     var locT = _lastKvTs ? new Date(_lastKvTs).getTime() : 0;
@@ -1051,7 +1025,7 @@ async function cfPollShift() {
 }
 
 // ═══════════════════════════════════════════════
-// AI SECTION POLISH  (cleans shorthand → prose, in place)
+// AI SECTION POLISH
 // ═══════════════════════════════════════════════
 async function polishSection(label, rawText) {
   var trimmed = (rawText||'').trim();
@@ -1077,7 +1051,7 @@ async function polishSection(label, rawText) {
 
 async function polishAllSections(btn) {
   if (_polishing) return;
-  _polishing = true;                 // SYNC FIX: hold off polling for the whole pass
+  _polishing = true;
   var orig = btn ? btn.innerHTML : '';
   if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner" style="width:13px;height:13px"></div>Polishing…'; }
   badge('syncing','✨ polishing…');
@@ -1086,8 +1060,8 @@ async function polishAllSections(btn) {
     for (var i=0; i<POLISH_SECTIONS.length; i++) {
       var id = POLISH_SECTIONS[i][0], label = POLISH_SECTIONS[i][1];
       var el = document.getElementById(id);
-      if (!el || !el.value.trim()) continue;      // skip empty fields
-      if (el === document.activeElement) continue; // don't touch a field being typed in
+      if (!el || !el.value.trim()) continue;
+      if (el === document.activeElement) continue;
       var polished = await polishSection(label, el.value);
       if (polished === null) { failed++; continue; }
       if (polished !== el.value.trim()) { el.value = polished; changed++; }
@@ -1096,7 +1070,7 @@ async function polishAllSections(btn) {
     _polishing = false;
     if (btn) { btn.disabled = false; btn.innerHTML = orig; }
   }
-  if (changed) debounceSave();        // single save after all edits; _dirty keeps polling paused until confirmed
+  if (changed) debounceSave();
   if (failed && !changed) badge('error','⚠ polish failed');
   else { badge('ok','✓ polished '+changed); setTimeout(function(){badge('','● live');},2000); }
 }
@@ -1116,7 +1090,7 @@ async function cfLoadNotes() {
     notes.forEach(function(n){
       if(n.date&&n.date!==today) return;
       var fp=noteFP(n);
-      if(deletedNoteFPs.indexOf(fp)!==-1) return;   // stay deleted — do not pull back in
+      if(deletedNoteFPs.indexOf(fp)!==-1) return;
       if(seen.indexOf(fp)===-1){shiftNotes.push(n);seen.push(fp);}
     });
     renderShiftNotes();
@@ -1237,7 +1211,7 @@ function addShiftNote(){
 }
 function removeShiftNote(i){
   var n=shiftNotes[i];
-  if(n){var fp=noteFP(n);if(deletedNoteFPs.indexOf(fp)===-1)deletedNoteFPs.push(fp);}  // tombstone so polling can't bring it back
+  if(n){var fp=noteFP(n);if(deletedNoteFPs.indexOf(fp)===-1)deletedNoteFPs.push(fp);}
   shiftNotes.splice(i,1);renderShiftNotes();debounceSave();
 }
 function renderShiftNotes(){
@@ -1323,9 +1297,7 @@ function fmtDate(val){
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 // ═══════════════════════════════════════════════
-// TOAST PULL  (fills numbers + 86 + specials sold)
-// Routes read secrets server-side; if creds aren't set yet the Worker
-// returns {error:...} and these fall back to manual entry gracefully.
+// TOAST PULL
 // ═══════════════════════════════════════════════
 function fmtMoney(n){ var x=parseFloat(n); if(isNaN(x)) return null; return '$'+x.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
 function tStatus(id,msg,ok){ var e=document.getElementById(id); if(!e) return; e.textContent=msg||''; e.style.color=ok?'var(--green-deep)':(msg&&msg.indexOf('…')===-1?'var(--red-deep)':'var(--ink-soft)'); }
@@ -1341,7 +1313,6 @@ async function pullToastNumbers(btn){
     if(d.checkAvg!=null){ var a=document.getElementById('s-avg'); if(a&&a!==document.activeElement) a.value=fmtMoney(d.checkAvg)||a.value; }
     if(d.covers!=null){ var c=document.getElementById('s-covers'); if(c&&c!==document.activeElement) c.value=d.covers; }
     _applying=false;
-    // Resy intentionally untouched — not available from Toast (no Toast Tables).
     tStatus('toast-num-status','Updated from Toast · '+(d.checkCount||0)+' checks · Resy still manual',true);
     debounceSave();
   }catch(e){ tStatus('toast-num-status','Could not reach Worker: '+e.message); }
@@ -1366,13 +1337,11 @@ async function pullToast86(btn){
   finally{ tSpin(btn,false); }
 }
 
-// Optional: fill specials "sold" counts from Analytics PMix (async report; needs analytics creds).
 async function pullToastPmix(btn){
   tSpin(btn,true,'Pulling…'); tStatus('toast-pmix-status','Requesting PMix (can take a few seconds)…');
   try{
     var r=await fetch(CF+'/toast/pmix'); var d=await r.json();
     if(d.error){ tStatus('toast-pmix-status','Toast: '+d.error); return; }
-    // Report shape gets confirmed on first real run; match rows to opening specials by name.
     var rows=[]; try{
       var rep=d.report;
       if(Array.isArray(rep)) rows=rep;
@@ -1395,7 +1364,6 @@ async function pullToastPmix(btn){
 }
 
 function appendPreShiftToEmployees(btn){
-  // Gather pre-shift content: logged meeting notes, then the Additional Pre-shift notes textarea
   var lines=[];
   preShiftNotes.forEach(function(n){ if(n&&n.text) lines.push('– '+n.text); });
   var extra=(document.getElementById('o-preshift')||{}).value||'';
@@ -1416,7 +1384,6 @@ function appendPreShiftToEmployees(btn){
 function numOr(x){ var n=parseInt(String(x==null?'':x).replace(/[^0-9-]/g,''),10); return isNaN(n)?null:n; }
 function walkIns(){ var c=numOr(v('s-covers')), r=numOr(v('s-resy')); if(c===null||r===null) return null; var w=c-r; return w>=0?w:null; }
 function pct(sold,total){ var s=parseFloat(sold), t=parseFloat(total); if(isNaN(s)||isNaN(t)||t<=0) return null; return Math.round(s/t*100); }
-// Walk every checklist row (opening + closing) and split into NO (flagged) vs not-yet-marked
 function collectFlags(){
   var no=[], unset=[];
   document.querySelectorAll('.check-row').forEach(function(row){
@@ -1563,8 +1530,6 @@ function copyEmailPlain(){
   if(!eb||eb.querySelector('.email-empty-hint')){alert('Generate the email first — click "Generate Email Preview" on Tab 2.');return;}
   var html=buildOutlookHTML();
   var plain=_plainTextEmail||'';
-  // PREFERRED: async Clipboard API writes a real text/html flavor. New Outlook / Outlook on the web
-  // read that flavor and keep the styling. execCommand often lands only plain text in these clients.
   if(navigator.clipboard && window.ClipboardItem){
     try{
       navigator.clipboard.write([new ClipboardItem({
@@ -1572,7 +1537,7 @@ function copyEmailPlain(){
         'text/plain':new Blob([plain],{type:'text/plain'})
       })]).then(showCopySuccess).catch(function(){ copyViaExecCommand(html); });
       return;
-    }catch(e){ /* fall through to execCommand */ }
+    }catch(e){}
   }
   copyViaExecCommand(html);
 }
@@ -1597,14 +1562,13 @@ function copyExec(){var t=document.getElementById('exec-box').innerText;navigato
 // ═══════════════════════════════════════════════
 // AI EXECUTIVE SUMMARY
 // ═══════════════════════════════════════════════
-// Strip any header the model prepends ("**Executive Summary — <date>**") and all markdown ** markers
 function cleanSummary(t){
   if(!t) return '';
   t=t.trim();
-  t=t.replace(/^\s*\*\*\s*executive summary[\s\S]*?\*\*\s*/i,'');   // bold header block
-  t=t.replace(/^\s*#{1,6}\s*/,'');                                  // stray markdown heading marks
-  t=t.replace(/^\s*executive summary\b\s*[-–—:]*\s*(?:(?:sun|mon|tues|wednes|thurs|fri|satur)day,?\s+[a-z]+\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4})?\s*[-–—:]*\s*/i,''); // plain header + optional date
-  t=t.replace(/\*\*/g,'');                                          // any remaining bold markers
+  t=t.replace(/^\s*\*\*\s*executive summary[\s\S]*?\*\*\s*/i,'');
+  t=t.replace(/^\s*#{1,6}\s*/,'');
+  t=t.replace(/^\s*executive summary\b\s*[-–—:]*\s*(?:(?:sun|mon|tues|wednes|thurs|fri|satur)day,?\s+[a-z]+\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4})?\s*[-–—:]*\s*/i,'');
+  t=t.replace(/\*\*/g,'');
   return t.trim();
 }
 function buildContext(){
@@ -1645,22 +1609,15 @@ async function generateExec(){
   document.getElementById('o-date').value=svcDate;
   document.getElementById('o-manager').value='Adam Brousell';
 
-  // Restore toggles from localStorage first
   try{var tr=localStorage.getItem(toggleKey());if(tr){var ts=JSON.parse(tr);Object.keys(ts).forEach(function(k){applyToggle(k,ts[k]);});}}catch(e){}
 
-  // Standing points load BEFORE the draft restore, so the merge in
-  // applyFields has the local set to union against
   loadStanding();
-
-  // Restore draft from localStorage
   loadDraftLocal();
 
-  // Seed default specials if none
   if(!openingSpecials.length){var ds=DAY_SPECIALS[serviceDay()];if(ds)openingSpecials.push({name:ds,count:'',sold:'',eightysixed:false});openingSpecials.push({name:'Steak Tartare',count:'',sold:'',eightysixed:false});}
   renderOpeningSpecials(); renderShiftSpecials(); renderShiftNotes(); renderPreShiftNotes(); renderEighties(); renderVips();
   renderRotation(); renderStandingPoints();
 
-  // Initial KV load — overrides local if KV is newer
   try {
     badge('syncing','↓ loading…');
     var r=await fetch(CF+'/shift'); var d=await r.json();
@@ -1676,13 +1633,11 @@ async function generateExec(){
   fetchWeather();
   cfLoadNotes();
 
-  // Start polling loops
-  setInterval(cfPollShift, POLL_MS);   // full shift every 10s
-  setInterval(cfLoadNotes, 15000);     // notes every 15s
+  setInterval(cfPollShift, POLL_MS);
+  setInterval(cfLoadNotes, 15000);
 })();
 </script>
 <script>
-// Register service worker for offline use. Guarded — silently no-ops if /sw.js isn't deployed yet.
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){ navigator.serviceWorker.register('/sw.js').catch(function(){}); });
 }
