@@ -406,6 +406,10 @@ function categorize(name) {
   // 5) NA wine / NA beer / zero-proof bottles
   if (/^na\s|\bna\s+(sparkling|wine|rose|red|white|brut|beer)\b|non[- ]?alcoholic|zero proof|\bleitz\b|\bgruvi\b|\blyre'?s\b|\bseedlip\b|\bghia\b|\bfre\b/.test(n)) return 'na';
 
+  // 5b) Bottled water. Rung as "BTL" like wine bottles, so it MUST be caught
+  //     before the ^btl wine rule below — otherwise Still/Sparkling Water lands in Wine.
+  if (/still water|sparkling water|bottled water/.test(n)) return 'na';
+
   // 6) Wine.
   // FIX: Added ^btl:|^btl\s to catch all "BTL:" bottle entries from Toast
   if (/d[']?yquem|latour pauillac|somm selection/.test(n)) return 'wine';
