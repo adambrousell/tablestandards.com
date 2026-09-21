@@ -227,7 +227,7 @@ const WORKER_URL = 'https://rpi-pmix-backend.amusementstandards.workers.dev';
 const EXCLUDE_FEES_FROM_TOTALS = false;
 const KIDS_OWN_CATEGORY = true;
 
-/* UPDATED: Fixed uncategorized items */
+/* UPDATED: Fixed Sep 14 uncategorized items — Dover Sole, Boozy Grape Soda, Red Wine */
 const ITEM_OVERRIDES = {
   // Spirits / aperitifs that Toast filed under Entrées
   'cocchi americano bianco': 'spirit',
@@ -257,6 +257,10 @@ const ITEM_OVERRIDES = {
   'virgin mary': 'na',
   'honey deuce': 'cocktail',
   'crudo': 'rawbar',
+  // Week of Sep 14 uncategorized items — now fixed
+  'dover sole': 'food',            // entrée; no 'sole' pattern in the food rule below
+  'boozy grape soda': 'cocktail',  // spiked soda, not an NA "soda"
+  'red wine': 'wine',              // "Red Wine" button — exact-match, so the generic 'wine' override misses it
   // Catch-all "Wine" button in Toast — bottles rung with no SKU attached.
   'wine': 'wine',
   // Lunch-only item
