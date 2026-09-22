@@ -1036,10 +1036,7 @@ document.addEventListener('input',  function(){ if(!_applying) debounceSave(); }
 document.addEventListener('change', function(){ if(!_applying) debounceSave(); });
 
 // ═══════════════════════════════════════════════
-// KV — SAVE
-// Tonight: always syncs to the Worker.
-// Earlier report: syncs only while tonight hasn't claimed the Worker slot;
-// otherwise it saves on this device so tonight's live report isn't overwritten.
+// KV — SAVE  (Worker files each report under its own service date)
 // ═══════════════════════════════════════════════
 async function cfSaveShift() {
   if (_isSaving) return;
@@ -1048,19 +1045,6 @@ async function cfSaveShift() {
   saveDraftLocal();
   badge('syncing','↑ saving…');
   try {
-    if (workDate) {
-      var slotFree = false;
-      try {
-        var cr = await fetch(CF+'/shift'); var cd = await cr.json();
-        cacheSnapshot(cd);
-        slotFree = workDate < realServiceDate() && (!cd || !cd.savedAt || cd.serviceDate !== realServiceDate());
-      } catch(e){}
-      if (!slotFree) {
-        if (_editSeq === seqAtSave) _dirty = false;
-        badge('ok','✓ saved on this device'); setTimeout(function(){badge('','● live');},2000);
-        return;
-      }
-    }
     var p = collect();
     var r = await fetch(CF+'/shift',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});
     var d = await r.json();
@@ -1086,10 +1070,12 @@ async function cfPollShift() {
   if (_isSaving || _dirty) return;
   if (isEditing()) return;
   try {
-    var r = await fetch(CF+'/shift');
+    var polledDate = serviceDate();
+    var r = await fetch(CF+'/shift?date='+polledDate);
     var d = await r.json();
     if (!d||!d.savedAt) return;
-    if (d.serviceDate&&d.serviceDate!==serviceDate()) { cacheSnapshot(d); return; }
+    if (polledDate!==serviceDate()) return;   // report switched mid-request
+    if (d.serviceDate&&d.serviceDate!==serviceDate()) return;
     if (_dirty || _polishing || isEditing()) return;
     var kvT  = new Date(d.savedAt).getTime();
     var locT = _lastKvTs ? new Date(_lastKvTs).getTime() : 0;
@@ -1158,11 +1144,11 @@ async function polishAllSections(btn) {
 // NOTES — KV
 // ═══════════════════════════════════════════════
 async function cfPostNote(note) {
-  try { await fetch(CF+'/notes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({},note,{date:serviceDate()}))}); } catch(e){}
+  try { await fetch(CF+'/notes?date='+serviceDate(),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({},note,{date:serviceDate()}))}); } catch(e){}
 }
 async function cfLoadNotes() {
   try {
-    var r=await fetch(CF+'/notes'); var notes=await r.json();
+    var r=await fetch(CF+'/notes?date='+serviceDate()); var notes=await r.json();
     if(!notes||!notes.length) return;
     var today=serviceDate();
     var seen=shiftNotes.map(noteFP);
@@ -1176,7 +1162,7 @@ async function cfLoadNotes() {
   } catch(e){}
 }
 async function cfClearNotes() {
-  try { await fetch(CF+'/notes',{method:'DELETE'}); shiftNotes=[]; deletedNoteFPs=[]; renderShiftNotes(); debounceSave(); showSyncStatus('Notes cleared ✓'); } catch(e){ showSyncStatus('Clear failed'); }
+  try { await fetch(CF+'/notes?date='+serviceDate(),{method:'DELETE'}); shiftNotes=[]; deletedNoteFPs=[]; renderShiftNotes(); debounceSave(); showSyncStatus('Notes cleared ✓'); } catch(e){ showSyncStatus('Clear failed'); }
 }
 function showSyncStatus(msg) {
   var el=document.getElementById('sync-status'); if(!el) return;
@@ -1765,6 +1751,19 @@ function resetForm(){
   document.querySelectorAll('.carry-chip').forEach(function(c){ c.remove(); });
   _applying=false;
 }
+// Pull the last few saved reports from the Worker so any device can finish or carry them
+async function syncHistory(){
+  try{
+    var r=await fetch(CF+'/shift/list?days=14'); var d=await r.json();
+    var cur=serviceDate();
+    var dates=((d&&d.dates)||[]).filter(function(x){ return x<cur; }).slice(0,4);
+    var snaps=await Promise.all(dates.map(function(x){
+      return fetch(CF+'/shift?date='+x).then(function(res){ return res.json(); }).catch(function(){ return null; });
+    }));
+    snaps.forEach(cacheSnapshot);
+  }catch(e){}
+}
+
 function renderAll(){
   renderOpeningSpecials(); renderShiftSpecials(); renderShiftNotes(); renderPreShiftNotes();
   renderEighties(); renderVips(); renderRotation(); renderStandingPoints(); refreshSpiel();
@@ -1789,6 +1788,7 @@ async function switchDate(target){
   if(d) applyFields(d);
   if(!openingSpecials.length) defaultSpecials();
   renderAll();
+  cfLoadNotes();
   var wx=document.getElementById('o-weather');
   if(!wx.value){ if(!workDate){ wx.placeholder='Fetching weather…'; fetchWeather(); } else wx.placeholder='Weather that night'; }
   _dirty=false;
@@ -1797,7 +1797,7 @@ async function switchDate(target){
 
   // Pick up anything newer another device pushed for this date
   try{
-    var r=await fetch(CF+'/shift'); var k=await r.json();
+    var r=await fetch(CF+'/shift?date='+target); var k=await r.json();
     if(k&&k.savedAt&&k.serviceDate===target&&serviceDate()===target&&new Date(k.savedAt).getTime()>new Date((d&&d.savedAt)||0).getTime()){
       _lastKvTs=k.savedAt; applyFields(k); saveDraftLocal();
     } else cacheSnapshot(k);
@@ -2052,7 +2052,7 @@ async function aiParse(raw){
     '"sales", "avg", "covers", "resy", "weather", "foh", "food", "bev", "emp", "hire", "batch", "maint", "cashVariance" (strings, "" if absent), '+
     '"eighties" (array of strings), "vips" (array of names). '+
     'Copy wording verbatim from the email. Never invent, infer, or summarize. Write 86 with no apostrophe.\n\nEmail:\n'+raw.slice(0,12000);
-  var r=await fetch(CF+'/summary',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt})});
+  var r=await fetch(CF+'/summary',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:prompt,max_tokens:2000})});
   var d=await r.json();
   var t=((d.content&&d.content[0]&&d.content[0].text)||'').replace(/```json|```/g,'').trim();
   var a=t.indexOf('{'), b=t.lastIndexOf('}');
@@ -2194,7 +2194,7 @@ function wireHistoryUI(){
 
   try {
     badge('syncing','↓ loading…');
-    var r=await fetch(CF+'/shift'); var d=await r.json();
+    var r=await fetch(CF+'/shift?date='+svcDate); var d=await r.json();
     if(d&&d.savedAt&&(!d.serviceDate||d.serviceDate===svcDate)){
       var kvT=new Date(d.savedAt).getTime();
       var locRaw=localStorage.getItem(draftKey());
@@ -2203,11 +2203,11 @@ function wireHistoryUI(){
       else{_lastKvTs=d.savedAt;badge('','● live');}
       kvCache=d;
     } else {
-      cacheSnapshot(d);   // Worker is still holding an earlier night — keep a copy
       badge('','● live');
     }
   } catch(e){ badge('error','⚠ offline'); }
 
+  await syncHistory();
   autoCarry();
   updateBanner(); updatePrevButtons();
 
