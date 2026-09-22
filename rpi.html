@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -153,7 +152,12 @@ textarea{resize:vertical;min-height:72px;line-height:1.55}
 .vip-quick:hover,.vip-quick.added{background:var(--gold-pale);border-color:var(--gold);color:var(--gold)}
 
 /* 86 */
-.eighty-row{display:grid;grid-template-columns:1fr 32px;gap:8px;margin-bottom:8px;align-items:center}
+.eighty-row{display:grid;grid-template-columns:1fr auto 32px;gap:8px;margin-bottom:8px;align-items:center}
+.w86-btn{font-family:'Josefin Sans',sans-serif;font-size:11px;font-weight:600;padding:6px 10px;border-radius:5px;border:1px solid var(--border);background:#fff;color:var(--ink-soft);cursor:pointer;white-space:nowrap;touch-action:manipulation}
+.w86-btn:hover{border-color:var(--gold);color:var(--gold)}
+.w86-btn.sent{background:var(--gold-pale);border-color:#e0c98a;color:var(--gold);cursor:default}
+.w86-btn:disabled{opacity:.6}
+.w86-food{font-size:10px;letter-spacing:.05em;color:var(--ink-faint);padding:0 6px;white-space:nowrap}
 
 /* NOTES */
 .note-entry{display:flex;align-items:flex-start;gap:10px;background:var(--cream-warm);border:.5px solid var(--border-light);border-left:3px solid var(--gold);border-radius:0 6px 6px 0;padding:8px 12px;animation:fadeUp .2s ease both}
@@ -693,6 +697,11 @@ var workDate    = null;   // null = tonight's live report; 'YYYY-MM-DD' = an ear
 var kvCache     = null;   // last Worker snapshot seen
 var parsedImport = null;  // last parsed email
 
+// Wine 86 reorder queue
+var foodEighties = [];    // 86 rows that came from the Toast food pull (no wine button)
+var wine86Sent   = {};    // normalized 86 text -> {id, at}; kept across nights so nothing is queued twice
+var WINE86_SENT_KEY = 'rpi_wine86_sent';
+
 var CF = 'https://rpi-shift-api.amusementstandards.workers.dev';
 
 var DAY_SPECIALS = {0:'Lobster Frites',1:'Poulet en Croûte',2:'Oyster Rockefeller',3:'USDA Prime French Dip',4:'Crispy Fish Frites',5:'Bouillabaisse Provençale',6:'Prime Short Rib Bourguignon'};
@@ -940,7 +949,8 @@ function collect() {
     preShiftNotes: preShiftNotes, preShiftSummary: preShiftSummary,
     vips: vips, shiftNotes: shiftNotes, deletedNoteFPs: deletedNoteFPs,
     standingPoints: standingPoints, removedStandingIds: removedStandingIds,
-    openingSpecials: openingSpecials, shiftExtras: shiftExtras, eighties: eighties
+    openingSpecials: openingSpecials, shiftExtras: shiftExtras, eighties: eighties,
+    foodEighties: foodEighties, wine86Sent: wine86Sent
   };
   var sent = lsGet('rpi_sent_'+serviceDate());
   if (sent) d.sentAt = sent;
@@ -967,6 +977,8 @@ function applyFields(d) {
   if (d.preShiftNotes&&d.preShiftNotes.length) { preShiftNotes=d.preShiftNotes; renderPreShiftNotes(); }
   if (d.preShiftSummary) { preShiftSummary=d.preShiftSummary; showPreShiftSummary(preShiftSummary); }
   if (d.vips&&d.vips.length) { vips=d.vips; renderVips(); }
+  if (d.foodEighties&&d.foodEighties.length) { d.foodEighties.forEach(function(x){ if(foodEighties.indexOf(x)===-1) foodEighties.push(x); }); }
+  if (d.wine86Sent&&typeof d.wine86Sent==='object') { Object.keys(d.wine86Sent).forEach(function(k){ if(!wine86Sent[k]) wine86Sent[k]=d.wine86Sent[k]; }); saveWine86Sent(); }
   if (d.eighties&&d.eighties.length) { eighties=d.eighties; renderEighties(); }
 
   if (d.deletedNoteFPs&&d.deletedNoteFPs.length) {
@@ -1211,8 +1223,73 @@ function renderVips(){
 function addEighty(){eighties.push('');renderEighties();}
 function renderEighties(){
   document.getElementById('eighty-list').innerHTML=eighties.map(function(e,i){
-    return '<div class="eighty-row"><input type="text" placeholder="Bin No., name, vintage…" value="'+esc(e||'').replace(/"/g,'&quot;')+'" oninput="eighties['+i+']=this.value;debounceSave()"><button class="rm" onclick="eighties.splice('+i+',1);renderEighties();debounceSave()" aria-label="Remove">×</button></div>';
+    return '<div class="eighty-row"><input type="text" placeholder="Bin No., name, vintage…" value="'+esc(e||'').replace(/"/g,'&quot;')+'" oninput="eighties['+i+']=this.value;debounceSave();updateWine86Btn('+i+')">'+
+      '<span id="w86-slot-'+i+'">'+wine86BtnHTML(e,i)+'</span>'+
+      '<button class="rm" onclick="eighties.splice('+i+',1);renderEighties();debounceSave()" aria-label="Remove">×</button></div>';
   }).join('');
+}
+
+// ═══════════════════════════════════════════════
+// WINE 86 → OWNERSHIP REORDER QUEUE  (Worker: /wine86)
+// ═══════════════════════════════════════════════
+function w86Key(text){ return String(text||'').toLowerCase().replace(/\s+/g,' ').trim(); }
+function isFood86(text){ var k=w86Key(text); return foodEighties.some(function(f){ return w86Key(f)===k; }); }
+function loadWine86Sent(){ try{ var r=localStorage.getItem(WINE86_SENT_KEY); if(r) wine86Sent=JSON.parse(r)||{}; }catch(e){} }
+function saveWine86Sent(){ try{ localStorage.setItem(WINE86_SENT_KEY, JSON.stringify(wine86Sent)); }catch(e){} }
+
+function wine86BtnHTML(text,i){
+  if(!String(text||'').trim()) return '';
+  if(isFood86(text)) return '<span class="w86-food" title="Food 86 from Toast">food</span>';
+  var sent=wine86Sent[w86Key(text)];
+  if(sent) return '<button class="w86-btn sent" type="button" title="On the wine reorder list'+(sent.at?' since '+esc(new Date(sent.at).toLocaleDateString()):'')+'">🍷 Sent</button>';
+  return '<button class="w86-btn" type="button" onclick="sendWine86('+i+',this)" title="Add to the wine reorder list for ownership">🍷 Reorder</button>';
+}
+function updateWine86Btn(i){ var slot=document.getElementById('w86-slot-'+i); if(slot) slot.innerHTML=wine86BtnHTML(eighties[i],i); }
+
+// "Bin 412 Chablis Premier Cru 2021" -> {bin:'412', vintage:'2021', name:'Chablis Premier Cru'}
+function parseWine86(text){
+  var t=String(text||'').trim(), bin='', vintage='', m;
+  if((m=t.match(/\bbin\s*(?:no\.?|#)?\s*([A-Za-z]?\d+[A-Za-z]?)\b/i))){ bin=m[1]; t=t.replace(m[0],' '); }
+  else if((m=t.match(/^#?\s*(\d{2,5}[A-Za-z]?)\b/))){ bin=m[1]; t=t.replace(m[0],' '); }
+  if((m=t.match(/\b((?:19|20)\d{2}|NV)\b(?!.*\b(?:19|20)\d{2}\b)/i))){ vintage=m[1].toUpperCase()==='NV'?'NV':m[1]; t=t.replace(m[0],' '); }
+  var name=t.replace(/\s*[,\u2013\u2014|]\s*/g,' ').replace(/^[\s\-:]+|[\s\-:]+$/g,'').replace(/\s{2,}/g,' ').trim();
+  return {name:name||String(text).trim(), bin:bin, vintage:vintage};
+}
+
+async function sendWine86(i,btn){
+  var text=String(eighties[i]||'').trim(); if(!text) return;
+  var key=w86Key(text);
+  if(wine86Sent[key]){ updateWine86Btn(i); return; }
+  var w=parseWine86(text);
+  if(btn){ btn.disabled=true; btn.textContent='Sending…'; }
+  try{
+    // Skip if it's already waiting on the list (another manager or device sent it)
+    var existing=null;
+    try{
+      var lr=await fetch(CF+'/wine86'); var list=await lr.json();
+      if(Array.isArray(list)) existing=list.filter(function(x){
+        return !x.ordered && w86Key(x.name)===w86Key(w.name) && String(x.vintage||'')===String(w.vintage||'') && String(x.bin||'')===String(w.bin||'');
+      })[0]||null;
+    }catch(e){}
+    var id, at=new Date().toISOString();
+    if(existing){ id=existing.id; at=existing.addedAt||at; }
+    else{
+      var r=await fetch(CF+'/wine86',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        name:w.name, bin:w.bin, vintage:w.vintage,
+        addedBy:v('s-closer')||v('o-manager')||'',
+        note:'86 on '+fmtDate(serviceDate())+' (shift report)'
+      })});
+      var d=await r.json();
+      if(!d||!d.ok) throw new Error((d&&d.error)||'not saved');
+      id=d.item&&d.item.id;
+    }
+    wine86Sent[key]={id:id||'', at:at};
+    saveWine86Sent(); debounceSave();
+    flash('ok', existing?'✓ already on reorder list':'✓ sent to wine reorder list');
+  }catch(e){
+    flash('error','⚠ wine list: '+e.message);
+  }
+  updateWine86Btn(i);
 }
 
 // ═══════════════════════════════════════════════
@@ -1410,6 +1487,7 @@ async function pullToast86(btn){
       var label=it.name||it.guid; if(!label) return;
       var dup=eighties.some(function(e){ return e && e.toLowerCase().indexOf(String(label).toLowerCase())!==-1; });
       if(!dup){ eighties.push(label); added++; }
+      if(foodEighties.indexOf(label)===-1) foodEighties.push(label);
     });
     renderEighties(); debounceSave();
     tStatus('toast-86-status', added?('Added '+added+' that went 86 today'):(items.length?'All '+items.length+' already listed':'Nothing new went 86 today'), added>0);
@@ -1742,7 +1820,7 @@ function resetForm(){
   toggleState={};
   document.querySelectorAll('.tog.on').forEach(function(b){ b.classList.remove('on'); });
   vips=[]; eighties=[]; shiftNotes=[]; deletedNoteFPs=[]; preShiftNotes=[]; preShiftSummary='';
-  openingSpecials=[]; shiftExtras=[];
+  openingSpecials=[]; shiftExtras=[]; foodEighties=[];
   _lastKvTs=null; _plainTextEmail='';
   var w=document.getElementById('ps-summary-wrap'); if(w) w.style.display='none';
   var eb=document.getElementById('email-body-render');
@@ -1834,6 +1912,7 @@ function carryOpenItems(pd){
     if(!val||!el||el.value.trim()) return;
     el.value=val; markCarried(el,label); n++;
   });
+  (pd.foodEighties||[]).forEach(function(x){ if(foodEighties.indexOf(x)===-1) foodEighties.push(x); });
   if(mergeEighties(pd.eighties)){ renderEighties(); markCarried(document.getElementById('eighty-list'),label); n++; }
   if(n) debounceSave();
   return n;
@@ -1875,6 +1954,8 @@ function pullPrev(field,target){
   var p=prevField(field); if(!p) return;
   var label=shortDate(p.date);
   if(field==='eighties'){
+    var src=readDraft(p.date);
+    ((src&&src.foodEighties)||[]).forEach(function(x){ if(foodEighties.indexOf(x)===-1) foodEighties.push(x); });
     var added=mergeEighties(p.value); renderEighties();
     if(added) markCarried(document.getElementById('eighty-list'),label);
   } else {
@@ -2186,6 +2267,7 @@ function wireHistoryUI(){
   try{var tr=localStorage.getItem(toggleKey());if(tr){var ts=JSON.parse(tr);Object.keys(ts).forEach(function(k){applyToggle(k,ts[k]);});}}catch(e){}
 
   loadStanding();
+  loadWine86Sent();
   loadDraftLocal();
 
   if(!openingSpecials.length) defaultSpecials();
