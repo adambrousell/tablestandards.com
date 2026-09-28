@@ -66,6 +66,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
           <th style="padding:4px 6px;font-weight:500;">Plat du Jour</th>
           <th style="padding:4px 6px;font-weight:500;width:90px;">PDJ count</th>
           <th style="padding:4px 6px;font-weight:500;width:90px;">Steak Tartare</th>
+          <th style="padding:4px 6px;font-weight:500;width:90px;">Dover Sole</th>
         </tr>
       </thead>
       <tbody id="manual-specials-body"></tbody>
@@ -107,10 +108,11 @@ window.addEventListener('load', () => {
       <td style="padding:4px 6px;color:var(--text-2);">${PDJ_SCHEDULE[d]}</td>
       <td style="padding:4px 6px;"><input id="ms-${d}-pdj" placeholder="e.g. 13/20" style="width:100%;border:1px solid var(--border);border-radius:4px;padding:5px 7px;font-size:12px;background:var(--bg);outline:none;"></td>
       <td style="padding:4px 6px;"><input id="ms-${d}-tt" placeholder="e.g. 5/7" style="width:100%;border:1px solid var(--border);border-radius:4px;padding:5px 7px;font-size:12px;background:var(--bg);outline:none;"></td>
+      <td style="padding:4px 6px;"><input id="ms-${d}-ds" placeholder="e.g. 4/6" style="width:100%;border:1px solid var(--border);border-radius:4px;padding:5px 7px;font-size:12px;background:var(--bg);outline:none;"></td>
     </tr>`).join('');
 });
 
-// "13/20" -> sold 13 avail 20 · "13" -> sold 13 · "86" -> 86'd · blank -> null
+// "13/20" -> sold 13 avail 20 · "13" -> sold 13 · "86" -> 86 · blank -> null
 function parseSpecEntry(str) {
   const s = (str || '').trim();
   if (!s) return null;
@@ -128,9 +130,12 @@ function collectManualSpecials() {
     const pdjEl = document.getElementById('ms-' + d + '-pdj');
     const ttEl  = document.getElementById('ms-' + d + '-tt');
     const pdj = parseSpecEntry(pdjEl && pdjEl.value);
+    const dsEl  = document.getElementById('ms-' + d + '-ds');
     const tt  = parseSpecEntry(ttEl && ttEl.value);
+    const ds  = parseSpecEntry(dsEl && dsEl.value);
     if (pdj) out.push({ d, name: PDJ_SCHEDULE[d], sold: pdj.sold, avail: pdj.avail, x: pdj.x });
     if (tt)  out.push({ d, name: 'Steak Tartare',  sold: tt.sold,  avail: tt.avail,  x: tt.x });
+    if (ds)  out.push({ d, name: 'Dover Sole',     sold: ds.sold,  avail: ds.avail,  x: ds.x });
   });
   return out;
 }
