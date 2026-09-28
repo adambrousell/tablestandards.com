@@ -227,7 +227,7 @@ const WORKER_URL = 'https://rpi-pmix-backend.amusementstandards.workers.dev';
 const EXCLUDE_FEES_FROM_TOTALS = false;
 const KIDS_OWN_CATEGORY = true;
 
-/* UPDATED: Fixed Sep 14 uncategorized items — Dover Sole, Boozy Grape Soda, Red Wine */
+/* UPDATED Sep 28: mapped week-of-Sep-21 uncategorized items; Dover Sole now its own pinned nightly category */
 const ITEM_OVERRIDES = {
   // Spirits / aperitifs that Toast filed under Entrées
   'cocchi americano bianco': 'spirit',
@@ -258,9 +258,17 @@ const ITEM_OVERRIDES = {
   'honey deuce': 'cocktail',
   'crudo': 'rawbar',
   // Week of Sep 14 uncategorized items — now fixed
-  'dover sole': 'food',            // entrée; no 'sole' pattern in the food rule below
+  // Dover Sole moved to its own pinned nightly category ('sole') — see categorize()
   'boozy grape soda': 'cocktail',  // spiked soda, not an NA "soda"
   'red wine': 'wine',              // "Red Wine" button — exact-match, so the generic 'wine' override misses it
+  // Week of Sep 21 uncategorized items — now fixed
+  'afterglow': 'cocktail',
+  'harvest g&t': 'cocktail',       // no "gin" in the name, so the spirit rule misses it
+  'hamachi crudo': 'rawbar',
+  'oeuf escossais': 'starter',     // Scotch egg
+  'oeuf ecossais': 'starter',
+  'cotes de nuits': 'wine',        // bottle rung without the BTL: prefix
+  'siete misterios doba yej': 'spirit', // mezcal
   // Catch-all "Wine" button in Toast — bottles rung with no SKU attached.
   'wine': 'wine',
   // Lunch-only item
@@ -307,14 +315,14 @@ const CAT_COLORS = {
   cocktail:'#2150a0', wine:'#5c2d6e', food:'#c0452a',
   starter:'#2a5f3c', rawbar:'#155e75', dessert:'#b8942a', spirit:'#4a7a8a',
   beer:'#7a5c2a', coffee:'#6b4e3d', na:'#888780',
-  events:'#7a3060', pdj:'#0f766e', tartare:'#8f2d44', lunch:'#556677', sides:'#9c6644',
+  events:'#7a3060', pdj:'#0f766e', tartare:'#8f2d44', sole:'#b5651d', lunch:'#556677', sides:'#9c6644',
   kids:'#a0522d', fees:'#6b6b67', uncat:'#8a6d1a',
 };
 const CAT_LABELS = {
   cocktail:'Cocktails & martinis', wine:'Wine (glass & bottle)', food:'Entrées',
   starter:'Starters', rawbar:'Raw bar (Les Fruits de Mer)', dessert:'Desserts', spirit:'Spirits',
   beer:'Beer', coffee:'Coffee & tea', na:'NA beverages',
-  events:'Private Events & Wine Dinner', pdj:'Weekly specials (Plats du Jour)', tartare:'Steak Tartare (nightly)', lunch:'Lunch only items', sides:'Sides',
+  events:'Private Events & Wine Dinner', pdj:'Weekly specials (Plats du Jour)', tartare:'Steak Tartare (nightly)', sole:'Dover Sole (nightly)', lunch:'Lunch only items', sides:'Sides',
   kids:'Kids menu', fees:'Fees & service charges', uncat:'Uncategorized — needs mapping',
 };
 
@@ -393,13 +401,14 @@ function categorize(name) {
   if (/^wd\s|wine dinner/.test(n)) return 'events';
   if (/^p\s*\.|private event adult|private event child|event decor|grazing table|beer.*wine.*spritz|beverage package|\bpackage\b/.test(n)) return 'events';
   if (/steak tartare/.test(n)) return 'tartare';
+  if (/dover sole/.test(n)) return 'sole';
 
   // 3) Daypart / sides. Omelet spelling is loose on purpose
   if (/omelet(te)?s?|eggs benedict|pan bagnat|chicken salad sandwich|salmon burger|crispy fish sandwich|^parfait$|lunch oyster/.test(n)) return 'lunch';
   if (/pommes frites|pommes duchess|haricot vert|peppers carmen|corn & lardons|corn.*lardons|^side\s|side donuts/.test(n)) return 'sides';
 
   // 4) Cocktails.
-  if (/espresso martini|salt air|filthy|metropolitan|jockey club|river pointe|the rpi|grasshopper|in fashion|saint joe|lychee|can't elope|pep in your|bee sting|negroni|strawberry fields|colada|hh:|martini happy hour|ancho problem|rhubarb|rhu-barbara/.test(n)) return 'cocktail';
+  if (/espresso martini|afterglow|harvest g\s*&\s*t|salt air|filthy|metropolitan|jockey club|river pointe|the rpi|grasshopper|in fashion|saint joe|lychee|can't elope|pep in your|bee sting|negroni|strawberry fields|colada|hh:|martini happy hour|ancho problem|rhubarb|rhu-barbara/.test(n)) return 'cocktail';
   if (/aperol spritz|hugo spritz|french 75|paper plane|mimosa|bloody mary|lemon drop|mojito|moscow mule|vesper|garden state|cavaillon|berry spritz|cocogroni|sangria/.test(n)) return 'cocktail';
   if (/na almost|na pear|na espresso|na summer/.test(n)) return 'cocktail';
 
@@ -415,7 +424,7 @@ function categorize(name) {
   if (/d[']?yquem|latour pauillac|somm selection/.test(n)) return 'wine';
   if (/^gl:|^gl\s|^btl:|^btl\s|cremant|brut ros|moet|drappier|folle blanche|albarino|ladoucette|drouhin.*secondes|pouilly|peyrassol|moulin.*vent|cotes du rh|guyon 2022|routestock|route stock|chappellet mountain|haut l'artigue|haut-l|pazo das bruxas|gros plant|jean aubron|saint-cyrgues|costieres/.test(n)) return 'wine';
   if (/wine by the bottle|btg bottle|sancerre|meursault|chablis|puligny|cabernet sauv|pride mountain|ridge.*lytton|kistler|o'shaugh|aubert.*carneros|turley|ducru|chauvin 2019|smith haut lafitte|leon beyer|melville|chevillon|cathiard|camus-bruchon|agrapart|sulauze|domaine pierre martin|francois de la roche|lauverjat|manarine|lafarge|domaine guyon|drouhin.*cotes de beaune|joseph drouhin|o'shaughnessy|maitre de chai|le petit ducru|le petite smith|pessac|picpoul|lieu dit|fess parker|daniel rion|petitot|hautes co|phileandre|lynch bages|cantenac|sociando|solitude|la rame|saint cyr|morgon|giacometti|patrimonio|arnot-roberts|fullerton|jk carriere|hundred acre|screaming eagle|lavieille|isabelle garrault|julie et patrick/.test(n)) return 'wine';
-  if (/\bsherry\b|\bmadeira\b|oloroso|amontillado|fino\b/.test(n)) return 'wine';
+  if (/cotes? de nuits|nuits[- ]saint[- ]georges|gevrey|vosne|chambolle|\bsherry\b|\bmadeira\b|oloroso|amontillado|fino\b/.test(n)) return 'wine';
   if (/^\d{3,4}[:\s]|^b\d{2,4}\b|^2\d{3}[:\s]/.test(n)) return 'wine';
 
   // 7) Spirits
@@ -423,7 +432,7 @@ function categorize(name) {
   if (/\bcasamigos|don julio|fortaleza|lalo\b|pueblo viejo|casa dragones|del maguey|clase azul|g4 blanco|g4 reposado|g4 anejo|tanteo|\bcodigo\b/.test(n)) return 'spirit';
   if (/\bangels envy|blanton|buffalo trace|bulleit|bushmill|dewars|high west|jack daniel|jameson|johnnie walker|laguavulin|lagavulin|macallan|maker's mark|michter|oban 14|sazerac rye|whistlepig|widow jane|woodford reserve|basil hayden|four roses|penelope|glenlivet|glenmorangie|glenfiddich|old rip van winkle|crown royal|knob creek|elijah craig|eagle rare|weller|wild turkey|jim beam|rittenhouse|redbreast|hibiki|nikka|ardbeg|talisker|balvenie|springbank/.test(n)) return 'spirit';
   if (/chartreuse|\bcognac\b|pierre ferrand|grand marnier|fernet|lazzaroni|molinari sambuca|nonino amaro|averna amaro|limoncello|bailey|campari|taylor fladgate|\bport\b|braulio|frangelico|\brum\b|havana|havanna|captain morgan|ron zacapa|bacardi|st\. agrestis|varnelli|hennessy|remy martin|courvoisier|cointreau|chambord|disaronno|drambuie|kahlua|mr\.? black/.test(n)) return 'spirit';
-  if (/\bcocchi\b|\blillet\b|\bdubonnet\b|punt e mes|carpano|\bdolin\b|\bsuze\b|\bcynar\b|montenegro|meletti|cardamaro|\bbyrrh\b|\bamericano bianco\b/.test(n)) return 'spirit';
+  if (/siete misterios|doba[- ]yej|montelobos|ilegal mezcal|\bcocchi\b|\blillet\b|\bdubonnet\b|punt e mes|carpano|\bdolin\b|\bsuze\b|\bcynar\b|montenegro|meletti|cardamaro|\bbyrrh\b|\bamericano bianco\b/.test(n)) return 'spirit';
   if (/\b(bourbon|whiskey|whisky|scotch|single malt|gin|tequila|mezcal|armagnac|grappa|liqueur|amaro|amaretto|aperitif|vermouth|sambuca|absinthe|calvados|eau de vie)\b/.test(n)) return 'spirit';
 
   // 8) Coffee / NA / beer.
@@ -439,8 +448,8 @@ function categorize(name) {
   // 10) Food.
   if (/wagyu|waygu|ratatouille|paillard|moules frites|lasagna|au poivre|pork chop|steak frites|roast chicken for|ny strip|new york strip|porterhouse|salmon\b|saumon|medaillons|branzino|red snapper|snapper|kids tenders|kids cheeseburger|chicken fingers/.test(n)) return 'food';
   if (/1\s*\/\s*2\s*(dozen|dzn)|half\s*dozen|1\/2\s*dozen/.test(n)) return 'rawbar';
-  if (/crudo tasting|shrimp cocktail|tuna tartare|ceviche|fluke|caviar.*donut|dune fox|sloop point|salty rose|laughing gull|little darling|violet sky|swan point|sugar shack|barnegat/.test(n)) return 'rawbar';
-  if (/bread service|little gem|garden salad|asparagus mimosa|escargots|^jambon|sardine toast|crepe aux|berries.*cream|salad de tomates|eggplant|peaches/.test(n)) return 'starter';
+  if (/crudo tasting|\bcrudo\b|hamachi|shrimp cocktail|tuna tartare|ceviche|fluke|caviar.*donut|dune fox|sloop point|salty rose|laughing gull|little darling|violet sky|swan point|sugar shack|barnegat/.test(n)) return 'rawbar';
+  if (/bread service|scotch egg|\boeuf\b|little gem|garden salad|asparagus mimosa|escargots|^jambon|sardine toast|crepe aux|berries.*cream|salad de tomates|eggplant|peaches/.test(n)) return 'starter';
   if (/carrot.*cake|meringue cake|chocolate cake|cheesecake|raspberry tart|creme brulee|banana split|brownie sundae|banana chip ice|brown butter ice|chocolate ice|strawberry ice|vanilla ice|mint ice|\bsorbet\b|\bgelato\b|fromage/.test(n)) return 'dessert';
   if (/custom cake|fet d'or/.test(n)) return 'food';
 
@@ -783,7 +792,7 @@ function renderDashboard() {
     </div>`;
   }).join('');
 
-  const PIN_ORDER = { pdj: 0, tartare: 1, uncat: 2 };
+  const PIN_ORDER = { pdj: 0, tartare: 1, sole: 2, uncat: 3 };
   const hmOrder = sorted.slice().sort((a, b) => {
     const pa = (a.key in PIN_ORDER) ? PIN_ORDER[a.key] : 99;
     const pb = (b.key in PIN_ORDER) ? PIN_ORDER[b.key] : 99;
@@ -792,8 +801,8 @@ function renderDashboard() {
   });
   let hmHtml = '';
   hmOrder.forEach(cat => {
-    if (cat.key === 'tartare') {
-      hmHtml += renderTartareSection(cat, cats[cat.key], prevLookup, hasPrev, byRev);
+    if (NIGHTLY_SPECIALS[cat.key]) {
+      hmHtml += renderNightlySection(cat, cats[cat.key], prevLookup, hasPrev, byRev, NIGHTLY_SPECIALS[cat.key]);
       return;
     }
     if (cat.key === 'pdj') {
@@ -957,11 +966,17 @@ function renderPdjSection(cat, items, prevLookup, hasPrev, byRev) {
   return html;
 }
 
-function renderTartareSection(cat, items, prevLookup, hasPrev, byRev) {
-  const item = (items && items[0]) ? { ...items[0], rev: items[0].qty * items[0].price } : null;
+// Nightly (every-night) specials: category key -> the name used in RPI Shift / manual counts.
+const NIGHTLY_SPECIALS = { tartare: 'Steak Tartare', sole: 'Dover Sole' };
+
+function renderNightlySection(cat, items, prevLookup, hasPrev, byRev, specialName) {
+  // Sum every Toast line in the category (e.g. "Dover Sole" + an "HH:" ring) rather than taking the first.
+  const item = (items && items.length)
+    ? { name: items[0].name, qty: sumQty(items), rev: sumRev(items) }
+    : null;
   const id = 'hmg-' + cat.key;
 
-  const loggedEntries = shiftSpecialsMap ? (shiftEntriesFor('Steak Tartare') || []) : [];
+  const loggedEntries = shiftSpecialsMap ? (shiftEntriesFor(specialName) || []) : [];
   const loggedSold = loggedEntries.reduce((s, e) => {
     const v = parseFloat(e.sold); return s + (isNaN(v) ? 0 : v);
   }, 0);
@@ -977,9 +992,10 @@ function renderTartareSection(cat, items, prevLookup, hasPrev, byRev) {
 
   let wowText = '';
   if (item && hasPrev) {
-    const prev = prevLookup[normalizeKey(item.name)];
-    if (prev && prev.qty > 0) {
-      const dv = (item.qty - prev.qty) / prev.qty * 100;
+    const prevQty = [...new Set(items.map(i => normalizeKey(i.name)))]
+      .reduce((s, k) => s + ((prevLookup[k] && prevLookup[k].qty) || 0), 0);
+    if (prevQty > 0) {
+      const dv = (item.qty - prevQty) / prevQty * 100;
       wowText = ` \u00b7 ${deltaArrow(dv)} ${Math.abs(Math.round(dv))}% wow`;
     }
   }
