@@ -1,0 +1,1306 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14120e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Walk-Through">
+<title>Owner Walk-Through · Rallo Hospitality</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #14120e;
+  --ink-2: #1a1712;
+  --ink-3: #221e18;
+  --ink-4: #2b261f;
+  --line: #342e25;
+  --line-2: #4a4235;
+  --gold: #b08d3e;
+  --gold-hi: #cfab5c;
+  --gold-lo: #7d6430;
+  --gold-wash: rgba(176, 141, 62, 0.12);
+  --paper: #efe6d2;
+  --text: #d8cdb6;
+  --muted: #9a8f7a;
+  --dim: #6b6253;
+  --good: #93ab7c;
+  --good-wash: rgba(147, 171, 124, 0.14);
+  --warn: #d6a044;
+  --warn-wash: rgba(214, 160, 68, 0.14);
+  --bad: #cf6a51;
+  --bad-wash: rgba(207, 106, 81, 0.15);
+  --display: 'Fraunces', Georgia, serif;
+  --serif: 'EB Garamond', Georgia, 'Times New Roman', serif;
+  --mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  --radius: 14px;
+  --tap: 52px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; min-height: 100vh; min-height: 100dvh;
+  background: var(--ink);
+  background-image: radial-gradient(120% 60% at 50% -10%, rgba(176,141,62,.08), transparent 60%);
+  background-attachment: fixed;
+  color: var(--text); font-family: var(--serif); font-size: 18px; line-height: 1.45;
+  overflow-x: hidden;
+}
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; border: 0; background: none; padding: 0; }
+.wrap { max-width: 560px; margin: 0 auto; padding: 0 16px; }
+.mono { font-family: var(--mono); font-feature-settings: "tnum"; }
+.eyebrow { font-family: var(--serif); font-size: 13px; letter-spacing: .22em; text-transform: uppercase; color: var(--gold); }
+h1, h2, h3 { font-family: var(--display); font-weight: 400; color: var(--paper); margin: 0; letter-spacing: -.01em; }
+h1 { font-size: 34px; line-height: 1.1; font-variation-settings: "opsz" 96; }
+h2 { font-size: 24px; line-height: 1.2; font-variation-settings: "opsz" 48; }
+.sub { color: var(--muted); font-size: 17px; margin: 6px 0 0; }
+.hidden { display: none !important; }
+
+/* ── Top bar ── */
+.topbar {
+  position: sticky; top: 0; z-index: 20;
+  background: rgba(20,18,14,.92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+  padding-top: var(--safe-t);
+}
+.topbar .row { display: flex; align-items: center; justify-content: space-between; height: 56px; gap: 12px; }
+.brand { font-family: var(--display); font-size: 15px; letter-spacing: .32em; color: var(--gold); font-weight: 500; white-space: nowrap; }
+.brand small { display: block; font-family: var(--serif); letter-spacing: .14em; font-size: 10px; color: var(--dim); margin-top: 1px; }
+.topctx { flex: 1; min-width: 0; text-align: center; font-size: 15px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.iconbtn { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 12px; color: var(--muted); font-size: 22px; }
+.iconbtn:active { background: var(--ink-3); }
+.progress { display: flex; gap: 4px; padding: 0 0 10px; }
+.progress span { flex: 1; height: 3px; border-radius: 2px; background: var(--line); transition: background .3s; }
+.progress span.done { background: var(--gold-lo); }
+.progress span.now { background: var(--gold-hi); }
+
+/* ── Layout ── */
+main { padding: 24px 0 calc(120px + var(--safe-b)); }
+.screen-head { margin: 4px 0 22px; }
+.screen-head .count { margin-top: 10px; font-size: 15px; color: var(--muted); }
+.screen-head .count b { color: var(--gold-hi); font-weight: 500; }
+
+/* ── Buttons ── */
+.btn {
+  min-height: var(--tap); padding: 0 22px; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: var(--serif); font-size: 18px; letter-spacing: .02em;
+  border: 1px solid var(--line-2); color: var(--paper); background: var(--ink-3);
+  transition: transform .08s, background .2s, border-color .2s;
+}
+.btn:active { transform: scale(.98); }
+.btn.primary { background: var(--gold); border-color: var(--gold); color: #17140e; font-weight: 600; }
+.btn.primary:active { background: var(--gold-hi); }
+.btn.primary:disabled { background: var(--ink-4); border-color: var(--line); color: var(--dim); }
+.btn.ghost { background: transparent; }
+.btn.danger { color: var(--bad); border-color: rgba(207,106,81,.4); background: transparent; }
+.btn.block { width: 100%; }
+.linkbtn { color: var(--gold-hi); font-size: 16px; min-height: 48px; padding: 0 4px; display: inline-flex; align-items: center; gap: 6px; }
+
+.bottombar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  background: linear-gradient(to top, var(--ink) 70%, rgba(20,18,14,0));
+  padding: 18px 0 calc(14px + var(--safe-b));
+}
+.bottombar .wrap { display: flex; gap: 10px; }
+.bottombar .btn.back { flex: 0 0 auto; width: 56px; padding: 0; font-size: 22px; }
+.bottombar .btn.primary { flex: 1; }
+
+/* ── Cards ── */
+.card {
+  background: var(--ink-2); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 18px 16px; margin-bottom: 12px;
+  transition: border-color .25s, box-shadow .25s;
+}
+.card.flash { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-wash); }
+
+/* Restaurant picker */
+.rest-card { width: 100%; text-align: left; display: flex; align-items: center; gap: 14px; min-height: 84px; }
+.rest-card .mono-badge {
+  flex: 0 0 48px; height: 48px; border-radius: 50%; border: 1px solid var(--gold-lo);
+  display: grid; place-items: center; font-family: var(--mono); font-size: 12px; color: var(--gold); letter-spacing: .04em;
+}
+.rest-card .name { font-family: var(--display); font-size: 21px; color: var(--paper); line-height: 1.15; }
+.rest-card .meta { font-size: 15px; color: var(--muted); margin-top: 3px; }
+.rest-card .meta.stale { color: var(--warn); }
+.rest-card.selected { border-color: var(--gold); background: linear-gradient(180deg, rgba(176,141,62,.10), rgba(176,141,62,.03)); }
+.rest-card.selected .mono-badge { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+
+.section-label { margin: 28px 0 12px; }
+
+/* Pills */
+.pills { display: grid; gap: 8px; }
+.pills.three { grid-template-columns: repeat(3, 1fr); }
+.pills.four { grid-template-columns: repeat(4, 1fr); }
+.pills.two { grid-template-columns: repeat(2, 1fr); }
+.pill {
+  min-height: var(--tap); border-radius: 12px; border: 1px solid var(--line-2); background: var(--ink-3);
+  color: var(--muted); font-size: 16px; line-height: 1.1; padding: 6px 4px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  transition: background .15s, border-color .15s, color .15s, transform .08s;
+}
+.pill:active { transform: scale(.97); }
+.pill .ic { font-size: 19px; line-height: 1; }
+.pill .lb { font-size: 14px; letter-spacing: .02em; }
+.pill.on { color: var(--paper); border-color: var(--gold); background: var(--gold-wash); }
+.pill.good.on { border-color: var(--good); background: var(--good-wash); color: var(--good); }
+.pill.warn.on { border-color: var(--warn); background: var(--warn-wash); color: var(--warn); }
+.pill.bad.on  { border-color: var(--bad);  background: var(--bad-wash);  color: var(--bad); }
+.pill.rate { min-height: 60px; }
+.pill.small { min-height: 48px; flex-direction: row; font-size: 16px; }
+
+/* Checklist item */
+.item .prompt { font-size: 19px; color: var(--paper); line-height: 1.35; margin: 0 0 14px; }
+.item.answered-good { border-color: rgba(147,171,124,.35); }
+.item.answered-warn { border-color: rgba(214,160,68,.5); }
+.item.answered-bad  { border-color: rgba(207,106,81,.55); }
+.item .tag { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.detail { margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line-2); display: grid; gap: 12px; animation: open .2s ease-out; }
+@keyframes open { from { opacity: 0; transform: translateY(-4px); } }
+.detail .lbl { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); margin-bottom: -4px; }
+.note-row { display: flex; gap: 8px; align-items: stretch; }
+textarea {
+  width: 100%; min-height: 84px; resize: vertical; border-radius: 12px; border: 1px solid var(--line-2);
+  background: var(--ink); color: var(--paper); padding: 12px 14px; font-size: 18px; line-height: 1.4;
+}
+textarea:focus, input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-wash); }
+textarea.big { min-height: 180px; }
+.mic {
+  flex: 0 0 52px; border-radius: 12px; border: 1px solid var(--line-2); background: var(--ink-3); font-size: 22px;
+  display: grid; place-items: center;
+}
+.mic.listening { border-color: var(--bad); background: var(--bad-wash); animation: pulse 1.2s infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(207,106,81,.15); } }
+.photos { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.thumb { position: relative; width: 72px; height: 72px; border-radius: 10px; overflow: hidden; background: var(--ink-4); border: 1px solid var(--line-2); }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb button { position: absolute; top: 0; right: 0; width: 32px; height: 32px; background: rgba(20,18,14,.75); color: var(--paper); font-size: 16px; border-bottom-left-radius: 10px; }
+.addphoto { min-height: 72px; min-width: 72px; padding: 0 16px; border-radius: 10px; border: 1px dashed var(--line-2); color: var(--muted); font-size: 16px; display: inline-flex; align-items: center; gap: 8px; }
+.addphoto:active { background: var(--ink-3); }
+
+.cat-actions { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px; margin: 6px 0 0; }
+.adhoc .rm { color: var(--dim); font-size: 14px; min-height: 40px; padding: 0 6px; letter-spacing: 0; text-transform: none; }
+
+/* Recheck */
+.recheck .from { font-size: 14px; color: var(--muted); }
+.recheck .orig-note { color: var(--muted); font-style: italic; font-size: 17px; margin: -6px 0 14px; }
+.sev-chip { display: inline-block; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; text-transform: uppercase; }
+.sev-chip.warn { color: var(--warn); } .sev-chip.bad { color: var(--bad); }
+
+/* Review */
+.rv-cat { margin-bottom: 22px; }
+.rv-cat-head { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: 8px; margin-bottom: 4px; gap: 12px; }
+.rv-cat-head h3 { font-size: 20px; }
+.rv-tally { font-size: 14px; color: var(--muted); white-space: nowrap; }
+.rv-tally .g { color: var(--good); } .rv-tally .w { color: var(--warn); } .rv-tally .b { color: var(--bad); }
+.rv-row { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.rv-row .ic { flex: 0 0 22px; font-size: 18px; line-height: 1.4; }
+.rv-row .body { flex: 1; min-width: 0; }
+.rv-row .t { color: var(--paper); font-size: 17px; }
+.rv-row .n { color: var(--muted); font-size: 16px; margin-top: 2px; overflow-wrap: anywhere; }
+.rv-row .edit { flex: 0 0 auto; }
+.rv-empty { color: var(--dim); font-style: italic; font-size: 16px; padding: 10px 0; }
+.alert { border: 1px solid rgba(214,160,68,.5); background: var(--warn-wash); color: var(--paper); border-radius: 12px; padding: 14px 16px; margin-bottom: 18px; font-size: 16px; }
+.alert.bad { border-color: rgba(207,106,81,.5); background: var(--bad-wash); }
+.ic.g { color: var(--good); } .ic.w { color: var(--warn); } .ic.b { color: var(--bad); }
+
+/* Banners on home */
+.banner { display: flex; align-items: center; gap: 12px; }
+.banner .txt { flex: 1; min-width: 0; }
+.banner .t { font-family: var(--display); font-size: 19px; color: var(--paper); }
+.banner .s { font-size: 15px; color: var(--muted); }
+.banner.draft { border-color: var(--gold-lo); }
+.banner.queue { border-color: rgba(214,160,68,.45); }
+.banner-actions { display: flex; gap: 8px; margin-top: 14px; }
+.banner-actions .btn { flex: 1; min-height: 48px; font-size: 16px; }
+
+/* PIN */
+.pin-screen { min-height: 78vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 10px; }
+.pin-screen .mark { font-family: var(--display); font-size: 38px; letter-spacing: .34em; color: var(--gold); margin-right: -.34em; font-weight: 400; }
+.pin-screen .rule { width: 56px; height: 1px; background: var(--gold-lo); margin: 6px 0 14px; }
+.pin-input {
+  width: 220px; height: 64px; text-align: center; font-family: var(--mono); font-size: 28px; letter-spacing: .4em;
+  background: var(--ink-2); border: 1px solid var(--line-2); border-radius: 14px; color: var(--paper); margin: 18px 0 8px;
+}
+.err { color: var(--bad); font-size: 16px; min-height: 22px; }
+
+/* Finish */
+.finish { text-align: center; padding-top: 6vh; }
+.seal { width: 112px; height: 112px; margin: 0 auto 26px; }
+.seal circle { stroke: var(--gold); stroke-width: 1.5; fill: none; stroke-dasharray: 340; stroke-dashoffset: 340; animation: draw .9s ease-out forwards; }
+.seal circle.inner { stroke: var(--gold-lo); stroke-width: 1; animation-delay: .15s; }
+.seal path { stroke: var(--gold-hi); stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 60; stroke-dashoffset: 60; animation: draw .5s .7s ease-out forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+.finish h1 { font-size: 30px; }
+.finish .who { color: var(--muted); font-size: 16px; margin: 10px auto 0; max-width: 34ch; }
+.finish .tally { display: flex; justify-content: center; gap: 22px; margin: 28px 0; }
+.finish .tally div { text-align: center; }
+.finish .tally .v { font-family: var(--mono); font-size: 26px; color: var(--paper); }
+.finish .tally .k { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+.finish .actions { display: grid; gap: 10px; margin-top: 12px; }
+.sending .bar { height: 2px; background: var(--line); border-radius: 2px; overflow: hidden; margin: 26px auto 14px; max-width: 240px; }
+.sending .bar span { display: block; height: 100%; width: 40%; background: var(--gold); animation: slide 1.2s ease-in-out infinite; }
+@keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
+
+/* Sheet / toast */
+.scrim { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 40; display: flex; align-items: flex-end; animation: fade .15s; }
+@keyframes fade { from { opacity: 0; } }
+.sheet { width: 100%; background: var(--ink-2); border-top: 1px solid var(--line-2); border-radius: 20px 20px 0 0; padding: 22px 0 calc(18px + var(--safe-b)); animation: up .2s ease-out; }
+@keyframes up { from { transform: translateY(30px); } }
+.sheet h2 { margin-bottom: 6px; }
+.sheet p { color: var(--muted); margin: 0 0 18px; font-size: 17px; }
+.sheet .stack { display: grid; gap: 10px; }
+.toast {
+  position: fixed; left: 50%; bottom: calc(96px + var(--safe-b)); transform: translateX(-50%); z-index: 50;
+  background: var(--paper); color: var(--ink); padding: 12px 18px; border-radius: 999px; font-size: 16px;
+  max-width: calc(100vw - 32px); box-shadow: 0 8px 30px rgba(0,0,0,.4); animation: fade .2s;
+}
+.skeleton { height: 84px; border-radius: var(--radius); background: linear-gradient(90deg, var(--ink-2), var(--ink-3), var(--ink-2)); background-size: 200% 100%; animation: shimmer 1.4s infinite; margin-bottom: 12px; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .seal circle, .seal path { stroke-dashoffset: 0; } }
+</style>
+</head>
+<body>
+<header class="topbar" id="topbar"></header>
+<main><div class="wrap" id="app"></div></main>
+<div id="bottom"></div>
+<input type="file" id="camera" accept="image/*" capture="environment" class="hidden">
+
+<script>
+'use strict';
+
+/* ═══════════════════════ CONFIG ═══════════════════════ */
+const CONFIG = {
+  WORKER_URL: 'https://rallo-audit.YOUR-SUBDOMAIN.workers.dev',
+  HISTORY_URL: 'audits.html',
+  AUDITOR: 'Victor Rallo',
+  PHOTO_MAX_PX: 1600,
+  PHOTO_QUALITY: 0.75,
+  STALE_DAYS: 21,
+  RETRY_MS: 30000,
+};
+const CATEGORY_BLURB = {
+  Food: 'Presentation, temperature, portioning, timing, specials.',
+  Beverage: 'Bar setup, glassware, pours and garnish, wine list, by-the-glass.',
+  Maintenance: 'Lighting, HVAC, furniture, restrooms, exterior, anything broken.',
+  Cleanliness: 'Entry, dining room, bar top, restrooms, spotting, windows.',
+};
+
+/* ═══════════════════════ STORAGE ═══════════════════════
+   localStorage holds the draft + send queue (small JSON).
+   IndexedDB holds photo blobs (too big for localStorage). */
+const LS = {
+  PIN: 'rallo.pin', DRAFT: 'rallo.draft', QUEUE: 'rallo.queue',
+  RESTAURANTS: 'rallo.cache.restaurants', CHECKLIST: 'rallo.cache.checklist',
+};
+const Store = {
+  get(key, fallback = null) {
+    try { const v = localStorage.getItem(key); return v == null ? fallback : JSON.parse(v); } catch { return fallback; }
+  },
+  set(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); return true; }
+    catch (e) { console.error('localStorage write failed', e); toast('Phone storage is full. Remove a photo or two'); return false; }
+  },
+  del(key) { try { localStorage.removeItem(key); } catch {} },
+  pin() { return Store.get(LS.PIN, ''); },
+  draft() { return Store.get(LS.DRAFT); },
+  saveDraft(d) { d.updatedAt = new Date().toISOString(); return Store.set(LS.DRAFT, d); },
+  clearDraft() { Store.del(LS.DRAFT); },
+  queue() { return Store.get(LS.QUEUE, []); },
+  saveQueue(q) { return Store.set(LS.QUEUE, q); },
+};
+
+const PhotoStore = {
+  _db: null,
+  open() {
+    if (this._db) return Promise.resolve(this._db);
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open('rallo-audit', 1);
+      req.onupgradeneeded = () => req.result.createObjectStore('photos');
+      req.onsuccess = () => { this._db = req.result; resolve(this._db); };
+      req.onerror = () => reject(req.error);
+    });
+  },
+  async _tx(mode, fn) {
+    const db = await this.open();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('photos', mode);
+      const req = fn(tx.objectStore('photos'));
+      tx.oncomplete = () => resolve(req && req.result);
+      tx.onerror = () => reject(tx.error);
+    });
+  },
+  put(id, blob) { return this._tx('readwrite', (s) => s.put(blob, id)); },
+  get(id) { return this._tx('readonly', (s) => s.get(id)); },
+  del(id) { return this._tx('readwrite', (s) => s.delete(id)); },
+};
+
+/* ═══════════════════════ API ═══════════════════════ */
+class ApiError extends Error {
+  constructor(message, status = 0) { super(message); this.status = status; }
+  get offline() { return this.status === 0; }
+  get retryable() { return this.status === 0 || this.status === 408 || this.status === 429 || this.status >= 500; }
+}
+const Api = {
+  async request(method, path, body, { timeout = 25000, pin = Store.pin() } = {}) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeout);
+    let res;
+    try {
+      res = await fetch(CONFIG.WORKER_URL + path, {
+        method,
+        headers: { 'Content-Type': 'application/json', 'X-Access-PIN': pin },
+        body: body ? JSON.stringify(body) : undefined,
+        signal: ctrl.signal,
+      });
+    } catch (e) {
+      throw new ApiError('No connection', 0);
+    } finally { clearTimeout(timer); }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new ApiError(data.error || `Error ${res.status}`, res.status);
+    return data;
+  },
+  restaurants: (pin) => Api.request('GET', '/restaurants', null, pin ? { pin } : undefined),
+  checklist: () => Api.request('GET', '/checklist'),
+  openFindings: (id) => Api.request('GET', `/restaurants/${id}/open-findings`),
+  createAudit: (payload) => Api.request('POST', '/audits', payload, { timeout: 45000 }),
+  upload: (body) => Api.request('POST', '/upload', body, { timeout: 90000 }),
+  submit: (id) => Api.request('POST', `/audits/${id}/submit`, {}, { timeout: 45000 }),
+};
+
+/* ═══════════════════════ HELPERS ═══════════════════════ */
+const $ = (sel, root = document) => root.querySelector(sel);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
+const localDate = (d = new Date()) => d.toLocaleDateString('en-CA'); // YYYY-MM-DD
+function daysSince(isoDate) {
+  if (!isoDate) return null;
+  const [y, m, d] = isoDate.split('-').map(Number);
+  const then = new Date(y, m - 1, d);
+  const now = new Date(); now.setHours(0, 0, 0, 0);
+  return Math.round((now - then) / 86400000);
+}
+function lastVisitText(r) {
+  const n = daysSince(r.lastAuditDate);
+  if (n == null) return 'Not yet visited';
+  if (n === 0) return 'Visited today';
+  if (n === 1) return 'Last visited yesterday';
+  return `Last visited ${n} days ago`;
+}
+function fmtShort(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+function defaultDaypart(now = new Date()) {
+  const h = now.getHours(), weekend = now.getDay() === 0 || now.getDay() === 6;
+  if (weekend && h >= 9 && h < 15) return 'Brunch';
+  if (h >= 11 && h < 16) return 'Lunch';
+  if (h >= 16) return 'Dinner';
+  return 'Other';
+}
+function greeting() {
+  const h = new Date().getHours();
+  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+}
+let toastTimer;
+function toast(msg) {
+  document.querySelectorAll('.toast').forEach((t) => t.remove());
+  const el = document.createElement('div');
+  el.className = 'toast'; el.textContent = msg;
+  document.body.appendChild(el);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.remove(), 2800);
+}
+function ask({ title, body = '', ok = 'OK', cancel = 'Cancel', danger = false }) {
+  return new Promise((resolve) => {
+    const scrim = document.createElement('div');
+    scrim.className = 'scrim';
+    scrim.innerHTML = `<div class="sheet"><div class="wrap">
+      <h2>${esc(title)}</h2>${body ? `<p>${esc(body)}</p>` : ''}
+      <div class="stack">
+        <button class="btn block ${danger ? 'danger' : 'primary'}" data-r="1">${esc(ok)}</button>
+        <button class="btn block ghost" data-r="0">${esc(cancel)}</button>
+      </div></div></div>`;
+    scrim.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-r]');
+      if (b || e.target === scrim) { scrim.remove(); resolve(!!(b && b.dataset.r === '1')); }
+    });
+    document.body.appendChild(scrim);
+  });
+}
+function menuSheet(items) {
+  return new Promise((resolve) => {
+    const scrim = document.createElement('div');
+    scrim.className = 'scrim';
+    scrim.innerHTML = `<div class="sheet"><div class="wrap"><div class="stack">
+      ${items.map((it, i) => `<button class="btn block ${it.danger ? 'danger' : ''}" data-i="${i}">${esc(it.label)}</button>`).join('')}
+      <button class="btn block ghost" data-i="-1">Close</button></div></div></div>`;
+    scrim.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-i]');
+      if (b || e.target === scrim) { scrim.remove(); resolve(b ? items[+b.dataset.i] : null); }
+    });
+    document.body.appendChild(scrim);
+  });
+}
+
+/* ═══════════════════════ PHOTOS ═══════════════════════ */
+async function compressPhoto(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    const scale = Math.min(1, CONFIG.PHOTO_MAX_PX / Math.max(img.naturalWidth, img.naturalHeight));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(img.naturalWidth * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+    return await new Promise((res) => canvas.toBlob(res, 'image/jpeg', CONFIG.PHOTO_QUALITY));
+  } finally { URL.revokeObjectURL(url); }
+}
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(',')[1]);
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(blob);
+  });
+}
+const thumbUrls = new Map();
+async function hydrateThumbs(root = document) {
+  for (const img of root.querySelectorAll('img[data-pid]')) {
+    const pid = img.dataset.pid;
+    if (!thumbUrls.has(pid)) {
+      const blob = await PhotoStore.get(pid).catch(() => null);
+      if (!blob) continue;
+      thumbUrls.set(pid, URL.createObjectURL(blob));
+    }
+    img.src = thumbUrls.get(pid);
+  }
+}
+
+/* ═══════════════════════ DICTATION ═══════════════════════ */
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+let activeRec = null;
+function toggleDictation(textarea, btn) {
+  if (activeRec) { activeRec.stop(); return; }
+  if (!SpeechRec) {
+    textarea.focus();
+    toast('Tap the mic on your keyboard to dictate');
+    return;
+  }
+  const rec = new SpeechRec();
+  rec.lang = 'en-US'; rec.interimResults = true; rec.continuous = false;
+  const base = textarea.value.trimEnd();
+  rec.onresult = (e) => {
+    let said = '';
+    for (const r of e.results) said += r[0].transcript;
+    textarea.value = (base ? base + ' ' : '') + said;
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+  rec.onerror = (e) => { if (e.error !== 'aborted' && e.error !== 'no-speech') toast('Dictation unavailable. Use the keyboard'); };
+  rec.onend = () => { btn.classList.remove('listening'); activeRec = null; flushNote(); };
+  btn.classList.add('listening');
+  activeRec = rec;
+  rec.start();
+}
+
+/* ═══════════════════════ DRAFT MODEL ═══════════════════════ */
+const App = {
+  screen: 'boot',
+  restaurants: Store.get(LS.RESTAURANTS, []),
+  pick: { restaurantId: null, daypart: defaultDaypart() },
+  draft: Store.draft(),
+  sending: '',
+  result: null,
+  loading: false,
+};
+
+function steps(d = App.draft) {
+  const list = [];
+  if (d.recheck && d.recheck.length) list.push({ id: 'recheck', label: 'Last time' });
+  for (const c of d.checklist.categories) list.push({ id: c, label: c, category: c });
+  list.push({ id: 'other', label: 'Anything else' }, { id: 'review', label: 'Review' });
+  return list;
+}
+const currentStep = () => steps()[App.draft.step] || steps()[0];
+
+/** Returns the mutable record behind a card key: 'i-<itemId>' | 'a-<uid>' | '__other'. */
+function entryFor(key) {
+  const d = App.draft;
+  if (key.startsWith('i-')) return (d.ratings[key.slice(2)] ||= { rating: null, severity: null, note: '', photos: [] });
+  if (key.startsWith('a-')) return d.adhoc.find((a) => a.key === key);
+  if (key === '__other') return { get photos() { return d.otherPhotos; }, set photos(v) { d.otherPhotos = v; } };
+  return null;
+}
+function itemsIn(category) { return App.draft.checklist.items[category] || []; }
+function categoryTally(category) {
+  const d = App.draft, t = { good: 0, warn: 0, bad: 0, open: 0, total: 0 };
+  for (const it of itemsIn(category)) {
+    t.total++;
+    const r = d.ratings[it.id] && d.ratings[it.id].rating;
+    if (r === 'Good') t.good++; else if (r === 'Needs Attention') t.warn++; else if (r === 'Issue') t.bad++; else t.open++;
+  }
+  for (const a of d.adhoc.filter((x) => x.category === category)) a.rating === 'Issue' ? t.bad++ : t.warn++;
+  return t;
+}
+function missingSeverity() {
+  const d = App.draft, out = [];
+  for (const c of d.checklist.categories) {
+    for (const it of itemsIn(c)) {
+      const r = d.ratings[it.id];
+      if (r && r.rating && r.rating !== 'Good' && !r.severity) out.push({ key: 'i-' + it.id, category: c, label: it.prompt });
+    }
+  }
+  for (const a of d.adhoc) if (!a.severity) out.push({ key: a.key, category: a.category, label: a.note || 'Added finding' });
+  return out;
+}
+
+let noteTimer;
+function saveDraft() { clearTimeout(noteTimer); Store.saveDraft(App.draft); }
+function flushNote() { saveDraft(); }
+
+/** Converts the draft into the POST /audits payload plus a photo manifest for the queue. */
+function buildJob(d) {
+  const findings = [], photos = [];
+  for (const c of d.checklist.categories) {
+    for (const it of itemsIn(c)) {
+      const r = d.ratings[it.id];
+      if (!r || !r.rating) continue;
+      const flagged = r.rating !== 'Good';
+      const key = 'i-' + it.id;
+      findings.push({
+        key, source: 'Checklist', category: c, itemId: it.id, rating: r.rating,
+        severity: flagged ? r.severity : undefined, note: flagged ? r.note.trim() : undefined,
+      });
+      if (flagged) r.photos.forEach((pid) => photos.push({ pid, key }));
+    }
+  }
+  for (const a of d.adhoc) {
+    findings.push({ key: a.key, source: 'Ad-hoc', category: a.category, rating: a.rating, severity: a.severity, note: a.note.trim() });
+    a.photos.forEach((pid) => photos.push({ pid, key: a.key }));
+  }
+  for (const f of d.recheck || []) {
+    const result = d.rechecks[f.id];
+    if (result) findings.push({ key: 'r-' + f.id, source: 'Recheck', carriedFrom: f.id, recheckResult: result });
+  }
+  d.otherPhotos.forEach((pid) => photos.push({ pid, key: '__other' }));
+
+  const allPids = [
+    ...Object.values(d.ratings).flatMap((r) => r.photos || []),
+    ...d.adhoc.flatMap((a) => a.photos), ...d.otherPhotos,
+  ];
+  return {
+    clientId: d.clientId,
+    restaurantName: d.restaurantName,
+    startedAt: d.startedAt,
+    stage: 'create',
+    payload: {
+      clientId: d.clientId, restaurantId: d.restaurantId, daypart: d.daypart, auditDate: d.auditDate,
+      startedAt: d.startedAt, auditor: CONFIG.AUDITOR, otherNotes: d.otherNotes.trim(), findings,
+    },
+    photos, allPids, uploaded: [], photoErrors: [],
+    tally: {
+      issues: findings.filter((f) => f.source !== 'Recheck' && f.rating === 'Issue').length,
+      attention: findings.filter((f) => f.source !== 'Recheck' && f.rating === 'Needs Attention').length,
+      good: findings.filter((f) => f.source === 'Checklist' && f.rating === 'Good').length,
+    },
+  };
+}
+
+/* ═══════════════════════ SEND QUEUE ═══════════════════════
+   Each job moves create → upload → submit, persisting after every step,
+   so a dropped connection resumes exactly where it left off. */
+const Queue = { busy: false };
+
+function persistJob(job) {
+  const q = Store.queue();
+  const i = q.findIndex((j) => j.clientId === job.clientId);
+  if (i >= 0) q[i] = job; else q.push(job);
+  return Store.saveQueue(q);
+}
+function removeJob(clientId) { Store.saveQueue(Store.queue().filter((j) => j.clientId !== clientId)); }
+
+async function runJob(job, progress = () => {}) {
+  if (job.stage === 'create') {
+    progress('Saving the walk-through');
+    const r = await Api.createAudit(job.payload);
+    Object.assign(job, { auditId: r.id, findingMap: r.findingMap || {}, recipients: r.recipients || [], stage: 'upload' });
+    persistJob(job);
+  }
+  if (job.stage === 'upload') {
+    const total = job.photos.length;
+    for (const ph of job.photos) {
+      if (job.uploaded.includes(ph.pid)) continue;
+      progress(`Uploading photo ${job.uploaded.length + 1} of ${total}`);
+      const blob = await PhotoStore.get(ph.pid).catch(() => null);
+      const recordId = ph.key === '__other' ? job.auditId : job.findingMap[ph.key];
+      if (blob && recordId) {
+        try {
+          await Api.upload({
+            recordId, table: ph.key === '__other' ? 'a' : 'f',
+            filename: `${ph.pid}.jpg`, contentType: 'image/jpeg', file: await blobToBase64(blob),
+          });
+        } catch (e) {
+          if (e.retryable) throw e;
+          job.photoErrors.push(`${ph.pid}: ${e.message}`); // a bad photo must not block the audit
+        }
+      }
+      job.uploaded.push(ph.pid);
+      persistJob(job);
+    }
+    job.stage = 'submit';
+    persistJob(job);
+  }
+  if (job.stage === 'submit') {
+    progress('Sending the email');
+    job.result = await Api.submit(job.auditId);
+    job.stage = 'done';
+    persistJob(job);
+  }
+  removeJob(job.clientId);
+  for (const pid of job.allPids || []) PhotoStore.del(pid).catch(() => {});
+  return job;
+}
+
+/** Background retry. Never shows errors loudly; the home banner reflects queue state. */
+async function drainQueue() {
+  if (Queue.busy || !Store.pin()) return;
+  const q = Store.queue();
+  if (!q.length) return;
+  Queue.busy = true;
+  try {
+    for (const job of q) {
+      try {
+        const done = await runJob(job);
+        toast(`Sent: ${done.restaurantName}`);
+      } catch (e) {
+        job.lastError = e.message; persistJob(job);
+        if (e.retryable) break;
+      }
+    }
+  } finally {
+    Queue.busy = false;
+    if (App.screen === 'home') render();
+  }
+}
+
+async function submitDraft() {
+  while (Queue.busy) await new Promise((r) => setTimeout(r, 200));
+  Queue.busy = true; // claim the lock before queuing so a background retry can't run this job too
+  const job = buildJob(App.draft);
+  if (!persistJob(job)) {
+    Queue.busy = false;
+    toast('Could not save on this phone. Try again');
+    return;
+  }
+  Store.clearDraft();
+  App.draft = null;
+  App.screen = 'sending';
+  App.sending = 'Saving the walk-through';
+  render(true);
+
+  try {
+    const done = await runJob(job, (msg) => { App.sending = msg; const el = $('#sending-msg'); if (el) el.textContent = msg; });
+    App.result = { job: done, queued: false };
+  } catch (e) {
+    job.lastError = e.message; persistJob(job);
+    App.result = { job, queued: true, error: e.retryable ? null : e.message };
+  } finally { Queue.busy = false; }
+  App.screen = 'done';
+  render();
+}
+
+/* ═══════════════════════ FLOW ═══════════════════════ */
+async function loadRestaurants() {
+  const paint = () => { if (App.screen === 'home') render(); };
+  App.loading = true; paint();
+  try {
+    const data = await Api.restaurants();
+    App.restaurants = data.restaurants;
+    if (data.config && data.config.staleDays) CONFIG.STALE_DAYS = data.config.staleDays;
+    Store.set(LS.RESTAURANTS, App.restaurants);
+  } catch (e) {
+    if (e.status === 401) { Store.del(LS.PIN); App.screen = 'pin'; render(); }
+    else if (!App.restaurants.length) toast('Offline. Connect once to load restaurants');
+  } finally { App.loading = false; paint(); }
+}
+
+async function beginAudit() {
+  const r = App.restaurants.find((x) => x.id === App.pick.restaurantId);
+  if (!r) return;
+  if (App.draft) {
+    const ok = await ask({ title: 'Discard the current draft?', body: `You have an unfinished walk-through at ${App.draft.restaurantName}. Only one draft can be open at a time.`, ok: 'Discard and start new', danger: true });
+    if (!ok) return;
+    await discardDraft(false);
+  }
+  const btn = $('#begin'); if (btn) { btn.disabled = true; btn.textContent = 'Opening…'; }
+
+  let checklist = Store.get(LS.CHECKLIST);
+  try { checklist = await Api.checklist(); Store.set(LS.CHECKLIST, checklist); }
+  catch (e) { if (!checklist) { toast('Need a connection to load the checklist the first time'); render(); return; } }
+
+  let recheck = [];
+  try { recheck = (await Api.openFindings(r.id)).findings; }
+  catch { toast('Offline. Skipping last-visit recheck'); }
+
+  App.draft = {
+    v: 1, clientId: uid(), restaurantId: r.id, restaurantName: r.name,
+    daypart: App.pick.daypart, auditDate: localDate(), startedAt: new Date().toISOString(),
+    step: 0, checklist,
+    recheck: recheck.map((f) => ({ id: f.id, category: f.category, prompt: f.prompt, note: f.note, rating: f.rating, severity: f.severity, date: f.date })),
+    rechecks: {}, ratings: {}, adhoc: [], otherNotes: '', otherPhotos: [],
+  };
+  saveDraft();
+  App.screen = 'audit';
+  render(true);
+}
+
+async function discardDraft(confirmFirst = true) {
+  if (!App.draft) return;
+  if (confirmFirst) {
+    const ok = await ask({ title: 'Discard this draft?', body: `Everything recorded at ${App.draft.restaurantName} will be deleted from this phone.`, ok: 'Discard draft', danger: true });
+    if (!ok) return;
+  }
+  const d = App.draft;
+  const pids = [...Object.values(d.ratings).flatMap((r) => r.photos || []), ...d.adhoc.flatMap((a) => a.photos), ...d.otherPhotos];
+  pids.forEach((pid) => PhotoStore.del(pid).catch(() => {}));
+  Store.clearDraft();
+  App.draft = null;
+  if (confirmFirst) { App.screen = 'home'; render(true); }
+}
+
+function goStep(i, focusKey) {
+  const n = steps().length;
+  App.draft.step = Math.max(0, Math.min(n - 1, i));
+  saveDraft();
+  render(!focusKey);
+  if (focusKey) {
+    const el = document.getElementById('card-' + focusKey);
+    if (el) {
+      el.scrollIntoView({ block: 'center' });
+      el.classList.add('flash');
+      setTimeout(() => el.classList.remove('flash'), 1400);
+    }
+  }
+}
+
+/* ═══════════════════════ RENDER ═══════════════════════ */
+function render(scrollTop = false) {
+  renderTopbar();
+  const app = $('#app'), bottom = $('#bottom');
+  const views = { pin: viewPin, home: viewHome, audit: viewAudit, sending: viewSending, done: viewDone, boot: () => ({ html: '' }) };
+  const v = (views[App.screen] || viewHome)();
+  app.innerHTML = v.html;
+  bottom.innerHTML = v.bottom || '';
+  if (scrollTop) window.scrollTo(0, 0);
+  hydrateThumbs(app);
+  if (v.after) v.after();
+}
+
+function renderTopbar() {
+  const tb = $('#topbar');
+  if (App.screen === 'pin' || App.screen === 'boot') { tb.innerHTML = ''; tb.classList.add('hidden'); return; }
+  tb.classList.remove('hidden');
+  let ctx = '', progress = '';
+  if (App.screen === 'audit' && App.draft) {
+    ctx = `${esc(App.draft.restaurantName)} · ${esc(App.draft.daypart)}`;
+    const s = steps(), cur = App.draft.step;
+    progress = `<div class="progress" aria-label="Step ${cur + 1} of ${s.length}">${s.map((_, i) => `<span class="${i < cur ? 'done' : i === cur ? 'now' : ''}"></span>`).join('')}</div>`;
+  }
+  tb.innerHTML = `<div class="wrap">
+    <div class="row">
+      <div class="brand">RALLO<small>Owner Walk-Through</small></div>
+      <div class="topctx">${ctx}</div>
+      <button class="iconbtn" data-act="menu" aria-label="Menu">⋯</button>
+    </div>${progress}</div>`;
+}
+
+function viewPin() {
+  return {
+    html: `<div class="pin-screen">
+      <div class="mark">RALLO</div>
+      <div class="eyebrow" style="color:var(--muted)">Hospitality</div>
+      <div class="rule"></div>
+      <h2>Owner Walk-Through</h2>
+      <form id="pin-form" autocomplete="off">
+        <input class="pin-input" id="pin" type="password" inputmode="numeric" autocomplete="one-time-code" aria-label="PIN" placeholder="····">
+        <div class="err" id="pin-err"></div>
+        <button class="btn primary" style="min-width:220px" type="submit">Unlock</button>
+      </form>
+    </div>`,
+    after: () => $('#pin').focus(),
+  };
+}
+
+function viewHome() {
+  const q = Store.queue();
+  const d = App.draft;
+  let html = `<div class="screen-head">
+    <div class="eyebrow">${esc(new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }))}</div>
+    <h1 style="margin-top:8px">${greeting()}, Vic.</h1>
+    <p class="sub">Where are we walking?</p>
+  </div>`;
+
+  for (const job of q) {
+    html += `<div class="card banner queue"><div class="txt">
+        <div class="t">${esc(job.restaurantName)}, waiting to send</div>
+        <div class="s">Saved on this phone. Will send when online.${job.lastError && !/connection/i.test(job.lastError) ? ` (${esc(job.lastError)})` : ''}</div>
+      </div></div>`;
+  }
+  if (q.length) html += `<button class="btn block" data-act="send-now" style="margin:-2px 0 14px">${Queue.busy ? 'Sending…' : 'Send now'}</button>`;
+
+  if (d) {
+    const s = steps(d)[d.step] || {};
+    html += `<div class="card banner draft" style="display:block">
+      <div class="t" style="font-family:var(--display);font-size:19px;color:var(--paper)">Unfinished: ${esc(d.restaurantName)}</div>
+      <div class="s" style="font-size:15px;color:var(--muted)">${esc(d.daypart)} · started ${new Date(d.startedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} · on ${esc(s.label || '')}</div>
+      <div class="banner-actions">
+        <button class="btn primary" data-act="resume">Resume</button>
+        <button class="btn danger" data-act="discard">Discard draft</button>
+      </div></div>`;
+  }
+
+  html += `<div class="eyebrow section-label">Restaurant</div>`;
+  if (!App.restaurants.length) {
+    html += App.loading ? '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>' : `<p class="sub">No restaurants yet. Add them in Airtable.</p>`;
+  }
+  for (const r of App.restaurants) {
+    const n = daysSince(r.lastAuditDate);
+    const stale = n == null || n >= CONFIG.STALE_DAYS;
+    const sel = App.pick.restaurantId === r.id;
+    html += `<button class="card rest-card ${sel ? 'selected' : ''}" data-act="pick" data-id="${r.id}" aria-pressed="${sel}">
+      <span class="mono-badge">${esc((r.shortCode || r.name.slice(0, 3)).toUpperCase().slice(0, 4))}</span>
+      <span style="flex:1;min-width:0">
+        <span class="name" style="display:block">${esc(r.name)}</span>
+        <span class="meta ${stale ? 'stale' : ''}" style="display:block">${lastVisitText(r)}</span>
+      </span></button>`;
+  }
+
+  html += `<div class="eyebrow section-label">Daypart</div>
+    <div class="pills four">${['Lunch', 'Dinner', 'Brunch', 'Other'].map((p) =>
+      `<button class="pill small ${App.pick.daypart === p ? 'on' : ''}" data-act="daypart" data-v="${p}">${p}</button>`).join('')}</div>
+    <p style="text-align:center;margin-top:28px"><a class="linkbtn" href="${CONFIG.HISTORY_URL}">Standings &amp; history →</a></p>`;
+
+  const chosen = App.restaurants.find((r) => r.id === App.pick.restaurantId);
+  return {
+    html,
+    bottom: `<div class="bottombar"><div class="wrap">
+      <button class="btn primary" id="begin" data-act="begin" ${chosen ? '' : 'disabled'}>${chosen ? `Begin at ${esc(chosen.name)}` : 'Choose a restaurant'}</button>
+    </div></div>`,
+  };
+}
+
+function viewAudit() {
+  const d = App.draft;
+  const s = steps(), cur = s[d.step];
+  let html = '';
+  if (cur.id === 'recheck') html = viewRecheck();
+  else if (cur.category) html = viewCategory(cur.category, d.step, s.length);
+  else if (cur.id === 'other') html = viewOther(d.step, s.length);
+  else html = viewReview();
+
+  const isReview = cur.id === 'review';
+  const next = s[d.step + 1];
+  const blocked = isReview && missingSeverity().length > 0;
+  const bottom = `<div class="bottombar"><div class="wrap">
+    <button class="btn back" data-act="back" aria-label="Back" ${d.step === 0 ? 'disabled style="opacity:.35"' : ''}>←</button>
+    ${isReview
+      ? `<button class="btn primary" data-act="submit" ${blocked ? 'disabled' : ''}>Submit &amp; send</button>`
+      : `<button class="btn primary" data-act="next">${esc(next.label)} →</button>`}
+  </div></div>`;
+  return { html, bottom };
+}
+
+function stepHead(eyebrow, title, sub, extra = '') {
+  return `<div class="screen-head"><div class="eyebrow">${eyebrow}</div><h1 style="margin-top:8px">${esc(title)}</h1>
+    ${sub ? `<p class="sub">${esc(sub)}</p>` : ''}${extra}</div>`;
+}
+
+function viewRecheck() {
+  const d = App.draft;
+  const answered = d.recheck.filter((f) => d.rechecks[f.id]).length;
+  let html = stepHead('Before you start', 'Last time', 'Open items from earlier visits. Did they get fixed?',
+    `<div class="count"><b class="mono">${answered}</b> of <span class="mono">${d.recheck.length}</span> checked</div>`);
+  for (const f of d.recheck) {
+    const v = d.rechecks[f.id];
+    const sevCls = f.rating === 'Issue' ? 'bad' : 'warn';
+    html += `<div class="card item recheck" id="card-r-${f.id}">
+      <div class="tag"><span>${esc(f.category)} · <span class="from">${esc(fmtShort(f.date))}</span></span>
+        <span class="sev-chip ${sevCls}">${f.rating === 'Issue' ? '✗' : '⚠'} ${esc(f.severity || '')}</span></div>
+      <p class="prompt">${esc(f.prompt || f.note || 'Added finding')}</p>
+      ${f.prompt && f.note ? `<p class="orig-note">“${esc(f.note)}”</p>` : ''}
+      <div class="pills three">
+        <button class="pill rate good ${v === 'Fixed' ? 'on' : ''}" data-act="recheck" data-id="${f.id}" data-v="Fixed"><span class="ic">✓</span><span class="lb">Fixed</span></button>
+        <button class="pill rate bad ${v === 'Still an issue' ? 'on' : ''}" data-act="recheck" data-id="${f.id}" data-v="Still an issue"><span class="ic">✗</span><span class="lb">Still an issue</span></button>
+        <button class="pill rate ${v === "Didn't check" ? 'on' : ''}" data-act="recheck" data-id="${f.id}" data-v="Didn't check"><span class="ic">–</span><span class="lb">Didn't check</span></button>
+      </div></div>`;
+  }
+  return html;
+}
+
+const RATING_UI = [
+  { v: 'Good', ic: '✓', lb: 'Good', cls: 'good' },
+  { v: 'Needs Attention', ic: '⚠', lb: 'Needs Attention', cls: 'warn' },
+  { v: 'Issue', ic: '✗', lb: 'Issue', cls: 'bad' },
+];
+const answeredClass = (r) => (r === 'Good' ? 'answered-good' : r === 'Needs Attention' ? 'answered-warn' : r === 'Issue' ? 'answered-bad' : '');
+
+function detailPanel(key, e) {
+  return `<div class="detail">
+    <div class="lbl">Severity</div>
+    <div class="pills three">${['Low', 'Med', 'High'].map((s) =>
+      `<button class="pill small ${e.severity === s ? 'on' : ''}" data-act="sev" data-key="${key}" data-v="${s}">${s}</button>`).join('')}</div>
+    <div class="note-row">
+      <textarea data-note="${key}" rows="2" placeholder="What did you see?">${esc(e.note)}</textarea>
+      <button class="mic" data-act="mic" data-key="${key}" aria-label="Dictate">🎤</button>
+    </div>
+    ${photoRow(key, e.photos)}
+  </div>`;
+}
+function photoRow(key, pids) {
+  return `<div class="photos">
+    ${pids.map((pid) => `<div class="thumb"><img data-pid="${pid}" alt=""><button data-act="rmphoto" data-key="${key}" data-pid="${pid}" aria-label="Remove photo">×</button></div>`).join('')}
+    <button class="addphoto" data-act="photo" data-key="${key}">📷 ${pids.length ? 'Add' : 'Photo'}</button>
+  </div>`;
+}
+
+function itemCard(it) {
+  const key = 'i-' + it.id;
+  const e = App.draft.ratings[it.id] || { rating: null, severity: null, note: '', photos: [] };
+  return `<div class="card item ${answeredClass(e.rating)}" id="card-${key}">
+    <p class="prompt">${esc(it.prompt)}</p>
+    <div class="pills three">${RATING_UI.map((r) =>
+      `<button class="pill rate ${r.cls} ${e.rating === r.v ? 'on' : ''}" data-act="rate" data-key="${key}" data-v="${r.v}"><span class="ic">${r.ic}</span><span class="lb">${r.lb}</span></button>`).join('')}</div>
+    ${e.rating && e.rating !== 'Good' ? detailPanel(key, e) : ''}
+  </div>`;
+}
+
+function adhocCard(a) {
+  return `<div class="card item adhoc ${answeredClass(a.rating)}" id="card-${a.key}">
+    <div class="tag"><span>Added finding</span><button class="rm" data-act="adhoc-rm" data-key="${a.key}">Remove</button></div>
+    <div class="pills two">${RATING_UI.slice(1).map((r) =>
+      `<button class="pill rate ${r.cls} ${a.rating === r.v ? 'on' : ''}" data-act="rate" data-key="${a.key}" data-v="${r.v}"><span class="ic">${r.ic}</span><span class="lb">${r.lb}</span></button>`).join('')}</div>
+    ${detailPanel(a.key, a)}
+  </div>`;
+}
+
+function viewCategory(category, stepIdx, total) {
+  const t = categoryTally(category);
+  let html = stepHead(`Step ${stepIdx + 1} of ${total}`, category, CATEGORY_BLURB[category] || '',
+    `<div class="count" id="count"><b class="mono">${t.total - t.open}</b> of <span class="mono">${t.total}</span> checked</div>`);
+  html += itemsIn(category).map(itemCard).join('');
+  html += App.draft.adhoc.filter((a) => a.category === category).map(adhocCard).join('');
+  html += `<div class="cat-actions">
+    <button class="linkbtn" data-act="adhoc-add" data-cat="${esc(category)}">+ Add a finding</button>
+    ${t.open ? `<button class="linkbtn" data-act="rest-good" data-cat="${esc(category)}" style="color:var(--good)">Mark the rest ✓ Good</button>` : ''}
+  </div>`;
+  return html;
+}
+
+function viewOther(stepIdx, total) {
+  const d = App.draft;
+  return stepHead(`Step ${stepIdx + 1} of ${total}`, 'Anything else',
+    'Service, staff, guest moments, ideas. Not scored.') +
+    `<div class="card">
+      <div class="note-row" style="margin-bottom:14px">
+        <textarea class="big" data-note="__other" placeholder="Notes for the team…">${esc(d.otherNotes)}</textarea>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:14px">
+        <button class="btn" style="flex:1" data-act="mic" data-key="__other">🎤 Dictate</button>
+      </div>
+      ${photoRow('__other', d.otherPhotos)}
+    </div>`;
+}
+
+function viewReview() {
+  const d = App.draft, s = steps();
+  const missing = missingSeverity();
+  let html = stepHead('Final step', 'Review', `${d.restaurantName} · ${d.daypart}`);
+  if (missing.length) {
+    html += `<div class="alert"><b>Severity needed</b> on ${missing.length} flag${missing.length > 1 ? 's' : ''} before sending:
+      ${missing.map((m) => `<div><button class="linkbtn" data-act="edit" data-step="${s.findIndex((x) => x.id === m.category)}" data-key="${m.key}">${esc(m.category)}: ${esc(m.label.slice(0, 48))} →</button></div>`).join('')}</div>`;
+  }
+
+  if (d.recheck.length) {
+    const idx = s.findIndex((x) => x.id === 'recheck');
+    html += `<div class="rv-cat"><div class="rv-cat-head"><h3>Last time</h3>
+      <button class="linkbtn" data-act="goto" data-step="${idx}">Edit</button></div>
+      ${d.recheck.map((f) => {
+        const v = d.rechecks[f.id];
+        const ic = v === 'Fixed' ? '<span class="ic g">✓</span>' : v === 'Still an issue' ? '<span class="ic b">✗</span>' : '<span class="ic" style="color:var(--dim)">–</span>';
+        return `<div class="rv-row">${ic}<div class="body"><div class="t">${esc(f.prompt || f.note)}</div><div class="n">${esc(v || 'Not answered')}</div></div></div>`;
+      }).join('')}</div>`;
+  }
+
+  for (const c of d.checklist.categories) {
+    const t = categoryTally(c), idx = s.findIndex((x) => x.id === c);
+    const flags = [];
+    for (const it of itemsIn(c)) {
+      const r = d.ratings[it.id];
+      if (r && r.rating && r.rating !== 'Good') flags.push({ key: 'i-' + it.id, title: it.prompt, ...r });
+    }
+    for (const a of d.adhoc.filter((x) => x.category === c)) flags.push({ key: a.key, title: 'Added finding', ...a });
+    flags.sort((a, b) => (a.rating === 'Issue' ? 0 : 1) - (b.rating === 'Issue' ? 0 : 1));
+
+    html += `<div class="rv-cat"><div class="rv-cat-head"><h3>${esc(c)}</h3>
+      <span class="rv-tally"><span class="g">${t.good} ✓</span> · <span class="w">${t.warn} ⚠</span> · <span class="b">${t.bad} ✗</span>${t.open ? ` · ${t.open} skipped` : ''}</span></div>
+      ${flags.length ? flags.map((f) => `<div class="rv-row">
+          <span class="ic ${f.rating === 'Issue' ? 'b' : 'w'}">${f.rating === 'Issue' ? '✗' : '⚠'}</span>
+          <div class="body"><div class="t">${esc(f.title)}</div>
+            <div class="n">${f.severity ? `<span class="sev-chip ${f.rating === 'Issue' ? 'bad' : 'warn'}">${esc(f.severity)}</span> ` : '<span style="color:var(--warn)">No severity</span> '}${esc(f.note || '')}${f.photos.length ? ` · 📷 ${f.photos.length}` : ''}</div></div>
+          <button class="linkbtn edit" data-act="edit" data-step="${idx}" data-key="${f.key}">Edit</button>
+        </div>`).join('') : `<div class="rv-empty">${t.good ? 'Nothing flagged.' : 'Not walked.'}</div>`}
+    </div>`;
+  }
+
+  const oi = s.findIndex((x) => x.id === 'other');
+  html += `<div class="rv-cat"><div class="rv-cat-head"><h3>Anything else</h3>
+    <button class="linkbtn" data-act="goto" data-step="${oi}">Edit</button></div>
+    ${d.otherNotes.trim() || d.otherPhotos.length
+      ? `<div class="rv-row"><div class="body"><div class="n" style="color:var(--text);white-space:pre-wrap">${esc(d.otherNotes.trim())}</div>${d.otherPhotos.length ? `<div class="n">📷 ${d.otherPhotos.length}</div>` : ''}</div></div>`
+      : '<div class="rv-empty">No notes.</div>'}</div>`;
+  html += `<p class="sub" style="text-align:center;font-size:15px">Submitting saves to Airtable and emails the ${esc(d.restaurantName)} team.</p>`;
+  return html;
+}
+
+function viewSending() {
+  return {
+    html: `<div class="finish sending">
+      <div class="eyebrow">One moment</div>
+      <div class="bar"><span></span></div>
+      <h2 id="sending-msg">${esc(App.sending)}</h2>
+      <p class="sub">You can lock the phone. It's saved here either way.</p></div>`,
+  };
+}
+
+function viewDone() {
+  const { job, queued, error } = App.result || {};
+  if (!job) return viewHome();
+  const minutes = Math.max(1, Math.round((Date.now() - new Date(job.startedAt)) / 60000));
+  const tally = `<div class="tally">
+    <div><div class="v" style="color:var(--bad)">${job.tally.issues}</div><div class="k">Issues</div></div>
+    <div><div class="v" style="color:var(--warn)">${job.tally.attention}</div><div class="k">Attention</div></div>
+    <div><div class="v" style="color:var(--good)">${job.tally.good}</div><div class="k">Good</div></div>
+  </div>`;
+  const actions = `<div class="actions">
+    <a class="btn primary block" href="${CONFIG.HISTORY_URL}">View standings</a>
+    <button class="btn block ghost" data-act="home">Done</button></div>`;
+
+  if (queued) {
+    return { html: `<div class="finish">
+      <div class="eyebrow" style="color:var(--warn)">${error ? 'Needs attention' : 'Offline'}</div>
+      <h1 style="margin-top:12px">Saved on this phone</h1>
+      <p class="who">${error ? `The server said: ${esc(error)}. It is still saved here; tap “Send now” on the home screen to retry.` : `Will send when online. ${esc(job.restaurantName)} is safe here, nothing is lost.`}</p>
+      ${tally}${actions}</div>` };
+  }
+
+  const r = job.result || {};
+  const names = r.recipients || job.recipients || [];
+  const headline = r.emailed
+    ? `Sent to ${names.length} ${names.length === 1 ? 'person' : 'people'} at ${esc(job.restaurantName)}`
+    : `Saved. Email didn't send.`;
+  const sub = r.emailed
+    ? esc(names.join(', '))
+    : `${esc(r.error || 'Unknown error')}. Use “Resend email” on the history page.`;
+  return { html: `<div class="finish">
+    <svg class="seal" viewBox="0 0 112 112" aria-hidden="true">
+      <circle cx="56" cy="56" r="53"/><circle class="inner" cx="56" cy="56" r="45"/>
+      <path d="M38 57 L51 70 L75 44"/></svg>
+    <div class="eyebrow">Walk-through complete · ${minutes} min</div>
+    <h1 style="margin-top:12px">${headline}</h1>
+    <p class="who">${sub}</p>
+    ${job.photoErrors && job.photoErrors.length ? `<p class="who" style="color:var(--warn)">${job.photoErrors.length} photo(s) could not upload.</p>` : ''}
+    ${tally}${actions}</div>` };
+}
+
+/* ═══════════════════════ EVENTS ═══════════════════════ */
+function rerenderCard(key) {
+  const el = document.getElementById('card-' + key);
+  if (!el) return render();
+  let html;
+  if (key.startsWith('i-')) {
+    const cat = currentStep().category;
+    html = itemCard(itemsIn(cat).find((it) => it.id === key.slice(2)));
+  } else if (key.startsWith('a-')) html = adhocCard(App.draft.adhoc.find((a) => a.key === key));
+  else return render();
+  el.outerHTML = html;
+  hydrateThumbs(document.getElementById('card-' + key));
+  updateCount();
+}
+function updateCount() {
+  const cat = App.draft && currentStep().category;
+  const el = $('#count');
+  if (!cat || !el) return;
+  const t = categoryTally(cat);
+  el.innerHTML = `<b class="mono">${t.total - t.open}</b> of <span class="mono">${t.total}</span> checked`;
+}
+
+const actions = {
+  async menu() {
+    const items = [];
+    if (App.draft && App.screen === 'audit') {
+      items.push({ label: 'Save & exit', run: () => { saveDraft(); App.screen = 'home'; render(true); } });
+      items.push({ label: 'Discard draft', danger: true, run: () => discardDraft() });
+    }
+    items.push({ label: 'Standings & history', run: () => { location.href = CONFIG.HISTORY_URL; } });
+    items.push({ label: 'Lock (forget PIN)', run: () => { Store.del(LS.PIN); App.screen = 'pin'; render(); } });
+    const choice = await menuSheet(items);
+    if (choice) choice.run();
+  },
+  pick(el) { App.pick.restaurantId = el.dataset.id; render(); },
+  daypart(el) { App.pick.daypart = el.dataset.v; render(); },
+  begin: beginAudit,
+  resume() { App.screen = 'audit'; render(true); },
+  discard: () => discardDraft(),
+  home() { App.screen = 'home'; App.result = null; render(true); loadRestaurants(); },
+  'send-now'() { drainQueue(); render(); },
+  next() { flushNote(); goStep(App.draft.step + 1); },
+  back() { flushNote(); goStep(App.draft.step - 1); },
+  goto(el) { goStep(+el.dataset.step); },
+  edit(el) { goStep(+el.dataset.step, el.dataset.key); },
+  async submit() {
+    if (missingSeverity().length) return;
+    flushNote();
+    await submitDraft();
+  },
+  rate(el) {
+    const key = el.dataset.key, v = el.dataset.v, e = entryFor(key);
+    e.rating = e.rating === v && key.startsWith('i-') ? null : v; // tap again to clear (checklist items)
+    saveDraft();
+    rerenderCard(key);
+  },
+  sev(el) {
+    const e = entryFor(el.dataset.key);
+    e.severity = el.dataset.v;
+    saveDraft();
+    rerenderCard(el.dataset.key);
+  },
+  recheck(el) {
+    const d = App.draft, id = el.dataset.id;
+    d.rechecks[id] = d.rechecks[id] === el.dataset.v ? undefined : el.dataset.v;
+    saveDraft();
+    render();
+  },
+  'rest-good'(el) {
+    for (const it of itemsIn(el.dataset.cat)) {
+      const e = entryFor('i-' + it.id);
+      if (!e.rating) e.rating = 'Good';
+    }
+    saveDraft();
+    render();
+  },
+  'adhoc-add'(el) {
+    const a = { key: 'a-' + uid().slice(0, 12), category: el.dataset.cat, rating: 'Needs Attention', severity: null, note: '', photos: [] };
+    App.draft.adhoc.push(a);
+    saveDraft();
+    render();
+    const card = document.getElementById('card-' + a.key);
+    if (card) { card.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+  },
+  async 'adhoc-rm'(el) {
+    const a = App.draft.adhoc.find((x) => x.key === el.dataset.key);
+    if (a && (a.note || a.photos.length) && !(await ask({ title: 'Remove this finding?', ok: 'Remove', danger: true }))) return;
+    App.draft.adhoc = App.draft.adhoc.filter((x) => x.key !== el.dataset.key);
+    if (a) a.photos.forEach((pid) => PhotoStore.del(pid).catch(() => {}));
+    saveDraft();
+    render();
+  },
+  mic(el) {
+    const ta = document.querySelector(`textarea[data-note="${el.dataset.key}"]`);
+    if (ta) toggleDictation(ta, el);
+  },
+  photo(el) {
+    App.photoTarget = el.dataset.key;
+    const input = $('#camera');
+    input.value = '';
+    input.click();
+  },
+  async rmphoto(el) {
+    const e = entryFor(el.dataset.key);
+    e.photos = e.photos.filter((p) => p !== el.dataset.pid);
+    PhotoStore.del(el.dataset.pid).catch(() => {});
+    saveDraft();
+    el.dataset.key === '__other' ? render() : rerenderCard(el.dataset.key);
+  },
+};
+
+document.addEventListener('click', (ev) => {
+  const el = ev.target.closest('[data-act]');
+  if (!el || el.disabled) return;
+  const fn = actions[el.dataset.act];
+  if (fn) { ev.preventDefault(); fn(el); }
+});
+
+document.addEventListener('input', (ev) => {
+  const ta = ev.target.closest('textarea[data-note]');
+  if (!ta || !App.draft) return;
+  const key = ta.dataset.note;
+  if (key === '__other') App.draft.otherNotes = ta.value;
+  else { const e = entryFor(key); if (e) e.note = ta.value; }
+  clearTimeout(noteTimer);
+  noteTimer = setTimeout(() => Store.saveDraft(App.draft), 250);
+});
+document.addEventListener('focusout', (ev) => { if (ev.target.matches('textarea[data-note]') && App.draft) saveDraft(); });
+
+$('#camera').addEventListener('change', async (ev) => {
+  const file = ev.target.files && ev.target.files[0];
+  const key = App.photoTarget;
+  if (!file || !key || !App.draft) return;
+  try {
+    const blob = await compressPhoto(file);
+    const pid = `${App.draft.clientId.slice(0, 8)}-${uid().slice(0, 10)}`;
+    await PhotoStore.put(pid, blob);
+    const e = entryFor(key);
+    e.photos = [...e.photos, pid];
+    saveDraft();
+    key === '__other' ? render() : rerenderCard(key);
+  } catch (e) {
+    console.error(e);
+    toast('Could not save that photo. Try again');
+  }
+});
+
+document.addEventListener('submit', async (ev) => {
+  if (ev.target.id !== 'pin-form') return;
+  ev.preventDefault();
+  const pin = $('#pin').value.trim();
+  const err = $('#pin-err');
+  if (!pin) return;
+  err.textContent = 'Checking…';
+  try {
+    const data = await Api.restaurants(pin);
+    Store.set(LS.PIN, pin);
+    App.restaurants = data.restaurants;
+    Store.set(LS.RESTAURANTS, App.restaurants);
+    App.screen = App.draft ? 'audit' : 'home';
+    render(true);
+    drainQueue();
+  } catch (e) {
+    err.textContent = e.status === 401 ? 'That PIN didn’t work.' : e.offline ? 'No connection. Try again with signal.' : e.message;
+  }
+});
+
+window.addEventListener('online', drainQueue);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') drainQueue(); else if (App.draft) saveDraft(); });
+window.addEventListener('pagehide', () => { if (App.draft) saveDraft(); });
+setInterval(() => { if (Store.queue().length) drainQueue(); }, CONFIG.RETRY_MS);
+
+/* ═══════════════════════ BOOT ═══════════════════════ */
+(function boot() {
+  if (!Store.pin()) { App.screen = 'pin'; render(); return; }
+  if (App.draft) { App.screen = 'audit'; render(true); }  // resume straight into the walk
+  else { App.screen = 'home'; render(); }
+  loadRestaurants();
+  drainQueue();
+})();
+</script>
+</body>
+</html>
