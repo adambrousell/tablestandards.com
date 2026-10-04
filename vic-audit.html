@@ -268,13 +268,55 @@ textarea.big { min-height: 180px; }
 /* ═══════════════════════ CONFIG ═══════════════════════ */
 const CONFIG = {
   // Your existing worker's URL + /audit (no trailing slash)
-  WORKER_URL: 'https://rpi-shift.YOUR-SUBDOMAIN.workers.dev/audit',
+  WORKER_URL: 'https://rpi-shift-api.amusementstandards.workers.dev/audit',
   HISTORY_URL: '', // set to 'audits.html' once a history page exists; links stay hidden until then
   AUDITOR: 'Victor Rallo',
   PHOTO_MAX_PX: 1600,
   PHOTO_QUALITY: 0.75,
   STALE_DAYS: 21,
   RETRY_MS: 30000,
+  DEFAULT_RESTAURANT_ID: 'rpi',
+};
+// Built-in fallbacks so the app opens ready to walk even before the worker answers.
+const DEFAULT_RESTAURANTS = [
+  { id: 'rpi', name: 'River Pointe Inn', shortCode: 'RPI', lastAuditDate: null },
+];
+const DEFAULT_CHECKLIST = {
+  categories: ['Food', 'Beverage', 'Maintenance', 'Cleanliness'],
+  items: {
+    Food: [
+      { id: 'f-temp', prompt: 'Hot food hot, cold food cold when it hits the table' },
+      { id: 'f-plate', prompt: 'Plating to spec: portion, garnish, clean rims' },
+      { id: 'f-time', prompt: 'Ticket times reasonable; courses paced well' },
+      { id: 'f-specials', prompt: 'Specials known by staff and executed well' },
+      { id: 'f-bread', prompt: 'Bread service and first touches correct and on time' },
+      { id: 'f-pass', prompt: 'Pass clean and organized; expo in control' },
+    ],
+    Beverage: [
+      { id: 'b-setup', prompt: 'Bar set and stocked; garnishes fresh' },
+      { id: 'b-glass', prompt: 'Glassware spotless; right glass for every drink' },
+      { id: 'b-pour', prompt: 'Cocktails to spec; pours and garnish consistent' },
+      { id: 'b-wine', prompt: 'Wine service correct: presentation, temperature, pour' },
+      { id: 'b-list', prompt: 'Wine list and BTG accurate; nothing 86 still listed' },
+      { id: 'b-time', prompt: 'Drink ticket times reasonable' },
+    ],
+    Maintenance: [
+      { id: 'm-light', prompt: 'Lighting and music levels right for the daypart' },
+      { id: 'm-hvac', prompt: 'Temperature comfortable throughout' },
+      { id: 'm-furn', prompt: 'Tables, chairs, banquettes solid and undamaged' },
+      { id: 'm-rest', prompt: 'Restrooms fully working: fixtures, locks, dryers' },
+      { id: 'm-ext', prompt: 'Exterior, signage, and lot in good shape' },
+      { id: 'm-broken', prompt: 'Nothing broken, burned out, or taped up' },
+    ],
+    Cleanliness: [
+      { id: 'c-entry', prompt: 'Entry and host stand clean and uncluttered' },
+      { id: 'c-dining', prompt: 'Dining room floors, tables, and settings clean' },
+      { id: 'c-bar', prompt: 'Bar top and back bar clean and organized' },
+      { id: 'c-rest', prompt: 'Restrooms clean and stocked' },
+      { id: 'c-glass', prompt: 'Windows, mirrors, and glass free of smudges' },
+      { id: 'c-staff', prompt: 'Staff uniforms neat and clean' },
+    ],
+  },
 };
 const CATEGORY_BLURB = {
   Food: 'Presentation, temperature, portioning, timing, specials.',
@@ -505,8 +547,8 @@ function toggleDictation(textarea, btn) {
 /* ═══════════════════════ DRAFT MODEL ═══════════════════════ */
 const App = {
   screen: 'boot',
-  restaurants: Store.get(LS.RESTAURANTS, []),
-  pick: { restaurantId: null, daypart: defaultDaypart() },
+  restaurants: (() => { const c = Store.get(LS.RESTAURANTS, []); return c && c.length ? c : DEFAULT_RESTAURANTS.slice(); })(),
+  pick: { restaurantId: CONFIG.DEFAULT_RESTAURANT_ID, daypart: defaultDaypart() },
   draft: Store.draft(),
   sending: '',
   result: null,
@@ -714,11 +756,13 @@ async function loadRestaurants() {
   App.loading = true; paint();
   try {
     const data = await Api.restaurants();
-    App.restaurants = data.restaurants;
+    if (Array.isArray(data.restaurants) && data.restaurants.length) App.restaurants = data.restaurants;
+    if (!App.restaurants.some((r) => r.id === App.pick.restaurantId)) App.pick.restaurantId = (App.restaurants[0] || {}).id || null;
     if (data.config && data.config.staleDays) CONFIG.STALE_DAYS = data.config.staleDays;
     Store.set(LS.RESTAURANTS, App.restaurants);
   } catch (e) {
-    if (!App.restaurants.length) toast(e.offline ? 'Offline. Connect once to load restaurants' : e.message);
+    console.warn('Could not load restaurants from', CONFIG.WORKER_URL, e);
+    if (!e.offline) toast(`Worker: ${e.message}`);
   } finally { App.loading = false; paint(); }
 }
 
@@ -732,9 +776,9 @@ async function beginAudit() {
   }
   const btn = $('#begin'); if (btn) { btn.disabled = true; btn.textContent = 'Opening…'; }
 
-  let checklist = Store.get(LS.CHECKLIST);
+  let checklist = Store.get(LS.CHECKLIST) || DEFAULT_CHECKLIST;
   try { checklist = await Api.checklist(); Store.set(LS.CHECKLIST, checklist); }
-  catch (e) { if (!checklist) { toast('Need a connection to load the checklist the first time'); render(); return; } }
+  catch (e) { /* use cached or built-in checklist */ }
 
   let recheck = [];
   try { recheck = (await Api.openFindings(r.id)).findings; }
