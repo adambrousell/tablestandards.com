@@ -90,7 +90,7 @@ main { padding: 24px 0 calc(120px + var(--safe-b)); }
 .btn {
   min-height: var(--tap); padding: 0 22px; border-radius: 999px;
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  font-family: var(--serif); font-size: 18px; letter-spacing: .02em;
+  font-family: var(--serif); font-size: 18px; letter-spacing: .02em; text-decoration: none;
   border: 1px solid var(--line-2); color: var(--paper); background: var(--ink-3);
   transition: transform .08s, background .2s, border-color .2s;
 }
@@ -220,16 +220,6 @@ textarea.big { min-height: 180px; }
 .banner-actions { display: flex; gap: 8px; margin-top: 14px; }
 .banner-actions .btn { flex: 1; min-height: 48px; font-size: 16px; }
 
-/* PIN */
-.pin-screen { min-height: 78vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 10px; }
-.pin-screen .mark { font-family: var(--display); font-size: 38px; letter-spacing: .34em; color: var(--gold); margin-right: -.34em; font-weight: 400; }
-.pin-screen .rule { width: 56px; height: 1px; background: var(--gold-lo); margin: 6px 0 14px; }
-.pin-input {
-  width: 220px; height: 64px; text-align: center; font-family: var(--mono); font-size: 28px; letter-spacing: .4em;
-  background: var(--ink-2); border: 1px solid var(--line-2); border-radius: 14px; color: var(--paper); margin: 18px 0 8px;
-}
-.err { color: var(--bad); font-size: 16px; min-height: 22px; }
-
 /* Finish */
 .finish { text-align: center; padding-top: 6vh; }
 .seal { width: 112px; height: 112px; margin: 0 auto 26px; }
@@ -277,8 +267,9 @@ textarea.big { min-height: 180px; }
 
 /* ═══════════════════════ CONFIG ═══════════════════════ */
 const CONFIG = {
-  WORKER_URL: 'https://rallo-audit.YOUR-SUBDOMAIN.workers.dev',
-  HISTORY_URL: 'audits.html',
+  // Your existing worker's URL + /audit (no trailing slash)
+  WORKER_URL: 'https://rpi-shift.YOUR-SUBDOMAIN.workers.dev/audit',
+  HISTORY_URL: '', // set to 'audits.html' once a history page exists; links stay hidden until then
   AUDITOR: 'Victor Rallo',
   PHOTO_MAX_PX: 1600,
   PHOTO_QUALITY: 0.75,
@@ -296,7 +287,7 @@ const CATEGORY_BLURB = {
    localStorage holds the draft + send queue (small JSON).
    IndexedDB holds photo blobs (too big for localStorage). */
 const LS = {
-  PIN: 'rallo.pin', DRAFT: 'rallo.draft', QUEUE: 'rallo.queue',
+  DRAFT: 'rallo.draft', QUEUE: 'rallo.queue',
   RESTAURANTS: 'rallo.cache.restaurants', CHECKLIST: 'rallo.cache.checklist',
 };
 const Store = {
@@ -308,7 +299,6 @@ const Store = {
     catch (e) { console.error('localStorage write failed', e); toast('Phone storage is full. Remove a photo or two'); return false; }
   },
   del(key) { try { localStorage.removeItem(key); } catch {} },
-  pin() { return Store.get(LS.PIN, ''); },
   draft() { return Store.get(LS.DRAFT); },
   saveDraft(d) { d.updatedAt = new Date().toISOString(); return Store.set(LS.DRAFT, d); },
   clearDraft() { Store.del(LS.DRAFT); },
@@ -348,14 +338,14 @@ class ApiError extends Error {
   get retryable() { return this.status === 0 || this.status === 408 || this.status === 429 || this.status >= 500; }
 }
 const Api = {
-  async request(method, path, body, { timeout = 25000, pin = Store.pin() } = {}) {
+  async request(method, path, body, { timeout = 25000 } = {}) {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), timeout);
     let res;
     try {
       res = await fetch(CONFIG.WORKER_URL + path, {
         method,
-        headers: { 'Content-Type': 'application/json', 'X-Access-PIN': pin },
+        headers: body ? { 'Content-Type': 'application/json' } : undefined,
         body: body ? JSON.stringify(body) : undefined,
         signal: ctrl.signal,
       });
@@ -366,7 +356,7 @@ const Api = {
     if (!res.ok) throw new ApiError(data.error || `Error ${res.status}`, res.status);
     return data;
   },
-  restaurants: (pin) => Api.request('GET', '/restaurants', null, pin ? { pin } : undefined),
+  restaurants: () => Api.request('GET', '/restaurants'),
   checklist: () => Api.request('GET', '/checklist'),
   openFindings: (id) => Api.request('GET', `/restaurants/${id}/open-findings`),
   createAudit: (payload) => Api.request('POST', '/audits', payload, { timeout: 45000 }),
@@ -660,7 +650,7 @@ async function runJob(job, progress = () => {}) {
     persistJob(job);
   }
   if (job.stage === 'submit') {
-    progress('Sending the email');
+    progress('Finishing up');
     job.result = await Api.submit(job.auditId);
     job.stage = 'done';
     persistJob(job);
@@ -672,7 +662,7 @@ async function runJob(job, progress = () => {}) {
 
 /** Background retry. Never shows errors loudly; the home banner reflects queue state. */
 async function drainQueue() {
-  if (Queue.busy || !Store.pin()) return;
+  if (Queue.busy) return;
   const q = Store.queue();
   if (!q.length) return;
   Queue.busy = true;
@@ -728,8 +718,7 @@ async function loadRestaurants() {
     if (data.config && data.config.staleDays) CONFIG.STALE_DAYS = data.config.staleDays;
     Store.set(LS.RESTAURANTS, App.restaurants);
   } catch (e) {
-    if (e.status === 401) { Store.del(LS.PIN); App.screen = 'pin'; render(); }
-    else if (!App.restaurants.length) toast('Offline. Connect once to load restaurants');
+    if (!App.restaurants.length) toast(e.offline ? 'Offline. Connect once to load restaurants' : e.message);
   } finally { App.loading = false; paint(); }
 }
 
@@ -796,7 +785,7 @@ function goStep(i, focusKey) {
 function render(scrollTop = false) {
   renderTopbar();
   const app = $('#app'), bottom = $('#bottom');
-  const views = { pin: viewPin, home: viewHome, audit: viewAudit, sending: viewSending, done: viewDone, boot: () => ({ html: '' }) };
+  const views = { home: viewHome, audit: viewAudit, sending: viewSending, done: viewDone, boot: () => ({ html: '' }) };
   const v = (views[App.screen] || viewHome)();
   app.innerHTML = v.html;
   bottom.innerHTML = v.bottom || '';
@@ -807,7 +796,7 @@ function render(scrollTop = false) {
 
 function renderTopbar() {
   const tb = $('#topbar');
-  if (App.screen === 'pin' || App.screen === 'boot') { tb.innerHTML = ''; tb.classList.add('hidden'); return; }
+  if (App.screen === 'boot') { tb.innerHTML = ''; tb.classList.add('hidden'); return; }
   tb.classList.remove('hidden');
   let ctx = '', progress = '';
   if (App.screen === 'audit' && App.draft) {
@@ -821,23 +810,6 @@ function renderTopbar() {
       <div class="topctx">${ctx}</div>
       <button class="iconbtn" data-act="menu" aria-label="Menu">⋯</button>
     </div>${progress}</div>`;
-}
-
-function viewPin() {
-  return {
-    html: `<div class="pin-screen">
-      <div class="mark">RALLO</div>
-      <div class="eyebrow" style="color:var(--muted)">Hospitality</div>
-      <div class="rule"></div>
-      <h2>Owner Walk-Through</h2>
-      <form id="pin-form" autocomplete="off">
-        <input class="pin-input" id="pin" type="password" inputmode="numeric" autocomplete="one-time-code" aria-label="PIN" placeholder="····">
-        <div class="err" id="pin-err"></div>
-        <button class="btn primary" style="min-width:220px" type="submit">Unlock</button>
-      </form>
-    </div>`,
-    after: () => $('#pin').focus(),
-  };
 }
 
 function viewHome() {
@@ -870,13 +842,13 @@ function viewHome() {
 
   html += `<div class="eyebrow section-label">Restaurant</div>`;
   if (!App.restaurants.length) {
-    html += App.loading ? '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>' : `<p class="sub">No restaurants yet. Add them in Airtable.</p>`;
+    html += App.loading ? '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>' : `<p class="sub">No restaurants yet. Add them to the worker config.</p>`;
   }
   for (const r of App.restaurants) {
     const n = daysSince(r.lastAuditDate);
     const stale = n == null || n >= CONFIG.STALE_DAYS;
     const sel = App.pick.restaurantId === r.id;
-    html += `<button class="card rest-card ${sel ? 'selected' : ''}" data-act="pick" data-id="${r.id}" aria-pressed="${sel}">
+    html += `<button class="card rest-card ${sel ? 'selected' : ''}" data-act="pick" data-id="${esc(r.id)}" aria-pressed="${sel}">
       <span class="mono-badge">${esc((r.shortCode || r.name.slice(0, 3)).toUpperCase().slice(0, 4))}</span>
       <span style="flex:1;min-width:0">
         <span class="name" style="display:block">${esc(r.name)}</span>
@@ -887,7 +859,7 @@ function viewHome() {
   html += `<div class="eyebrow section-label">Daypart</div>
     <div class="pills four">${['Lunch', 'Dinner', 'Brunch', 'Other'].map((p) =>
       `<button class="pill small ${App.pick.daypart === p ? 'on' : ''}" data-act="daypart" data-v="${p}">${p}</button>`).join('')}</div>
-    <p style="text-align:center;margin-top:28px"><a class="linkbtn" href="${CONFIG.HISTORY_URL}">Standings &amp; history →</a></p>`;
+    ${CONFIG.HISTORY_URL ? `<p style="text-align:center;margin-top:28px"><a class="linkbtn" href="${CONFIG.HISTORY_URL}">Standings &amp; history →</a></p>` : ''}`;
 
   const chosen = App.restaurants.find((r) => r.id === App.pick.restaurantId);
   return {
@@ -932,15 +904,15 @@ function viewRecheck() {
   for (const f of d.recheck) {
     const v = d.rechecks[f.id];
     const sevCls = f.rating === 'Issue' ? 'bad' : 'warn';
-    html += `<div class="card item recheck" id="card-r-${f.id}">
+    html += `<div class="card item recheck" id="card-r-${esc(f.id)}">
       <div class="tag"><span>${esc(f.category)} · <span class="from">${esc(fmtShort(f.date))}</span></span>
         <span class="sev-chip ${sevCls}">${f.rating === 'Issue' ? '✗' : '⚠'} ${esc(f.severity || '')}</span></div>
       <p class="prompt">${esc(f.prompt || f.note || 'Added finding')}</p>
       ${f.prompt && f.note ? `<p class="orig-note">“${esc(f.note)}”</p>` : ''}
       <div class="pills three">
-        <button class="pill rate good ${v === 'Fixed' ? 'on' : ''}" data-act="recheck" data-id="${f.id}" data-v="Fixed"><span class="ic">✓</span><span class="lb">Fixed</span></button>
-        <button class="pill rate bad ${v === 'Still an issue' ? 'on' : ''}" data-act="recheck" data-id="${f.id}" data-v="Still an issue"><span class="ic">✗</span><span class="lb">Still an issue</span></button>
-        <button class="pill rate ${v === "Didn't check" ? 'on' : ''}" data-act="recheck" data-id="${f.id}" data-v="Didn't check"><span class="ic">–</span><span class="lb">Didn't check</span></button>
+        <button class="pill rate good ${v === 'Fixed' ? 'on' : ''}" data-act="recheck" data-id="${esc(f.id)}" data-v="Fixed"><span class="ic">✓</span><span class="lb">Fixed</span></button>
+        <button class="pill rate bad ${v === 'Still an issue' ? 'on' : ''}" data-act="recheck" data-id="${esc(f.id)}" data-v="Still an issue"><span class="ic">✗</span><span class="lb">Still an issue</span></button>
+        <button class="pill rate ${v === "Didn't check" ? 'on' : ''}" data-act="recheck" data-id="${esc(f.id)}" data-v="Didn't check"><span class="ic">–</span><span class="lb">Didn't check</span></button>
       </div></div>`;
   }
   return html;
@@ -1067,7 +1039,7 @@ function viewReview() {
     ${d.otherNotes.trim() || d.otherPhotos.length
       ? `<div class="rv-row"><div class="body"><div class="n" style="color:var(--text);white-space:pre-wrap">${esc(d.otherNotes.trim())}</div>${d.otherPhotos.length ? `<div class="n">📷 ${d.otherPhotos.length}</div>` : ''}</div></div>`
       : '<div class="rv-empty">No notes.</div>'}</div>`;
-  html += `<p class="sub" style="text-align:center;font-size:15px">Submitting saves to Airtable and emails the ${esc(d.restaurantName)} team.</p>`;
+  html += `<p class="sub" style="text-align:center;font-size:15px">Submitting saves the walk-through and sends it to the ${esc(d.restaurantName)} team.</p>`;
   return html;
 }
 
@@ -1081,6 +1053,11 @@ function viewSending() {
   };
 }
 
+function mailtoHref(r) {
+  const to = (r.recipients || []).map(encodeURIComponent).join(',');
+  return `mailto:${to}?subject=${encodeURIComponent(r.subject || 'Walk-through')}&body=${encodeURIComponent(r.summaryText || '')}`;
+}
+
 function viewDone() {
   const { job, queued, error } = App.result || {};
   if (!job) return viewHome();
@@ -1090,26 +1067,31 @@ function viewDone() {
     <div><div class="v" style="color:var(--warn)">${job.tally.attention}</div><div class="k">Attention</div></div>
     <div><div class="v" style="color:var(--good)">${job.tally.good}</div><div class="k">Good</div></div>
   </div>`;
-  const actions = `<div class="actions">
-    <a class="btn primary block" href="${CONFIG.HISTORY_URL}">View standings</a>
-    <button class="btn block ghost" data-act="home">Done</button></div>`;
+  const historyBtn = CONFIG.HISTORY_URL ? `<a class="btn block" href="${CONFIG.HISTORY_URL}">View standings</a>` : '';
 
   if (queued) {
     return { html: `<div class="finish">
       <div class="eyebrow" style="color:var(--warn)">${error ? 'Needs attention' : 'Offline'}</div>
       <h1 style="margin-top:12px">Saved on this phone</h1>
       <p class="who">${error ? `The server said: ${esc(error)}. It is still saved here; tap “Send now” on the home screen to retry.` : `Will send when online. ${esc(job.restaurantName)} is safe here, nothing is lost.`}</p>
-      ${tally}${actions}</div>` };
+      ${tally}<div class="actions">${historyBtn}<button class="btn block primary" data-act="home">Done</button></div></div>` };
   }
 
   const r = job.result || {};
   const names = r.recipients || job.recipients || [];
-  const headline = r.emailed
-    ? `Sent to ${names.length} ${names.length === 1 ? 'person' : 'people'} at ${esc(job.restaurantName)}`
-    : `Saved. Email didn't send.`;
-  const sub = r.emailed
-    ? esc(names.join(', '))
-    : `${esc(r.error || 'Unknown error')}. Use “Resend email” on the history page.`;
+  let eyebrowTxt, headline, sub, primary;
+  if (r.emailed) {
+    headline = `Sent to ${names.length} ${names.length === 1 ? 'person' : 'people'} at ${esc(job.restaurantName)}`;
+    sub = esc(names.join(', '));
+    primary = `<button class="btn primary block" data-act="home">Done</button>`;
+  } else {
+    headline = 'Saved. One tap to send.';
+    sub = r.emailSkipped
+      ? `Opens your email with the full summary${names.length ? ` addressed to the ${esc(job.restaurantName)} team` : ''}.`
+      : `Automatic email failed (${esc(r.error || 'unknown error')}). Send it from your phone instead.`;
+    primary = `<a class="btn primary block" href="${esc(mailtoHref(r))}">✉ Email the team</a>
+      <button class="btn block ghost" data-act="home">Done</button>`;
+  }
   return { html: `<div class="finish">
     <svg class="seal" viewBox="0 0 112 112" aria-hidden="true">
       <circle cx="56" cy="56" r="53"/><circle class="inner" cx="56" cy="56" r="45"/>
@@ -1118,7 +1100,7 @@ function viewDone() {
     <h1 style="margin-top:12px">${headline}</h1>
     <p class="who">${sub}</p>
     ${job.photoErrors && job.photoErrors.length ? `<p class="who" style="color:var(--warn)">${job.photoErrors.length} photo(s) could not upload.</p>` : ''}
-    ${tally}${actions}</div>` };
+    ${tally}<div class="actions">${primary}${historyBtn}</div></div>` };
 }
 
 /* ═══════════════════════ EVENTS ═══════════════════════ */
@@ -1150,8 +1132,8 @@ const actions = {
       items.push({ label: 'Save & exit', run: () => { saveDraft(); App.screen = 'home'; render(true); } });
       items.push({ label: 'Discard draft', danger: true, run: () => discardDraft() });
     }
-    items.push({ label: 'Standings & history', run: () => { location.href = CONFIG.HISTORY_URL; } });
-    items.push({ label: 'Lock (forget PIN)', run: () => { Store.del(LS.PIN); App.screen = 'pin'; render(); } });
+    if (CONFIG.HISTORY_URL) items.push({ label: 'Standings & history', run: () => { location.href = CONFIG.HISTORY_URL; } });
+    if (App.screen !== 'audit') items.push({ label: 'Refresh restaurants', run: () => loadRestaurants() });
     const choice = await menuSheet(items);
     if (choice) choice.run();
   },
@@ -1268,26 +1250,6 @@ $('#camera').addEventListener('change', async (ev) => {
   }
 });
 
-document.addEventListener('submit', async (ev) => {
-  if (ev.target.id !== 'pin-form') return;
-  ev.preventDefault();
-  const pin = $('#pin').value.trim();
-  const err = $('#pin-err');
-  if (!pin) return;
-  err.textContent = 'Checking…';
-  try {
-    const data = await Api.restaurants(pin);
-    Store.set(LS.PIN, pin);
-    App.restaurants = data.restaurants;
-    Store.set(LS.RESTAURANTS, App.restaurants);
-    App.screen = App.draft ? 'audit' : 'home';
-    render(true);
-    drainQueue();
-  } catch (e) {
-    err.textContent = e.status === 401 ? 'That PIN didn’t work.' : e.offline ? 'No connection. Try again with signal.' : e.message;
-  }
-});
-
 window.addEventListener('online', drainQueue);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') drainQueue(); else if (App.draft) saveDraft(); });
 window.addEventListener('pagehide', () => { if (App.draft) saveDraft(); });
@@ -1295,9 +1257,8 @@ setInterval(() => { if (Store.queue().length) drainQueue(); }, CONFIG.RETRY_MS);
 
 /* ═══════════════════════ BOOT ═══════════════════════ */
 (function boot() {
-  if (!Store.pin()) { App.screen = 'pin'; render(); return; }
-  if (App.draft) { App.screen = 'audit'; render(true); }  // resume straight into the walk
-  else { App.screen = 'home'; render(); }
+  App.screen = App.draft ? 'audit' : 'home'; // resume straight into the walk if a draft is open
+  render(true);
   loadRestaurants();
   drainQueue();
 })();
