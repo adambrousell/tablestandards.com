@@ -227,7 +227,7 @@ const WORKER_URL = 'https://rpi-pmix-backend.amusementstandards.workers.dev';
 const EXCLUDE_FEES_FROM_TOTALS = false;
 const KIDS_OWN_CATEGORY = true;
 
-/* UPDATED Sep 28: mapped week-of-Sep-21 uncategorized items; Dover Sole now its own pinned nightly category */
+/* UPDATED Oct 5: mapped week-of-Sep-28 uncategorized items (fall menu); Fondue Add-ons excluded as $0 modifier */
 const ITEM_OVERRIDES = {
   // Spirits / aperitifs that Toast filed under Entrées
   'cocchi americano bianco': 'spirit',
@@ -269,6 +269,17 @@ const ITEM_OVERRIDES = {
   'oeuf ecossais': 'starter',
   'cotes de nuits': 'wine',        // bottle rung without the BTL: prefix
   'siete misterios doba yej': 'spirit', // mezcal
+  // Week of Sep 28 uncategorized items (fall menu) — now fixed
+  'shrimp provencal': 'food',      // ~$41 avg — entrée price point
+  'salade d\'automne': 'starter',
+  'salade dautomne': 'starter',
+  'beets & cream': 'starter',
+  'beets and cream': 'starter',
+  'garlic spinach': 'sides',
+  'banana old fashioned': 'cocktail', // "old fashioned" isn't in the cocktail regex
+  'emerlad city': 'cocktail',      // Toast button is misspelled — keep both spellings
+  'emerald city': 'cocktail',
+  'malibu bay breeze': 'cocktail',
   // Catch-all "Wine" button in Toast — bottles rung with no SKU attached.
   'wine': 'wine',
   // Lunch-only item
@@ -285,10 +296,12 @@ const ITEM_OVERRIDES = {
   'plating fee': 'fees',
 };
 
-/* UPDATED: Added "do not make" to excludes */
+/* UPDATED Oct 5: Fondue Add-ons ($0 modifier ring) excluded */
 const ITEM_EXCLUDES = new Set([
   'no make',
   'do not make',
+  'fondue add-ons',
+  'fondue add ons',
 ]);
 const EXCLUDE_PATTERNS = [
   /\bseat\s*\d+\b/,                 // "Tartar Sauce Seat 4" — seat note, not a sale
