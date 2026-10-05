@@ -26,6 +26,7 @@
   --brass-hi: #b8924a;
   --brass-wash: rgba(155, 122, 54, 0.10);
   --good: #5f7d4a;
+  --good-wash: rgba(95, 125, 74, 0.12);
   --bad: #b0503a;
   --bad-wash: rgba(176, 80, 58, 0.10);
   --display: 'Playfair Display', Georgia, serif;
@@ -94,6 +95,7 @@ select.restaurant {
   background-repeat: no-repeat; background-position: right 18px center;
 }
 select.restaurant.empty { color: var(--dim); }
+select.restaurant.small { min-height: 50px; font-size: 18px; }
 .who { margin-top: 10px; font-size: 15px; color: var(--muted); min-height: 44px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
 
 .sec-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
@@ -112,10 +114,36 @@ textarea::placeholder, input::placeholder { color: var(--dim); }
 .mic.listening { border-color: var(--bad); background: var(--bad-wash); color: var(--bad); animation: pulse 1.2s infinite; }
 @keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(176,80,58,.12); } }
 
+/* Photos */
+.photos { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+.thumb { position: relative; width: 72px; height: 72px; border-radius: 10px; overflow: hidden; background: var(--card-2); border: 1px solid var(--line-2); }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb button { position: absolute; top: 0; right: 0; width: 32px; height: 32px; background: rgba(30,27,22,.6); color: #fff; font-size: 17px; border-bottom-left-radius: 10px; }
+.addphoto { min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px dashed var(--line-2); color: var(--muted); font-size: 14px; font-weight: 600; letter-spacing: .04em; display: inline-flex; align-items: center; gap: 6px; }
+.addphoto:active { background: var(--card-2); }
+
 /* Banners */
 .banner .t { font-family: var(--display); font-size: 18px; color: var(--ink); }
 .banner .s { font-size: 14px; color: var(--muted); }
 .banner.queue { border-color: rgba(155,122,54,.5); background: #fbf5e8; }
+
+/* Preview + history */
+.meta { display: flex; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 15px; align-items: baseline; }
+.meta:first-child { border-top: 0; padding-top: 0; }
+.meta .k { flex: 0 0 64px; font-size: 12px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--dim); }
+.meta .v { flex: 1; min-width: 0; color: var(--ink); overflow-wrap: anywhere; }
+.mailframe { border: 1px solid var(--line-2); border-radius: var(--radius); overflow: hidden; background: #f7f2e8; margin-bottom: 12px; }
+.mailframe iframe { display: block; width: 100%; height: 480px; border: 0; background: #f7f2e8; }
+.hist-item { width: 100%; text-align: left; display: block; }
+.hist-item .name { font-family: var(--display); font-size: 20px; color: var(--ink); line-height: 1.2; }
+.hist-item .when { font-size: 14px; color: var(--muted); margin-top: 2px; }
+.hist-item .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.tag { font-size: 12px; font-weight: 600; letter-spacing: .06em; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line-2); color: var(--muted); background: var(--card); }
+.tag.ok { color: var(--good); border-color: rgba(95,125,74,.4); background: var(--good-wash); }
+.tag.warn { color: var(--bad); border-color: rgba(176,80,58,.35); background: var(--bad-wash); }
+.empty-state { text-align: center; color: var(--muted); padding: 30px 10px; }
+.skeleton { height: 92px; border-radius: var(--radius); background: linear-gradient(90deg, var(--card), var(--card-2), var(--card)); background-size: 200% 100%; animation: shimmer 1.4s infinite; margin-bottom: 12px; }
+@keyframes shimmer { to { background-position: -200% 0; } }
 
 /* Admin */
 .grp-title { font-family: var(--display); font-size: 20px; color: var(--ink); }
@@ -160,6 +188,7 @@ input.rname { font-family: var(--display); font-size: 20px; margin-bottom: 4px; 
 <header class="topbar" id="topbar"></header>
 <main><div class="wrap" id="app"></div></main>
 <div id="bottom"></div>
+<input type="file" id="photo-input" accept="image/*" multiple class="hidden">
 
 <script>
 'use strict';
@@ -170,7 +199,11 @@ const CONFIG = {
   AUTHOR: 'Victor Rallo',
   GREET_NAME: 'Vic',
   RETRY_MS: 30000,
+  PHOTO_MAX_PX: 1600,
+  PHOTO_QUALITY: 0.75,
+  MAX_PHOTOS: 6, // per section
 };
+const PHOTO_URL = (id) => `${CONFIG.WORKER_URL}/photo/${id}`;
 const ALL_ID = 'all';
 const SECTIONS = [
   { key: 'food', label: 'Food Notes & Changes', hint: 'Dishes, plating, temperature, portions, timing, specials.' },
@@ -219,7 +252,9 @@ const DEFAULT_RECIPIENTS = {
   ],
 };
 
-/* ═══════════════════════ STORAGE ═══════════════════════ */
+/* ═══════════════════════ STORAGE ═══════════════════════
+   localStorage: draft, send queue, recipient cache, PIN.
+   IndexedDB: photo blobs (too big for localStorage). */
 const LS = { DRAFT: 'rallo.notes.draft', QUEUE: 'rallo.notes.queue', RECIPIENTS: 'rallo.notes.recipients', LAST: 'rallo.notes.lastRestaurant', PIN: 'rallo.notes.pin' };
 const Store = {
   get(key, fallback = null) { try { const v = localStorage.getItem(key); return v == null ? fallback : JSON.parse(v); } catch { return fallback; } },
@@ -228,9 +263,29 @@ const Store = {
   queue() { return Store.get(LS.QUEUE, []); },
   saveQueue(q) { return Store.set(LS.QUEUE, q); },
 };
-const Session = {
-  get(k) { try { return sessionStorage.getItem(k); } catch { return null; } },
-  set(k, v) { try { v == null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch {} },
+const PhotoStore = {
+  _db: null,
+  open() {
+    if (this._db) return Promise.resolve(this._db);
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open('rallo-notes', 1);
+      req.onupgradeneeded = () => req.result.createObjectStore('photos');
+      req.onsuccess = () => { this._db = req.result; resolve(this._db); };
+      req.onerror = () => reject(req.error);
+    });
+  },
+  async _tx(mode, fn) {
+    const db = await this.open();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('photos', mode);
+      const req = fn(tx.objectStore('photos'));
+      tx.oncomplete = () => resolve(req && req.result);
+      tx.onerror = () => reject(tx.error);
+    });
+  },
+  put(id, blob) { return this._tx('readwrite', (s) => s.put(blob, id)); },
+  get(id) { return this._tx('readonly', (s) => s.get(id)); },
+  del(id) { return this._tx('readwrite', (s) => s.delete(id)); },
 };
 
 /* ═══════════════════════ API ═══════════════════════ */
@@ -240,15 +295,15 @@ class ApiError extends Error {
   get retryable() { return this.status === 0 || this.status === 408 || this.status === 429 || this.status >= 500; }
 }
 const Api = {
-  async request(method, path, body, { timeout = 25000, headers = {} } = {}) {
+  async request(method, path, body, { timeout = 25000, headers = {}, raw = null } = {}) {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), timeout);
     let res;
     try {
       res = await fetch(CONFIG.WORKER_URL + path, {
         method, signal: ctrl.signal,
-        headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...headers },
-        body: body ? JSON.stringify(body) : undefined,
+        headers: { ...(raw ? { 'Content-Type': raw.type || 'image/jpeg' } : body ? { 'Content-Type': 'application/json' } : {}), ...headers },
+        body: raw || (body ? JSON.stringify(body) : undefined),
       });
     } catch { throw new ApiError('No connection', 0); }
     finally { clearTimeout(timer); }
@@ -259,19 +314,23 @@ const Api = {
   recipients: () => Api.request('GET', '/recipients'),
   checkPin: (pin) => Api.request('POST', '/recipients/check', {}, { headers: { 'X-Admin-Pin': pin } }),
   saveRecipients: (cfg, pin) => Api.request('PUT', '/recipients', cfg, { headers: { 'X-Admin-Pin': pin } }),
-  send: (payload) => Api.request('POST', '/walkthrough', payload, { timeout: 45000 }),
+  uploadPhoto: (id, blob) => Api.request('PUT', `/photo/${id}`, null, { raw: blob, timeout: 90000 }),
+  send: (payload) => Api.request('POST', '/walkthrough', payload, { timeout: 60000 }),
+  reports: (pin) => Api.request('GET', '/reports', null, { headers: { 'X-Admin-Pin': pin } }),
+  report: (id, pin) => Api.request('GET', `/reports/${encodeURIComponent(id)}`, null, { headers: { 'X-Admin-Pin': pin } }),
 };
 
 /* ═══════════════════════ HELPERS ═══════════════════════ */
 const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 12));
 const clone = (o) => JSON.parse(JSON.stringify(o));
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const slug = (s) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const slug = (s) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const localDate = (d = new Date()) => d.toLocaleDateString('en-CA');
 const longDate = (d = new Date()) => d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 const timeOf = (d = new Date()) => d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+const plural = (n, one, many = one + 's') => `${n} ${n === 1 ? one : many}`;
 function greeting() { const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; }
 
 let toastTimer;
@@ -315,7 +374,7 @@ function menuSheet(items) {
 }
 function pinSheet(msg) {
   return new Promise((resolve) => {
-    const scrim = sheet(`<h2>Admin PIN</h2><p>${esc(msg || 'Needed to change who receives the notes.')}</p>
+    const scrim = sheet(`<h2>Admin PIN</h2><p>${esc(msg)}</p>
       <input class="field" id="pin-input" type="password" inputmode="numeric" autocomplete="off" placeholder="PIN" style="margin-bottom:14px">
       <div class="stack"><button class="btn block primary" data-r="1">Unlock</button><button class="btn block ghost" data-r="0">Cancel</button></div>`,
       (e, s) => {
@@ -326,6 +385,56 @@ function pinSheet(msg) {
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { const v = input.value.trim(); scrim.remove(); resolve(v || null); } });
     setTimeout(() => input.focus(), 50);
   });
+}
+/** Returns a working PIN (remembered on this phone) or null. */
+async function ensurePin(purpose) {
+  let pin = Store.get(LS.PIN), msg = purpose;
+  for (;;) {
+    if (!pin) { pin = await pinSheet(msg); if (!pin) return null; }
+    try { await Api.checkPin(pin); Store.set(LS.PIN, pin); return pin; }
+    catch (e) {
+      if (e.status === 401) { Store.del(LS.PIN); pin = null; msg = "That PIN didn't match. Try again."; continue; }
+      toast(e.offline ? 'That needs a connection' : `Worker: ${e.message}`);
+      return null;
+    }
+  }
+}
+
+/* ═══════════════════════ PHOTOS ═══════════════════════ */
+async function compressPhoto(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    const scale = Math.min(1, CONFIG.PHOTO_MAX_PX / Math.max(img.naturalWidth, img.naturalHeight));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(img.naturalWidth * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', CONFIG.PHOTO_QUALITY));
+    if (!blob) throw new Error('Could not compress photo');
+    return blob;
+  } finally { URL.revokeObjectURL(url); }
+}
+const thumbUrls = new Map();
+async function blobUrlFor(pid) {
+  if (thumbUrls.has(pid)) return thumbUrls.get(pid);
+  const blob = await PhotoStore.get(pid).catch(() => null);
+  if (!blob) return '';
+  const u = URL.createObjectURL(blob);
+  thumbUrls.set(pid, u);
+  return u;
+}
+function forgetPhoto(pid) {
+  PhotoStore.del(pid).catch(() => {});
+  if (thumbUrls.has(pid)) { URL.revokeObjectURL(thumbUrls.get(pid)); thumbUrls.delete(pid); }
+}
+async function hydrateThumbs(root = document) {
+  for (const img of root.querySelectorAll('img[data-pid]')) {
+    const u = await blobUrlFor(img.dataset.pid);
+    if (u) img.src = u;
+  }
 }
 
 /* ═══════════════════════ RECIPIENTS ═══════════════════════ */
@@ -377,13 +486,16 @@ function cleanConfig(cfg) {
 
 /* ═══════════════════════ STATE ═══════════════════════ */
 function newDraft(restaurantId = Store.get(LS.LAST, '')) {
-  return { clientId: uid(), restaurantId: restaurantId || '', notes: {}, startedAt: new Date().toISOString() };
+  return { clientId: uid(), restaurantId: restaurantId || '', notes: {}, photos: {}, startedAt: new Date().toISOString() };
 }
 const App = {
   screen: 'form',
   recipients: (() => { const c = Store.get(LS.RECIPIENTS); return validShape(c) ? c : clone(DEFAULT_RECIPIENTS); })(),
-  draft: Store.get(LS.DRAFT) || newDraft(),
+  draft: (() => { const d = Store.get(LS.DRAFT) || newDraft(); d.photos = d.photos || {}; d.notes = d.notes || {}; return d; })(),
   edit: null,
+  preview: null,
+  hist: { list: null, filter: '', error: '' },
+  reportView: null,
   result: null,
   sending: '',
   queueBusy: false,
@@ -391,11 +503,14 @@ const App = {
 let saveTimer;
 function saveDraft() { clearTimeout(saveTimer); Store.set(LS.DRAFT, App.draft); }
 function saveDraftSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(saveDraft, 250); }
-const filledSections = (d = App.draft) => SECTIONS.filter((s) => (d.notes[s.key] || '').trim());
+const photosOf = (key, d = App.draft) => d.photos[key] || [];
+const sectionHas = (key, d = App.draft) => !!(d.notes[key] || '').trim() || photosOf(key, d).length > 0;
+const filledSections = (d = App.draft) => SECTIONS.filter((s) => sectionHas(s.key, d));
 
-/* ═══════════════════════ REPORT ═══════════════════════ */
+/* ═══════════════════════ REPORT + EMAIL ═══════════════════════ */
 function buildJob() {
   const d = App.draft, now = new Date();
+  const sections = filledSections(d).map((s) => ({ key: s.key, label: s.label, text: (d.notes[s.key] || '').trim(), photos: photosOf(s.key, d).slice() }));
   const payload = {
     clientId: d.clientId,
     restaurantId: d.restaurantId,
@@ -405,32 +520,100 @@ function buildJob() {
     timeLabel: timeOf(now),
     submittedAt: now.toISOString(),
     author: CONFIG.AUTHOR,
-    sections: filledSections(d).map((s) => ({ key: s.key, label: s.label, text: d.notes[s.key].trim() })),
+    sections,
   };
-  return { clientId: d.clientId, payload, fallbackTo: recipientsFor(d.restaurantId), queuedAt: now.toISOString() };
+  return {
+    clientId: d.clientId, payload, fallbackTo: recipientsFor(d.restaurantId), queuedAt: now.toISOString(),
+    photos: sections.flatMap((s) => s.photos), uploaded: [], skipped: [],
+  };
 }
-function subjectOf(p) { return `Walk-Through Notes · ${p.restaurantName} · ${p.dateLabel}`; }
-function plainText(p) {
-  return [
-    `WALK-THROUGH NOTES: ${p.restaurantName.toUpperCase()}`,
-    `${p.dateLabel} · ${p.timeLabel}`,
-    `From ${p.author}`, '',
-    ...p.sections.flatMap((s) => [s.label.toUpperCase(), s.text, '']),
-  ].join('\n').trim();
+function subjectOf(p) { return `Walk-Through Notes · ${p.restaurantName} · ${p.dateLabel || p.date}`; }
+
+/** Plain-text version. photoUrl(id) → link, or null when photos aren't on the server yet. */
+function plainText(p, photoUrl) {
+  const lines = [`WALK-THROUGH NOTES: ${p.restaurantName.toUpperCase()}`, `${p.dateLabel || p.date}${p.timeLabel ? ` · ${p.timeLabel}` : ''}`, `From ${p.author}`, ''];
+  for (const s of p.sections) {
+    lines.push(s.label.toUpperCase());
+    if (s.text) lines.push(s.text);
+    const ph = s.photos || [];
+    const linked = photoUrl ? ph.map(photoUrl).filter(Boolean) : [];
+    linked.forEach((u) => lines.push(`Photo: ${u}`));
+    if (ph.length > linked.length) lines.push(`(${plural(ph.length - linked.length, 'photo')} in the app)`);
+    lines.push('');
+  }
+  return lines.join('\n').trim();
 }
+
+/** Same template the worker sends. photo(id) → { src, href }. Keep in sync with renderHtml in worker.js. */
+function emailHtml(r, photo) {
+  const sections = r.sections.map((s) => {
+    const ph = (s.photos || []).map(photo).filter((x) => x && x.src);
+    return `
+      <tr><td style="padding:18px 0 6px;font:600 11px/1 Arial,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#9b7a36">${esc(s.label)}</td></tr>
+      <tr><td style="padding:0 0 14px;border-bottom:1px solid #e5dccb">
+        ${s.text ? `<div style="font:16px/1.55 Georgia,serif;color:#1e1b16;white-space:pre-wrap">${esc(s.text)}</div>` : ''}
+        ${ph.length ? `<div style="margin-top:${s.text ? 10 : 0}px">${ph.map((p) => `<a href="${esc(p.href || p.src)}" target="_blank" style="display:inline-block;margin:0 8px 8px 0"><img src="${esc(p.src)}" width="160" height="120" alt="Photo" style="display:block;width:160px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #e5dccb"></a>`).join('')}</div>` : ''}
+      </td></tr>`;
+  }).join('');
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#f7f2e8">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f2e8"><tr><td align="center" style="padding:28px 14px">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fffcf6;border:1px solid #e5dccb;border-radius:12px">
+      <tr><td style="padding:28px 26px 8px">
+        <div style="font:600 11px/1 Arial,sans-serif;letter-spacing:.28em;color:#9b7a36">RALLO HOSPITALITY · OWNER NOTES</div>
+        <div style="font:400 26px/1.25 'Playfair Display',Georgia,serif;color:#1e1b16;margin-top:12px">${esc(r.restaurantName)}</div>
+        <div style="font:14px/1.5 Arial,sans-serif;color:#7a705f;margin-top:4px">${esc(r.dateLabel || r.date)}${r.timeLabel ? ` · ${esc(r.timeLabel)}` : ''} · from ${esc(r.author || CONFIG.AUTHOR)}</div>
+      </td></tr>
+      <tr><td style="padding:0 26px 26px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${sections}</table></td></tr>
+    </table>
+  </td></tr></table></body></html>`;
+}
+function mountMail(html) {
+  const f = $('#mail');
+  if (!f) return;
+  const fit = () => { try { f.style.height = f.contentDocument.documentElement.scrollHeight + 'px'; } catch {} };
+  f.onload = () => { fit(); try { for (const im of f.contentDocument.images) im.addEventListener('load', fit); } catch {} };
+  f.srcdoc = html;
+}
+const workerPhoto = (id) => ({ src: PHOTO_URL(id), href: PHOTO_URL(id) });
 function mailtoHref(job, res = {}) {
   const to = (res.to && res.to.length ? res.to : job.fallbackTo.map((p) => p.email)).join(',');
-  return `mailto:${to}?subject=${encodeURIComponent(res.subject || subjectOf(job.payload))}&body=${encodeURIComponent(plainText(job.payload))}`;
+  const up = new Set(job.uploaded || []);
+  return `mailto:${to}?subject=${encodeURIComponent(res.subject || subjectOf(job.payload))}&body=${encodeURIComponent(plainText(job.payload, (id) => (up.has(id) ? PHOTO_URL(id) : null)))}`;
 }
 
 /* ═══════════════════════ SEND QUEUE ═══════════════════════
-   The worker de-duplicates by clientId, so a retry never double-sends. */
+   Each job uploads its photos, then sends. Progress is saved after every
+   photo, and the worker de-duplicates by clientId, so retries never double-send. */
 function persistJob(job) {
   const q = Store.queue(), i = q.findIndex((j) => j.clientId === job.clientId);
   if (i >= 0) q[i] = job; else q.push(job);
   return Store.saveQueue(q);
 }
 function removeJob(clientId) { Store.saveQueue(Store.queue().filter((j) => j.clientId !== clientId)); }
+function cleanupJobPhotos(job) { (job.photos || []).forEach(forgetPhoto); }
+
+async function runJob(job, progress = () => {}) {
+  job.uploaded = job.uploaded || []; job.skipped = job.skipped || []; job.photos = job.photos || [];
+  const todo = job.photos.filter((p) => !job.uploaded.includes(p) && !job.skipped.includes(p));
+  let n = job.uploaded.length;
+  for (const pid of todo) {
+    progress(`Uploading photo ${++n} of ${job.photos.length}`);
+    const blob = await PhotoStore.get(pid).catch(() => null);
+    if (!blob) { job.skipped.push(pid); persistJob(job); continue; }
+    try { await Api.uploadPhoto(pid, blob); job.uploaded.push(pid); }
+    catch (e) { if (e.retryable) throw e; job.skipped.push(pid); }
+    persistJob(job);
+  }
+  if (job.skipped.length) {
+    const skip = new Set(job.skipped);
+    job.payload.sections = job.payload.sections
+      .map((s) => ({ ...s, photos: (s.photos || []).filter((p) => !skip.has(p)) }))
+      .filter((s) => s.text || s.photos.length);
+    persistJob(job);
+  }
+  progress('Sending the notes');
+  return Api.send(job.payload);
+}
 
 async function drainQueue() {
   if (App.queueBusy) return;
@@ -442,8 +625,8 @@ async function drainQueue() {
     for (const job of q) {
       if (job.needsManual) continue;
       try {
-        const res = await Api.send(job.payload);
-        if (res.emailed) { removeJob(job.clientId); toast(`Sent: ${job.payload.restaurantName}`); }
+        const res = await runJob(job);
+        if (res.emailed) { removeJob(job.clientId); cleanupJobPhotos(job); toast(`Sent: ${job.payload.restaurantName}`); }
         else {
           // Saved on the worker but auto-email is off or failed: hand it to Vic to send from his phone.
           Object.assign(job, { needsManual: true, lastError: res.error || '', fallbackTo: res.to && res.to.length ? res.to.map((email) => ({ name: email, email })) : job.fallbackTo });
@@ -460,18 +643,17 @@ async function drainQueue() {
   }
 }
 
-async function submit() {
+async function submit(job) {
   while (App.queueBusy) await new Promise((r) => setTimeout(r, 200));
   App.queueBusy = true;
-  const job = buildJob();
   if (!persistJob(job)) { App.queueBusy = false; return; }
   Store.set(LS.LAST, App.draft.restaurantId);
-  App.draft = newDraft(App.draft.restaurantId);
+  App.draft = newDraft(App.draft.restaurantId); // photos stay in IndexedDB until the job finishes
   saveDraft();
-  App.screen = 'sending'; App.sending = 'Sending the notes';
+  App.screen = 'sending'; App.sending = job.photos.length ? 'Uploading photos' : 'Sending the notes';
   render(true);
   try {
-    const res = await Api.send(job.payload);
+    const res = await runJob(job, (msg) => { App.sending = msg; const el = $('#sending-msg'); if (el) el.textContent = msg; });
     removeJob(job.clientId);
     App.result = { job, res };
   } catch (e) {
@@ -516,38 +698,59 @@ function toggleDictation(key, btn) {
 }
 
 function autogrow(ta) { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 2 + 'px'; }
+function markCard(key) { const card = document.getElementById('sec-' + key); if (card) card.classList.toggle('has', sectionHas(key)); }
 function setNote(key, value, pushToField = false) {
   App.draft.notes[key] = value;
   const ta = $(`textarea[data-note="${key}"]`);
   if (ta && pushToField) { ta.value = value; autogrow(ta); }
-  const card = document.getElementById('sec-' + key);
-  if (card) card.classList.toggle('has', !!value.trim());
+  markCard(key);
   saveDraftSoon();
+  updateChrome();
+}
+function photoRow(key) {
+  const pids = photosOf(key);
+  return pids.map((pid) => `<div class="thumb"><img data-pid="${esc(pid)}" alt="Photo"><button data-act="rmphoto" data-key="${key}" data-pid="${esc(pid)}" aria-label="Remove photo">×</button></div>`).join('')
+    + (pids.length < CONFIG.MAX_PHOTOS ? `<button class="addphoto" data-act="photo" data-key="${key}">📷 ${pids.length ? 'Add' : 'Photo'}</button>` : '');
+}
+function refreshPhotos(key) {
+  const el = document.getElementById('ph-' + key);
+  if (el) { el.innerHTML = photoRow(key); hydrateThumbs(el); }
+  markCard(key);
   updateChrome();
 }
 
 /* ═══════════════════════ RENDER ═══════════════════════ */
 function render(scrollTop = false) {
   renderTopbar();
-  const views = { form: viewForm, sending: viewSending, done: viewDone, admin: viewAdmin };
+  const views = { form: viewForm, preview: viewPreview, sending: viewSending, done: viewDone, admin: viewAdmin, history: viewHistory, report: viewReport };
   const v = (views[App.screen] || viewForm)();
   $('#app').innerHTML = v.html;
   $('#bottom').innerHTML = v.bottom || '';
   if (scrollTop) window.scrollTo(0, 0);
+  hydrateThumbs($('#app'));
   if (v.after) v.after();
 }
 function renderTopbar() {
-  let ctx = '';
-  if (App.screen === 'form') ctx = esc(restaurantName(App.draft.restaurantId));
-  if (App.screen === 'admin') ctx = 'Recipients';
+  const ctx = {
+    form: restaurantName(App.draft.restaurantId),
+    preview: 'Preview',
+    admin: 'Recipients',
+    history: 'Past walk-throughs',
+    report: App.reportView && App.reportView.rec ? App.reportView.rec.report.restaurantName : 'Past walk-through',
+  }[App.screen] || '';
   $('#topbar').innerHTML = `<div class="wrap"><div class="row">
     <div class="brand">RALLO<small>Owner Notes</small></div>
-    <div class="topctx">${ctx}</div>
+    <div class="topctx">${esc(ctx)}</div>
     <button class="iconbtn" data-act="menu" aria-label="Menu">⋯</button>
   </div></div>`;
 }
 function head(eyebrow, title, sub = '', extra = '') {
   return `<div class="screen-head"><div class="eyebrow">${esc(eyebrow)}</div><h1 style="margin-top:8px">${esc(title)}</h1>${sub ? `<p class="sub">${esc(sub)}</p>` : ''}${extra}</div>`;
+}
+function restaurantOptions(selected, placeholder) {
+  return `<option value="" ${selected ? '' : 'selected'} ${placeholder.disabled ? 'disabled' : ''}>${esc(placeholder.label)}</option>
+    ${App.recipients.restaurants.map((r) => `<option value="${esc(r.id)}" ${selected === r.id ? 'selected' : ''}>${esc(r.name)}</option>`).join('')}
+    <option value="${ALL_ID}" ${selected === ALL_ID ? 'selected' : ''}>All restaurants · whole team</option>`;
 }
 
 function whoHtml() {
@@ -555,17 +758,18 @@ function whoHtml() {
   if (!id) return 'Choose where you are to see who gets this.';
   const n = recipientsFor(id).length;
   if (!n) return `<span style="color:var(--bad)">No email addresses on file yet.</span> <button class="linkbtn" data-act="admin">Add recipients →</button>`;
-  return `<button class="linkbtn" data-act="who">Goes to ${n} ${n === 1 ? 'person' : 'people'} →</button>`;
+  return `<button class="linkbtn" data-act="who">Goes to ${plural(n, 'person', 'people')} →</button>`;
 }
 function bottomForm() {
   const d = App.draft, id = d.restaurantId, filled = filledSections().length;
   const ready = !!id && filled > 0;
-  const label = !id ? 'Choose a restaurant' : !filled ? 'Add a note to send' : id === ALL_ID ? 'Send to all restaurants' : `Send to ${restaurantName(id)}`;
+  const label = !id ? 'Choose a restaurant' : !filled ? 'Add a note to send' : 'Preview & send';
   return `<div class="bottombar"><div class="wrap"><button class="btn primary" data-act="send" ${ready ? '' : 'disabled'}>${esc(label)}</button></div></div>`;
 }
 function countHtml() {
   const n = filledSections().length;
-  return `<b>${n}</b> of ${SECTIONS.length} sections have notes · empty ones are left out`;
+  const p = Object.values(App.draft.photos).reduce((a, l) => a + l.length, 0);
+  return `<b>${n}</b> of ${SECTIONS.length} sections have notes${p ? ` · ${plural(p, 'photo')}` : ''} · empty ones are left out`;
 }
 function updateChrome() {
   if (App.screen !== 'form') return;
@@ -576,9 +780,9 @@ function updateChrome() {
 }
 
 function viewForm() {
-  const d = App.draft, cfg = App.recipients;
-  let html = head(longDate(), `${greeting()}, ${CONFIG.GREET_NAME}.`, 'Type or tap Dictate in any box. It saves as you go.',
-    `<div class="count" id="count">${countHtml()}</div>`);
+  const d = App.draft;
+  let html = head(longDate(), `${greeting()}, ${CONFIG.GREET_NAME}.`, 'Type, dictate, or add photos in any box. It saves as you go.',
+    `<div class="count" id="count">${countHtml()}</div><button class="linkbtn" data-act="history">Past walk-throughs →</button>`);
 
   for (const job of Store.queue()) {
     html += `<div class="card banner queue">
@@ -593,29 +797,52 @@ function viewForm() {
   html += `<div class="card">
     <div class="eyebrow" style="margin-bottom:10px">Restaurant</div>
     <select id="restaurant" class="restaurant ${d.restaurantId ? '' : 'empty'}" aria-label="Restaurant">
-      <option value="" ${d.restaurantId ? '' : 'selected'} disabled>Where are you?</option>
-      ${cfg.restaurants.map((r) => `<option value="${esc(r.id)}" ${d.restaurantId === r.id ? 'selected' : ''}>${esc(r.name)}</option>`).join('')}
-      <option value="${ALL_ID}" ${d.restaurantId === ALL_ID ? 'selected' : ''}>All restaurants · whole team</option>
+      ${restaurantOptions(d.restaurantId, { label: 'Where are you?', disabled: true })}
     </select>
     <div class="who" id="who">${whoHtml()}</div>
   </div>`;
 
   for (const s of SECTIONS) {
     const val = d.notes[s.key] || '';
-    html += `<div class="card ${val.trim() ? 'has' : ''}" id="sec-${s.key}">
+    html += `<div class="card ${sectionHas(s.key) ? 'has' : ''}" id="sec-${s.key}">
       <div class="sec-head">
         <div><h3><label for="ta-${s.key}">${esc(s.label)}</label></h3>${s.hint ? `<div class="hint">${esc(s.hint)}</div>` : ''}</div>
         <button class="mic" data-act="mic" data-key="${s.key}" aria-label="Dictate ${esc(s.label)}">${MIC_IDLE}</button>
       </div>
       <textarea id="ta-${s.key}" data-note="${s.key}" rows="3" placeholder="Notes…">${esc(val)}</textarea>
+      <div class="photos" id="ph-${s.key}">${photoRow(s.key)}</div>
     </div>`;
   }
   return { html, bottom: bottomForm(), after: () => document.querySelectorAll('textarea[data-note]').forEach(autogrow) };
 }
 
+function viewPreview() {
+  const job = App.preview;
+  if (!job) return viewForm();
+  const p = job.payload, list = job.fallbackTo, nPh = job.photos.length;
+  const html = head('Preview', 'Check it, then send', 'This is exactly what the team will get.') +
+    `<div class="card">
+      <div class="meta"><div class="k">To</div><div class="v">${plural(list.length, 'person', 'people')} · <button class="linkbtn" data-act="who" style="min-height:0">see list</button></div></div>
+      <div class="meta"><div class="k">Subject</div><div class="v">${esc(subjectOf(p))}</div></div>
+      ${nPh ? `<div class="meta"><div class="k">Photos</div><div class="v">${plural(nPh, 'photo')}, shown in the email and attached</div></div>` : ''}
+    </div>
+    <div class="mailframe"><iframe id="mail" title="Email preview" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe></div>`;
+  return {
+    html,
+    bottom: `<div class="bottombar"><div class="wrap">
+      <button class="btn back" data-act="preview-back" aria-label="Back to editing">←</button>
+      <button class="btn primary" data-act="preview-send">Send to ${plural(list.length, 'person', 'people')}</button></div></div>`,
+    after: async () => {
+      const urls = {};
+      for (const pid of job.photos) urls[pid] = await blobUrlFor(pid);
+      mountMail(emailHtml(p, (id) => ({ src: urls[id] || '' })));
+    },
+  };
+}
+
 function viewSending() {
   return { html: `<div class="finish sending"><div class="eyebrow">One moment</div><div class="bar"><span></span></div>
-    <h2>${esc(App.sending)}</h2><p class="sub">It's saved on this phone either way.</p></div>` };
+    <h2 id="sending-msg">${esc(App.sending)}</h2><p class="sub">It's saved on this phone either way.</p></div>` };
 }
 
 function viewDone() {
@@ -623,6 +850,7 @@ function viewDone() {
   if (!job) return viewForm();
   const p = job.payload;
   const again = `<button class="btn block ghost" data-act="new">New report</button>`;
+  const skipped = job.skipped && job.skipped.length ? `<p class="who-list" style="color:var(--bad)">${plural(job.skipped.length, 'photo')} couldn't upload and ${job.skipped.length === 1 ? 'was' : 'were'} left out.</p>` : '';
   if (queued) {
     return { html: `<div class="finish">
       <div class="eyebrow" style="color:var(--bad)">${error ? 'Needs attention' : 'No connection'}</div>
@@ -632,20 +860,75 @@ function viewDone() {
         <a class="btn block primary" href="${esc(mailtoHref(job))}" data-act="mail-queued" data-id="${esc(job.clientId)}">✉ Email from phone instead</a>
         ${again}</div></div>` };
   }
+  cleanupJobPhotos(job);
   const names = res.recipients || job.fallbackTo.map((x) => x.name);
   const seal = `<svg class="seal" viewBox="0 0 112 112" aria-hidden="true"><circle cx="56" cy="56" r="53"/><circle class="inner" cx="56" cy="56" r="45"/><path d="M38 57 L51 70 L75 44"/></svg>`;
   if (res.emailed) {
     return { html: `<div class="finish">${seal}
       <div class="eyebrow">${esc(p.restaurantName)} · ${esc(p.dateLabel)}</div>
-      <h1 style="margin-top:12px">Sent to ${names.length} ${names.length === 1 ? 'person' : 'people'}</h1>
-      <p class="who-list">${esc(names.join(', '))}</p>
+      <h1 style="margin-top:12px">Sent to ${plural(names.length, 'person', 'people')}</h1>
+      <p class="who-list">${esc(names.join(', '))}</p>${skipped}
       <div class="actions"><button class="btn block primary" data-act="new">Done</button></div></div>` };
   }
   return { html: `<div class="finish">${seal}
     <div class="eyebrow">${esc(p.restaurantName)} · ${esc(p.dateLabel)}</div>
     <h1 style="margin-top:12px">Saved. One tap to send.</h1>
-    <p class="who-list">${res.emailSkipped ? 'Opens your email with the notes, addressed to the team.' : `Automatic email didn't go through${res.error ? ` (${esc(res.error)})` : ''}. Send it from your phone instead.`}</p>
+    <p class="who-list">${res.emailSkipped ? 'Opens your email with the notes, addressed to the team. Photos come through as links.' : `Automatic email didn't go through${res.error ? ` (${esc(res.error)})` : ''}. Send it from your phone instead.`}</p>${skipped}
     <div class="actions"><a class="btn block primary" href="${esc(mailtoHref(job, res))}">✉ Email the team</a>${again}</div></div>` };
+}
+
+function viewHistory() {
+  const h = App.hist;
+  let html = head('Archive', 'Past walk-throughs', 'Every report sent from this app, newest first.') +
+    `<div class="card"><select id="hist-filter" class="restaurant small ${h.filter ? '' : 'empty'}" aria-label="Filter by restaurant">
+      ${restaurantOptions(h.filter, { label: 'All restaurants', disabled: false }).replace('All restaurants · whole team', 'Sent to all restaurants')}
+    </select></div>`;
+  if (h.error) html += `<div class="empty-state">Couldn't load history (${esc(h.error)}).<br><button class="linkbtn" data-act="history">Try again</button></div>`;
+  else if (!h.list) html += '<div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>';
+  else {
+    const list = h.filter ? h.list.filter((x) => x.restaurantId === h.filter) : h.list;
+    if (!list.length) html += `<div class="empty-state">${h.list.length ? 'Nothing sent for this restaurant yet.' : 'No walk-throughs sent yet.'}</div>`;
+    for (const x of list) {
+      const when = x.dateLabel ? `${x.dateLabel}${x.timeLabel ? ` · ${x.timeLabel}` : ''}` : x.date;
+      html += `<button class="card hist-item" data-act="open-report" data-id="${esc(x.clientId)}">
+        <div class="name">${esc(x.restaurantName)}</div>
+        <div class="when">${esc(when)}</div>
+        <div class="tags">
+          <span class="tag">${plural((x.sections || []).length, 'section')}</span>
+          ${x.photoCount ? `<span class="tag">📷 ${x.photoCount}</span>` : ''}
+          <span class="tag">${plural(x.recipients || 0, 'recipient')}</span>
+          <span class="tag ${x.emailed ? 'ok' : 'warn'}">${x.emailed ? 'Emailed' : 'Sent from phone'}</span>
+        </div></button>`;
+    }
+  }
+  return {
+    html,
+    bottom: `<div class="bottombar"><div class="wrap"><button class="btn back" data-act="back-form" aria-label="Back">←</button>
+      <button class="btn primary" data-act="back-form">Back to notes</button></div></div>`,
+  };
+}
+
+function viewReport() {
+  const v = App.reportView || {};
+  let html;
+  if (v.error) html = `<div class="empty-state">Couldn't open this report (${esc(v.error)}).</div>`;
+  else if (!v.rec) html = '<div class="skeleton" style="height:140px"></div><div class="skeleton" style="height:420px"></div>';
+  else {
+    const { report: r, result: res = {} } = v.rec;
+    html = head(r.dateLabel || r.date, r.restaurantName, r.timeLabel ? `Sent ${r.timeLabel} by ${r.author || CONFIG.AUTHOR}` : '') +
+      `<div class="card">
+        <div class="meta"><div class="k">To</div><div class="v">${esc((res.recipients || []).join(', ') || '—')}</div></div>
+        <div class="meta"><div class="k">Subject</div><div class="v">${esc(res.subject || subjectOf(r))}</div></div>
+        <div class="meta"><div class="k">Status</div><div class="v">${res.emailed ? '<span class="tag ok">Emailed automatically</span>' : '<span class="tag warn">Saved; emailed from phone</span>'}</div></div>
+      </div>
+      <div class="mailframe"><iframe id="mail" title="Email as sent" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe></div>`;
+  }
+  return {
+    html,
+    bottom: `<div class="bottombar"><div class="wrap"><button class="btn back" data-act="history-back" aria-label="Back to list">←</button>
+      <button class="btn primary" data-act="history-back">All walk-throughs</button></div></div>`,
+    after: () => { if (v.rec) mountMail(emailHtml(v.rec.report, workerPhoto)); },
+  };
 }
 
 function personRows(grp, list) {
@@ -681,68 +964,103 @@ function viewAdmin() {
 const groupList = (grp) => (grp === 'e' ? App.edit.everyone : App.edit.restaurants[+grp.slice(1)].team);
 
 /* ═══════════════════════ ACTIONS ═══════════════════════ */
+function goForm() { App.screen = 'form'; render(true); }
 const actions = {
   async menu() {
     const items = [];
     if (App.screen === 'form') {
+      items.push({ label: 'Past walk-throughs', run: () => actions.history() });
       items.push({ label: 'Recipients', run: () => actions.admin() });
       if (filledSections().length) items.push({ label: 'Clear all notes', danger: true, run: () => actions.clear() });
       items.push({ label: 'Refresh recipient list', run: () => loadRecipients(true) });
     } else if (App.screen === 'admin') {
       items.push({ label: 'Back without saving', run: () => actions['admin-cancel']() });
+    } else if (App.screen === 'preview') {
+      items.push({ label: 'Back to editing', run: () => actions['preview-back']() });
+    } else if (App.screen === 'sending') {
+      return;
     } else {
-      items.push({ label: 'New report', run: () => actions.new() });
+      items.push({ label: 'Back to notes', run: () => actions.new() });
     }
+    items.push({ label: 'Forget PIN on this phone', run: () => { Store.del(LS.PIN); toast('PIN forgotten'); } });
     const c = await menuSheet(items);
     if (c) c.run();
   },
   async clear() {
-    if (!(await ask({ title: 'Clear all notes?', bodyHtml: 'Every box on this report will be emptied.', ok: 'Clear notes', danger: true }))) return;
+    if (!(await ask({ title: 'Clear all notes?', bodyHtml: 'Every box and photo on this report will be emptied.', ok: 'Clear notes', danger: true }))) return;
+    Object.values(App.draft.photos).flat().forEach(forgetPhoto);
     App.draft = newDraft(App.draft.restaurantId); saveDraft(); render(true);
   },
   who() {
     const list = recipientsFor(App.draft.restaurantId);
-    ask({ title: `${restaurantName(App.draft.restaurantId)}: ${list.length} recipients`,
+    ask({ title: `${restaurantName(App.draft.restaurantId)}: ${plural(list.length, 'recipient')}`,
       bodyHtml: `<ul>${list.map((p) => `<li>${esc(p.name)}<span>${esc(p.email)}</span></li>`).join('')}</ul>`,
       ok: 'Close', cancel: '' });
   },
   mic(el) { toggleDictation(el.dataset.key, el); },
-  async send() {
+  photo(el) {
+    if (photosOf(el.dataset.key).length >= CONFIG.MAX_PHOTOS) return;
+    App.photoTarget = el.dataset.key;
+    $('#photo-input').click();
+  },
+  rmphoto(el) {
+    const key = el.dataset.key, pid = el.dataset.pid;
+    App.draft.photos[key] = photosOf(key).filter((p) => p !== pid);
+    forgetPhoto(pid);
+    saveDraft();
+    refreshPhotos(key);
+  },
+  send() {
     if (activeRec) activeRec.stop();
     saveDraft();
-    const d = App.draft, list = recipientsFor(d.restaurantId), n = filledSections().length;
-    if (!d.restaurantId || !n) return;
-    if (!list.length) { toast('No email addresses on file. Add them under Recipients'); return; }
-    const ok = await ask({
-      title: `Send to ${list.length} ${list.length === 1 ? 'person' : 'people'}?`,
-      bodyHtml: `${esc(restaurantName(d.restaurantId))} · ${n} section${n === 1 ? '' : 's'} · dated ${esc(longDate())}
-        <ul style="margin-top:12px">${list.map((p) => `<li>${esc(p.name)}<span>${esc(p.email)}</span></li>`).join('')}</ul>`,
-      ok: 'Send notes', cancel: 'Keep editing',
-    });
-    if (ok) submit();
+    const d = App.draft;
+    if (!d.restaurantId || !filledSections().length) return;
+    if (!recipientsFor(d.restaurantId).length) { toast('No email addresses on file. Add them under Recipients'); return; }
+    App.preview = buildJob();
+    App.screen = 'preview';
+    render(true);
   },
+  'preview-back'() { App.preview = null; goForm(); },
+  'preview-send'() { const job = App.preview; App.preview = null; if (job) submit(job); },
   'send-now'() { drainQueue(); },
   'mail-queued'(el) {
     // Let the mailto link open, then take the report out of the auto-send queue so it isn't sent twice.
     const id = el.dataset.id;
-    setTimeout(() => { removeJob(id); if (App.screen === 'form') render(); toast('Handed off to your email app'); }, 400);
-    return 'passthrough';
+    setTimeout(() => {
+      const job = Store.queue().find((j) => j.clientId === id);
+      removeJob(id);
+      if (job) cleanupJobPhotos(job);
+      if (App.screen === 'form') render();
+      toast('Handed off to your email app');
+    }, 400);
   },
-  new() { App.result = null; App.screen = 'form'; render(true); loadRecipients(); },
+  new() { App.result = null; App.reportView = null; goForm(); loadRecipients(); },
+  'back-form'() { goForm(); },
+
+  async history() {
+    const pin = await ensurePin('Needed to open past walk-throughs.');
+    if (!pin) return;
+    App.hist = { list: null, filter: App.hist.filter || '', error: '' };
+    App.screen = 'history';
+    render(true);
+    try { App.hist.list = (await Api.reports(pin)).reports || []; }
+    catch (e) { if (e.status === 401) Store.del(LS.PIN); App.hist.error = e.offline ? 'no connection' : e.message; }
+    if (App.screen === 'history') render();
+  },
+  async 'open-report'(el) {
+    const pin = Store.get(LS.PIN);
+    App.reportView = { id: el.dataset.id };
+    App.screen = 'report';
+    render(true);
+    try { App.reportView.rec = await Api.report(el.dataset.id, pin); }
+    catch (e) { App.reportView.error = e.offline ? 'no connection' : e.message; }
+    if (App.screen === 'report') render();
+  },
+  'history-back'() { App.reportView = null; App.screen = 'history'; render(true); },
 
   async admin() {
-    let pin = Session.get(LS.PIN), msg = '';
-    for (;;) {
-      if (!pin) { pin = await pinSheet(msg); if (!pin) return; }
-      try { await Api.checkPin(pin); break; }
-      catch (e) {
-        if (e.status === 401) { pin = null; msg = "That PIN didn't match. Try again."; continue; }
-        Session.set(LS.PIN, null);
-        toast(e.offline ? 'Recipients can only be changed with a connection' : `Worker: ${e.message}`);
-        return;
-      }
-    }
-    Session.set(LS.PIN, pin);
+    const pin = await ensurePin('Needed to change who receives the notes.');
+    if (!pin) return;
     await loadRecipients(false);
     App.edit = clone(App.recipients);
     App.screen = 'admin';
@@ -751,7 +1069,7 @@ const actions = {
   async 'admin-cancel'() {
     const changed = JSON.stringify(App.edit) !== JSON.stringify(App.recipients);
     if (changed && !(await ask({ title: 'Leave without saving?', ok: 'Discard changes', cancel: 'Keep editing', danger: true }))) return;
-    App.edit = null; App.screen = 'form'; render(true);
+    App.edit = null; goForm();
   },
   async 'admin-save'() {
     const { errs, cfg } = cleanConfig(App.edit);
@@ -761,16 +1079,16 @@ const actions = {
     }
     const btn = $('#admin-save'); if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
     try {
-      const saved = await Api.saveRecipients(cfg, Session.get(LS.PIN));
+      const saved = await Api.saveRecipients(cfg, Store.get(LS.PIN));
       setRecipients(saved.recipients || cfg);
       const id = App.draft.restaurantId;
       if (id && id !== ALL_ID && !App.recipients.restaurants.some((r) => r.id === id)) { App.draft.restaurantId = ''; saveDraft(); }
-      App.edit = null; App.screen = 'form';
-      render(true);
+      App.edit = null;
+      goForm();
       toast('Saved. Every phone will use the new list');
     } catch (e) {
-      if (e.status === 401) Session.set(LS.PIN, null);
-      toast(e.status === 401 ? 'PIN expired. Open Recipients again' : e.offline ? 'No connection. Nothing saved yet' : `Not saved: ${e.message}`);
+      if (e.status === 401) Store.del(LS.PIN);
+      toast(e.status === 401 ? 'PIN changed. Open Recipients again' : e.offline ? 'No connection. Nothing saved yet' : `Not saved: ${e.message}`);
       if (btn) { btn.disabled = false; btn.textContent = 'Save changes'; }
     }
   },
@@ -802,8 +1120,7 @@ document.addEventListener('click', (ev) => {
   if (!el || el.disabled) return;
   const fn = actions[el.dataset.act];
   if (!fn) return;
-  const isLink = el.tagName === 'A';
-  if (!isLink) ev.preventDefault();
+  if (el.tagName !== 'A') ev.preventDefault();
   fn(el);
 });
 document.addEventListener('input', (ev) => {
@@ -820,6 +1137,26 @@ document.addEventListener('change', (ev) => {
     Store.set(LS.LAST, ev.target.value);
     saveDraft(); renderTopbar(); updateChrome();
   }
+  if (ev.target.id === 'hist-filter') { App.hist.filter = ev.target.value; render(); }
+});
+$('#photo-input').addEventListener('change', async (ev) => {
+  const files = Array.from(ev.target.files || []);
+  ev.target.value = '';
+  const key = App.photoTarget;
+  if (!files.length || !key) return;
+  const list = (App.draft.photos[key] = photosOf(key).slice());
+  const room = CONFIG.MAX_PHOTOS - list.length;
+  if (files.length > room) toast(`Up to ${CONFIG.MAX_PHOTOS} photos per section`);
+  for (const f of files.slice(0, Math.max(0, room))) {
+    try {
+      const blob = await compressPhoto(f);
+      const pid = uid();
+      await PhotoStore.put(pid, blob);
+      list.push(pid);
+    } catch (e) { console.error(e); toast('Could not add that photo. Try again'); }
+  }
+  saveDraft();
+  refreshPhotos(key);
 });
 document.addEventListener('focusout', (ev) => { if (ev.target.matches('textarea[data-note]')) saveDraft(); });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') drainQueue(); else saveDraft(); });
@@ -840,17 +1177,13 @@ async function loadRecipients(announce = false) {
 function updateChromeAndSelect() {
   // Rebuild only the dropdown + summary so typing isn't interrupted.
   const sel = $('#restaurant');
-  if (sel && document.activeElement !== sel) {
-    const d = App.draft;
-    sel.innerHTML = `<option value="" ${d.restaurantId ? '' : 'selected'} disabled>Where are you?</option>
-      ${App.recipients.restaurants.map((r) => `<option value="${esc(r.id)}" ${d.restaurantId === r.id ? 'selected' : ''}>${esc(r.name)}</option>`).join('')}
-      <option value="${ALL_ID}" ${d.restaurantId === ALL_ID ? 'selected' : ''}>All restaurants · whole team</option>`;
-  }
+  if (sel && document.activeElement !== sel) sel.innerHTML = restaurantOptions(App.draft.restaurantId, { label: 'Where are you?', disabled: true });
   renderTopbar(); updateChrome();
 }
 
 /* ═══════════════════════ BOOT ═══════════════════════ */
 (function boot() {
+  // Old sessionStorage PIN from the first version: nothing to migrate, it just asks once.
   const id = App.draft.restaurantId;
   if (id && id !== ALL_ID && !App.recipients.restaurants.some((r) => r.id === id)) App.draft.restaurantId = '';
   render(true);
