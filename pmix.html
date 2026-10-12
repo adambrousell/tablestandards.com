@@ -227,7 +227,7 @@ const WORKER_URL = 'https://rpi-pmix-backend.amusementstandards.workers.dev';
 const EXCLUDE_FEES_FROM_TOTALS = false;
 const KIDS_OWN_CATEGORY = true;
 
-/* UPDATED Oct 5: mapped week-of-Sep-28 uncategorized items (fall menu); Fondue Add-ons excluded as $0 modifier */
+/* UPDATED Oct 12: mapped week-of-Oct-5 uncategorized items; Dover Sole is now the Thursday plat du jour */
 const ITEM_OVERRIDES = {
   // Spirits / aperitifs that Toast filed under Entrées
   'cocchi americano bianco': 'spirit',
@@ -258,7 +258,6 @@ const ITEM_OVERRIDES = {
   'honey deuce': 'cocktail',
   'crudo': 'rawbar',
   // Week of Sep 14 uncategorized items — now fixed
-  // Dover Sole moved to its own pinned nightly category ('sole') — see categorize()
   'boozy grape soda': 'cocktail',  // spiked soda, not an NA "soda"
   'red wine': 'wine',              // "Red Wine" button — exact-match, so the generic 'wine' override misses it
   // Week of Sep 21 uncategorized items — now fixed
@@ -294,6 +293,12 @@ const ITEM_OVERRIDES = {
   'gratuity': 'fees',
   'penny': 'fees',
   'plating fee': 'fees',
+  // Week of Oct 5 uncategorized items — now fixed
+  'drouhin marc de bourgogne': 'spirit',   // Burgundy pomace brandy, by the glass
+  'christian drouin poire cidre': 'beer',  // bottled pear cider — "cidre" spelling slips past the cider rule
+  'gluteen free bun': 'sides',             // Toast button is misspelled — keep both spellings
+  'gluten free bun': 'sides',
+  'family reserve - pnw': 'events',        // $1,200 single ring — confirm: event/wine dinner vs. a bottle
 };
 
 /* UPDATED Oct 5: Fondue Add-ons ($0 modifier ring) excluded */
@@ -313,29 +318,38 @@ function isExcludedRow(name) {
   return EXCLUDE_PATTERNS.some(re => re.test(n));
 }
 
+// Plats du jour — riverpointeinn.com/menus, updated Oct 2026.
+// Keys are canonSpecial() names; pdjNight() also matches longer Toast names
+// ("Dover Sole Meuniere", "USDA Prime French Dip") that contain a key.
 const PDJ_NIGHT_BY_DISH = {
   'poulet en croute': 'Mon',
-  'oyster rockefeller': 'Tue',
+  'crispy fish frites': 'Tue',
   'french dip': 'Wed',
-  'crispy fish frites': 'Thu',
+  'dover sole': 'Thu',
   'bouillabaise provencal': 'Fri',
   'prime short rib bourgignon': 'Sat',
   'lobster frites': 'Sun',
 };
+function pdjNight(name) {
+  const k = canonSpecial(name);
+  if (PDJ_NIGHT_BY_DISH[k]) return PDJ_NIGHT_BY_DISH[k];
+  const hit = Object.keys(PDJ_NIGHT_BY_DISH).find(d => k.includes(d));
+  return hit ? PDJ_NIGHT_BY_DISH[hit] : null;
+}
 const WD_LONG = { Mon:'Monday', Tue:'Tuesday', Wed:'Wednesday', Thu:'Thursday', Fri:'Friday', Sat:'Saturday', Sun:'Sunday' };
 
 const CAT_COLORS = {
   cocktail:'#2150a0', wine:'#5c2d6e', food:'#c0452a',
   starter:'#2a5f3c', rawbar:'#155e75', dessert:'#b8942a', spirit:'#4a7a8a',
   beer:'#7a5c2a', coffee:'#6b4e3d', na:'#888780',
-  events:'#7a3060', pdj:'#0f766e', tartare:'#8f2d44', sole:'#b5651d', lunch:'#556677', sides:'#9c6644',
+  events:'#7a3060', pdj:'#0f766e', tartare:'#8f2d44', lunch:'#556677', sides:'#9c6644',
   kids:'#a0522d', fees:'#6b6b67', uncat:'#8a6d1a',
 };
 const CAT_LABELS = {
   cocktail:'Cocktails & martinis', wine:'Wine (glass & bottle)', food:'Entrées',
   starter:'Starters', rawbar:'Raw bar (Les Fruits de Mer)', dessert:'Desserts', spirit:'Spirits',
   beer:'Beer', coffee:'Coffee & tea', na:'NA beverages',
-  events:'Private Events & Wine Dinner', pdj:'Weekly specials (Plats du Jour)', tartare:'Steak Tartare (nightly)', sole:'Dover Sole (nightly)', lunch:'Lunch only items', sides:'Sides',
+  events:'Private Events & Wine Dinner', pdj:'Weekly specials (Plats du Jour)', tartare:'Steak Tartare (nightly)', lunch:'Lunch only items', sides:'Sides',
   kids:'Kids menu', fees:'Fees & service charges', uncat:'Uncategorized — needs mapping',
 };
 
@@ -410,15 +424,14 @@ function categorize(name) {
 
   // 2) Nightly / weekly specials.
   if (/plat[e]?\s*d[eu]\s*jour|\bd[eu]\s*jour\b|^pdj\b/.test(n)) return 'pdj';
-  if (/poulet en croute|poulet en cro|oysters? rockefeller|french dip|crispy fish\s*(&\s*)?frites|bouillabais|prime short rib|short rib bourg|lobster frites/.test(n)) return 'pdj';
+  if (/poulet en croute|poulet en cro|oysters? rockefeller|french dip|crispy fish\s*(&\s*)?frites|bouillabais|prime short rib|short rib bourg|lobster frites|dover sole/.test(n)) return 'pdj';
   if (/^wd\s|wine dinner/.test(n)) return 'events';
   if (/^p\s*\.|private event adult|private event child|event decor|grazing table|beer.*wine.*spritz|beverage package|\bpackage\b/.test(n)) return 'events';
   if (/steak tartare/.test(n)) return 'tartare';
-  if (/dover sole/.test(n)) return 'sole';
 
   // 3) Daypart / sides. Omelet spelling is loose on purpose
   if (/omelet(te)?s?|eggs benedict|pan bagnat|chicken salad sandwich|salmon burger|crispy fish sandwich|^parfait$|lunch oyster/.test(n)) return 'lunch';
-  if (/pommes frites|pommes duchess|haricot vert|peppers carmen|corn & lardons|corn.*lardons|^side\s|side donuts/.test(n)) return 'sides';
+  if (/glut[e]+n free bun|pommes frites|pommes duchess|haricot vert|peppers carmen|corn & lardons|corn.*lardons|^side\s|side donuts/.test(n)) return 'sides';
 
   // 4) Cocktails.
   if (/espresso martini|afterglow|harvest g\s*&\s*t|salt air|filthy|metropolitan|jockey club|river pointe|the rpi|grasshopper|in fashion|saint joe|lychee|can't elope|pep in your|bee sting|negroni|strawberry fields|colada|hh:|martini happy hour|ancho problem|rhubarb|rhu-barbara/.test(n)) return 'cocktail';
@@ -446,14 +459,14 @@ function categorize(name) {
   if (/\bangels envy|blanton|buffalo trace|bulleit|bushmill|dewars|high west|jack daniel|jameson|johnnie walker|laguavulin|lagavulin|macallan|maker's mark|michter|oban 14|sazerac rye|whistlepig|widow jane|woodford reserve|basil hayden|four roses|penelope|glenlivet|glenmorangie|glenfiddich|old rip van winkle|crown royal|knob creek|elijah craig|eagle rare|weller|wild turkey|jim beam|rittenhouse|redbreast|hibiki|nikka|ardbeg|talisker|balvenie|springbank/.test(n)) return 'spirit';
   if (/chartreuse|\bcognac\b|pierre ferrand|grand marnier|fernet|lazzaroni|molinari sambuca|nonino amaro|averna amaro|limoncello|bailey|campari|taylor fladgate|\bport\b|braulio|frangelico|\brum\b|havana|havanna|captain morgan|ron zacapa|bacardi|st\. agrestis|varnelli|hennessy|remy martin|courvoisier|cointreau|chambord|disaronno|drambuie|kahlua|mr\.? black/.test(n)) return 'spirit';
   if (/siete misterios|doba[- ]yej|montelobos|ilegal mezcal|\bcocchi\b|\blillet\b|\bdubonnet\b|punt e mes|carpano|\bdolin\b|\bsuze\b|\bcynar\b|montenegro|meletti|cardamaro|\bbyrrh\b|\bamericano bianco\b/.test(n)) return 'spirit';
-  if (/\b(bourbon|whiskey|whisky|scotch|single malt|gin|tequila|mezcal|armagnac|grappa|liqueur|amaro|amaretto|aperitif|vermouth|sambuca|absinthe|calvados|eau de vie)\b/.test(n)) return 'spirit';
+  if (/\b(bourbon|whiskey|whisky|scotch|single malt|gin|tequila|mezcal|armagnac|grappa|liqueur|amaro|amaretto|aperitif|vermouth|sambuca|absinthe|calvados|eau de vie|marc de bourgogne)\b/.test(n)) return 'spirit';
 
   // 8) Coffee / NA / beer.
   if (/\bespresso\b|\bcappuccino\b|\bmacchiato\b|\bcoffee\b|peppermint tea|chamomile tea|earl gr[ae]y|green tea|black tea/.test(n)) return 'coffee';
   if (/btl.*still water|btl.*sparkling water|\bcoke\b|diet coke|sprite|ginger ale|club soda|ginger beer|\btonic\b|shirley temple|lemonade|iced tea|apple juice|arnold palmer|pineapple juice|cranberry juice|fresh oj|milk/.test(n)) return 'na';
   if (/beer done|vliet|birdsmouth|kronenbourg|other half|grimm|athletic brewing/.test(n)) return 'beer';
   if (n === 'lunch') return 'beer';
-  if (/\b(ipa|lager|pilsner|pale ale|amber ale|stout|porter|hefeweizen|saison|cider|draft|draught)\b/.test(n)) return 'beer';
+  if (/\b(ipa|lager|pilsner|pale ale|amber ale|stout|porter|hefeweizen|saison|cider|cidre|draft|draught)\b/.test(n)) return 'beer';
 
   // 9) Kids.
   if (KIDS_OWN_CATEGORY && /^kids?\b|kids cheeseburger|kids tenders|chicken fingers/.test(n)) return 'kids';
@@ -805,7 +818,7 @@ function renderDashboard() {
     </div>`;
   }).join('');
 
-  const PIN_ORDER = { pdj: 0, tartare: 1, sole: 2, uncat: 3 };
+  const PIN_ORDER = { pdj: 0, tartare: 1, uncat: 2 };
   const hmOrder = sorted.slice().sort((a, b) => {
     const pa = (a.key in PIN_ORDER) ? PIN_ORDER[a.key] : 99;
     const pb = (b.key in PIN_ORDER) ? PIN_ORDER[b.key] : 99;
@@ -887,7 +900,7 @@ function renderPdjSection(cat, items, prevLookup, hasPrev, byRev) {
 
   const NIGHT_ORDER = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   const enriched = items.map(i => ({
-    ...i, rev: i.qty * i.price, night: PDJ_NIGHT_BY_DISH[canonSpecial(i.name)] || null
+    ...i, rev: i.qty * i.price, night: pdjNight(i.name)
   })).sort((a, b) => {
     const ai = a.night ? NIGHT_ORDER.indexOf(a.night) : 99;
     const bi = b.night ? NIGHT_ORDER.indexOf(b.night) : 99;
@@ -980,10 +993,10 @@ function renderPdjSection(cat, items, prevLookup, hasPrev, byRev) {
 }
 
 // Nightly (every-night) specials: category key -> the name used in RPI Shift / manual counts.
-const NIGHTLY_SPECIALS = { tartare: 'Steak Tartare', sole: 'Dover Sole' };
+const NIGHTLY_SPECIALS = { tartare: 'Steak Tartare' };
 
 function renderNightlySection(cat, items, prevLookup, hasPrev, byRev, specialName) {
-  // Sum every Toast line in the category (e.g. "Dover Sole" + an "HH:" ring) rather than taking the first.
+  // Sum every Toast line in the category (e.g. "Steak Tartare" + an "HH:" ring) rather than taking the first.
   const item = (items && items.length)
     ? { name: items[0].name, qty: sumQty(items), rev: sumRev(items) }
     : null;
