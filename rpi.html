@@ -700,8 +700,10 @@ var WINE86_SENT_KEY = 'rpi_wine86_sent';
 
 var CF = 'https://rpi-shift-api.amusementstandards.workers.dev';
 
-var DAY_SPECIALS = {0:'Lobster Frites',1:'Poulet en Croûte',2:'Oyster Rockefeller',3:'USDA Prime French Dip',4:'Crispy Fish Frites',5:'Bouillabaisse Provençale',6:'Prime Short Rib Bourguignon'};
-var COMMON_SPECIALS = ['Poulet en Croûte','Oyster Rockefeller','USDA Prime French Dip','Crispy Fish Frites','Bouillabaisse Provençale','Prime Short Rib Bourguignon','Lobster Frites','Steak Tartare','Dover Sole'];
+// Plats du jour — riverpointeinn.com/menus (updated Oct 2026). Key = JS getDay() (0 = Sunday).
+// Dover Sole is Thursday-only now.
+var DAY_SPECIALS = {0:'Lobster Frites',1:'Poulet en Croûte',2:'Crispy Fish Frites',3:'USDA Prime French Dip',4:'Dover Sole',5:'Bouillabaisse Provençale',6:'Prime Short Rib Bourguignon'};
+var COMMON_SPECIALS = ['Poulet en Croûte','Crispy Fish Frites','USDA Prime French Dip','Dover Sole','Bouillabaisse Provençale','Prime Short Rib Bourguignon','Lobster Frites','Steak Tartare'];
 
 var POLISH_SECTIONS = [
   ['s-foh','FOH'],
