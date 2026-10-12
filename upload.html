@@ -23,6 +23,9 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .paste-label { font-size: 12px; font-weight: 500; color: var(--text-2); }
 .paste-card textarea { width: 100%; height: 120px; border: 1px solid var(--border); border-radius: var(--r); padding: 8px 10px; font-family: 'DM Sans', sans-serif; font-size: 11px; color: var(--text); background: var(--bg); resize: vertical; outline: none; }
 .paste-card textarea:focus { border-color: var(--accent); }
+.spec-input { width: 100%; border: 1px solid var(--border); border-radius: 4px; padding: 5px 7px; font-size: 12px; background: var(--bg); outline: none; }
+.spec-input:focus { border-color: var(--accent); }
+.spec-na { font-size: 11px; color: var(--text-3); font-style: italic; }
 .action-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
 .btn { border: none; border-radius: var(--r); padding: 10px 24px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; }
 .btn-primary { background: var(--accent); color: #fff; }
@@ -66,7 +69,6 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
           <th style="padding:4px 6px;font-weight:500;">Plat du Jour</th>
           <th style="padding:4px 6px;font-weight:500;width:90px;">PDJ count</th>
           <th style="padding:4px 6px;font-weight:500;width:90px;">Steak Tartare</th>
-          <th style="padding:4px 6px;font-weight:500;width:90px;">Dover Sole</th>
         </tr>
       </thead>
       <tbody id="manual-specials-body"></tbody>
@@ -87,29 +89,47 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 // ══════════════════════════════════════════════════════════════════════════
 const WORKER_URL = 'https://rpi-pmix-backend.amusementstandards.workers.dev';
 
-// Fixed PDJ schedule (riverpointeinn.com/menus) — Toast spellings so the
-// chef viewer's name matching works without translation.
+// Fixed PDJ schedule — per riverpointeinn.com/menus (updated Oct 2026).
+// Names use Toast spellings so the chef viewer's name matching works
+// without translation. Website names shown in the comments.
 const PDJ_SCHEDULE = {
-  Mon: 'Poulet en Croute',
-  Tue: 'Oysters Rockefeller',
-  Wed: 'French Dip',
-  Thu: 'Crispy Fish Frites',
-  Fri: 'Bouillabaise Provençal',
-  Sat: 'Prime Short Rib Bourgignon',
-  Sun: 'Lobster Frites',
+  Mon: 'Poulet en Croute',             // Poulet en Croûte — $32
+  Tue: 'Crispy Fish Frites',           // Crispy Fish & Frites — $41
+  Wed: 'French Dip',                   // USDA Prime French Dip — $39
+  Thu: 'Dover Sole',                   // Dover Sole Meunière — $59
+  Fri: 'Bouillabaise Provençal',       // Bouillabaisse Provençale — $49
+  Sat: 'Prime Short Rib Bourgignon',   // Prime Short Rib Bourguignon — $51
+  Sun: 'Lobster Frites',               // Lobster Frites — MP
 };
 const WEEK_DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
+// Nightly specials tracked in their own columns (every night). Dover Sole is
+// Thursday-only now, so it's counted in the PDJ column. If a nightly special
+// ever becomes a night's PDJ, its cell shows "= PDJ" so it isn't entered twice.
+const NIGHTLY_SPECIALS = [
+  { key: 'tt', name: 'Steak Tartare', placeholder: 'e.g. 5/7' },
+];
+
+function isPdjNight(day, specialName) {
+  return PDJ_SCHEDULE[day].toLowerCase() === specialName.toLowerCase();
+}
+
 window.addEventListener('load', () => {
   const tb = document.getElementById('manual-specials-body');
-  if (tb) tb.innerHTML = WEEK_DAYS.map(d => `
+  if (!tb) return;
+  tb.innerHTML = WEEK_DAYS.map(d => {
+    const specialCells = NIGHTLY_SPECIALS.map(s => isPdjNight(d, s.name)
+      ? `<td style="padding:4px 6px;"><span class="spec-na">= PDJ</span></td>`
+      : `<td style="padding:4px 6px;"><input id="ms-${d}-${s.key}" class="spec-input" placeholder="${s.placeholder}"></td>`
+    ).join('');
+    return `
     <tr>
       <td style="padding:4px 6px;font-weight:600;color:var(--text-2);">${d}</td>
       <td style="padding:4px 6px;color:var(--text-2);">${PDJ_SCHEDULE[d]}</td>
-      <td style="padding:4px 6px;"><input id="ms-${d}-pdj" placeholder="e.g. 13/20" style="width:100%;border:1px solid var(--border);border-radius:4px;padding:5px 7px;font-size:12px;background:var(--bg);outline:none;"></td>
-      <td style="padding:4px 6px;"><input id="ms-${d}-tt" placeholder="e.g. 5/7" style="width:100%;border:1px solid var(--border);border-radius:4px;padding:5px 7px;font-size:12px;background:var(--bg);outline:none;"></td>
-      <td style="padding:4px 6px;"><input id="ms-${d}-ds" placeholder="e.g. 4/6" style="width:100%;border:1px solid var(--border);border-radius:4px;padding:5px 7px;font-size:12px;background:var(--bg);outline:none;"></td>
-    </tr>`).join('');
+      <td style="padding:4px 6px;"><input id="ms-${d}-pdj" class="spec-input" placeholder="e.g. 13/20"></td>
+      ${specialCells}
+    </tr>`;
+  }).join('');
 });
 
 // "13/20" -> sold 13 avail 20 · "13" -> sold 13 · "86" -> 86 · blank -> null
@@ -128,17 +148,19 @@ function collectManualSpecials() {
   const out = [];
   WEEK_DAYS.forEach(d => {
     const pdjEl = document.getElementById('ms-' + d + '-pdj');
-    const ttEl  = document.getElementById('ms-' + d + '-tt');
     const pdj = parseSpecEntry(pdjEl && pdjEl.value);
-    const dsEl  = document.getElementById('ms-' + d + '-ds');
-    const tt  = parseSpecEntry(ttEl && ttEl.value);
-    const ds  = parseSpecEntry(dsEl && dsEl.value);
     if (pdj) out.push({ d, name: PDJ_SCHEDULE[d], sold: pdj.sold, avail: pdj.avail, x: pdj.x });
-    if (tt)  out.push({ d, name: 'Steak Tartare',  sold: tt.sold,  avail: tt.avail,  x: tt.x });
-    if (ds)  out.push({ d, name: 'Dover Sole',     sold: ds.sold,  avail: ds.avail,  x: ds.x });
+
+    NIGHTLY_SPECIALS.forEach(s => {
+      if (isPdjNight(d, s.name)) return;   // already captured as the PDJ
+      const el = document.getElementById('ms-' + d + '-' + s.key);
+      const v = parseSpecEntry(el && el.value);
+      if (v) out.push({ d, name: s.name, sold: v.sold, avail: v.avail, x: v.x });
+    });
   });
   return out;
 }
+
 function getApiKey() { return (localStorage.getItem('rpi_upload_key') || '').trim(); }
 window.addEventListener('load', () => {
   const saved = localStorage.getItem('rpi_upload_key');
@@ -237,6 +259,7 @@ async function parseAndUpload() {
   }
   document.getElementById('card-this').classList.add('has-data');
 
+  const manualSpecials = collectManualSpecials();
   const btn = document.getElementById('upload-btn');
   btn.disabled = true;
   btn.textContent = 'Uploading...';
@@ -252,12 +275,12 @@ async function parseAndUpload() {
       body: JSON.stringify({
         items: parsed.items,
         dateRange: parsed.dateRange,
-        manualSpecials: collectManualSpecials()
+        manualSpecials
       })
     });
     const result = await resp.json();
     if (!resp.ok) throw new Error(result.error || `Server error ${resp.status}`);
-    const mCount = collectManualSpecials().length;
+    const mCount = manualSpecials.length;
     showStatus(`✓ ${result.message}` + (mCount ? ` · ${mCount} manual specials entries` : '') + ` — chef view is live.`, 'success');
   } catch (err) {
     showStatus(`Error: ${err.message}`, 'error');
@@ -270,6 +293,7 @@ async function parseAndUpload() {
 function clearAll() {
   document.getElementById('raw-this').value = '';
   document.getElementById('card-this').classList.remove('has-data');
+  document.querySelectorAll('#manual-specials-body input').forEach(i => { i.value = ''; });
   showStatus('');
 }
 </script>
