@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>RPI · Cellar Somm</title>
+<title>RPI · Cellar but no somm</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
@@ -138,7 +138,7 @@
   .wname{font-family:'Fraunces',serif;font-weight:600;font-size:18px;line-height:1.25}
   .wprice{font-family:'Fraunces',serif;font-weight:700;font-size:19px;color:var(--brass-bright);white-space:nowrap}
   .wmeta{
-    display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 6px;
+    display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 6px;align-items:center;
   }
   .tag{
     font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;
@@ -148,7 +148,24 @@
     background:var(--brass);color:var(--ink);border-color:var(--brass-bright);
     font-weight:600;letter-spacing:.1em;
   }
+  /* Physical page — the point of a lookup, so it's the loudest chip */
+  .tag.page{
+    background:var(--brass-bright);color:var(--ink);border-color:#efd38f;
+    font-weight:700;letter-spacing:.12em;font-size:13px;padding:3px 11px;
+    box-shadow:0 1px 4px rgba(0,0,0,.35);
+  }
+  .tag.pick{background:var(--oxblood);color:var(--parchment);border-color:#8a3a30;font-weight:600}
   .wnote{font-size:15.5px;color:var(--parchment-dim);font-style:italic}
+
+  /* Big page banner for a single-bin lookup — "flip to page N" at a glance */
+  .pagebanner{
+    display:none;align-items:baseline;justify-content:center;gap:10px;
+    margin:10px 0 2px;padding:10px 12px;border:1px solid var(--brass-bright);border-radius:6px;
+    background:linear-gradient(180deg, rgba(212,175,92,.16), rgba(212,175,92,.05));
+  }
+  .pagebanner.show{display:flex}
+  .pagebanner .pblabel{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--brass)}
+  .pagebanner .pbnum{font-family:'Fraunces',serif;font-weight:700;font-size:26px;color:var(--brass-bright);line-height:1}
 
   .errbox{
     display:none;margin:18px 0;border:1px solid rgba(110,43,35,.7);
@@ -176,8 +193,6 @@
     padding:0 14px;font-family:'EB Garamond',serif;font-size:14px;cursor:pointer;
   }
   .settings-inner .hint{font-size:13px;color:var(--olive);margin-top:8px;font-style:italic}
-
-  .tag.pick{background:var(--oxblood);color:var(--parchment);border-color:#8a3a30;font-weight:600}
 
   .pushpanel{display:none;border:1px solid var(--line);border-radius:6px;margin-top:14px;padding:12px 14px;
     background:linear-gradient(180deg, rgba(176,141,62,.08), rgba(176,141,62,.02))}
@@ -207,8 +222,8 @@
 
   <header>
     <div class="est">River Pointe Inn · Rumson</div>
-    <h1>Cellar <span class="amp">&amp;</span> Somm</h1>
-    <div class="sub">Speak · Pour · Bin</div>
+    <h1>Cellar <span class="amp">but no</span> somm</h1>
+    <div class="sub">Speak · Pour · Bin · Page</div>
   </header>
 
   <div class="liststate" id="liststate">
@@ -252,6 +267,10 @@
 
   <div class="results" id="results">
     <div class="askedfor" id="askedfor"></div>
+    <div class="pagebanner" id="pagebanner">
+      <span class="pblabel">On the list</span>
+      <span class="pbnum" id="pagebanner-num"></span>
+    </div>
     <div class="somm-note" id="sommnote"></div>
     <div id="glass-section"></div>
     <div id="bottle-section"></div>
@@ -309,6 +328,8 @@
     errbox: document.getElementById("errbox"),
     results: document.getElementById("results"),
     askedfor: document.getElementById("askedfor"),
+    pagebanner: document.getElementById("pagebanner"),
+    pagebannerNum: document.getElementById("pagebanner-num"),
     sommnote: document.getElementById("sommnote"),
     glassSection: document.getElementById("glass-section"),
     bottleSection: document.getElementById("bottle-section"),
@@ -328,6 +349,13 @@
   function esc(s){
     return String(s == null ? "" : s)
       .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+  // The Worker may send the page under any of these keys — accept them all.
+  function pageOf(w){
+    if (!w) return "";
+    var p = w.page != null ? w.page : (w.pg != null ? w.pg : (w.pageNo != null ? w.pageNo : ""));
+    p = String(p).trim();
+    return p && p !== "0" ? p : "";
   }
   function shortUrl(u){
     try{
@@ -459,9 +487,10 @@
     if (state.busy || !workerReady()) return;
     clearError();
     els.results.classList.remove("show");
+    els.pagebanner.classList.remove("show");
     // Show contextual working text for bin lookups
     var isBin = /^(?:bin\s*#?\s*|#)?\d{1,4}$/i.test(phrase.trim());
-    setWorking(true, isBin ? "Looking up that bin…" : "Reading the list & pairing…");
+    setWorking(true, isBin ? "Finding that bin & its page…" : "Reading the list & pairing…");
     try{
       var r = await fetch(WORKER_URL + "/pair?format=json&q=" + encodeURIComponent(phrase));
       if (!r.ok){
@@ -469,12 +498,12 @@
         throw new Error(msg || ("HTTP " + r.status));
       }
       var recs = await r.json();
-      renderResults(phrase, recs);
+      renderResults(phrase, recs, isBin);
       loadStatus(); // pair may have rolled the list forward for the day
     }catch(err){
       console.error("recommend failed", err);
       showError(
-        "<b>Pairing failed.</b> Tap “Refresh list” to hunt for today's PDF, or paste the new link under List source. (" +
+        "<b>Lookup failed.</b> Tap “Refresh list” to hunt for today's PDF, or paste the new link under List source. (" +
         esc(err.message || err) + ")"
       );
     }finally{
@@ -485,9 +514,11 @@
   /* ── render ── */
   function card(w, isBottle){
     var meta = "";
+    var pg = pageOf(w);
+    if (pg) meta += '<span class="tag page">Page ' + esc(pg) + "</span>";
+    if (isBottle && w.bin) meta += '<span class="tag bin">Bin ' + esc(w.bin) + "</span>";
     if (w.push) meta += '<span class="tag pick">Cellar pick</span>';
     if (isBottle && w.tier) meta += '<span class="tag">' + esc(w.tier) + "</span>";
-    if (isBottle && w.bin) meta += '<span class="tag bin">Bin ' + esc(w.bin) + "</span>";
     if (w.style) meta += '<span class="tag">' + esc(w.style) + "</span>";
     return (
       '<div class="card">' +
@@ -498,22 +529,32 @@
       "</div>"
     );
   }
-  function renderResults(phrase, recs){
+  function renderResults(phrase, recs, isBin){
     els.askedfor.textContent = "“" + phrase + "”";
     els.sommnote.textContent = recs.summary || "";
 
     var g = Array.isArray(recs.glass) ? recs.glass : [];
     var b = Array.isArray(recs.bottles) ? recs.bottles : [];
 
+    // Single-bin lookup → flash the physical page big, up top.
+    els.pagebanner.classList.remove("show");
+    if (isBin && b.length === 1){
+      var onePg = pageOf(b[0]);
+      if (onePg){
+        els.pagebannerNum.textContent = "Page " + onePg;
+        els.pagebanner.classList.add("show");
+      }
+    }
+
     els.glassSection.innerHTML = g.length
       ? '<div class="sectionhead"><span>By the Glass</span></div>' + g.map(function(w){ return card(w, false); }).join("")
       : "";
     els.bottleSection.innerHTML = b.length
-      ? '<div class="sectionhead"><span>By the Bottle</span></div>' + b.map(function(w){ return card(w, true); }).join("")
+      ? '<div class="sectionhead"><span>' + (isBin ? "On the List" : "By the Bottle") + '</span></div>' + b.map(function(w){ return card(w, true); }).join("")
       : "";
 
     if (!g.length && !b.length){
-      showError("<b>Nothing matched that request on today's list.</b> Try rephrasing — grape, region, weight, or the dish it's pairing with.");
+      showError("<b>Nothing matched that on today's list.</b> Try the bin number, or rephrase — grape, region, weight, or the dish it's pairing with.");
       return;
     }
     els.results.classList.add("show");
