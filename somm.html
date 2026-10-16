@@ -208,14 +208,13 @@
   <header>
     <div class="est">River Pointe Inn · Rumson</div>
     <h1>Cellar <span class="amp">&amp;</span> Somm</h1>
-    <div class="sub">Speak · Pour · Bin · Page</div>
+    <div class="sub">Speak · Pour · Bin</div>
   </header>
 
   <div class="liststate" id="liststate">
     <span class="dot"></span>
     <span id="liststate-text">No list loaded yet</span>
     <button id="refreshbtn" type="button">Refresh list</button>
-    <a id="weeklylink" href="#" target="_blank" rel="noopener" style="color:var(--brass);font-size:13px;text-underline-offset:3px">Weekly list</a>
   </div>
 
   <div class="pushpanel" id="pushpanel">
@@ -475,7 +474,7 @@
     }catch(err){
       console.error("recommend failed", err);
       showError(
-        "<b>Pairing failed.</b> Tap \u201CRefresh list\u201D to hunt for today's PDF, or paste the new link under List source. (" +
+        "<b>Pairing failed.</b> Tap “Refresh list” to hunt for today's PDF, or paste the new link under List source. (" +
         esc(err.message || err) + ")"
       );
     }finally{
@@ -500,7 +499,7 @@
     );
   }
   function renderResults(phrase, recs){
-    els.askedfor.textContent = "\u201C" + phrase + "\u201D";
+    els.askedfor.textContent = "“" + phrase + "”";
     els.sommnote.textContent = recs.summary || "";
 
     var g = Array.isArray(recs.glass) ? recs.glass : [];
@@ -614,10 +613,6 @@
   });
 
   els.countsbtn.addEventListener("click", uploadCounts);
-
-  if (!/YOUR-WORKER/.test(WORKER_URL)){
-    document.getElementById("weeklylink").href = WORKER_URL + "/weeklylist";
-  }
 
   loadStatus();
   loadPush();
