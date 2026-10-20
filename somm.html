@@ -157,7 +157,8 @@
     box-shadow:0 1px 4px rgba(0,0,0,.35);
   }
   .tag.pick{background:var(--oxblood);color:var(--parchment);border-color:#8a3a30;font-weight:600}
-  .wnote{font-size:15.5px;color:var(--parchment-dim);font-style:italic}
+  .wdesc{font-size:15px;color:var(--parchment);line-height:1.35;margin-top:2px}
+  .wnote{font-size:14.5px;color:var(--olive);font-style:italic;margin-top:5px}
 
   /* Big page banner for a single-bin lookup — "flip to page N" at a glance */
   .pagebanner{
@@ -400,15 +401,121 @@ function binMatches(q){
 }
 
 /* ===== render ===== */
+/* Short style descriptor, derived locally from region/grape — no tasting notes
+   invented per-vintage, so it's accurate for every bottle and works offline.
+   Priority: grape named → appellation named in the wine name (trusted over a
+   noisy parsed sub) → grape in sub → category/region → generic by color. */
+function describe(w){
+  const name=(w.name||"").toLowerCase();
+  const sub=(w.sub||"").toLowerCase();
+  const cat=(w.cat||"").toLowerCase();
+  const hay=name+" | "+sub+" | "+cat;
+  const has=(...k)=>k.some(x=>hay.indexOf(x)!==-1);
+  const nm=(...k)=>k.some(x=>name.indexOf(x)!==-1);
+
+  // 1) Grape named explicitly — most reliable
+  if(has("gewürztraminer","gewurztraminer")) return "Alsace white — lychee, rose, exotically aromatic, off-dry";
+  if(has("pinot gris")) return "Rich, honeyed white — ripe orchard fruit, low acid";
+  if(has("pinot blanc")) return "Easy dry white — soft apple and almond, gentle";
+  if(has("riesling")) return "Aromatic white — lime, orchard fruit, zippy acidity";
+  if(has("chenin blanc","montlouis","vouvray")) return "Chenin Blanc — quince, honey, bright mineral edge";
+  if(has("sauvignon blanc")) return "Crisp white — citrus, cut grass, high acidity";
+  if(has("picpoul")) return "Lean, salty seaside white — lemon and brine";
+  if(has("viognier","condrieu")) return "Lush white — apricot, peach, floral, full-bodied";
+  if(has("muscadet","folle blanche","gros plant")) return "Light, briny white — the classic oyster wine";
+  if(has("aligoté","aligote")) return "Brisk, lean white Burgundy — lemon and chalk";
+  if(has("chignin")||(has("savoie")&&cat.indexOf("white")!==-1)) return "Alpine white — light, floral, snappy";
+
+  // 2) Appellation named in the WINE NAME (trusted over a noisy sub)
+  if(nm("chablis")) return "Chablis — steely, dry Chardonnay, oyster-shell mineral";
+  if(nm("meursault")) return "Meursault — rich white Burgundy, hazelnut, buttery";
+  if(nm("puligny","chassagne","montrachet","corton-charlemagne")) return "Grand white Burgundy — Chardonnay, flinty, refined";
+  if(nm("pouilly-fuiss","pouilly fuiss","mâcon","macon","saint-aubin","st-aubin")) return "White Burgundy — Chardonnay, orchard fruit, subtle oak";
+  if(nm("sancerre")) return name.indexOf("rouge")!==-1 ? "Sancerre Rouge — light Pinot Noir, tart red fruit" : "Sancerre — Sauvignon Blanc, citrus, flinty, crisp";
+  if(nm("châteauneuf","chateauneuf","gigondas","cairanne","côtes-du-rhône","cotes-du-rhone","côtes du rhône","luberon","beaumes")) return "Southern Rhône — Grenache blend, garrigue, warm & spicy";
+  if(nm("côte-rôtie","cote-rotie","hermitage","cornas","saint-joseph","crozes")) return "Northern Rhône Syrah — black pepper, olive, smoky";
+  if(nm("pauillac","margaux","st-julien","saint-julien","estèphe","estephe","médoc","medoc","léognan","leognan","pessac")) return "Left Bank Bordeaux — Cabernet-led, structured, cassis & cedar";
+  if(nm("pomerol","émilion","emilion")) return "Right Bank Bordeaux — Merlot-led, plush, plummy";
+  if(nm("bandol")) return "Bandol — Mourvèdre, muscular, dark, leathery";
+  if(nm("fleurie","brouilly","moulin-à-vent","moulin-a-vent","morgon","beaujolais","gamay")) return "Beaujolais — juicy, light red, red berries, low tannin";
+  if(nm("petit secondes")) return "Pinot Noir — red cherry, supple, polished";
+  if(nm("zinfandel","lytton springs","three valleys","pagani","kirschenmann")) return "Bold red — brambly dark fruit, jammy, spicy";
+  if(nm("pinot noir")) return "Pinot Noir — red cherry, supple, polished";
+
+  // 3) Grape in sub
+  if(sub.indexOf("gamay")!==-1) return "Beaujolais — juicy, light red, red berries, low tannin";
+  if(sub.indexOf("zinfandel")!==-1) return "Bold red — brambly dark fruit, jammy, spicy";
+  if(sub.indexOf("petite syrah")!==-1||has("petite sirah")) return "Inky, powerful red — dense, chewy, dark";
+  if(sub.indexOf("cabernet franc")!==-1) return "Medium red — red fruit, graphite, herbal lift";
+  if(sub.indexOf("merlot")!==-1) return "Plush red — plum, soft tannins, rounded";
+  if(sub.indexOf("trousseau")!==-1) return "Light, savory red — pale, earthy, high-toned";
+  if(sub.indexOf("grenache")!==-1||sub.indexOf("syrah")!==-1) return "Warm-climate red — ripe dark fruit, pepper, full";
+
+  // 4) Category / region
+  if(cat.indexOf("champagne")!==-1){
+    if(name.indexOf("blanc de noirs")!==-1) return "Champagne — Pinot-driven, richer, red-fruited";
+    if(name.indexOf("blanc de blancs")!==-1) return "Champagne — all Chardonnay, crisp and chalky";
+    if(name.indexOf("rosé")!==-1||name.indexOf("rose")!==-1) return "Rosé Champagne — red-berried, elegant";
+    return "Champagne — fine bubbles, brioche, bright";
+  }
+  if(cat.indexOf("sparkling")!==-1) return (name.indexOf("rosé")!==-1||name.indexOf("rose")!==-1) ? "Sparkling rosé — crisp, red-berried bubbles" : "Sparkling — crisp, dry, celebratory bubbles";
+
+  if(sub.indexOf("chablis")!==-1) return "Chablis — steely, dry Chardonnay, oyster-shell mineral";
+  if(sub.indexOf("bourgogne blanc")!==-1||cat==="mâconnais") return "White Burgundy — Chardonnay, orchard fruit, subtle oak";
+  if(sub.indexOf("meursault")!==-1) return "Meursault — rich white Burgundy, hazelnut, buttery";
+  if(sub.indexOf("puligny")!==-1||sub.indexOf("chassagne")!==-1) return "Grand white Burgundy — Chardonnay, flinty, refined";
+  if(sub.indexOf("saint-aubin")!==-1) return "White Burgundy — crisp Chardonnay, citrus, mineral";
+
+  if(cat==="côte de nuits"||cat==="french red burgundy"||["bourgogne rouge","gevrey","chambolle","vosne","nuits","morey","vougeot","echézeaux","fixin","hautes côtes de nuits","côtes de nuits"].some(k=>sub.indexOf(k)!==-1))
+    return "Red Burgundy — Pinot Noir, red cherry, earthy, silky";
+  if(cat==="côte de beaune") return "Red Burgundy — Pinot Noir, bright red fruit, elegant";
+  if(cat==="côte chalonnaise") return (nm("blanc")) ? "White Burgundy — Chardonnay, fresh" : "Red Burgundy — Pinot Noir, approachable, fresh";
+  if(cat==="beaujolais") return "Beaujolais — juicy, light red, red berries, low tannin";
+
+  if(cat.indexOf("bordeaux")!==-1){
+    if(sub==="pomerol"||sub==="st. émilion") return "Right Bank Bordeaux — Merlot-led, plush, plummy";
+    if(["pauillac","margaux","st-julien","st. estèphe","haut-médoc","médoc","pessac-léognan"].indexOf(sub)!==-1) return "Left Bank Bordeaux — Cabernet-led, structured, cassis & cedar";
+    return "Bordeaux blend — Cabernet & Merlot, savory, firm";
+  }
+  if(cat==="northern rhône valley") return "Northern Rhône Syrah — black pepper, olive, smoky";
+  if(cat==="southern rhône valley") return "Southern Rhône — Grenache blend, garrigue, warm & spicy";
+
+  if(sub.indexOf("sancerre")!==-1) return name.indexOf("rouge")!==-1 ? "Sancerre Rouge — light Pinot Noir, tart red fruit" : "Sancerre — Sauvignon Blanc, citrus, flinty, crisp";
+  if(cat==="french white loire valley") return "Loire white — crisp, mineral, high acid";
+  if(cat==="french red"&&sub.indexOf("loire")!==-1) return "Loire red — Cabernet Franc, red fruit, leafy, light";
+
+  if(sub.indexOf("jura")!==-1) return "Jura red — pale, savory, nervy and earthy";
+  if(sub.indexOf("provence")!==-1&&cat.indexOf("red")!==-1) return "Provence red — herbal, warm, Mediterranean";
+  if(sub.indexOf("corsica")!==-1) return "Corsican red — island grapes, herbal and spicy";
+  if(sub.indexOf("languedoc")!==-1||sub.indexOf("roussillon")!==-1) return "Southern French red — ripe, herby, sun-soaked";
+
+  if(cat.indexOf("rosé")===0||sub.indexOf("france |")===0||sub.indexOf("united states |")===0||name.indexOf("rosé")!==-1) return "Dry rosé — pale, crisp, red-berry and citrus";
+
+  if(sub.indexOf("cabernet")!==-1) return "Napa-style Cab — ripe cassis, bold, full-bodied";
+  if(sub.indexOf("pinot noir")!==-1) return "New-World Pinot Noir — red fruit, supple, polished";
+  if(sub.indexOf("chardonnay")!==-1) return "New-World Chardonnay — ripe orchard fruit, rounder";
+  if(sub.indexOf("chenin")!==-1) return "Chenin Blanc — orchard fruit, bright, textural";
+
+  if(sub==="bubbles") return "Sparkling — crisp, dry bubbles";
+  if(sub==="white") return "Dry white — fresh and food-friendly";
+  if(sub==="red") return "Red — balanced, versatile";
+  if(sub==="rosé") return "Dry rosé — crisp and light";
+  if(cat.indexOf("white")!==-1) return "Dry white — fresh, food-friendly";
+  if(cat.indexOf("red")!==-1) return "Red — balanced and versatile";
+  return "";
+}
 function card(w,isBottle){
   let meta="";
   if(w.page) meta+='<span class="tag page">Page '+esc(w.page)+'</span>';
   if(isBottle&&w.bin) meta+='<span class="tag bin">Bin '+esc(w.bin)+'</span>';
   const style=(w.cat||"")+(w.sub?" · "+w.sub:""); if(style.trim()) meta+='<span class="tag">'+esc(style)+'</span>';
   const pr=w.price?"$"+esc(w.price):(w.glass?"$"+esc(w.glass)+" / glass":"");
+  const desc=describe(w);
   const note=(isBottle&&w.glass)?"Also by the glass $"+esc(w.glass):"";
   return '<div class="card"><div class="cardtop"><div class="wname">'+esc(w.name)+(w.vintage?' <span style="opacity:.65">'+esc(w.vintage)+'</span>':'')+'</div><div class="wprice">'+pr+'</div></div>'+
-    (meta?'<div class="wmeta">'+meta+'</div>':'')+(note?'<div class="wnote">'+esc(note)+'</div>':'')+'</div>';
+    (meta?'<div class="wmeta">'+meta+'</div>':'')+
+    (desc?'<div class="wdesc">'+esc(desc)+'</div>':'')+
+    (note?'<div class="wnote">'+esc(note)+'</div>':'')+'</div>';
 }
 function render(phrase){
   if(!CATALOG){ showError("<b>Still loading the list…</b> One moment."); return; }
