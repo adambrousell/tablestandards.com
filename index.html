@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TableStandards — Connected Restaurant Operations</title>
-<meta name="description" content="TableStandards is a connected suite of restaurant operations tools that roll up into one composite score per restaurant. A brand of Amusement Standards LLC.">
+<meta name="description" content="TableStandards is a complete suite of mobile checklists and tools for restaurant teams, rolling up into one management view. A brand of Amusement Standards LLC.">
 <meta name="theme-color" content="#1c1915">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -56,7 +56,7 @@ h2{font-family:var(--font-display);font-weight:600;font-size:clamp(28px,5vw,42px
 .lede{max-width:640px;font-size:20px;color:var(--ink-soft)}
 .rule{width:56px;height:2px;background:var(--brass);margin:18px 0 0}
 
-/* Score diagram */
+/* Roll-up diagram */
 .score-grid{display:grid;gap:36px;margin-top:40px;align-items:center}
 .diagram{width:100%;max-width:520px;margin:0 auto;display:block}
 .diagram text{font-family:var(--font-body)}
@@ -105,7 +105,7 @@ footer a{color:var(--brass-bright)}
   <div class="wrap">
     <a class="mark" href="landing.html">Table<span>Standards</span></a>
     <nav>
-      <a href="#score">The Score</a>
+      <a href="#how">How It Works</a>
       <a href="#suite">The Suite</a>
       <a href="#ratings">Guest Ratings</a>
     </nav>
@@ -115,66 +115,63 @@ footer a{color:var(--brass-bright)}
 <section class="hero">
   <div class="wrap">
     <div class="eyebrow">A brand of Amusement Standards LLC</div>
-    <h1>One number for <em>every</em> restaurant.</h1>
-    <p>TableStandards is a connected suite of restaurant operations tools. Each one does its own job. They also share data, and together they roll up into a single composite score for each restaurant.</p>
+    <h1>The whole floor, in <em>one</em> view.</h1>
+    <p>TableStandards is a full suite of mobile checklists and tools for restaurant teams. Staff fill them out on their phones during service, and every entry rolls up to one management view.</p>
     <div class="actions">
       <a class="btn btn-brass" href="#suite">See the suite</a>
-      <a class="btn btn-line" href="#score">How the score works</a>
+      <a class="btn btn-line" href="#how">How it works</a>
     </div>
   </div>
 </section>
 
-<section id="score">
+<section id="how">
   <div class="wrap">
-    <div class="eyebrow">The Composite Score</div>
-    <h2>A FICO-type score for the dining room</h2>
-    <p class="lede">Amusement Standards scores ride operations with one composite risk number. TableStandards applies the same idea to restaurants: each tool contributes a signal, and the signals combine into one score per restaurant that you can track over time.</p>
+    <div class="eyebrow">How It Works</div>
+    <h2>Checklists on the floor, one view for management</h2>
+    <p class="lede">Amusement Standards runs ride operations this way: inspectors complete checklists on their phones, and every submission lands in one management workspace. TableStandards uses the same model for restaurants.</p>
     <div class="rule"></div>
 
     <div class="score-grid">
-      <!-- Diagram: four tools + guest rating signal feed one per-restaurant score.
-           The dial deliberately shows no value. TODO: define score scale, weights, and refresh cadence. -->
-      <svg class="diagram" viewBox="0 0 400 340" role="img" aria-labelledby="dgTitle dgDesc">
-        <title id="dgTitle">How the TableStandards score is built</title>
-        <desc id="dgDesc">Shift Report, Product Mix, Cellar but no Somm, and Wine Portal, plus guest ratings, all feed one composite score per restaurant.</desc>
+      <!-- Diagram: mobile checklists and tools (left) roll up into one management device (right).
+           TODO: name and link the management view once it exists. -->
+      <svg class="diagram" viewBox="0 0 400 300" role="img" aria-labelledby="dgTitle dgDesc">
+        <title id="dgTitle">How TableStandards rolls up</title>
+        <desc id="dgDesc">Shift Report, Product Mix, Cellar but no Somm, Wine Portal, and guest ratings are each used on a phone, and all of them roll up into one management view.</desc>
         <g stroke="#a8823a" stroke-width="1.5" fill="none" stroke-dasharray="4 4">
-          <path d="M70 52 C 120 52, 150 150, 200 190"/>
-          <path d="M330 52 C 280 52, 250 150, 200 190"/>
-          <path d="M70 128 C 120 128, 150 170, 200 190"/>
-          <path d="M330 128 C 280 128, 250 170, 200 190"/>
-          <path d="M200 26 L 200 150" stroke-dasharray="2 5"/>
+          <path d="M150 34 C 200 34, 210 150, 244 150"/>
+          <path d="M150 92 C 200 92, 210 150, 244 150"/>
+          <path d="M150 150 L 244 150"/>
+          <path d="M150 208 C 200 208, 210 150, 244 150"/>
+          <path d="M150 266 C 200 266, 210 150, 244 150"/>
         </g>
-        <g font-size="15" text-anchor="middle" fill="#1c1915">
-          <rect x="8" y="34" width="124" height="36" rx="3" fill="#f4ecdc" stroke="#1c1915" stroke-opacity=".25"/>
-          <text x="70" y="57">Shift Report</text>
-          <rect x="268" y="34" width="124" height="36" rx="3" fill="#f4ecdc" stroke="#1c1915" stroke-opacity=".25"/>
-          <text x="330" y="57">Product Mix</text>
-          <rect x="8" y="110" width="124" height="36" rx="3" fill="#f4ecdc" stroke="#1c1915" stroke-opacity=".25"/>
-          <text x="70" y="133">Cellar but no Somm</text>
-          <rect x="268" y="110" width="124" height="36" rx="3" fill="#f4ecdc" stroke="#1c1915" stroke-opacity=".25"/>
-          <text x="330" y="133">Wine Portal</text>
-          <rect x="146" y="6" width="108" height="30" rx="15" fill="#ebe0ca" stroke="#a8823a"/>
-          <text x="200" y="26" font-style="italic" font-size="14">Guest ratings</text>
+        <g font-size="14" fill="#1c1915">
+          <g id="ph">
+            <rect x="8" y="14" width="24" height="40" rx="4" fill="#1c1915"/>
+            <rect x="11" y="19" width="18" height="28" rx="1" fill="#c9a14f"/>
+          </g>
+          <use href="#ph" y="58"/><use href="#ph" y="116"/><use href="#ph" y="174"/><use href="#ph" y="232"/>
+          <text x="42" y="39">Shift Report</text>
+          <text x="42" y="97">Product Mix</text>
+          <text x="42" y="155">Cellar but no Somm</text>
+          <text x="42" y="213">Wine Portal</text>
+          <text x="42" y="271" font-style="italic">Guest ratings</text>
         </g>
-        <!-- dial -->
-        <g transform="translate(200 270)">
-          <path d="M-110 0 A110 110 0 0 1 110 0" fill="none" stroke="#e0d2b6" stroke-width="18"/>
-          <path d="M-110 0 A110 110 0 0 1 -55 -95.3" fill="none" stroke="#7d6029" stroke-width="18"/>
-          <path d="M-52 -96.9 A110 110 0 0 1 52 -96.9" fill="none" stroke="#a8823a" stroke-width="18"/>
-          <path d="M55 -95.3 A110 110 0 0 1 110 0" fill="none" stroke="#c9a14f" stroke-width="18"/>
-          <circle r="80" cy="0" fill="#1c1915"/>
-          <rect x="-80" y="0" width="160" height="70" fill="#f4ecdc"/>
-          <text y="-22" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-size="44" font-weight="600" fill="#c9a14f">—</text>
-          <text y="-2" text-anchor="middle" font-size="13" fill="#f4ecdc" letter-spacing="1.5">PER RESTAURANT</text>
-          <text y="30" text-anchor="middle" font-size="16" font-style="italic" fill="#4a4238">TableStandards Score</text>
+        <!-- management device (tablet) -->
+        <g transform="translate(244 70)">
+          <rect width="148" height="160" rx="10" fill="#1c1915"/>
+          <rect x="10" y="12" width="128" height="136" rx="2" fill="#f4ecdc"/>
+          <rect x="18" y="22" width="112" height="8" fill="#a8823a"/>
+          <g fill="#e0d2b6"><rect x="18" y="40" width="112" height="16"/><rect x="18" y="62" width="112" height="16"/><rect x="18" y="84" width="112" height="16"/><rect x="18" y="106" width="112" height="16"/></g>
+          <g fill="#7d6029"><rect x="22" y="45" width="6" height="6"/><rect x="22" y="67" width="6" height="6"/><rect x="22" y="89" width="6" height="6"/><rect x="22" y="111" width="6" height="6"/></g>
+          <text x="74" y="140" text-anchor="middle" font-size="12" fill="#4a4238" letter-spacing="1">MANAGEMENT VIEW</text>
         </g>
       </svg>
 
       <ul class="score-notes">
-        <li><strong>Four tools, one ledger.</strong> Shift Report, Product Mix, Cellar but no Somm, and Wine Portal each send their data into the same restaurant record.</li>
-        <li><strong>Guests count too.</strong> In-house guest ratings are one of the score's inputs.</li>
-        <li><strong>One score per restaurant.</strong> Each location gets one number, so you can compare locations and follow the trend.</li>
-        <!-- TODO: score scale (e.g., range), per-input weighting, and how often it re-scores. Do not publish numbers until defined. -->
+        <li><strong>Built for phones.</strong> Each checklist and tool is made for a phone in one hand, during service.</li>
+        <li><strong>Everything rolls up.</strong> Every entry lands in the same restaurant record.</li>
+        <li><strong>One view for the GM.</strong> Management sees every checklist from every station in one place.</li>
+        <!-- TODO: confirm what the management view shows (completion status, exceptions, history) before describing it in more detail. -->
       </ul>
     </div>
   </div>
@@ -183,8 +180,8 @@ footer a{color:var(--brass-bright)}
 <section id="suite" class="alt">
   <div class="wrap">
     <div class="eyebrow">The Suite</div>
-    <h2>Four tools that share their data</h2>
-    <p class="lede">Each tool works on its own, and each one feeds the composite score.</p>
+    <h2>The complete suite</h2>
+    <p class="lede">Each one works on its own, and each one rolls up to the management view.</p>
     <div class="rule"></div>
 
     <div class="cards">
@@ -194,11 +191,11 @@ footer a{color:var(--brass-bright)}
         <p>Shift and front-of-house operations management.</p>
         <span class="go">View &rarr;</span>
       </a>
-      <a class="card" href="product-mix.html">
-        <span class="tag">Sales <span class="status">In development</span></span>
+      <a class="card" href="pmix.html">
+        <span class="tag">Sales <span class="status live">Live</span></span>
         <h3>Product Mix</h3>
         <p>Product-mix sales analysis.</p>
-        <span class="go">View &rarr;</span>
+        <span class="go">Open the app &rarr;</span>
       </a>
       <a class="card" href="somm.html">
         <span class="tag">Wine <span class="status live">Live</span></span>
@@ -231,7 +228,7 @@ footer a{color:var(--brass-bright)}
         <li><div><b>Under five:</b> the guest fills out a private feedback form that goes only to you, not to Google.</div></li>
       </ol>
       <div>
-        <p class="lede" style="margin-bottom:20px">Every rating is stored with the restaurant's record and feeds its TableStandards score.</p>
+        <p class="lede" style="margin-bottom:20px">Every rating lands in the restaurant record and rolls up to the management view.</p>
         <a class="btn btn-brass" href="ratings.html">Try the rating flow</a>
       </div>
     </div>
