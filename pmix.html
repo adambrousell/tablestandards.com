@@ -227,7 +227,7 @@ const WORKER_URL = 'https://rpi-pmix-backend.amusementstandards.workers.dev';
 const EXCLUDE_FEES_FROM_TOTALS = false;
 const KIDS_OWN_CATEGORY = true;
 
-/* UPDATED Oct 12: mapped week-of-Oct-5 uncategorized items; Dover Sole is now the Thursday plat du jour */
+/* UPDATED Oct 20: mapped week-of-Oct-12 uncategorized items — Rodez Ambonnay Champagnes, the Champagne & Oysters event + admission, onion soup, apple tart, Manuel Atxa red BTG */
 const ITEM_OVERRIDES = {
   // Spirits / aperitifs that Toast filed under Entrées
   'cocchi americano bianco': 'spirit',
@@ -299,6 +299,17 @@ const ITEM_OVERRIDES = {
   'gluteen free bun': 'sides',             // Toast button is misspelled — keep both spellings
   'gluten free bun': 'sides',
   'family reserve - pnw': 'events',        // $1,200 single ring — confirm: event/wine dinner vs. a bottle
+  // Week of Oct 12 uncategorized items — now fixed
+  // Eric Rodez, Ambonnay grower Champagne — rung with no GL:/BTL: prefix, so the wine rules miss them
+  'rodez cuvee des crayeres ambonnay grand cru, nv': 'wine',
+  'rodez rose de maceration ambonnay grand cru, 2018': 'wine',
+  'rodez les buery ambonnay grand cru rose de maceration, 2017': 'wine',
+  'rodez cuvee des crayeres ambonnay grand cru, nv mag 1.5l': 'wine',   // 1.5L magnum
+  'champagne and oysters': 'events',           // ticketed Champagne & Oysters event
+  'champagne and oysters admission': 'events', // paired admission line — switch to 'fees' if you book it as a cover charge
+  'onion soup': 'starter',                     // soupe à l'oignon
+  'apple tart': 'dessert',                     // tarte aux pommes
+  'manuel atcha axta rojo': 'wine',            // $19 red BTG — confirm it's a wine pour, else move to ITEM_EXCLUDES
 };
 
 /* UPDATED Oct 5: Fondue Add-ons ($0 modifier ring) excluded */
