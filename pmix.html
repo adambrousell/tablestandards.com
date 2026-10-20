@@ -693,16 +693,25 @@ function normalizeKey(name) {
 }
 function deltaClass(v) { return v > 2 ? 'up' : v < -2 ? 'down' : 'flat'; }
 function deltaArrow(v) { return v > 2 ? '\u25b2' : v < -2 ? '\u25bc' : '\u2014'; }
+// Cap runaway percentages. When last week's baseline is tiny (e.g. a category
+// that barely existed, then a one-off event lands in it), the raw % explodes
+// into noise like "10000%". Anything past 999% just reads ">999%".
+function pctLabel(v) { const a = Math.abs(Math.round(v)); return (a > 999 ? '>999' : a) + '%'; }
 function deltaTag(cur, prev, cls) {
   if (prev === null || prev === undefined || prev === 0) return '';
   const d = (cur - prev) / prev * 100;
   if (Math.abs(d) < 0.5) return `<span class="${cls} flat" style="opacity:0.6;">same</span>`;
-  return `<span class="${cls} ${deltaClass(d)}">${deltaArrow(d)} ${Math.abs(Math.round(d))}%</span>`;
+  return `<span class="${cls} ${deltaClass(d)}">${deltaArrow(d)} ${pctLabel(d)}</span>`;
 }
 
 function hexBlend(hex, w) {
   const c = hex.replace('#','');
-  const mix = ch => Math.round(255*(1-w) + parseInt(ch,16)*w).toString(16).padStart(2,'0');
+  // Clamp each channel to 0–255. Without this, a weight outside 0–1 (the PDJ
+  // tiles can produce one when a night's shift count outruns the Toast max)
+  // yields a negative or oversized channel, an invalid hex color, and a blank
+  // white tile with white-on-white text.
+  const clamp = v => Math.max(0, Math.min(255, v));
+  const mix = ch => clamp(Math.round(255*(1-w) + parseInt(ch,16)*w)).toString(16).padStart(2,'0');
   return '#' + mix(c.substr(0,2)) + mix(c.substr(2,2)) + mix(c.substr(4,2));
 }
 function isLightBg(hex) {
@@ -878,7 +887,7 @@ function renderDashboard() {
           const d = (item.qty - prev.qty) / prev.qty * 100;
           const dc = deltaClass(d);
           const dCol = dc === 'up' ? upCol : dc === 'down' ? dnCol : flatCol;
-          dHtml = `<div class="hm-delta" style="color:${dCol};">${deltaArrow(d)} ${Math.abs(Math.round(d))}% wow</div>`;
+          dHtml = `<div class="hm-delta" style="color:${dCol};">${deltaArrow(d)} ${pctLabel(d)} wow</div>`;
         } else {
           dHtml = `<div class="hm-delta" style="color:${flatCol};">\u2605 new</div>`;
         }
@@ -949,7 +958,9 @@ function renderPdjSection(cat, items, prevLookup, hasPrev, byRev) {
     const disagree = soldN !== null && Math.abs(soldN - toastQty) >= 1;
 
     const maxSold = Math.max(...enriched.map(x => Math.round(x.qty)), 1);
-    const weight = 0.35 + (displaySold / maxSold) * 0.65;
+    // displaySold comes from the shift log, maxSold from Toast — a night whose
+    // shift count outruns the Toast max would push weight past 1, so clamp it.
+    const weight = Math.min(1, 0.35 + (displaySold / maxSold) * 0.65);
     const bg = hexBlend(cat.color, weight);
     const light = isLightBg(bg);
     const nameCol = light ? '#1a1a18' : '#ffffff';
@@ -966,7 +977,7 @@ function renderPdjSection(cat, items, prevLookup, hasPrev, byRev) {
         const dv = (item.qty - prev.qty) / prev.qty * 100;
         const dc = deltaClass(dv);
         const dCol = dc === 'up' ? upCol : dc === 'down' ? dnCol : flatCol;
-        dHtml = `<div class="hm-delta" style="color:${dCol};">${deltaArrow(dv)} ${Math.abs(Math.round(dv))}% wow</div>`;
+        dHtml = `<div class="hm-delta" style="color:${dCol};">${deltaArrow(dv)} ${pctLabel(dv)} wow</div>`;
       } else {
         dHtml = `<div class="hm-delta" style="color:${flatCol};">\u2605 new</div>`;
       }
@@ -1033,7 +1044,7 @@ function renderNightlySection(cat, items, prevLookup, hasPrev, byRev, specialNam
       .reduce((s, k) => s + ((prevLookup[k] && prevLookup[k].qty) || 0), 0);
     if (prevQty > 0) {
       const dv = (item.qty - prevQty) / prevQty * 100;
-      wowText = ` \u00b7 ${deltaArrow(dv)} ${Math.abs(Math.round(dv))}% wow`;
+      wowText = ` \u00b7 ${deltaArrow(dv)} ${pctLabel(dv)} wow`;
     }
   }
   const soldTotal = item ? Math.round(item.qty).toLocaleString() : Math.round(cat.qty).toLocaleString();
