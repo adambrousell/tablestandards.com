@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="RPI Busser">
+<title>RPI · Busser Checklist</title>
+<meta name="theme-color" content="#1c1915">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+/* TODO: palette reconstructed to match index.html / somm.html / bar.html house style (ink / parchment / brass).
+   Swap for somm.html's exact token values when convenient. */
+:root{
+  --ink:#1c1915;--ink-2:#2b2620;--ink-soft:#4a4238;
+  --parchment:#f4ecdc;--parchment-2:#ebe0ca;--parchment-3:#e0d2b6;
+  --brass:#a8823a;--brass-bright:#c9a14f;--brass-dim:#7d6029;
+  --oxblood:#6e2b23;
+  --rule:rgba(28,25,21,.16);
+  --line:rgba(176,141,62,.4);
+  --font-display:'Fraunces',Georgia,serif;
+  --font-body:'EB Garamond',Georgia,serif;
+  --radius:4px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-body);font-size:18px;line-height:1.5;color:var(--parchment);background:var(--ink);background-image:radial-gradient(ellipse at 50% -10%, #241f16 0%, var(--ink) 60%);min-height:100dvh;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+.wrap{max-width:620px;margin:0 auto;padding:16px 16px 72px}
+
+/* Masthead */
+header{text-align:center;padding:6px 0 16px;border-bottom:1px solid var(--line)}
+.est{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--brass-bright)}
+h1{font-family:var(--font-display);font-weight:600;font-size:30px;letter-spacing:.01em;margin:3px 0 0}
+.sub{font-size:13px;color:var(--parchment-3);letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
+.back{display:inline-block;margin-top:10px;font-size:14px;color:var(--brass-bright);text-decoration:none;opacity:.85}
+.back:hover{opacity:1}
+
+/* Meta row */
+.meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0 4px}
+.meta label{display:block;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);margin-bottom:5px}
+.meta input,.meta select{width:100%;background:rgba(239,231,214,.06);border:1px solid var(--line);border-radius:var(--radius);padding:11px 12px;color:var(--parchment);font-family:var(--font-body);font-size:17px}
+.meta input:focus,.meta select:focus{outline:2px solid var(--brass);outline-offset:1px}
+.meta .full{grid-column:1 / -1}
+.meta select option{color:#000}
+
+/* Overall progress */
+.overall{position:sticky;top:0;z-index:5;background:linear-gradient(180deg,var(--ink) 70%,rgba(28,25,21,0));padding:12px 0 10px;margin-top:10px}
+.overall .bar{height:8px;border-radius:999px;background:rgba(239,231,214,.1);overflow:hidden}
+.overall .fill{height:100%;width:0;background:linear-gradient(90deg,var(--brass),var(--brass-bright));transition:width .25s ease}
+.overall .pct{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;font-size:14px;color:var(--parchment-3)}
+.overall .pct b{font-family:var(--font-display);font-size:19px;color:var(--brass-bright)}
+
+/* Section */
+.section{margin-top:22px;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:linear-gradient(180deg,rgba(239,231,214,.04),rgba(239,231,214,.015))}
+.section > summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(0,0,0,.18)}
+.section > summary::-webkit-details-marker{display:none}
+.section > summary .chev{margin-left:auto;transition:transform .2s;color:var(--brass);font-size:14px}
+.section[open] > summary .chev{transform:rotate(90deg)}
+.section .sname{font-family:var(--font-display);font-weight:600;font-size:19px;letter-spacing:.04em}
+.section .scount{font-size:13px;color:var(--parchment-3);font-variant-numeric:tabular-nums}
+.section .sdot{width:9px;height:9px;border-radius:50%;background:rgba(239,231,214,.2);flex:0 0 auto}
+.section.done .sdot{background:var(--brass-bright);box-shadow:0 0 0 3px rgba(201,161,79,.18)}
+.sbody{padding:6px 14px 14px}
+
+/* Sub-group label */
+.grp{font-family:var(--font-display);font-size:14px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--brass-bright);margin:14px 0 6px;padding-top:10px;border-top:1px dashed var(--line)}
+.grp:first-child{border-top:none;padding-top:2px;margin-top:4px}
+.note{font-size:14px;color:var(--parchment-3);font-style:italic;margin:2px 0 8px}
+
+/* Check item */
+.item{display:flex;gap:12px;align-items:flex-start;padding:9px 6px;border-radius:var(--radius);cursor:pointer}
+.item:active{background:rgba(239,231,214,.05)}
+.item input{position:absolute;opacity:0;width:0;height:0}
+.box{flex:0 0 auto;width:24px;height:24px;border:2px solid var(--line);border-radius:5px;margin-top:1px;display:grid;place-items:center;transition:background .15s,border-color .15s}
+.box svg{width:15px;height:15px;opacity:0;transform:scale(.6);transition:opacity .15s,transform .15s}
+.item input:checked ~ .box{background:var(--brass);border-color:var(--brass-bright)}
+.item input:checked ~ .box svg{opacity:1;transform:scale(1)}
+.item input:focus-visible ~ .box{outline:2px solid var(--brass-bright);outline-offset:2px}
+.itext{flex:1;font-size:16.5px;line-height:1.4}
+.item input:checked ~ .itext{color:var(--parchment-3);text-decoration:line-through;text-decoration-color:var(--brass-dim)}
+.itext em{color:var(--parchment-3);font-size:14.5px}
+
+/* Footer actions */
+.foot{position:fixed;left:0;right:0;bottom:0;background:linear-gradient(180deg,rgba(28,25,21,0),var(--ink) 40%);padding:18px 16px 20px;z-index:10}
+.foot .inner{max-width:620px;margin:0 auto;display:flex;gap:10px;align-items:center}
+.btn{flex:1;font-family:var(--font-display);font-weight:600;font-size:16px;padding:14px 18px;border-radius:var(--radius);border:1px solid var(--brass);background:var(--brass);color:var(--ink);cursor:pointer}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.secondary{flex:0 0 auto;background:none;color:var(--brass-bright)}
+.savednote{text-align:center;font-size:13px;color:var(--parchment-3);min-height:18px;margin-top:8px;font-style:italic}
+
+.motto{text-align:center;font-family:var(--font-display);font-style:italic;font-size:17px;color:var(--brass-bright);margin-top:26px;opacity:.8}
+
+/* Toast */
+.toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%) translateY(20px);background:var(--ink-2);border:1px solid var(--brass);color:var(--parchment);padding:12px 18px;border-radius:999px;font-size:15px;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:20;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.err{border-color:var(--oxblood)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="est">River Pointe Inn · Rumson</div>
+    <h1>Busser Checklist</h1>
+    <div class="sub">Open · Ongoing · Close</div>
+    <a class="back" href="index.html">&larr; TableStandards</a>
+  </header>
+
+  <div class="meta">
+    <div>
+      <label for="m-date">Date</label>
+      <input id="m-date" type="date">
+    </div>
+    <div>
+      <label for="m-init">Initials</label>
+      <input id="m-init" type="text" maxlength="4" autocomplete="off" placeholder="AB" inputmode="text">
+    </div>
+    <div class="full">
+      <label for="m-shift">Checklist</label>
+      <select id="m-shift">
+        <option value="opening">Opening Side Work</option>
+        <option value="ongoing">Ongoing (During Service)</option>
+        <option value="closing">Closing Side Work</option>
+        <option value="all">Show everything</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="overall">
+    <div class="pct"><span id="pct-label">0 of 0 done</span><b id="pct-num">0%</b></div>
+    <div class="bar"><div class="fill" id="pct-fill"></div></div>
+  </div>
+
+  <div id="sections"></div>
+
+  <div class="motto">Melius semper.</div>
+</div>
+
+<div class="foot">
+  <div class="inner">
+    <button class="btn secondary" id="resetbtn" type="button">Reset</button>
+    <button class="btn" id="submitbtn" type="button">Submit shift</button>
+  </div>
+  <div class="savednote" id="savednote"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   RPI Busser Checklist — standalone, phone-first.
+   State saves to localStorage per (date + checklist). Submit POSTs
+   completion to the TableStandards Worker (/checklist) so it rolls
+   up to the management view, same pattern as the bar checklist.
+   ============================================================ */
+
+var WORKER_URL = "https://sommkv.amusementstandards.workers.dev";
+var SUBMIT_PATH = "/checklist"; // live checklist endpoint (shared with bar.html)
+
+/* ---- Checklist content (transcribed from the printed RPI busser side work) ----
+   Each shift = ordered list of groups; each group = {grp, note?, items[]}.
+   Parentheticals render lighter via <em>. */
+var DATA = {
+  opening: {
+    title: "Opening Side Work",
+    groups: [
+      {grp:"Restaurant Exterior", note:"After clocking in, do these first.", items:[
+        "Dumpster area clean and all gates closed",
+        "Covered outdoor dining is neat",
+        "Sidewalk around the restaurant clean; pick up any trash"
+      ]},
+      {grp:"Tables", items:[
+        "Help servers polish and detail tables — every item on the table is POLISHED"
+      ]},
+      {grp:"Linens", items:[
+        "At least 80 napkins folded in the wooden credenza under the New York photo before service",
+        "At least 80 napkins folded in the wooden credenza in the back room",
+        "Bar has 80 napkins folded",
+        "All plates stacked with folded linens"
+      ]},
+      {grp:"Service Stations", items:[
+        "Napkins and plates stacked and ready for service",
+        "B&B plates stocked at each service station",
+        "Silverware caddy full at every station (fork, knife, spoon, steak knife, etc.)"
+      ]},
+      {grp:"Bar", note:"Bar stocked with service items for the shift.", items:[
+        "Share plates and B&B plates",
+        "Napkins",
+        "Silverware"
+      ]},
+      {grp:"Polish Station", items:[
+        "Station set up with hot water, a linen bag, and a garbage can",
+        "Polish all glassware and silverware left from the previous shift",
+        "Keep polishing clean glassware/silverware through the shift at the kitchen station",
+        "Unpolished glassware always leaves the kitchen on a tray",
+        "Unpolished silverware always leaves the kitchen in a caddy covered by a linen"
+      ]},
+      {grp:"General Cleanliness", items:[
+        "Sweep and clean the floor",
+        "Organize spaces",
+        "Check for out lights",
+        "Ad hoc tasks as directed by management"
+      ]},
+      {grp:"Paper", items:[
+        "Stock table paper — both front and back racks full before service"
+      ]}
+    ]
+  },
+
+  ongoing: {
+    title: "Ongoing (During Service)",
+    groups: [
+      {grp:"On the Floor", items:[
+        "Clear tables at the discretion of servers and management",
+        "Polish glassware and silverware as it is ready",
+        "Monitor and empty bar bus buckets",
+        "Full bus buckets cross the dining room only with a linen covering them",
+        "Monitor and empty trash cans when they become full",
+        "Full trash cans leave with a linen on top — never dragged through the dining room"
+      ]}
+    ]
+  },
+
+  closing: {
+    title: "Closing Side Work",
+    groups: [
+      {grp:"Polishing & Stocking", note:"All polished items back in their locations before leaving.", items:[
+        "Polish station swept and organized before the last busser leaves",
+        "All full glass racks covered with a napkin",
+        "No bus buckets left on the floor",
+        "Clean and polish all items",
+        "No glassware or silverware left in the back"
+      ]},
+      {grp:"Back Rack", items:[
+        "Back rack emptied of all clean service items (plates, etc.)"
+      ]},
+      {grp:"Trash & Linens", items:[
+        "Take out trash — bar, front and back dining room, polishing station",
+        "Dirty linens in the linen box in the dumpster area"
+      ]},
+      {grp:"Bar", items:[
+        "Empty bus buckets and linen buckets and run them through the dish machine"
+      ]},
+      {grp:"Outside", items:[
+        "Outdoor tables unset and wiped down",
+        "Umbrellas closed"
+      ]}
+    ]
+  }
+};
+
+var ORDER = ["opening","ongoing","closing"];
+
+/* ---- element refs ---- */
+var $ = function(id){return document.getElementById(id);};
+var els = {
+  date:$("m-date"), init:$("m-init"), shift:$("m-shift"),
+  sections:$("sections"), pctLabel:$("pct-label"), pctNum:$("pct-num"), pctFill:$("pct-fill"),
+  submit:$("submitbtn"), reset:$("resetbtn"), savednote:$("savednote"), toast:$("toast")
+};
+
+function itemId(shift,gi,ii){ return shift+"."+gi+"."+ii; }
+function storeKey(){ var d=els.date.value||"nodate"; var s=els.shift.value; return "rpi:busser:"+d+":"+s; }
+
+var state = {};
+function loadState(){
+  state = {};
+  try{ var raw=localStorage.getItem(storeKey()); if(raw) state=JSON.parse(raw)||{}; }catch(e){ state={}; }
+}
+function saveState(){ try{ localStorage.setItem(storeKey(), JSON.stringify(state)); }catch(e){} }
+
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function fmt(t){ return esc(t).replace(/\(([^)]+)\)/g, '<em>($1)</em>'); }
+
+var CHECK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5" fill="none" stroke="#1c1915" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+function visibleShifts(){ var v=els.shift.value; return v==="all" ? ORDER : [v]; }
+
+function render(){
+  var shifts = visibleShifts();
+  var html = "";
+  shifts.forEach(function(shift){
+    var def = DATA[shift];
+    var sid = "sec-"+shift;
+    html += '<details class="section" id="'+sid+'" data-shift="'+shift+'" open>';
+    html +=   '<summary>';
+    html +=     '<span class="sdot"></span>';
+    html +=     '<span class="sname">'+esc(def.title)+'</span>';
+    html +=     '<span class="scount" id="count-'+shift+'"></span>';
+    html +=     '<span class="chev">&#9656;</span>';
+    html +=   '</summary>';
+    html +=   '<div class="sbody">';
+    def.groups.forEach(function(g,gi){
+      html += '<div class="grp">'+esc(g.grp)+'</div>';
+      if(g.note) html += '<div class="note">'+fmt(g.note)+'</div>';
+      g.items.forEach(function(it,ii){
+        var id = itemId(shift,gi,ii);
+        var on = state[id] ? " checked" : "";
+        html += '<label class="item">';
+        html +=   '<input type="checkbox" data-id="'+id+'"'+on+'>';
+        html +=   '<span class="box">'+CHECK_SVG+'</span>';
+        html +=   '<span class="itext">'+fmt(it)+'</span>';
+        html += '</label>';
+      });
+    });
+    html +=   '</div>';
+    html += '</details>';
+  });
+  els.sections.innerHTML = html;
+
+  els.sections.querySelectorAll('input[type=checkbox]').forEach(function(cb){
+    cb.addEventListener('change', function(){
+      var id=cb.getAttribute('data-id');
+      if(cb.checked) state[id]=true; else delete state[id];
+      saveState(); updateProgress();
+    });
+  });
+  updateProgress();
+}
+
+function countShift(shift){
+  var def=DATA[shift], total=0, done=0;
+  def.groups.forEach(function(g,gi){ g.items.forEach(function(it,ii){ total++; if(state[itemId(shift,gi,ii)]) done++; }); });
+  return {total:total,done:done};
+}
+
+function updateProgress(){
+  var shifts=visibleShifts(), total=0, done=0;
+  shifts.forEach(function(shift){
+    var c=countShift(shift); total+=c.total; done+=c.done;
+    var el=document.getElementById('count-'+shift);
+    if(el) el.textContent=c.done+'/'+c.total;
+    var sec=document.getElementById('sec-'+shift);
+    if(sec) sec.classList.toggle('done', c.total>0 && c.done===c.total);
+  });
+  var pct = total? Math.round(done/total*100) : 0;
+  els.pctFill.style.width=pct+'%';
+  els.pctNum.textContent=pct+'%';
+  els.pctLabel.textContent=done+' of '+total+' done';
+  els.submit.disabled = !(total>0 && done===total);
+}
+
+function toast(msg, isErr){
+  els.toast.textContent=msg;
+  els.toast.classList.toggle('err', !!isErr);
+  els.toast.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t=setTimeout(function(){ els.toast.classList.remove('show'); }, 2600);
+}
+
+els.submit.addEventListener('click', function(){
+  if(!els.init.value.trim()){ toast("Add your initials first", true); els.init.focus(); return; }
+  var shift=els.shift.value;
+  var scope = shift==="all" ? ORDER : [shift];
+  var totals = scope.map(countShift).reduce(function(a,c){return {total:a.total+c.total,done:a.done+c.done};},{total:0,done:0});
+
+  var payload = {
+    tool: "busser-checklist",
+    restaurant: "RPI",            // TODO: make per-location once multi-restaurant
+    date: els.date.value || null,
+    initials: els.init.value.trim().toUpperCase(),
+    checklist: shift,
+    completed: totals.done,
+    total: totals.total,
+    ts: new Date().toISOString()
+    // This completion event is an input to the TableStandards management view / score.
+  };
+
+  var prev=els.submit.textContent;
+  els.submit.disabled=true; els.submit.textContent="Sending…";
+
+  fetch(WORKER_URL+SUBMIT_PATH, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(payload)
+  }).then(function(r){
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    toast("Shift submitted — "+payload.initials+" ✓");
+    els.submit.textContent="Submitted ✓";
+  }).catch(function(e){
+    try{ localStorage.setItem("rpi:busser:pending:"+Date.now(), JSON.stringify(payload)); }catch(_){}
+    toast("Saved locally — couldn't reach server", true);
+    els.submit.textContent=prev; els.submit.disabled=false;
+  });
+});
+
+els.reset.addEventListener('click', function(){
+  if(!confirm("Clear every check on this checklist?")) return;
+  state={}; saveState(); render();
+  toast("Checklist cleared");
+});
+
+function rekey(){ loadState(); render(); }
+els.date.addEventListener('change', rekey);
+els.shift.addEventListener('change', rekey);
+els.init.addEventListener('input', function(){ try{ localStorage.setItem("rpi:busser:lastinit", els.init.value.trim().toUpperCase()); }catch(e){} });
+
+(function init(){
+  var d=new Date(); var iso=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  els.date.value=iso;
+  try{ var li=localStorage.getItem("rpi:busser:lastinit"); if(li) els.init.value=li; }catch(e){}
+  loadState();
+  render();
+})();
+</script>
+</body>
+</html>
