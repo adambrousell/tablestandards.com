@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proposal — Cutlery Intelligence System · River Pointe Inn</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Playfair+Display+SC:wght@400;600&family=JetBrains+Mono:wght@300;400&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+<style>
+
+/* ============================================================
+   TOKENS
+   ============================================================ */
+:root {
+  --ink:        #f0ead8;
+  --ink-light:  #d4ccb4;
+  --paper:      #1c2433;
+  --paper-warm: #212d40;
+  --paper-dark: #161e2d;
+  --gold:       #c9a47a;
+  --gold-light: #e0bc96;
+  --gold-pale:  rgba(201,164,122,0.12);
+  --rule:       rgba(201,164,122,0.2);
+  --rule-heavy: rgba(201,164,122,0.5);
+  --muted:      #8a99aa;
+  --accent:     #e0bc96;
+}
+
+/* ============================================================
+   RESET + BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Lato', sans-serif;
+  font-weight: 300;
+  font-size: 16px;
+  line-height: 1.8;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   PAGE STRUCTURE
+   ============================================================ */
+.page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 40px 120px;
+  position: relative;
+}
+
+/* Vertical rule — decorative left margin line */
+.page::before {
+  content: '';
+  position: fixed;
+  left: calc(50% - 430px + 12px);
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(to bottom,
+    transparent 0%,
+    var(--rule) 8%,
+    var(--rule) 92%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+/* ============================================================
+   COVER
+   ============================================================ */
+.cover {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 80px 0 60px 40px;
+  position: relative;
+  border-bottom: 1px solid var(--rule-heavy);
+  margin-bottom: 80px;
+}
+
+.cover::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(to right,
+    var(--rule-heavy),
+    var(--gold-light),
+    var(--rule-heavy)
+  );
+}
+
+.cover-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 300;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 28px;
+}
+
+.cover-rule {
+  width: 60px;
+  height: 1px;
+  background: var(--gold-light);
+  margin-bottom: 32px;
+}
+
+.cover-title {
+  font-family: 'Playfair Display SC', Georgia, serif;
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: 0.03em;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.cover-subtitle {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(18px, 2.5vw, 24px);
+  font-weight: 300;
+  font-style: italic;
+  color: var(--muted);
+  margin-bottom: 48px;
+}
+
+.cover-meta {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 0;
+  width: fit-content;
+  border: 1px solid var(--rule-heavy);
+}
+
+.cover-meta-cell {
+  padding: 14px 24px;
+  border-right: 1px solid var(--rule);
+}
+
+.cover-meta-cell:last-child { border-right: none; }
+
+.meta-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.meta-value {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--ink);
+  letter-spacing: 0.02em;
+}
+
+/* Decorative corner marks */
+.corner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-color: var(--gold);
+  border-style: solid;
+}
+
+.corner-tl { top: 40px; left: 0; border-width: 1px 0 0 1px; }
+.corner-tr { top: 40px; right: 0; border-width: 1px 1px 0 0; }
+.corner-bl { bottom: 20px; left: 0; border-width: 0 0 1px 1px; }
+.corner-br { bottom: 20px; right: 0; border-width: 0 1px 1px 0; }
+
+/* ============================================================
+   SECTION STRUCTURE
+   ============================================================ */
+.section {
+  margin-bottom: 72px;
+  padding-left: 40px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.section-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+
+.section-title {
+  font-family: 'Playfair Display SC', Georgia, serif;
+  font-size: clamp(20px, 3vw, 28px);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  margin-bottom: 6px;
+  line-height: 1.2;
+}
+
+.section-rule {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right, var(--gold-light), transparent);
+  margin-bottom: 28px;
+}
+
+.body-text {
+  font-size: 17px;
+  line-height: 1.8;
+  color: var(--ink-light);
+  margin-bottom: 20px;
+  max-width: 640px;
+}
+
+.body-text:last-child { margin-bottom: 0; }
+
+/* ============================================================
+   PULLQUOTE
+   ============================================================ */
+.pullquote {
+  border-left: 3px solid var(--gold-light);
+  margin: 36px 0 36px 20px;
+  padding: 16px 24px;
+  background: var(--gold-pale);
+}
+
+.pullquote p {
+  font-size: 20px;
+  font-style: italic;
+  font-weight: 300;
+  color: var(--gold-light);
+  line-height: 1.6;
+}
+
+.pullquote cite {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-style: normal;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-top: 10px;
+}
+
+/* ============================================================
+   SYSTEM ARCHITECTURE DIAGRAM
+   ============================================================ */
+.arch-diagram {
+  background: var(--paper-dark);
+  border: 1px solid var(--rule-heavy);
+  padding: 40px;
+  margin: 32px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.arch-diagram::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 28px,
+    rgba(201,168,76,0.04) 28px,
+    rgba(201,168,76,0.04) 29px
+  );
+  pointer-events: none;
+}
+
+.arch-layers {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.arch-layer {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.arch-nodes {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.arch-node {
+  flex: 1;
+  min-width: 100px;
+  background: rgba(201,168,76,0.08);
+  border: 1px solid rgba(201,168,76,0.3);
+  padding: 12px 14px;
+  text-align: center;
+}
+
+.arch-node.highlight {
+  background: rgba(201,168,76,0.15);
+  border-color: var(--gold-light);
+}
+
+.node-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold-light);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.node-desc {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 12px;
+  color: rgba(245,240,232,0.5);
+  line-height: 1.3;
+}
+
+.arch-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 0;
+  color: rgba(201,168,76,0.4);
+  font-size: 16px;
+  letter-spacing: 0.1em;
+}
+
+.arch-layer-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: rgba(201,168,76,0.35);
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  padding: 0 12px 0 4px;
+  min-width: 36px;
+}
+
+/* ============================================================
+   CAPABILITY TABLE
+   ============================================================ */
+.cap-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 28px 0;
+  font-size: 15px;
+}
+
+.cap-table thead tr {
+  border-bottom: 2px solid var(--gold);
+}
+
+.cap-table th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-align: left;
+  padding: 10px 16px 10px 0;
+  font-weight: 400;
+}
+
+.cap-table td {
+  padding: 12px 16px 12px 0;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink-light);
+  vertical-align: top;
+  line-height: 1.5;
+}
+
+.cap-table tr:last-child td { border-bottom: none; }
+
+.cap-table td:first-child {
+  font-weight: 400;
+  color: var(--ink);
+  white-space: nowrap;
+  padding-right: 24px;
+}
+
+.cap-table td.tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  white-space: nowrap;
+}
+
+.tag-live    { color: var(--gold-light); }
+.tag-phase2  { color: var(--muted); }
+
+/* ============================================================
+   PHASE TIMELINE
+   ============================================================ */
+.timeline {
+  margin: 32px 0;
+  position: relative;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 18px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(to bottom, var(--gold-light), var(--rule));
+}
+
+.phase {
+  display: flex;
+  gap: 28px;
+  margin-bottom: 32px;
+  position: relative;
+}
+
+.phase:last-child { margin-bottom: 0; }
+
+.phase-dot {
+  width: 37px;
+  height: 37px;
+  border: 1px solid var(--gold-light);
+  background: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.phase-num {
+  font-family: 'Playfair Display SC', Georgia, serif;
+  font-size: 14px;
+  color: var(--gold);
+}
+
+.phase-body { padding-top: 4px; }
+
+.phase-title {
+  font-family: 'Playfair Display SC', Georgia, serif;
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--ink);
+  margin-bottom: 4px;
+  letter-spacing: 0.05em;
+}
+
+.phase-timing {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+
+.phase-desc {
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.phase-items {
+  list-style: none;
+  margin-top: 8px;
+}
+
+.phase-items li {
+  font-size: 14px;
+  color: var(--ink-light);
+  padding: 3px 0 3px 18px;
+  position: relative;
+  line-height: 1.5;
+}
+
+.phase-items li::before {
+  content: '—';
+  position: absolute;
+  left: 0;
+  color: var(--gold);
+  font-size: 12px;
+}
+
+/* ============================================================
+   SENSOR GRID
+   ============================================================ */
+.sensor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 28px 0;
+}
+
+.sensor-card {
+  border: 1px solid var(--rule-heavy);
+  padding: 20px 18px;
+  background: var(--paper-warm);
+  transition: background 0.2s;
+}
+
+.sensor-card:hover { background: var(--paper-dark); }
+
+.sensor-icon {
+  font-size: 22px;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.sensor-name {
+  font-family: 'Playfair Display SC', Georgia, serif;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.sensor-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+/* ============================================================
+   ALGORITHM BOX
+   ============================================================ */
+.algo-box {
+  background: var(--paper-dark);
+  padding: 32px 36px;
+  margin: 28px 0;
+  border-left: 3px solid var(--gold-light);
+  position: relative;
+  overflow: hidden;
+}
+
+.algo-box::after {
+  content: 'PRIORITY ENGINE';
+  position: absolute;
+  top: 14px;
+  right: 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 0.3em;
+  color: rgba(201,168,76,0.3);
+}
+
+.algo-formula {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 22px;
+  font-style: italic;
+  color: var(--gold-light);
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.algo-formula span {
+  font-style: normal;
+  color: rgba(245,240,232,0.4);
+  font-size: 16px;
+}
+
+.algo-legend {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 24px;
+}
+
+.algo-term {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: rgba(201,168,76,0.7);
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(201,168,76,0.1);
+}
+
+.algo-term span { color: rgba(245,240,232,0.45); font-size: 10px; }
+
+/* ============================================================
+   ROI TABLE
+   ============================================================ */
+.roi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 28px 0;
+}
+
+.roi-card {
+  border: 1px solid var(--rule-heavy);
+  padding: 22px 20px;
+}
+
+.roi-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+
+.roi-val {
+  font-family: 'Playfair Display SC', Georgia, serif;
+  font-size: 32px;
+  font-weight: 400;
+  color: var(--ink);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.roi-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* ============================================================
+   INVESTMENT TABLE
+   ============================================================ */
+.investment-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 28px 0;
+  font-size: 15px;
+}
+
+.investment-table th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-align: left;
+  padding: 8px 0;
+  border-bottom: 2px solid var(--gold);
+  font-weight: 400;
+}
+
+.investment-table th:last-child { text-align: right; }
+
+.investment-table td {
+  padding: 11px 0;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink-light);
+  line-height: 1.4;
+  vertical-align: top;
+}
+
+.investment-table td:last-child {
+  text-align: right;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.investment-table tr.total td {
+  border-top: 2px solid var(--gold);
+  border-bottom: none;
+  font-weight: 400;
+  color: var(--ink);
+  padding-top: 14px;
+}
+
+.investment-table tr.total td:last-child {
+  font-family: 'Playfair Display SC', Georgia, serif;
+  font-size: 18px;
+  color: var(--gold);
+}
+
+.investment-table tr.free td:last-child {
+  color: var(--gold);
+}
+
+/* ============================================================
+   CLOSING / SIGNATURE
+   ============================================================ */
+.closing {
+  border-top: 1px solid var(--rule-heavy);
+  padding-top: 48px;
+  margin-top: 80px;
+  padding-left: 40px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: end;
+}
+
+.closing-text .body-text {
+  font-size: 16px;
+  font-style: italic;
+}
+
+.sig-block {
+  text-align: right;
+}
+
+.sig-name {
+  font-family: 'Playfair Display SC', Georgia, serif;
+  font-size: 18px;
+  color: var(--ink);
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.sig-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 2px;
+}
+
+.sig-org {
+  font-size: 13px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.sig-line {
+  width: 140px;
+  height: 1px;
+  background: var(--rule-heavy);
+  margin: 16px 0 10px auto;
+}
+
+/* ============================================================
+   PAGE FOOTER
+   ============================================================ */
+.doc-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--paper-dark);
+  border-top: 1px solid var(--rule);
+  padding: 10px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  z-index: 50;
+}
+
+.footer-mark { color: var(--gold); }
+
+/* ============================================================
+   PRINT
+   ============================================================ */
+@media print {
+  body { background: white; }
+  .doc-footer { position: static; border-top: 1px solid #ccc; margin-top: 60px; }
+  .page::before { display: none; }
+  .section { opacity: 1; transform: none; }
+  .cover { min-height: auto; padding-top: 40px; }
+}
+
+/* ============================================================
+   SCROLL ANIMATIONS
+   ============================================================ */
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- CORNER DECORATIONS -->
+  <div class="corner corner-tl"></div>
+  <div class="corner corner-tr"></div>
+
+  <!-- ========================================================
+       COVER
+       ======================================================== -->
+  <div class="cover">
+    <div class="cover-eyebrow">Confidential · Strategic Proposal</div>
+    <div class="cover-rule"></div>
+    <h1 class="cover-title">Cutlery Intelligence<br>System</h1>
+    <p class="cover-subtitle">A real-time smallware tracking & service optimization platform<br>for River Pointe Inn</p>
+
+    <div class="cover-meta">
+      <div class="cover-meta-cell">
+        <div class="meta-label">Prepared By</div>
+        <div class="meta-value">Adam Brousell</div>
+      </div>
+      <div class="cover-meta-cell">
+        <div class="meta-label">Venue</div>
+        <div class="meta-value">River Pointe Inn · Rumson, NJ</div>
+      </div>
+      <div class="cover-meta-cell">
+        <div class="meta-label">Date</div>
+        <div class="meta-value" id="docDate">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       01. EXECUTIVE SUMMARY
+       ======================================================== -->
+  <div class="section" id="s1">
+    <div class="section-number">01 · Executive Summary</div>
+    <h2 class="section-title">The Problem We Are Solving</h2>
+    <div class="section-rule"></div>
+
+    <p class="body-text">
+      At River Pointe Inn, the gap between a dish leaving the kitchen and the correct cutlery being present at the table is managed entirely by institutional memory, manual floor checks, and reactive scrambling at the polish station. There is no system. There is no signal. There is only experience — and when service accelerates, experience is not enough.
+    </p>
+
+    <div class="pullquote">
+      <p>"The polish station should never be guessing. It should be executing a ranked work order generated by the tickets on the floor."</p>
+      <cite>— Operational Design Principle</cite>
+    </div>
+
+    <p class="body-text">
+      This proposal outlines a full-stack Cutlery Intelligence System — a purpose-built operational platform that connects every dish sold through Toast POS to a live demand calculation, monitors physical bin inventory through a sensor network, and generates a prioritized work order for the polish station in real time. The General Manager sees the entire floor. The polish staff sees exactly what to do next.
+    </p>
+
+    <p class="body-text">
+      No system like this exists as a commercial product. This is built from scratch, owned entirely by River Pointe, and designed to scale.
+    </p>
+  </div>
+
+  <!-- ========================================================
+       02. SYSTEM ARCHITECTURE
+       ======================================================== -->
+  <div class="section" id="s2">
+    <div class="section-number">02 · System Architecture</div>
+    <h2 class="section-title">How the System Works</h2>
+    <div class="section-rule"></div>
+
+    <p class="body-text">
+      Five layers work in concert. Every component is purpose-built, zero proprietary lock-in, and designed for a single-location fine dining operation.
+    </p>
+
+    <div class="arch-diagram">
+      <div class="arch-layers">
+
+        <div class="arch-layer">
+          <div class="arch-layer-label">Physical</div>
+          <div class="arch-nodes">
+            <div class="arch-node">
+              <span class="node-label">Weight Sensors</span>
+              <span class="node-desc">Quantity by bin weight</span>
+            </div>
+            <div class="arch-node">
+              <span class="node-label">RFID Readers</span>
+              <span class="node-desc">High-value item identity</span>
+            </div>
+            <div class="arch-node">
+              <span class="node-label">IR Beams</span>
+              <span class="node-desc">Threshold crossings</span>
+            </div>
+            <div class="arch-node">
+              <span class="node-label">Camera / CV</span>
+              <span class="node-desc">Visual count verification</span>
+            </div>
+            <div class="arch-node">
+              <span class="node-label">QR Scan</span>
+              <span class="node-desc">Staff manual confirm</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="arch-arrow">↓ &nbsp; All events POST to single endpoint &nbsp; ↓</div>
+
+        <div class="arch-layer">
+          <div class="arch-layer-label">Edge API</div>
+          <div class="arch-nodes">
+            <div class="arch-node highlight">
+              <span class="node-label">Cloudflare Worker</span>
+              <span class="node-desc">Central demand engine · Priority algorithm · Sensor router · Toast webhook receiver</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="arch-arrow">↓ &nbsp; Reads &amp; writes &nbsp; ↓</div>
+
+        <div class="arch-layer">
+          <div class="arch-layer-label">Data</div>
+          <div class="arch-nodes">
+            <div class="arch-node">
+              <span class="node-label">Airtable</span>
+              <span class="node-desc">Bins · Stations · Menu matrix · Polish queue · Event log</span>
+            </div>
+            <div class="arch-node">
+              <span class="node-label">Toast API</span>
+              <span class="node-desc">Live orders · Menu items · Labor · Check data</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="arch-arrow">↓ &nbsp; Rendered via &nbsp; ↓</div>
+
+        <div class="arch-layer">
+          <div class="arch-layer-label">Interfaces</div>
+          <div class="arch-nodes">
+            <div class="arch-node highlight">
+              <span class="node-label">GM Dashboard</span>
+              <span class="node-desc">Full floor · All bins · Live queue · Open tickets</span>
+            </div>
+            <div class="arch-node highlight">
+              <span class="node-label">Polish Station</span>
+              <span class="node-desc">Ranked work order · One tap to complete</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <p class="body-text">
+      Every sensor type — weight, RFID, infrared, camera, QR — posts to a single Cloudflare Worker endpoint. No sensor ever communicates with the database directly. The Worker normalizes all input, runs the demand calculation, and writes the result. This architecture means adding a new sensor type in the future is a matter of minutes, not weeks.
+    </p>
+  </div>
+
+  <!-- ========================================================
+       03. CAPABILITIES
+       ======================================================== -->
+  <div class="section" id="s3">
+    <div class="section-number">03 · Capabilities</div>
+    <h2 class="section-title">What the System Delivers</h2>
+    <div class="section-rule"></div>
+
+    <table class="cap-table">
+      <thead>
+        <tr>
+          <th>Capability</th>
+          <th>Description</th>
+          <th>Phase</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Menu-Cutlery Matrix</td>
+          <td>Every dish on the menu is mapped to its exact required pieces — dinner fork, fish knife, oyster fork — including tasting menu course sequences.</td>
+          <td class="tag tag-live">Phase 1</td>
+        </tr>
+        <tr>
+          <td>Live Bin Inventory</td>
+          <td>Weight sensors and RFID readers report current piece count at every bin, every station, every 2 minutes.</td>
+          <td class="tag tag-live">Phase 1</td>
+        </tr>
+        <tr>
+          <td>Demand Forecasting</td>
+          <td>Open Toast tickets feed a demand engine that calculates exactly which pieces are needed where in the next 15 and 30 minutes.</td>
+          <td class="tag tag-live">Phase 1</td>
+        </tr>
+        <tr>
+          <td>Polish Priority Queue</td>
+          <td>A ranked, scored work order for the polish station — updated every 2 minutes — tells staff exactly what to polish and where to deliver it next.</td>
+          <td class="tag tag-live">Phase 1</td>
+        </tr>
+        <tr>
+          <td>GM Floor Dashboard</td>
+          <td>All bins across all stations visible on one screen. Color-coded status, live queue, open ticket count, critical alerts.</td>
+          <td class="tag tag-live">Phase 1</td>
+        </tr>
+        <tr>
+          <td>Staff Tablet View</td>
+          <td>Purpose-built mobile interface for polish station staff. Simple ranked list. One tap to mark complete. No training required.</td>
+          <td class="tag tag-live">Phase 1</td>
+        </tr>
+        <tr>
+          <td>Full Event Audit Log</td>
+          <td>Every sensor reading, every scan event, every quantity change is logged immutably in Airtable with timestamp and source.</td>
+          <td class="tag tag-live">Phase 1</td>
+        </tr>
+        <tr>
+          <td>Camera Computer Vision</td>
+          <td>Visual object counting at dish pit and polish station — verifies weight sensor readings and catches discrepancies.</td>
+          <td class="tag tag-phase2">Phase 2</td>
+        </tr>
+        <tr>
+          <td>VoxIntel Integration</td>
+          <td>Passive RF monitoring correlated with staff and item movement patterns — surfaces behavioral insights invisible to sensors alone.</td>
+          <td class="tag tag-phase2">Phase 2</td>
+        </tr>
+        <tr>
+          <td>Loss Detection</td>
+          <td>Statistical baseline per item type. Deviations beyond threshold trigger a GM alert — catches breakage and attrition before end-of-month inventory.</td>
+          <td class="tag tag-phase2">Phase 2</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ========================================================
+       04. SENSOR LAYER
+       ======================================================== -->
+  <div class="section" id="s4">
+    <div class="section-number">04 · Sensor Layer</div>
+    <h2 class="section-title">The Physical Intelligence Network</h2>
+    <div class="section-rule"></div>
+
+    <p class="body-text">
+      Each sensor type is deployed where it produces the highest signal. No location is instrumented for its own sake. Every sensor posts to the same endpoint.
+    </p>
+
+    <div class="sensor-grid">
+      <div class="sensor-card">
+        <span class="sensor-icon">⚖</span>
+        <div class="sensor-name">Load Cells</div>
+        <div class="sensor-desc">Mounted under cutlery bins. Weight converts to piece count using per-piece gram profiles. Catches quantity changes passively — no staff interaction required.</div>
+      </div>
+      <div class="sensor-card">
+        <span class="sensor-icon">📡</span>
+        <div class="sensor-name">RFID</div>
+        <div class="sensor-desc">High-value individual items — crystal stems, silver serving pieces — carry industrial-grade waterproof tags rated for commercial dishwasher cycles.</div>
+      </div>
+      <div class="sensor-card">
+        <span class="sensor-icon">〰</span>
+        <div class="sensor-name">IR Beams</div>
+        <div class="sensor-desc">Doorways between kitchen, FOH, and dish pit. Every item crossing a threshold is counted. Catches movement that bins don't see.</div>
+      </div>
+      <div class="sensor-card">
+        <span class="sensor-icon">📷</span>
+        <div class="sensor-name">Camera / CV</div>
+        <div class="sensor-desc">Dish pit exit and polish station entry. Visual object counting verifies sensor readings. Phase 2 full CV identifies cutlery by silhouette.</div>
+      </div>
+      <div class="sensor-card">
+        <span class="sensor-icon">⬛</span>
+        <div class="sensor-name">QR Codes</div>
+        <div class="sensor-desc">Every bin carries a QR label. Staff scan to confirm destination when moving batches. Triggers an event identical to any sensor — same pipeline, same audit log.</div>
+      </div>
+      <div class="sensor-card">
+        <span class="sensor-icon">📻</span>
+        <div class="sensor-name">VoxIntel RF</div>
+        <div class="sensor-desc">Passive radio monitoring correlated with staff location and item movement. Surfaces patterns invisible to fixed sensors. Phase 2 integration.</div>
+      </div>
+    </div>
+
+    <p class="body-text">
+      One important hardware note: RFID tags specified for this system are rated for repeated high-temperature commercial dishwasher cycles. Epoxy-encased UHF Gen2 tags from manufacturers such as Xerafy and Confidex are designed for exactly this environment. Tags are applied to bins and racks — not individual pieces of cutlery — which dramatically reduces tag count and unit cost.
+    </p>
+  </div>
+
+  <!-- ========================================================
+       05. PRIORITY ALGORITHM
+       ======================================================== -->
+  <div class="section" id="s5">
+    <div class="section-number">05 · Priority Algorithm</div>
+    <h2 class="section-title">How the Queue Is Ranked</h2>
+    <div class="section-rule"></div>
+
+    <p class="body-text">
+      The polish queue is not a simple list of what is empty. It is a scored, ranked work order calculated from three independent signals — how short the bin is, how soon the pieces are needed, and how depleted the bin is relative to its par. Every item in the queue has a score. The highest score gets polished next.
+    </p>
+
+    <div class="algo-box">
+      <div class="algo-formula">
+        Priority = <span>(</span>Deficit × 10<span>)</span>
+        + <span>(</span>60 ÷ Minutes Until Needed × 20<span>)</span>
+        + <span>(</span>Depletion % × 15<span>)</span>
+      </div>
+      <div class="algo-legend">
+        <div class="algo-term">Deficit <span>— pieces short of demand</span></div>
+        <div class="algo-term">Minutes Until Needed <span>— from open ticket timing</span></div>
+        <div class="algo-term">Depletion % <span>— (par − current) ÷ par</span></div>
+        <div class="algo-term">≥ 60 pts <span>— CRITICAL · red</span></div>
+        <div class="algo-term">≥ 35 pts <span>— HIGH · amber</span></div>
+        <div class="algo-term">&lt; 35 pts <span>— NORMAL / LOW</span></div>
+      </div>
+    </div>
+
+    <p class="body-text">
+      The queue recalculates every two minutes via a Cloudflare Cron Trigger during service hours. As tickets open, close, and evolve — and as sensors report bin changes — the ranking shifts automatically. Staff at the polish station never need to assess urgency themselves. The system has already done it.
+    </p>
+  </div>
+
+  <!-- ========================================================
+       06. IMPLEMENTATION PHASES
+       ======================================================== -->
+  <div class="section" id="s6">
+    <div class="section-number">06 · Implementation</div>
+    <h2 class="section-title">Phased Deployment Plan</h2>
+    <div class="section-rule"></div>
+
+    <div class="timeline">
+
+      <div class="phase">
+        <div class="phase-dot"><div class="phase-num">I</div></div>
+        <div class="phase-body">
+          <div class="phase-title">Data Foundation & Software Stack</div>
+          <div class="phase-timing">Week 1 – 2</div>
+          <div class="phase-desc">All software is built and deployed before a single sensor ships. The system is operational on QR scans and manual input while sensor hardware is procured.</div>
+          <ul class="phase-items">
+            <li>Airtable base — all 8 tables built and seeded</li>
+            <li>Menu-Cutlery Matrix populated for current menu</li>
+            <li>Cloudflare Worker deployed and connected to Toast webhook</li>
+            <li>GM Dashboard live on Cloudflare Pages</li>
+            <li>Polish Station tablet view deployed</li>
+            <li>QR labels printed and affixed to all bins</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-dot"><div class="phase-num">II</div></div>
+        <div class="phase-body">
+          <div class="phase-title">Sensor Hardware Installation</div>
+          <div class="phase-timing">Week 3 – 5</div>
+          <div class="phase-desc">Physical sensors installed station by station. Each goes live and begins posting to the existing Worker endpoint the moment it is mounted.</div>
+          <ul class="phase-items">
+            <li>Load cells under bins at Kitchen Pass and Side Stations</li>
+            <li>IR break-beams at kitchen-FOH and dish pit thresholds</li>
+            <li>RFID readers at Bar and Storage</li>
+            <li>Industrial RFID tags affixed to bins and racks</li>
+            <li>Baseline calibration — weight profiles per piece type</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-dot"><div class="phase-num">III</div></div>
+        <div class="phase-body">
+          <div class="phase-title">Calibration & Staff Integration</div>
+          <div class="phase-timing">Week 6</div>
+          <div class="phase-desc">One week of tuning with live service data. Staff are introduced to the polish station tablet with no training beyond "look at this list and do number one first."</div>
+          <ul class="phase-items">
+            <li>Priority algorithm tuned to actual River Pointe service cadence</li>
+            <li>Table-to-station mapping confirmed against floor plan</li>
+            <li>Par levels adjusted from observed baseline</li>
+            <li>Polish station tablet mounted and running</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div class="phase-dot"><div class="phase-num">IV</div></div>
+        <div class="phase-body">
+          <div class="phase-title">Camera CV & VoxIntel Integration</div>
+          <div class="phase-timing">Month 2 – 3</div>
+          <div class="phase-desc">Advanced sensing layers added once clean baseline data exists. Camera vision verifies sensor counts. VoxIntel surfaces movement patterns invisible to fixed sensors.</div>
+          <ul class="phase-items">
+            <li>Camera feeds at dish pit exit and polish station entry</li>
+            <li>Frame-differential object counting — no cloud processing required</li>
+            <li>VoxIntel passive RF pipeline integrated</li>
+            <li>Loss detection statistical baseline established</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================
+       07. ROI
+       ======================================================== -->
+  <div class="section" id="s7">
+    <div class="section-number">07 · Return on Investment</div>
+    <h2 class="section-title">What This Is Worth</h2>
+    <div class="section-rule"></div>
+
+    <div class="roi-grid">
+      <div class="roi-card">
+        <div class="roi-label">Eliminated</div>
+        <div class="roi-val">100%</div>
+        <div class="roi-desc">Of reactive polish scrambles mid-service. The queue tells staff what is needed before the table asks for it.</div>
+      </div>
+      <div class="roi-card">
+        <div class="roi-label">Visibility Gained</div>
+        <div class="roi-val">Full Floor</div>
+        <div class="roi-desc">GM sees every bin, every station, every shortage in real time — from a phone or any screen in the building.</div>
+      </div>
+      <div class="roi-card">
+        <div class="roi-label">Loss Detection</div>
+        <div class="roi-val">Daily</div>
+        <div class="roi-desc">Rather than discovering breakage and attrition at monthly inventory, deviations surface within 24 hours of occurring.</div>
+      </div>
+      <div class="roi-card">
+        <div class="roi-label">Comparable Product</div>
+        <div class="roi-val">None</div>
+        <div class="roi-desc">No commercial system at any price point does what this does for a single fine dining location. This is proprietary operational infrastructure.</div>
+      </div>
+    </div>
+
+    <div class="pullquote">
+      <p>A table that waits for the correct fork is a table that remembers waiting. A table that never waits does not notice the system. That is the standard this platform enforces.</p>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       08. INVESTMENT
+       ======================================================== -->
+  <div class="section" id="s8">
+    <div class="section-number">08 · Investment</div>
+    <h2 class="section-title">Cost Structure</h2>
+    <div class="section-rule"></div>
+
+    <p class="body-text">
+      Software infrastructure costs are negligible. The majority of investment is hardware — sensors, tags, and mounting hardware. All software is self-hosted on infrastructure already in use.
+    </p>
+
+    <table class="investment-table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Notes</th>
+          <th>Est. Cost</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Load cell sensors (6 stations × 4 bins)</td>
+          <td>HX711 amplifier + ESP32 microcontroller per station</td>
+          <td>$280 – $420</td>
+        </tr>
+        <tr>
+          <td>Industrial RFID tags (50 units)</td>
+          <td>Xerafy or equivalent; dishwasher-rated, on-metal</td>
+          <td>$180 – $300</td>
+        </tr>
+        <tr>
+          <td>RFID readers (Bar + Storage)</td>
+          <td>UHF Gen2 USB or ethernet readers</td>
+          <td>$200 – $350</td>
+        </tr>
+        <tr>
+          <td>IR break-beam sensors (3 thresholds)</td>
+          <td>Adafruit or equivalent; wired to microcontroller</td>
+          <td>$60 – $100</td>
+        </tr>
+        <tr>
+          <td>Camera units (Phase 2)</td>
+          <td>Raspberry Pi HQ Camera + compute module</td>
+          <td>$180 – $280</td>
+        </tr>
+        <tr>
+          <td>QR labels (printed)</td>
+          <td>Laminated, waterproof stock</td>
+          <td>$20 – $40</td>
+        </tr>
+        <tr>
+          <td>Polish station tablet mount</td>
+          <td>Wall or rack mount; any Android/iPad tablet</td>
+          <td>$40 – $80</td>
+        </tr>
+        <tr class="free">
+          <td>Cloudflare Worker</td>
+          <td>Free tier — 100,000 requests/day included</td>
+          <td>$0</td>
+        </tr>
+        <tr class="free">
+          <td>Airtable</td>
+          <td>Free tier sufficient for Phase 1</td>
+          <td>$0</td>
+        </tr>
+        <tr class="free">
+          <td>Cloudflare Pages (dashboard hosting)</td>
+          <td>Free tier</td>
+          <td>$0</td>
+        </tr>
+        <tr class="total">
+          <td>Total Hardware Investment</td>
+          <td>Phase 1 sensors + tags + mounts</td>
+          <td>$780 – $1,290</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="body-text">
+      Phase 1 can be fully operational — software running, Toast integrated, QR scanning live — for zero hardware cost. Sensors are additive once the software foundation is proven in service.
+    </p>
+  </div>
+
+  <!-- ========================================================
+       09. CLOSING
+       ======================================================== -->
+  <div class="closing">
+    <div class="closing-text">
+      <p class="body-text">
+        This system was designed by and for River Pointe Inn. It is not a vendor product. It is not a subscription. It is operational infrastructure built to the specific rhythms of this kitchen, this floor, and this standard of service.
+      </p>
+      <p class="body-text">
+        It is ready to build. The only question is when.
+      </p>
+    </div>
+    <div class="sig-block">
+      <div class="sig-line"></div>
+      <div class="sig-name">Adam Brousell</div>
+      <div class="sig-title">General Manager</div>
+      <div class="sig-org">River Pointe Inn · Rallo Hospitality</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Footer -->
+<div class="doc-footer">
+  <span class="footer-mark">River Pointe Inn</span>
+  <span>Cutlery Intelligence System · Confidential</span>
+  <span id="footerDate">—</span>
+</div>
+
+<script>
+// Set dates
+var now = new Date();
+var formatted = now.toLocaleDateString('en-US', {
+  year: 'numeric', month: 'long', day: 'numeric'
+});
+document.getElementById('docDate').textContent = formatted;
+document.getElementById('footerDate').textContent = formatted;
+
+// Scroll reveal
+var observer = new IntersectionObserver(function(entries) {
+  entries.forEach(function(entry) {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.08 });
+
+document.querySelectorAll('.section').forEach(function(el) {
+  observer.observe(el);
+});
+
+// Stagger section reveals slightly
+document.querySelectorAll('.section').forEach(function(el, i) {
+  el.style.transitionDelay = (i * 0.05) + 's';
+});
+</script>
+</body>
+</html>
