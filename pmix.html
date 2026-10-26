@@ -310,6 +310,10 @@ const ITEM_OVERRIDES = {
   'onion soup': 'starter',                     // soupe à l'oignon
   'apple tart': 'dessert',                     // tarte aux pommes
   'manuel atcha axta rojo': 'wine',            // $19 red BTG — confirm it's a wine pour, else move to ITEM_EXCLUDES
+  // Week of Oct 19 uncategorized items — now fixed
+  // Les Fruits de Mer caviar service ($195/service). Also now caught by the
+  // broadened \bcaviar\b rawbar rule below — the old rule only matched "caviar donut".
+  'caviar service': 'rawbar',
 };
 
 /* UPDATED Oct 5: Fondue Add-ons ($0 modifier ring) excluded */
@@ -485,7 +489,9 @@ function categorize(name) {
   // 10) Food.
   if (/wagyu|waygu|ratatouille|paillard|moules frites|lasagna|au poivre|pork chop|steak frites|roast chicken for|ny strip|new york strip|porterhouse|salmon\b|saumon|medaillons|branzino|red snapper|snapper|kids tenders|kids cheeseburger|chicken fingers/.test(n)) return 'food';
   if (/1\s*\/\s*2\s*(dozen|dzn)|half\s*dozen|1\/2\s*dozen/.test(n)) return 'rawbar';
-  if (/crudo tasting|\bcrudo\b|hamachi|shrimp cocktail|tuna tartare|ceviche|fluke|caviar.*donut|dune fox|sloop point|salty rose|laughing gull|little darling|violet sky|swan point|sugar shack|barnegat/.test(n)) return 'rawbar';
+  // \bcaviar\b catches "Caviar Service", "Caviar Donut", "Ossetra Caviar", etc.
+  // (was caviar.*donut — only matched a caviar donut, so "Caviar Service" fell through to uncat).
+  if (/crudo tasting|\bcrudo\b|hamachi|shrimp cocktail|tuna tartare|ceviche|fluke|\bcaviar\b|dune fox|sloop point|salty rose|laughing gull|little darling|violet sky|swan point|sugar shack|barnegat/.test(n)) return 'rawbar';
   if (/bread service|scotch egg|\boeuf\b|little gem|garden salad|asparagus mimosa|escargots|^jambon|sardine toast|crepe aux|berries.*cream|salad de tomates|eggplant|peaches/.test(n)) return 'starter';
   if (/carrot.*cake|meringue cake|chocolate cake|cheesecake|raspberry tart|creme brulee|banana split|brownie sundae|banana chip ice|brown butter ice|chocolate ice|strawberry ice|vanilla ice|mint ice|\bsorbet\b|\bgelato\b|fromage/.test(n)) return 'dessert';
   if (/custom cake|fet d'or/.test(n)) return 'food';
