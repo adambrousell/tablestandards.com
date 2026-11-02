@@ -998,11 +998,12 @@ function renderPdjSection(cat, items, prevLookup, hasPrev, byRev) {
       ? (WD_LONG[night].toUpperCase() + (dateLbl ? '  \u00b7  ' + dateLbl : ''))
       : 'NIGHT UNKNOWN';
 
-    let heroVal, heroSub = '';
-    if (wasX) { heroVal = '86'; heroSub = 'sold out early'; }
+    let heroVal, heroSub = '', heroSoldOut = false;
+    if (wasX) { heroVal = '86'; heroSub = 'sold out early'; heroSoldOut = true; }
     else if (availN !== null) {
       heroVal = displaySold + ' of ' + availN + ' sold';
-      heroSub = soldOut ? 'sold out' : (availN - displaySold) + ' left over';
+      // "# left over" removed per request — surface only the sold-out state.
+      if (soldOut) { heroSub = 'sold out'; heroSoldOut = true; }
     } else {
       heroVal = displaySold + ' sold';
       heroSub = (soldN === null) ? 'count not entered' : '';
@@ -1015,7 +1016,7 @@ function renderPdjSection(cat, items, prevLookup, hasPrev, byRev) {
       <div class="hm-day-label" style="color:${softCol};">${headerText}</div>
       <div class="hm-name" style="color:${nameCol};margin-top:2px;">${item.name.replace(/^(GL:|HH:)\s*/i,'')}</div>
       <div class="hm-day-val" style="color:${nameCol};margin-top:4px;">${heroVal}</div>
-      ${heroSub ? `<div class="hm-day-sub" style="color:${metaCol};">${heroSub}</div>` : ''}
+      ${heroSub ? `<div class="hm-day-sub" style="color:${heroSoldOut ? dnCol : metaCol};">${heroSub}</div>` : ''}
       ${reconLine ? `<div class="hm-day-sub" style="color:${metaCol};">${reconLine}</div>` : ''}
       ${dHtml}
     </div>`;
@@ -1111,13 +1112,14 @@ function renderNightlySection(cat, items, prevLookup, hasPrev, byRev, specialNam
       const light = isLightBg(bg);
       const nameCol = light ? '#1a1a18' : '#ffffff';
       const metaCol = light ? 'rgba(26,26,24,0.6)' : 'rgba(255,255,255,0.8)';
+      const subCol = (subHtml === 'sold out') ? (light ? '#b83030' : '#ffb3b3') : metaCol;
       tiles.push({
         day: wd,
         sortKey,
         html: `<div class="hm-day-cell" style="background:${bg};border-left-color:${cat.color};">
           <div class="hm-day-label" style="color:${metaCol};">${wd.toUpperCase()} ${dateLbl}</div>
           <div class="hm-day-val" style="color:${nameCol};">${valHtml}</div>
-          ${subHtml ? `<div class="hm-day-sub" style="color:${metaCol};">${subHtml}</div>` : ''}
+          ${subHtml ? `<div class="hm-day-sub" style="color:${subCol};">${subHtml}</div>` : ''}
         </div>`
       });
     }
