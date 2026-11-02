@@ -47,7 +47,9 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .logout-btn { font-size: 12px; color: var(--text-3); background: transparent; border: 1px solid var(--border-strong); padding: 6px 12px; border-radius: var(--r); cursor: pointer; }
 .logout-btn:hover { color: var(--text-2); }
 
-.toggle-section { display: flex; gap: 8px; }
+.toggle-section { display: flex; align-items: center; gap: 10px; }
+.toggle-group { display: flex; gap: 8px; }
+.toggle-divider { width: 1px; align-self: stretch; background: var(--border-strong); margin: 3px 2px; }
 .toggle-btn { background: var(--surface); color: var(--text-2); border: 1px solid var(--border-strong); border-radius: 20px; padding: 8px 20px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; font-weight: 500; }
 .toggle-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
@@ -69,6 +71,11 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 16px 18px; margin-bottom: 14px; }
 .card-title { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); margin-bottom: 14px; }
 .card-title span { font-family: 'DM Serif Display', serif; font-size: 15px; text-transform: none; letter-spacing: 0; color: var(--text); margin-right: 8px; }
+/* Hint text inside a card title — beats the generic .card-title span rule so it
+   stays a small sans note rather than inheriting the serif heading style. */
+.card-title .ct-hint { font-family: 'DM Sans', sans-serif; font-size: 11px; letter-spacing: 0; text-transform: none; color: var(--text-3); font-weight: 400; margin-right: 0; }
+
+.somm-muted { font-size: 11px; color: var(--text-3); margin: 0 0 12px; font-variant-numeric: tabular-nums; }
 
 .cat-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; cursor: pointer; border-radius: 4px; }
 .cat-row:hover { background: #f1efe8; }
@@ -102,7 +109,9 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
   .logo { font-size: 17px; }
   .logo span { font-size: 14px; }
   .header-bar { flex-direction: column; align-items: stretch; gap: 10px; }
-  .toggle-section { width: 100%; }
+  .toggle-section { width: 100%; flex-direction: column; align-items: stretch; }
+  .toggle-group { width: 100%; }
+  .toggle-divider { display: none; }
   .toggle-btn { flex: 1; text-align: center; padding: 10px 0; font-size: 14px; }
   .kpi-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .kpi { padding: 10px 10px; }
@@ -157,6 +166,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 .hm-day-sub { font-size: 10px; margin-top: 1px; }
 .hm-pinned-badge { display: inline-block; font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); background: #e8f2ec; border: 1px solid #c7dccf; border-radius: 10px; padding: 1px 7px; margin-left: 6px; vertical-align: middle; }
 .hm-warn-badge { display: inline-block; font-size: 9px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8a6d1a; background: #fdf6dd; border: 1px solid #e6d9a8; border-radius: 10px; padding: 1px 7px; margin-left: 6px; vertical-align: middle; }
+.hm-cellar-badge { display: inline-block; margin-left: 5px; color: #b8942a; font-size: 11px; vertical-align: baseline; }
 .kpi-delta { display: inline-block; font-size: 11px; font-weight: 500; padding: 1px 7px; border-radius: 10px; margin-top: 5px; }
 .kpi-delta.up { background: #e8f5ed; color: var(--up); }
 .kpi-delta.down { background: #faeaea; color: var(--down); }
@@ -172,7 +182,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 <div class="login-screen" id="login-screen">
   <div class="login-card">
     <h1>Weekly Product Mix</h1>
-    <p>River Pointe Inn — kitchen view</p>
+    <p>River Pointe Inn</p>
     <div id="login-error" class="login-error"></div>
     <input type="password" id="password-input" placeholder="Password" autocomplete="current-password">
     <button onclick="authenticate()">View this week</button>
@@ -199,8 +209,15 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
         <div class="uploaded-label" id="uploaded-label"></div>
       </div>
       <div class="toggle-section">
-        <button class="toggle-btn" id="tg-revenue" onclick="setView('revenue')">By revenue</button>
-        <button class="toggle-btn active" id="tg-quantity" onclick="setView('quantity')">By quantity</button>
+        <div class="toggle-group">
+          <button class="toggle-btn active" id="tg-kitchen" onclick="setLens('kitchen')">Kitchen</button>
+          <button class="toggle-btn" id="tg-somm" onclick="setLens('somm')">Somm</button>
+        </div>
+        <div class="toggle-divider"></div>
+        <div class="toggle-group">
+          <button class="toggle-btn" id="tg-revenue" onclick="setView('revenue')">By revenue</button>
+          <button class="toggle-btn active" id="tg-quantity" onclick="setView('quantity')">By quantity</button>
+        </div>
       </div>
     </div>
 
@@ -214,7 +231,7 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
     </div>
 
     <div class="card">
-      <div class="card-title"><span>Items ranked within each category</span> weekly specials pinned first, remaining categories by rank · <span style="font-size:11px;color:var(--text-3);font-family:'DM Sans',sans-serif;">click a header to collapse</span></div>
+      <div class="card-title"><span id="heatmap-title">Items ranked within each category</span> <span id="heatmap-hint" class="ct-hint">weekly specials pinned first, remaining categories by rank &middot; click a header to collapse</span></div>
       <div id="shift-status" style="font-size:11px;margin:-8px 0 12px;color:var(--text-3);"></div>
       <div id="heatmap"></div>
     </div>
@@ -226,6 +243,9 @@ const WORKER_URL = 'https://rpi-pmix-backend.amusementstandards.workers.dev';
 
 const EXCLUDE_FEES_FROM_TOTALS = false;
 const KIDS_OWN_CATEGORY = true;
+
+// Unit price at/above which a by-the-bottle wine line gets the cellar marker in Somm view.
+const CELLAR_MIN = 150;
 
 /* UPDATED Nov 2: mapped week-of-Oct-26 uncategorized items — Highland & Honey cocktail, White Wine catch-all button, Felix Bigallet China-China amer, Bubbly Toast add-on */
 const ITEM_OVERRIDES = {
@@ -373,6 +393,15 @@ const CAT_LABELS = {
   kids:'Kids menu', fees:'Fees & service charges', uncat:'Uncategorized — needs mapping',
 };
 
+// View state: lens (kitchen|somm) is orthogonal to metric (revenue|quantity).
+let currentLens = 'kitchen';
+(function () {
+  try {
+    const v = (new URLSearchParams(location.search).get('view') || '').toLowerCase();
+    if (v === 'somm' || v === 'wine' || v === 'sommelier') currentLens = 'somm';
+  } catch (e) {}
+})();
+
 function getToken() { return sessionStorage.getItem('rpi_chef_token') || ''; }
 
 async function authenticate() {
@@ -414,6 +443,7 @@ function logout() {
 function showMainContent() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('main-content').classList.add('authed');
+  syncToggleButtons();
   loadData();
 }
 
@@ -503,6 +533,18 @@ function categorize(name) {
 
   // 11) Fallback.
   return 'uncat';
+}
+
+// Somm view: split a wine line into by-the-glass vs by-the-bottle service.
+// Returns 'glass', 'bottle', or 'unknown' (lines with no GL:/BTL: prefix and
+// no bin number — surfaced in their own section so they can be fixed in Toast).
+function wineService(name) {
+  const n = normName(name);
+  if (/^gl:|^gl\s/.test(n)) return 'glass';
+  if (/^btl:|^btl\s/.test(n)) return 'bottle';
+  if (/\bmag\b|magnum|1\.5\s*l|\b3l\b|jeroboam|double magnum/.test(n)) return 'bottle';
+  if (/^\d{3,4}[:\s]|^b\d{2,4}\b|^2\d{3}[:\s]/.test(n)) return 'bottle';
+  return 'unknown';
 }
 
 function isMiscRow(name) {
@@ -756,7 +798,64 @@ function renderUncatBanner(uncatItems) {
   </div>`;
 }
 
+// Standard item-grid section (one heat-shaded tile per item). Shared by the
+// Kitchen lens and by the beverage sections of the Somm lens.
+function renderItemGrid(cat, itemsArr, prevLookup, hasPrev, byRev, badgeHtml) {
+  const grp = [...itemsArr]
+    .map(i => ({ ...i, rev: i.qty * i.price }))
+    .sort((a,b) => byRev ? b.rev - a.rev : b.qty - a.qty);
+  const maxR = byRev ? (grp[0]?.rev || 1) : (grp[0]?.qty || 1);
+  const id = 'hmg-' + cat.key;
+  let html = `<div class="hm-cat-section">
+    <div class="hm-cat-header" onclick="toggleHmGroup('${id}')">
+      <span class="leg-dot" style="background:${cat.color}"></span>
+      <span class="hm-cat-label">${cat.label}</span>${badgeHtml || ''}
+      <span class="hm-cat-rev">${fmt(cat.rev)} \u00b7 ${Math.round(cat.qty).toLocaleString()} sold \u00b7 ${grp.length} items</span>
+      <span class="hm-cat-toggle" id="${id}-toggle">\u25bc</span>
+    </div>
+    <div class="hm-grid" id="${id}">`;
+  grp.forEach(item => {
+    const metric = byRev ? item.rev : item.qty;
+    const weight = 0.25 + (metric / maxR) * 0.75;
+    const bg = hexBlend(cat.color, weight);
+    const light = isLightBg(bg);
+    const nameCol = light ? '#1a1a18' : '#ffffff';
+    const metaCol = light ? 'rgba(26,26,24,0.65)' : 'rgba(255,255,255,0.8)';
+    const upCol   = light ? '#1a7a3a' : '#a8ffbe';
+    const dnCol   = light ? '#b83030' : '#ffb3b3';
+    const flatCol = light ? 'rgba(26,26,24,0.5)' : 'rgba(255,255,255,0.65)';
+    const name = item.name.replace(/^(GL:|HH:|\d{3,4}[:\s]|B\d{2,4}[:\s]?)\s*/i,'');
+    const prev = hasPrev ? prevLookup[normalizeKey(item.name)] : null;
+    let dHtml = '';
+    if (hasPrev) {
+      if (prev && prev.qty > 0) {
+        const d = (item.qty - prev.qty) / prev.qty * 100;
+        const dc = deltaClass(d);
+        const dCol = dc === 'up' ? upCol : dc === 'down' ? dnCol : flatCol;
+        dHtml = `<div class="hm-delta" style="color:${dCol};">${deltaArrow(d)} ${pctLabel(d)} wow</div>`;
+      } else {
+        dHtml = `<div class="hm-delta" style="color:${flatCol};">\u2605 new</div>`;
+      }
+    }
+    html += `<div class="hm-cell" style="background:${bg};border-left-color:${cat.color};">
+      <div class="hm-name" style="color:${nameCol};">${name}</div>
+      <div class="hm-meta" style="color:${metaCol};">${Math.round(item.qty)} sold \u00b7 ${fmt(item.rev)}</div>
+      ${dHtml}
+    </div>`;
+  });
+  html += `</div></div>`;
+  return html;
+}
+
+// Dispatcher: lens decides which dashboard renders; metric toggle re-renders either.
 function renderDashboard() {
+  if (!currentData) return;
+  syncToggleButtons();
+  if (currentLens === 'somm') renderSommDashboard();
+  else renderKitchenDashboard();
+}
+
+function renderKitchenDashboard() {
   if (!currentData) return;
   const keep = i => {
     if (isStaffOrComp(i.name) || isMiscRow(i.name) || isExcludedRow(i.name)) return false;
@@ -776,6 +875,11 @@ function renderDashboard() {
       'Updated ' + d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' }) +
       ' ' + d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
   }
+
+  // Restore kitchen-specific titles & the shift-status line (Somm hides/retitles them).
+  document.getElementById('heatmap-title').textContent = 'Items ranked within each category';
+  document.getElementById('heatmap-hint').textContent = 'weekly specials pinned first, remaining categories by rank \u00b7 click a header to collapse';
+  document.getElementById('shift-status').style.display = '';
 
   const cats = {}, prevCats = {};
   items.forEach(i => { const c = categorize(i.name); (cats[c]||(cats[c]=[])).push(i); });
@@ -866,53 +970,226 @@ function renderDashboard() {
       hmHtml += renderPdjSection(cat, cats[cat.key], prevLookup, hasPrev, byRev);
       return;
     }
-    const grp = [...cats[cat.key]]
-      .map(i => ({ ...i, rev: i.qty * i.price }))
-      .sort((a,b) => byRev ? b.rev - a.rev : b.qty - a.qty);
-    const maxR = byRev ? (grp[0]?.rev || 1) : (grp[0]?.qty || 1);
-    const id = 'hmg-' + cat.key;
     const pinBadge = (cat.key === 'uncat') ? '<span class="hm-warn-badge">Fix in Toast</span>' : '';
-    hmHtml += `<div class="hm-cat-section">
-      <div class="hm-cat-header" onclick="toggleHmGroup('${id}')">
-        <span class="leg-dot" style="background:${cat.color}"></span>
-        <span class="hm-cat-label">${cat.label}</span>${pinBadge}
-        <span class="hm-cat-rev">${fmt(cat.rev)} \u00b7 ${Math.round(cat.qty).toLocaleString()} sold \u00b7 ${grp.length} items</span>
-        <span class="hm-cat-toggle" id="${id}-toggle">\u25bc</span>
-      </div>
-      <div class="hm-grid" id="${id}">`;
-    grp.forEach(item => {
-      const metric = byRev ? item.rev : item.qty;
-      const weight = 0.25 + (metric / maxR) * 0.75;
-      const bg = hexBlend(cat.color, weight);
-      const light = isLightBg(bg);
-      const nameCol = light ? '#1a1a18' : '#ffffff';
-      const metaCol = light ? 'rgba(26,26,24,0.65)' : 'rgba(255,255,255,0.8)';
-      const upCol   = light ? '#1a7a3a' : '#a8ffbe';
-      const dnCol   = light ? '#b83030' : '#ffb3b3';
-      const flatCol = light ? 'rgba(26,26,24,0.5)' : 'rgba(255,255,255,0.65)';
-      const name = item.name.replace(/^(GL:|HH:|\d{3,4}[:\s]|B\d{2,4}[:\s]?)\s*/i,'');
-      const prev = hasPrev ? prevLookup[normalizeKey(item.name)] : null;
-      let dHtml = '';
-      if (hasPrev) {
-        if (prev && prev.qty > 0) {
-          const d = (item.qty - prev.qty) / prev.qty * 100;
-          const dc = deltaClass(d);
-          const dCol = dc === 'up' ? upCol : dc === 'down' ? dnCol : flatCol;
-          dHtml = `<div class="hm-delta" style="color:${dCol};">${deltaArrow(d)} ${pctLabel(d)} wow</div>`;
-        } else {
-          dHtml = `<div class="hm-delta" style="color:${flatCol};">\u2605 new</div>`;
-        }
-      }
-      hmHtml += `<div class="hm-cell" style="background:${bg};border-left-color:${cat.color};">
-        <div class="hm-name" style="color:${nameCol};">${name}</div>
-        <div class="hm-meta" style="color:${metaCol};">${Math.round(item.qty)} sold \u00b7 ${fmt(item.rev)}</div>
-        ${dHtml}
-      </div>`;
-    });
-    hmHtml += `</div></div>`;
+    hmHtml += renderItemGrid(cat, cats[cat.key], prevLookup, hasPrev, byRev, pinBadge);
   });
   document.getElementById('heatmap').innerHTML = hmHtml;
 
+  document.getElementById('dashboard').classList.add('active');
+}
+
+// ── Somm lens ───────────────────────────────────────────────────────────────
+// Same weekly data, wine-and-bar framing: beverage categories only, wine split
+// into by-the-glass / by-the-bottle, cellar bottles flagged, and wine lines
+// with no GL:/BTL: prefix surfaced for Rebecca to fix in Toast.
+
+// One wine section (glass / bottle / service-unspecified). opts: {showUnit, cellar, badge, emptyHint}
+function renderWineSection(title, gid, list, prevLookup, hasPrev, byRev, opts) {
+  opts = opts || {};
+  const color = CAT_COLORS.wine;
+  const grp = [...list]
+    .map(i => ({ ...i, rev: i.qty * i.price }))
+    .sort((a,b) => byRev ? b.rev - a.rev : b.qty - a.qty);
+  const catRev = grp.reduce((s,i)=>s+i.rev, 0);
+  const catQty = grp.reduce((s,i)=>s+i.qty, 0);
+  const maxR = byRev ? (grp[0]?.rev || 1) : (grp[0]?.qty || 1);
+  const id = 'hmg-' + gid;
+  let html = `<div class="hm-cat-section">
+    <div class="hm-cat-header" onclick="toggleHmGroup('${id}')">
+      <span class="leg-dot" style="background:${color}"></span>
+      <span class="hm-cat-label">${title}</span>${opts.badge || ''}
+      <span class="hm-cat-rev">${fmt(catRev)} \u00b7 ${Math.round(catQty).toLocaleString()} sold \u00b7 ${grp.length} labels</span>
+      <span class="hm-cat-toggle" id="${id}-toggle">\u25bc</span>
+    </div>
+    <div class="hm-grid" id="${id}">`;
+  if (!grp.length) {
+    html += `<div class="hm-cell" style="background:#efede6;border-left-color:${color};">
+      <div class="hm-meta" style="color:var(--text-3);">${opts.emptyHint || 'Nothing here this week.'}</div>
+    </div>`;
+  }
+  grp.forEach(item => {
+    const metric = byRev ? item.rev : item.qty;
+    const weight = 0.25 + (metric / maxR) * 0.75;
+    const bg = hexBlend(color, weight);
+    const light = isLightBg(bg);
+    const nameCol = light ? '#1a1a18' : '#ffffff';
+    const metaCol = light ? 'rgba(26,26,24,0.65)' : 'rgba(255,255,255,0.8)';
+    const upCol   = light ? '#1a7a3a' : '#a8ffbe';
+    const dnCol   = light ? '#b83030' : '#ffb3b3';
+    const flatCol = light ? 'rgba(26,26,24,0.5)' : 'rgba(255,255,255,0.65)';
+    const name = item.name.replace(/^(GL:|BTL:|HH:|\d{3,4}[:\s]|B\d{2,4}[:\s]?)\s*/i,'');
+    const unit = item.price;
+    const cellar = opts.cellar && unit >= CELLAR_MIN;
+    const metaBits = `${Math.round(item.qty)} sold \u00b7 ${fmt(item.rev)}` + (opts.showUnit ? ` \u00b7 ${fmt(unit)} ea` : '');
+    const prev = hasPrev ? prevLookup[normalizeKey(item.name)] : null;
+    let dHtml = '';
+    if (hasPrev) {
+      if (prev && prev.qty > 0) {
+        const d = (item.qty - prev.qty) / prev.qty * 100;
+        const dc = deltaClass(d);
+        const dCol = dc === 'up' ? upCol : dc === 'down' ? dnCol : flatCol;
+        dHtml = `<div class="hm-delta" style="color:${dCol};">${deltaArrow(d)} ${pctLabel(d)} wow</div>`;
+      } else {
+        dHtml = `<div class="hm-delta" style="color:${flatCol};">\u2605 new</div>`;
+      }
+    }
+    const badge = cellar ? `<span class="hm-cellar-badge" title="High-ticket bottle (\u2265 ${fmt(CELLAR_MIN)} per unit)">\u2726</span>` : '';
+    html += `<div class="hm-cell" style="background:${bg};border-left-color:${color};">
+      <div class="hm-name" style="color:${nameCol};">${name}${badge}</div>
+      <div class="hm-meta" style="color:${metaCol};">${metaBits}</div>
+      ${dHtml}
+    </div>`;
+  });
+  html += `</div></div>`;
+  return html;
+}
+
+function renderSommDashboard() {
+  if (!currentData) return;
+  const keep = i => {
+    if (isStaffOrComp(i.name) || isMiscRow(i.name) || isExcludedRow(i.name)) return false;
+    if (EXCLUDE_FEES_FROM_TOTALS && categorize(i.name) === 'fees') return false;
+    return true;
+  };
+  const items = (currentData.items || []).filter(keep);
+  const prevItems = (currentData.prevItems || []).filter(keep);
+  const hasPrev = prevItems.length > 0;
+  const byRev = currentView === 'revenue';
+
+  let weekText = 'Week of ' + (currentData.dateRange || '\u2014');
+  if (hasPrev && currentData.prevDateRange) weekText += '  \u00b7  vs ' + currentData.prevDateRange;
+  document.getElementById('week-label').textContent = weekText;
+  if (currentData.uploadedAt) {
+    const d = new Date(currentData.uploadedAt);
+    document.getElementById('uploaded-label').textContent =
+      'Updated ' + d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' }) +
+      ' ' + d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+  }
+
+  // Shift specials are a food concern — hide that line in Somm view.
+  const ss = document.getElementById('shift-status');
+  if (ss) ss.style.display = 'none';
+
+  const cats = {}, prevCats = {};
+  items.forEach(i => { const c = categorize(i.name); (cats[c]||(cats[c]=[])).push(i); });
+  prevItems.forEach(i => { const c = categorize(i.name); (prevCats[c]||(prevCats[c]=[])).push(i); });
+
+  renderUncatBanner(cats['uncat'] || []);
+
+  const prevLookup = {};
+  prevItems.forEach(i => {
+    const k = normalizeKey(i.name);
+    if (!prevLookup[k]) prevLookup[k] = { qty: 0, rev: 0 };
+    prevLookup[k].qty += i.qty;
+    prevLookup[k].rev += i.qty * i.price;
+  });
+
+  const BEV = ['wine','spirit','cocktail','beer','na','coffee'];
+  const cRev = k => sumRev(cats[k] || []);
+  const cQty = k => sumQty(cats[k] || []);
+  const pRev = k => sumRev(prevCats[k] || []);
+
+  const totalRev = Object.keys(cats).reduce((s,k)=>s+sumRev(cats[k]), 0);
+  const bevRev = BEV.reduce((s,k)=>s+cRev(k), 0);
+  const prevBevRev = BEV.reduce((s,k)=>s+pRev(k), 0);
+  const wineRev = cRev('wine');
+  const prevWineRev = pRev('wine');
+  const barRev = cRev('spirit') + cRev('cocktail');
+  const prevBarRev = pRev('spirit') + pRev('cocktail');
+
+  // Wine service split.
+  const wineItems = (cats['wine'] || []).map(i => ({ ...i, rev: i.qty * i.price, svc: wineService(i.name) }));
+  const glass  = wineItems.filter(i => i.svc === 'glass');
+  const bottle = wineItems.filter(i => i.svc === 'bottle');
+  const unknown = wineItems.filter(i => i.svc === 'unknown');
+  const glassRev  = glass.reduce((s,i)=>s+i.rev, 0);
+  const bottleRev = bottle.reduce((s,i)=>s+i.rev, 0);
+  const splitBase = glassRev + bottleRev;
+  const glassPct  = splitBase > 0 ? Math.round(glassRev / splitBase * 100) : 0;
+  const bottlePct = splitBase > 0 ? 100 - glassPct : 0;
+
+  // KPIs — money-centric regardless of the metric toggle.
+  const bevShare = totalRev > 0 ? Math.round(bevRev / totalRev * 100) : 0;
+  const wineShareBev = bevRev > 0 ? Math.round(wineRev / bevRev * 100) : 0;
+  const kpis = [
+    { label:'Beverage revenue', val:fmt(bevRev), sub:`${bevShare}% of est. revenue`,
+      delta: hasPrev ? deltaTag(bevRev, prevBevRev, 'kpi-delta') : '' },
+    { label:'Wine', val:fmt(wineRev), sub:`${wineShareBev}% of beverage`,
+      delta: hasPrev ? deltaTag(wineRev, prevWineRev, 'kpi-delta') : '' },
+    { label:'Bar (spirits + cocktails)', val:fmt(barRev), sub:'poured drinks',
+      delta: hasPrev ? deltaTag(barRev, prevBarRev, 'kpi-delta') : '' },
+    { label:'Wine glass / bottle', val:`${glassPct}% / ${bottlePct}%`,
+      sub:`${fmt(glassRev)} BTG \u00b7 ${fmt(bottleRev)} BTL`, delta:'' },
+  ];
+  document.getElementById('kpi-grid').innerHTML = kpis.map(k =>
+    `<div class="kpi"><div class="kpi-label">${k.label}</div><div class="kpi-val">${k.val}</div><div class="kpi-sub">${k.sub}</div>${k.delta||''}</div>`).join('');
+
+  // Beverage category ranking.
+  document.getElementById('ranking-title').textContent =
+    byRev ? 'Beverage categories ranked by revenue' : 'Beverage categories ranked by quantity';
+  const bevRanking = BEV.map(key => ({
+    key, label: CAT_LABELS[key] || key, color: CAT_COLORS[key] || '#8a8577',
+    qty: cQty(key), rev: cRev(key),
+    prevQty: sumQty(prevCats[key] || []), prevRev: pRev(key),
+  })).filter(r => r.qty > 0).sort((a,b) => byRev ? b.rev - a.rev : b.qty - a.qty);
+
+  const totalMetric = byRev ? bevRev : bevRanking.reduce((s,r)=>s+r.qty, 0);
+  const maxVal = bevRanking.length ? (byRev ? bevRanking[0].rev : bevRanking[0].qty) : 1;
+  const axisMax = niceCeil(maxVal);
+  const axisTicks = [0, 0.25, 0.5, 0.75, 1]
+    .map(f => `<span>${axisLabel(axisMax * f, byRev)}</span>`).join('');
+  const headerHtml = `<div class="cat-header-row">
+    <span class="cat-rank">#</span>
+    <span class="cat-name">Category</span>
+    <span class="cat-axis"><span class="axis-scale">${axisTicks}</span></span>
+    <span class="cat-share">%</span>
+    <span class="cat-val">${byRev ? 'Revenue' : 'Qty sold'}</span>
+    <span class="cat-sub">${byRev ? 'Qty sold' : 'Revenue'}</span>
+    ${hasPrev ? '<span class="cat-delta" style="color:var(--text-3);">vs last wk</span>' : ''}
+  </div>`;
+  const wineJump = glass.length ? 'wine-glass' : (bottle.length ? 'wine-bottle' : 'wine-unknown');
+  document.getElementById('ranking-list').innerHTML = headerHtml + bevRanking.map((r, idx) => {
+    const val = byRev ? r.rev : r.qty;
+    const prevVal = byRev ? r.prevRev : r.prevQty;
+    const share = totalMetric > 0 ? val / totalMetric * 100 : 0;
+    const width = axisMax > 0 ? Math.max(1.5, val / axisMax * 100) : 0;
+    const main = byRev ? fmt(r.rev) : Math.round(r.qty).toLocaleString();
+    const sub  = byRev ? `${Math.round(r.qty).toLocaleString()} sold` : fmt(r.rev);
+    const jump = r.key === 'wine' ? wineJump : r.key;
+    return `<div class="cat-row" onclick="jumpToCategory('${jump}')" title="View ${r.label}">
+      <span class="cat-rank">${idx+1}</span>
+      <span class="cat-name">${r.label}</span>
+      <span class="cat-bar" title="${main} \u00b7 ${share < 1 ? share.toFixed(1) : Math.round(share)}% of beverage \u00b7 axis 0\u2013${byRev ? fmt(axisMax) : Math.round(axisMax).toLocaleString()}"><span class="cat-bar-fill" style="width:${width}%;background:${r.color};"></span></span>
+      <span class="cat-share">${share < 1 ? share.toFixed(1) : Math.round(share)}%</span>
+      <span class="cat-val">${main}</span>
+      <span class="cat-sub">${sub}</span>
+      ${hasPrev ? (deltaTag(val, prevVal, 'cat-delta') || '<span class="cat-delta flat">new</span>') : ''}
+    </div>`;
+  }).join('');
+
+  // Heatmap card titles for the Somm framing.
+  document.getElementById('heatmap-title').textContent = 'Wine program & bar';
+  document.getElementById('heatmap-hint').textContent = 'wine split by the glass vs the bottle, then spirits & cocktails \u00b7 click a header to collapse';
+
+  const nonBevRev = totalRev - bevRev;
+  const ctxLine = `<div class="somm-muted">Food &amp; other (not shown in this view): ${fmt(nonBevRev)} \u00b7 beverage is ${bevShare}% of the week by revenue</div>`;
+
+  let hmHtml = '';
+  hmHtml += renderWineSection('Wine \u2014 by the glass', 'wine-glass', glass, prevLookup, hasPrev, byRev,
+    { showUnit:false, emptyHint:'No by-the-glass pours rung this week.' });
+  hmHtml += renderWineSection('Wine \u2014 by the bottle', 'wine-bottle', bottle, prevLookup, hasPrev, byRev,
+    { showUnit:true, cellar:true, badge:'<span class="hm-pinned-badge">Cellar</span>', emptyHint:'No bottles rung this week.' });
+  if (unknown.length) {
+    hmHtml += renderWineSection('Wine \u2014 service unspecified', 'wine-unknown', unknown, prevLookup, hasPrev, byRev,
+      { showUnit:true, badge:'<span class="hm-warn-badge">Add GL:/BTL:</span>' });
+  }
+  ['spirit','cocktail','beer','na','coffee'].forEach(key => {
+    if (!(cats[key] && cats[key].length)) return;
+    const cat = { key, label: CAT_LABELS[key] || key, color: CAT_COLORS[key] || '#8a8577', rev: cRev(key), qty: cQty(key) };
+    hmHtml += renderItemGrid(cat, cats[key], prevLookup, hasPrev, byRev, '');
+  });
+
+  document.getElementById('heatmap').innerHTML = ctxLine + hmHtml;
   document.getElementById('dashboard').classList.add('active');
 }
 
@@ -1150,10 +1427,29 @@ function toggleHmGroup(id) {
   tog.textContent = el.classList.toggle('collapsed') ? '▶' : '▼';
 }
 
+function syncToggleButtons() {
+  document.getElementById('tg-kitchen').classList.toggle('active', currentLens === 'kitchen');
+  document.getElementById('tg-somm').classList.toggle('active', currentLens === 'somm');
+  document.getElementById('tg-revenue').classList.toggle('active', currentView === 'revenue');
+  document.getElementById('tg-quantity').classList.toggle('active', currentView === 'quantity');
+}
+
+function setLens(lens) {
+  currentLens = lens;
+  // Keep the URL in step so a mid-session switch is bookmarkable/shareable.
+  try {
+    const u = new URL(location.href);
+    if (lens === 'somm') u.searchParams.set('view', 'somm');
+    else u.searchParams.delete('view');
+    history.replaceState(null, '', u);
+  } catch (e) {}
+  if (currentData) renderDashboard();
+  else syncToggleButtons();
+}
+
 function setView(view) {
   currentView = view;
-  document.getElementById('tg-revenue').classList.toggle('active', view === 'revenue');
-  document.getElementById('tg-quantity').classList.toggle('active', view === 'quantity');
+  syncToggleButtons();
   if (currentData) renderDashboard();
 }
 </script>
