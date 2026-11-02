@@ -227,7 +227,7 @@ const WORKER_URL = 'https://rpi-pmix-backend.amusementstandards.workers.dev';
 const EXCLUDE_FEES_FROM_TOTALS = false;
 const KIDS_OWN_CATEGORY = true;
 
-/* UPDATED Oct 20: mapped week-of-Oct-12 uncategorized items — Rodez Ambonnay Champagnes, the Champagne & Oysters event + admission, onion soup, apple tart, Manuel Atxa red BTG */
+/* UPDATED Nov 2: mapped week-of-Oct-26 uncategorized items — Highland & Honey cocktail, White Wine catch-all button, Felix Bigallet China-China amer, Bubbly Toast add-on */
 const ITEM_OVERRIDES = {
   // Spirits / aperitifs that Toast filed under Entrées
   'cocchi americano bianco': 'spirit',
@@ -314,6 +314,11 @@ const ITEM_OVERRIDES = {
   // Les Fruits de Mer caviar service ($195/service). Also now caught by the
   // broadened \bcaviar\b rawbar rule below — the old rule only matched "caviar donut".
   'caviar service': 'rawbar',
+  // Week of Oct 26 uncategorized items — now fixed
+  'highland & honey': 'cocktail',              // Scotch + honey cocktail — no spirit keyword in the name
+  'white wine': 'wine',                        // "White Wine" catch-all button — exact-match twin of 'red wine' above, so the generic 'wine' rules miss it
+  'felix bigallet china-china amer': 'spirit', // Bigallet China-China, a bitter-orange amer/aperitif — "amer" isn't in the spirit regex
+  'bubbly toast': 'events',                    // $10 flat Champagne toast add-on — confirm: event line vs. a sparkling BTG pour (move to 'wine' if it's a pour)
 };
 
 /* UPDATED Oct 5: Fondue Add-ons ($0 modifier ring) excluded */
