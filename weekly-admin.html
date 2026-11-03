@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Server Weekly Admin</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231f4536'/><text x='50' y='68' font-family='serif' font-size='34' font-weight='bold' fill='%23d8b24a' text-anchor='middle'>RPI</text></svg>">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,600&family=Mulish:wght@0,400;0,700;0,800&display=swap">
+<style>
+:root{
+  --bg:#f3efe6;--surface:#fbf9f4;--ink:#1c2a24;--muted:#5e6b63;--line:#d9d2c3;
+  --green:#1f4536;--green-soft:#2c5a46;--brass:#b08419;--brass-deep:#8a6612;
+  --cream:#efe7d4;--good:#1f6d4b;--good-bg:#e4efe6;--bad:#9a2f2a;--bad-bg:#f4e3df;
+  --shadow:0 1px 2px rgba(28,42,36,.06),0 8px 30px rgba(28,42,36,.09);
+  --f-display:"Fraunces","Hoefler Text",Georgia,serif;--f-body:"Mulish","Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#13201a;--surface:#182a22;--ink:#ede8db;--muted:#9aa89f;--line:#2c4034;
+  --green:#3f7d61;--green-soft:#4c9074;--brass:#d2a53f;--brass-deep:#b98c28;
+  --cream:#1e3328;--good:#5bbf8e;--good-bg:#17382a;--bad:#e08a82;--bad-bg:#3a201e;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.45);color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#13201a;--surface:#182a22;--ink:#ede8db;--muted:#9aa89f;--line:#2c4034;
+  --green:#3f7d61;--green-soft:#4c9074;--brass:#d2a53f;--brass-deep:#b98c28;
+  --cream:#1e3328;--good:#5bbf8e;--good-bg:#17382a;--bad:#e08a82;--bad-bg:#3a201e;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.45);color-scheme:dark;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh}
+.wrap{max-width:960px;margin:0 auto;padding-block:24px 64px;
+  padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance}
+.eyebrow{text-transform:uppercase;letter-spacing:.22em;font-size:.7rem;font-weight:800;color:var(--brass-deep)}
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.head h1{font-size:1.9rem;font-style:italic;color:var(--green)}
+.head .sub{color:var(--muted);font-size:.86rem}
+.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;font:inherit;font-weight:800;letter-spacing:.03em;padding:10px 16px;border-radius:3px;border:1px solid transparent;cursor:pointer;font-size:.86rem}
+.btn-primary{background:var(--green);color:#fff;border-color:var(--green)}
+.btn-primary:hover{background:var(--green-soft)}
+.btn-ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn-ghost:hover{border-color:var(--brass);color:var(--brass-deep)}
+.btn-brass{background:var(--brass);color:#2a2008;border-color:var(--brass)}
+.btn-brass:hover{background:var(--brass-deep);color:#fff}
+select{font:inherit;font-weight:700;padding:9px 12px;border-radius:3px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);padding:16px 18px}
+.kpi .l{font-size:.66rem;text-transform:uppercase;letter-spacing:.12em;font-weight:800;color:var(--muted);margin-bottom:6px}
+.kpi .v{font-family:var(--f-display);font-size:2rem;font-weight:600;line-height:1}
+.kpi .v small{font-size:.9rem;color:var(--muted);font-family:var(--f-body);font-weight:700}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);margin-bottom:18px;overflow:hidden}
+.card .ch{padding:14px 18px;border-bottom:1px solid var(--line);background:var(--cream);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.card .ch h3{font-size:1.05rem}
+.card .cb{padding:4px 2px}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th{text-align:left;font-size:.64rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:10px 16px;border-bottom:1px solid var(--line);cursor:pointer;white-space:nowrap}
+th:hover{color:var(--brass-deep)}
+td{padding:10px 16px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:none}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.72rem;font-weight:800}
+.pill.pass{background:var(--good-bg);color:var(--good)}
+.pill.fail{background:var(--bad-bg);color:var(--bad)}
+.pill.out{background:var(--bad-bg);color:var(--bad)}
+.pill.done{background:var(--good-bg);color:var(--good)}
+.empty{padding:22px 16px;color:var(--muted);font-style:italic;text-align:center}
+.banner{background:var(--bad-bg);color:var(--bad);border:1px solid var(--bad);border-radius:4px;padding:12px 16px;font-weight:700;font-size:.88rem;margin-bottom:18px}
+.banner.info{background:var(--cream);color:var(--brass-deep);border-color:var(--brass)}
+.scroll{overflow-x:auto}
+/* login */
+.login{max-width:420px;margin:48px auto 0}
+.cover{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);overflow:hidden}
+.crest{background:var(--green);color:var(--cream);padding:28px 24px;text-align:center;border-bottom:3px solid var(--brass)}
+.crest .mark{font-family:var(--f-display);letter-spacing:.4em;text-transform:uppercase;font-size:.72rem;color:var(--brass);font-weight:600}
+.crest h1{color:#fff;font-size:1.8rem;font-style:italic;margin-top:.3rem}
+.cb2{padding:24px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin-bottom:6px}
+.field input{width:100%;padding:12px 14px;font:inherit;font-size:1rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:3px}
+.field input:focus{outline:2px solid var(--brass);border-color:var(--brass)}
+.err{background:var(--bad-bg);color:var(--bad);border:1px solid var(--bad);border-radius:3px;padding:10px 14px;font-size:.86rem;font-weight:700;margin-bottom:14px}
+.err:empty{display:none}
+.full{width:100%}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:11px 20px;border-radius:99px;font-size:.86rem;font-weight:700;box-shadow:var(--shadow);opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:20;max-width:calc(100vw - 32px)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:640px){.kpis{grid-template-columns:1fr 1fr}.head h1{font-size:1.6rem}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast"></div>
+<script>
+const CF='https://rpi-shift-api.amusementstandards.workers.dev';
+const TOKEN_KEY='rpi_sw_token';
+function getToken(){try{return localStorage.getItem(TOKEN_KEY)||'';}catch(e){return '';}}
+function setToken(t){try{localStorage.setItem(TOKEN_KEY,t);}catch(e){}}
+function clearToken(){try{localStorage.removeItem(TOKEN_KEY);}catch(e){}}
+try{const th=localStorage.getItem('rpi_theme');if(th)document.documentElement.setAttribute('data-theme',th);}catch(e){}
+
+async function api(path,opts){
+  opts=opts||{};const headers=Object.assign({},opts.body?{'Content-Type':'application/json'}:{});
+  const tk=getToken();if(tk)headers['Authorization']='Bearer '+tk;
+  const res=await fetch(CF+path,{method:opts.method||'GET',headers,credentials:'include',body:opts.body?JSON.stringify(opts.body):undefined});
+  let data={};try{data=await res.json();}catch(e){}
+  if(!res.ok){const e=new Error((data&&data.error)||('Request failed ('+res.status+')'));e.status=res.status;throw e;}
+  return data;
+}
+function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const day=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-day);const ys=new Date(Date.UTC(t.getUTCFullYear(),0,1));const wk=Math.ceil(((t-ys)/86400000+1)/7);return t.getUTCFullYear()+'-W'+String(wk).padStart(2,'0');}
+const CURRENT_WEEK=isoWeek(new Date());
+
+let state={phase:'loading',user:null,err:'',week:CURRENT_WEEK,scores:null,comp:null,sort:{k:'name',dir:1}};
+const app=document.getElementById('app'),toastEl=document.getElementById('toast');let tt;
+function toast(m){toastEl.textContent=m;toastEl.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>toastEl.classList.remove('show'),2300);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function val(id){const e=document.getElementById(id);return e?e.value.trim():'';}
+
+async function boot(){
+  if(getToken()){try{const d=await api('/auth/me');if(d.user.role!=='manager'){state.phase='denied';state.user=d.user;render();return;}state.user=d.user;await loadAll();return;}catch(e){clearToken();}}
+  state.phase='login';render();
+}
+async function loadAll(){
+  state.phase='dash';render();
+  try{
+    const wk=state.week==='ALL'?'':state.week;
+    const [sc,cp]=await Promise.all([
+      api('/quiz/admin/scores'+(wk?('?week='+encodeURIComponent(wk)):'')),
+      api('/quiz/compliance'+(state.week!=='ALL'?('?week='+encodeURIComponent(state.week)):'?week='+encodeURIComponent(CURRENT_WEEK)))
+    ]);
+    state.scores=sc;state.comp=cp;
+  }catch(e){state.scores={error:e.message};}
+  render();
+}
+
+function render(){({loading:rLoad,login:rLogin,denied:rDenied,dash:rDash}[state.phase]||rLoad)();}
+function rLoad(){app.innerHTML='<div class="login"><div class="cover"><div class="crest"><div class="mark">River Pointe Inn</div><h1>Server Weekly Admin</h1></div><div class="cb2"><p style="color:var(--muted)">Loading…</p></div></div></div>';}
+
+function rLogin(){
+  app.innerHTML=`<div class="login"><div class="cover">
+    <div class="crest"><div class="mark">River Pointe Inn</div><h1>Server Weekly Admin</h1></div>
+    <div class="cb2">
+      <div class="err" id="e">${esc(state.err)}</div>
+      <div class="field"><label>Manager email</label><input id="em" type="email" autocomplete="username"></div>
+      <div class="field"><label>Password</label><input id="pw" type="password" autocomplete="current-password"></div>
+      <button class="btn btn-primary full" onclick="doLogin()">Sign in</button>
+    </div></div></div>`;
+  const pw=document.getElementById('pw');if(pw)pw.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+}
+async function doLogin(){
+  const email=val('em'),pw=val('pw');if(!email||!pw){state.err='Enter email and password';render();return;}
+  try{const d=await api('/auth/login',{method:'POST',body:{email,password:pw}});
+    if(d.user.role!=='manager'){clearToken();state.err='That account is not a manager.';render();return;}
+    setToken(d.token);state.user=d.user;state.err='';await loadAll();
+  }catch(e){state.err=e.message;render();}
+}
+function rDenied(){app.innerHTML=`<div class="login"><div class="cover"><div class="crest"><div class="mark">River Pointe Inn</div><h1>Managers only</h1></div><div class="cb2"><p style="color:var(--muted)">This dashboard is for managers. You're signed in as ${esc(state.user?state.user.name:'')}.</p><div style="margin-top:14px"><button class="btn btn-ghost" onclick="logout()">Sign out</button></div></div></div></div>`;}
+function logout(){api('/auth/logout',{method:'POST'}).catch(()=>{});clearToken();state.user=null;state.phase='login';render();}
+
+function sortRows(rows){
+  const {k,dir}=state.sort;
+  return rows.slice().sort((a,b)=>{let x=a[k],y=b[k];if(typeof x==='number'||typeof y==='number'){x=x==null?-1:x;y=y==null?-1:y;return (x-y)*dir;}return String(x).localeCompare(String(y))*dir;});
+}
+function setSort(k){if(state.sort.k===k)state.sort.dir*=-1;else state.sort={k,dir:1};render();}
+
+function rDash(){
+  const sc=state.scores,cp=state.comp;
+  const weeks=(sc&&sc.summary&&sc.summary.weeks)||[];
+  const weekOpts=['<option value="'+CURRENT_WEEK+'">This week ('+CURRENT_WEEK+')</option>','<option value="ALL">All weeks</option>']
+    .concat(weeks.filter(w=>w!==CURRENT_WEEK).map(w=>'<option value="'+w+'">'+w+'</option>'));
+  const sel=weekOpts.map(o=>o.replace('value="'+state.week+'"','value="'+state.week+'" selected')).join('');
+
+  let banner='';
+  if(sc&&sc.error)banner='<div class="banner">Could not load scores: '+esc(sc.error)+'</div>';
+  else if(sc&&sc.configured===false)banner='<div class="banner info">Airtable isn’t connected yet — set AIRTABLE_TOKEN and AIRTABLE_BASE_ID on the Worker. Showing live completion from the quiz backend in the meantime.</div>';
+
+  // KPIs
+  const done=cp?cp.done:0, total=cp?cp.total:0;
+  const passRate=(sc&&sc.summary&&sc.summary.passRate!=null)?sc.summary.passRate+'%':'—';
+  const avg=(sc&&sc.summary&&sc.summary.avgScore!=null)?sc.summary.avgScore+'%':'—';
+  const records=(sc&&sc.summary)?sc.summary.count:0;
+
+  // scores table
+  const rows=(sc&&Array.isArray(sc.rows))?sc.rows:[];
+  const th=(k,l)=>'<th onclick="setSort(\''+k+'\')">'+l+(state.sort.k===k?(state.sort.dir>0?' ↑':' ↓'):'')+'</th>';
+  const scoreTable=rows.length?`<div class="scroll"><table><thead><tr>
+      ${th('name','Server')}${th('week','Week')}${th('best','Score')}${th('pass','Result')}${th('attempts','Att.')}${th('completedAt','Completed')}
+    </tr></thead><tbody>
+    ${sortRows(rows).map(r=>`<tr>
+      <td>${esc(r.name)}</td><td>${esc(r.week)}</td>
+      <td>${r.best!=null?r.best+'%':'—'}</td>
+      <td>${r.best!=null?(r.pass||r.best>=80?'<span class="pill pass">Pass</span>':'<span class="pill fail">Review</span>'):'—'}</td>
+      <td>${r.attempts!=null?r.attempts:'—'}</td>
+      <td>${r.completedAt?new Date(r.completedAt).toLocaleDateString():'—'}</td>
+    </tr>`).join('')}
+    </tbody></table></div>`:'<div class="empty">No recorded scores yet for this view.</div>';
+
+  // current-week roster (done/outstanding)
+  const roster=(cp&&cp.roster)||[];
+  const rosterTable=roster.length?`<div class="scroll"><table><thead><tr><th>Server</th><th>Status</th><th>Best</th></tr></thead><tbody>
+    ${roster.map(r=>`<tr><td>${esc(r.name)}</td><td>${r.completed?'<span class="pill done">Done</span>':'<span class="pill out">Outstanding</span>'}</td><td>${r.completed&&r.score!=null?r.score+'%':'—'}</td></tr>`).join('')}
+    </tbody></table></div>`:'<div class="empty">No server accounts yet.</div>';
+
+  app.innerHTML=`
+    <div class="head">
+      <div><div class="eyebrow">River Pointe Inn</div><h1>Server Weekly</h1><div class="sub">Admin &amp; scores — signed in as ${esc(state.user.name)}</div></div>
+      <div class="tools">
+        <select onchange="state.week=this.value;loadAll()">${sel}</select>
+        <button class="btn btn-ghost" onclick="loadAll()">Refresh</button>
+        <button class="btn btn-ghost" onclick="logout()">Sign out</button>
+      </div>
+    </div>
+    ${banner}
+    <div class="kpis">
+      <div class="kpi"><div class="l">Done this week</div><div class="v">${done}<small> / ${total}</small></div></div>
+      <div class="kpi"><div class="l">Pass rate</div><div class="v">${passRate}</div></div>
+      <div class="kpi"><div class="l">Avg score</div><div class="v">${avg}</div></div>
+      <div class="kpi"><div class="l">Records</div><div class="v">${records}</div></div>
+    </div>
+
+    <div class="card">
+      <div class="ch"><h3>This week &mdash; ${esc(state.week==='ALL'?CURRENT_WEEK:state.week)}</h3>
+        <div class="tools">
+          <button class="btn btn-brass" onclick="sendReminders(false)">Send reminders</button>
+          <button class="btn btn-ghost" onclick="sendReminders(true)">Preview</button>
+        </div>
+      </div>
+      <div class="cb">${rosterTable}</div>
+    </div>
+
+    <div class="card">
+      <div class="ch"><h3>Scores ${state.week==='ALL'?'(all weeks)':''}</h3>
+        <button class="btn btn-ghost" onclick="exportCsv()">Export CSV</button>
+      </div>
+      <div class="cb">${scoreTable}</div>
+    </div>
+    <div style="text-align:center;margin-top:28px;font-family:var(--f-display);font-style:italic;color:var(--muted)">Melius semper</div>`;
+}
+
+async function sendReminders(dry){
+  try{const r=await api('/quiz/remind/'+(dry?'preview':'run'));
+    toast((dry?'Would remind ':'Reminded ')+((r.sent||[]).length)+' · '+((r.outstanding||[]).length)+' outstanding');
+    if(!dry)setTimeout(loadAll,800);
+  }catch(e){toast(e.message);}
+}
+function exportCsv(){
+  const rows=(state.scores&&state.scores.rows)||[];
+  if(!rows.length){toast('Nothing to export');return;}
+  const head=['Name','Email','Week','Score','Pass','Attempts','CompletedAt'];
+  const lines=[head.join(',')].concat(rows.map(r=>[r.name,r.email,r.week,r.best,(r.pass||(r.best>=80))?'Y':'N',r.attempts,r.completedAt].map(v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"').join(',')));
+  const blob=new Blob([lines.join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='server-weekly-'+(state.week==='ALL'?'all':state.week)+'.csv';document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+boot();
+</script>
+</body>
+</html>
