@@ -242,7 +242,6 @@ function renderAuth(){
       `:`
         <div class="field"><label>Full name</label><input id="su-name" type="text" autocomplete="name"></div>
         <div class="field"><label>Email</label><input id="su-email" type="email" autocomplete="username"></div>
-        <div class="field"><label>Mobile <span style="text-transform:none;letter-spacing:0;font-weight:400">(optional — for text reminders)</span></label><input id="su-phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(732) 555-0148"></div>
         <div class="field"><label>Staff code</label><input id="su-code" type="text" autocomplete="off"></div>
         <div class="hint">Ask a manager for the current staff code.</div>
         <div class="field"><label>Choose a password</label><input id="su-pw" type="password" autocomplete="new-password" oninput="meter(this.value)"></div>
@@ -270,10 +269,10 @@ async function doLogin(){
   catch(e){authFail(e.message);}
 }
 async function doSignup(){
-  const name=val('su-name'),email=val('su-email'),code=val('su-code'),pw=val('su-pw'),phone=val('su-phone');
+  const name=val('su-name'),email=val('su-email'),code=val('su-code'),pw=val('su-pw');
   if(!name||!email||!code||!pw){authFail('Fill in every field');return;}
   if(pw.length<12){authFail('Password must be at least 12 characters');return;}
-  try{const d=await api('/auth/signup',{method:'POST',body:{name,email,phone,code,password:pw}});setToken(d.token);state.user=d.user;state.authErr='';await startQuiz();}
+  try{const d=await api('/auth/signup',{method:'POST',body:{name,email,code,password:pw}});setToken(d.token);state.user=d.user;state.authErr='';await startQuiz();}
   catch(e){authFail(e.message);}
 }
 function logout(){api('/auth/logout',{method:'POST'}).catch(()=>{});clearToken();state.user=null;state.phase='auth';state.authTab='login';render();}
