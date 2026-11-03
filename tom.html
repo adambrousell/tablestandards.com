@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deal Desk Daily</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.27.0/lib/msal-browser.min.js"></script>
+<!--
+  Deal Desk Daily — standalone version.
+  Reads live from Microsoft Graph (Outlook mail, calendar, Teams chats, OneDrive) and the
+  Dynamics 365 / Dataverse Web API, signed in as you through Microsoft Entra ID.
+  Fill in CONFIG below (tenantId, clientId) after your IT admin registers the app.
+-->
+<script>
+const CONFIG = {
+  tenantId: '',            // Entra ID → Overview → Directory (tenant) ID
+  clientId: '',            // Entra ID → App registrations → Deal Desk Daily → Application (client) ID
+  crmUrl: 'https://solarlandscape.crm.dynamics.com',
+  crmAppId: '12a7b53b-fa36-eb11-a813-000d3a3379bc',
+  // Core markets: NJ, MD, IL, PA, VA (Dynamics option values for sl_address_state)
+  coreStates: { 268470028: 'NJ', 268470018: 'MD', 268470011: 'IL', 268470036: 'PA', 268470044: 'VA' },
+  briefPath: '/DealDesk/brief.json',   // OneDrive path of the daily priorities file (optional)
+  refreshMinutes: 15,
+};
+</script>
+<style>
+  :root {
+    --bg: #f7f6f3; --panel: #ffffff; --fg: #1d1c1a; --muted: #6b6862; --line: #e4e1db;
+    --accent: #2f6fdb; --accent-soft: rgba(47,111,219,.12); --warn: #b26a00; --warn-soft: rgba(178,106,0,.14);
+    --ok: #2e7d4f; --ok-soft: rgba(46,125,79,.13); --bad: #c0392b; --bar: #d8d4cc;
+    --radius: 10px; --sans: 'Inter', system-ui, sans-serif; --serif: 'Source Serif 4', Georgia, serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161614; --panel: #1f1e1c; --fg: #ecebe8; --muted: #a29e96; --line: #33312d;
+      --accent: #7aa6f5; --accent-soft: rgba(122,166,245,.16); --warn: #f0a640; --warn-soft: rgba(240,166,64,.16);
+      --ok: #6cc592; --ok-soft: rgba(108,197,146,.15); --bad: #ef6b5b; --bar: #3d3b37;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #161614; --panel: #1f1e1c; --fg: #ecebe8; --muted: #a29e96; --line: #33312d;
+    --accent: #7aa6f5; --accent-soft: rgba(122,166,245,.16); --warn: #f0a640; --warn-soft: rgba(240,166,64,.16);
+    --ok: #6cc592; --ok-soft: rgba(108,197,146,.15); --bad: #ef6b5b; --bar: #3d3b37;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.45; }
+  a { color: inherit; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 24px 16px 48px; display: grid; gap: 20px; }
+  header .date { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+  header h1 { font-family: var(--serif); font-weight: 400; font-size: 34px; margin: 2px 0 4px; }
+  header .take { margin: 0; }
+  header .take b { font-weight: 600; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+  .chip { font-size: 13px; padding: 3px 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); text-decoration: none; color: var(--muted); white-space: nowrap; }
+  .chip:hover { color: var(--fg); border-color: var(--muted); }
+  button.chip { cursor: pointer; font-family: inherit; }
+  .status { margin-left: auto; font-size: 12px; color: var(--muted); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; min-width: 0; }
+  .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .card h2 { font-size: 16px; font-weight: 500; margin: 0; }
+  .note { color: var(--muted); font-size: 12.5px; margin: 4px 0 12px; }
+  .out { font-size: 12.5px; color: var(--muted); text-decoration: none; white-space: nowrap; }
+  .out:hover { color: var(--fg); text-decoration: underline; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr)); gap: 16px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr)); gap: 12px; }
+  .kpi { display: grid; gap: 4px; align-content: start; text-decoration: none; }
+  .kpi:hover { border-color: var(--muted); }
+  .kpi .lab { font-size: 12.5px; color: var(--muted); }
+  .kpi .num { font-family: var(--serif); font-size: 32px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .kpi .sub { font-size: 12.5px; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+  th { text-align: left; font-weight: 500; color: var(--muted); padding: 4px 10px 6px 0; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--panel); }
+  td { padding: 8px 10px 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  .r { text-align: right; }
+  .muted { color: var(--muted); }
+  .scroll { max-height: 26rem; overflow: auto; }
+  .scroll.sm { max-height: 17rem; }
+  a.rec { text-decoration: none; border-bottom: 1px dotted var(--muted); }
+  a.rec:hover { border-bottom-style: solid; }
+  .tag { display: inline-block; padding: 0 7px; border-radius: 999px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+  .tag.new { background: var(--warn-soft); color: var(--warn); margin-left: 6px; }
+  .tag.ext { background: var(--ok-soft); color: var(--ok); }
+  .unread td:nth-child(-n+2) { font-weight: 600; }
+  .clip { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .alert-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .alert-head .out { margin-left: auto; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--bar); }
+  .pill { min-width: 26px; text-align: center; padding: 0 8px; border-radius: 999px; background: var(--bar); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .alert.hot { border-color: var(--warn); box-shadow: inset 4px 0 0 var(--warn); }
+  .alert.hot .dot { background: var(--warn); }
+  .alert.hot .pill { background: var(--warn-soft); color: var(--warn); }
+  @media (prefers-reduced-motion: no-preference) {
+    .alert.hot .dot { animation: pulse 1.6s ease-out infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 var(--warn-soft); } 100% { box-shadow: 0 0 0 9px transparent; } }
+  }
+  .brief td:nth-child(1) { font-family: var(--serif); font-size: 18px; width: 1.6rem; }
+  .brief td:nth-child(2) { font-weight: 600; width: 10rem; }
+  .brief td:nth-child(3) { font-size: 14px; }
+  .brief td:nth-child(5) { white-space: nowrap; }
+  @media (max-width: 720px) {
+    .brief thead { display: none; }
+    .brief tr { display: grid; grid-template-columns: 1.6rem 1fr; border-bottom: 1px solid var(--line); padding: 6px 0; }
+    .brief td { border: 0; padding: 2px 0; }
+    .brief td:nth-child(n+2) { grid-column: 2; width: auto; }
+    .hide-sm { display: none; }
+  }
+  .funnel { display: grid; gap: 10px; }
+  .step { display: grid; grid-template-columns: minmax(7rem, 9rem) 1fr; gap: 10px; align-items: center; font-size: 13px; }
+  .step a { text-decoration: none; }
+  .step a:hover { text-decoration: underline; }
+  .barwrap { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .barfill { height: 22px; border-radius: 4px; background: var(--bar); min-width: 2px; }
+  .barfill.hot { background: var(--accent); }
+  .barwrap span { color: var(--muted); white-space: nowrap; }
+  .empty, .err { color: var(--muted); font-size: 13px; padding: 14px 0; text-align: center; }
+  .err::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--bad); margin-right: 6px; vertical-align: middle; }
+  .skel { height: 14px; border-radius: 4px; background: var(--line); animation: sk 1.2s ease-in-out infinite alternate; }
+  @keyframes sk { from { opacity: .45; } to { opacity: 1; } }
+  .gate { max-width: 560px; margin: 12vh auto; text-align: center; padding: 0 16px; }
+  .gate h1 { font-family: var(--serif); font-weight: 400; font-size: 34px; margin: 0 0 8px; }
+  .gate p { color: var(--muted); }
+  .btn { font: inherit; font-weight: 500; padding: 10px 20px; border-radius: 8px; border: 0; background: var(--accent); color: #fff; cursor: pointer; }
+  .gate code { background: var(--panel); border: 1px solid var(--line); padding: 1px 6px; border-radius: 5px; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div id="gate" class="gate" hidden>
+  <h1>Deal Desk Daily</h1>
+  <p id="gate-msg">Sign in with your Solar Landscape Microsoft account to load your mail, calendar, Teams and Dynamics pipeline.</p>
+  <button id="signin" class="btn">Sign in with Microsoft</button>
+</div>
+
+<div id="app" class="wrap" hidden>
+  <header>
+    <div class="date" id="today"></div>
+    <h1>Deal Desk Daily</h1>
+    <p class="take">Next up: <b id="nextmtg">…</b></p>
+    <div class="bar">
+      <a class="chip" id="lk-opps" target="_blank" rel="noopener">Dynamics pipeline ↗</a>
+      <a class="chip" id="lk-accts" target="_blank" rel="noopener">Accounts ↗</a>
+      <a class="chip" id="lk-tasks" target="_blank" rel="noopener">CRM tasks ↗</a>
+      <a class="chip" href="https://outlook.office.com/mail/" target="_blank" rel="noopener">Outlook ↗</a>
+      <a class="chip" href="https://outlook.office.com/calendar/" target="_blank" rel="noopener">Calendar ↗</a>
+      <a class="chip" href="https://teams.microsoft.com/" target="_blank" rel="noopener">Teams ↗</a>
+      <button class="chip" id="refresh">Refresh</button>
+      <span class="status" id="status"></span>
+    </div>
+  </header>
+
+  <section class="card alert" id="alert">
+    <div class="alert-head">
+      <span class="dot"></span>
+      <h2>New opportunities in core markets</h2>
+      <span class="pill" id="new-day">–</span><span class="muted" style="font-size:12.5px">since yesterday</span>
+      <a class="out" id="lk-opps2" target="_blank" rel="noopener">Dynamics ↗</a>
+    </div>
+    <p class="note"><b id="new-n">–</b> added to your accounts in NJ, MD, IL, PA and VA in the last 14 days, newest first. Click a site or account to open it in Dynamics.</p>
+    <div class="scroll sm"><table>
+      <thead><tr><th>Added</th><th>Site</th><th>Account</th><th>State</th><th class="r">Est. kW DC</th><th class="hide-sm">Added by</th></tr></thead>
+      <tbody id="tb-new"></tbody>
+    </table></div>
+  </section>
+
+  <section class="kpis">
+    <a class="card kpi" href="https://outlook.office.com/calendar/" target="_blank" rel="noopener">
+      <span class="lab">Client meetings · next 5 days ↗</span><span class="num" id="k-client">–</span><span class="sub"><span id="k-meet">–</span> meetings in total</span>
+    </a>
+    <a class="card kpi" id="kl-late" target="_blank" rel="noopener">
+      <span class="lab">Late-stage pipeline (MW DC) ↗</span><span class="num" id="k-late">–</span><span class="sub"><span id="k-late-n">–</span> sites in Commercial or Legal Review</span>
+    </a>
+    <a class="card kpi" id="kl-prop" target="_blank" rel="noopener">
+      <span class="lab">Sites at Proposal ↗</span><span class="num" id="k-prop">–</span><span class="sub">Open opportunities you own</span>
+    </a>
+    <a class="card kpi" href="https://outlook.office.com/mail/" target="_blank" rel="noopener">
+      <span class="lab">Emails from people · last 3 days ↗</span><span class="num" id="k-mail">–</span><span class="sub"><span id="k-unread">–</span> still unread</span>
+    </a>
+    <a class="card kpi" id="kl-tasks" target="_blank" rel="noopener">
+      <span class="lab">Overdue CRM tasks ↗</span><span class="num" id="k-over">–</span><span class="sub">of <span id="k-open">–</span> open in Dynamics</span>
+    </a>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Today's priorities</h2><span class="out" id="brief-at"></span></div>
+    <p class="note">Claude's read of your inbox, sent mail, Teams and pipeline, written each weekday morning. Click an account to find it in Dynamics.</p>
+    <table class="brief">
+      <thead><tr><th>#</th><th>Account</th><th>Do this</th><th>Why</th><th>When</th></tr></thead>
+      <tbody id="tb-brief"></tbody>
+    </table>
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <div class="card-head"><h2>Schedule · next 5 days</h2><a class="out" href="https://outlook.office.com/calendar/" target="_blank" rel="noopener">Calendar ↗</a></div>
+      <p class="note">Cancellations removed. Green tags count attendees from outside Solar Landscape.</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Day</th><th>Time</th><th>Meeting</th><th class="r">Outside</th></tr></thead>
+        <tbody id="tb-cal"></tbody>
+      </table></div>
+    </section>
+    <section class="card">
+      <div class="card-head"><h2>Pipeline by stage</h2><a class="out" id="lk-opps3" target="_blank" rel="noopener">Dynamics ↗</a></div>
+      <p class="note">Your open opportunities. Bar length is proposed MW DC; late stages highlighted.</p>
+      <div class="funnel" id="funnel"></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <div class="card-head"><h2>Late-stage deals</h2><a class="out" id="lk-opps4" target="_blank" rel="noopener">Dynamics ↗</a></div>
+    <p class="note">Commercial and Legal Review, largest first. Click a site or account to open it in Dynamics.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Site</th><th>Account</th><th>Stage</th><th>State</th><th class="r">kW DC</th><th class="hide-sm">In stage since</th></tr></thead>
+      <tbody id="tb-late"></tbody>
+    </table></div>
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <div class="card-head"><h2>Inbox · people only</h2><a class="out" href="https://outlook.office.com/mail/" target="_blank" rel="noopener">Outlook ↗</a></div>
+      <p class="note">Last 3 days, newsletters, alerts and auto-replies filtered out. Unread in bold.</p>
+      <div class="scroll"><table>
+        <thead><tr><th>From</th><th>Subject</th><th>Received</th></tr></thead>
+        <tbody id="tb-mail"></tbody>
+      </table></div>
+    </section>
+    <section class="card">
+      <div class="card-head"><h2>Teams chats</h2><a class="out" href="https://teams.microsoft.com/" target="_blank" rel="noopener">Teams ↗</a></div>
+      <p class="note">Your most recent chats where someone else spoke last.</p>
+      <div class="scroll"><table>
+        <thead><tr><th>From</th><th>Message</th><th>When</th></tr></thead>
+        <tbody id="tb-teams"></tbody>
+      </table></div>
+    </section>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ---------- constants ----------
+  const GRAPH = 'https://graph.microsoft.com/v1.0';
+  const GRAPH_SCOPES = ['User.Read', 'Mail.Read', 'Calendars.Read', 'Chat.Read', 'Files.Read'];
+  const CRM_SCOPES = [`${CONFIG.crmUrl}/user_impersonation`];
+  const API = `${CONFIG.crmUrl}/api/data/v9.2`;
+  const CRM = `${CONFIG.crmUrl}/main.aspx?appid=${CONFIG.crmAppId}`;
+  const FV = '@OData.Community.Display.V1.FormattedValue';
+  const STAGES = [
+    [268470010, 'Pre-Screened'], [268470001, 'Interest Confirmed'], [268470003, 'Proposal'],
+    [126490002, 'Commercial Review'], [268470006, 'Legal Review'],
+  ];
+  const LATE = [126490002, 268470006];
+  const ROBOT = /(no-?reply|newsletter|news@|crew@|quarantine|nixle|ccsend|zcsend|info@|events@|admin@|developer@|notification|marketing|thedeepview|morningbrew|bisnow|teams\.mail\.microsoft)/i;
+
+  const $ = (id) => document.getElementById(id);
+  const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); e.append(...kids.filter((k) => k != null)); return e; };
+  const link = (text, href, cls) => href ? el('a', { href, target: '_blank', rel: 'noopener', className: cls || 'rec', textContent: text || '' }) : document.createTextNode(text || '');
+  const rec = (etn, id, text) => link(text, id ? `${CRM}&pagetype=entityrecord&etn=${etn}&id=${id}` : null);
+  const find = (text) => link(text, `${CRM}&pagetype=search&searchText=${encodeURIComponent(text || '')}`);
+  const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const day = (n) => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + n); return d; };
+  const int = (n) => (n == null || isNaN(n) ? '–' : Math.round(n).toLocaleString('en-US'));
+  const fmtDay = (s) => new Date(s.slice(0, 10) + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  const fmtTime = (s) => { const [h, m] = s.slice(11, 16).split(':').map(Number); return `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`; };
+  const fmtWhen = (s) => new Date(s).toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' });
+  const fmtDate = (s) => new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const text = (html) => new DOMParser().parseFromString(html || '', 'text/html').body.textContent.trim();
+  const set = (id, v) => { $(id).textContent = v; };
+  const rowsInto = (id, rows, cols, emptyMsg) => {
+    const tb = $(id);
+    if (!rows.length) { tb.replaceChildren(el('tr', {}, el('td', { colSpan: cols, className: 'empty', textContent: emptyMsg }))); return; }
+    tb.replaceChildren(...rows);
+  };
+  const fail = (id, cols, err) => {
+    console.error(id, err);
+    const tb = $(id);
+    const msg = 'Failed to load' + (err && err.status === 403 ? ' — no permission' : '');
+    if (tb.tagName === 'TBODY') tb.replaceChildren(el('tr', {}, el('td', { colSpan: cols, className: 'err', textContent: msg })));
+    else tb.replaceChildren(el('div', { className: 'err', textContent: msg }));
+  };
+  const skeleton = (id, cols) => {
+    const tb = $(id); if (tb.childElementCount) return;
+    const r = () => el('tr', {}, ...Array.from({ length: cols }, () => el('td', {}, el('div', { className: 'skel' }))));
+    tb.replaceChildren(r(), r(), r());
+  };
+
+  ['lk-opps', 'lk-opps2', 'lk-opps3', 'lk-opps4', 'kl-late', 'kl-prop'].forEach((id) => { $(id).href = `${CRM}&pagetype=entitylist&etn=opportunity`; });
+  $('lk-accts').href = `${CRM}&pagetype=entitylist&etn=account`;
+  ['lk-tasks', 'kl-tasks'].forEach((id) => { $(id).href = `${CRM}&pagetype=entitylist&etn=task`; });
+
+  // ---------- auth ----------
+  if (!CONFIG.clientId || !CONFIG.tenantId) {
+    $('gate').hidden = false;
+    $('gate-msg').innerHTML = 'Almost there: open this file in a text editor and fill in <code>tenantId</code> and <code>clientId</code> in <code>CONFIG</code> near the top. Your IT admin gets both from the Entra ID app registration.';
+    $('signin').hidden = true;
+    return;
+  }
+  if (location.protocol === 'file:') {
+    $('gate').hidden = false;
+    $('gate-msg').textContent = 'Microsoft sign-in can\'t run from a file opened on disk. Serve this page from a web address (for example http://localhost:8080 or your company intranet) that is listed as a redirect URI on the app registration.';
+    $('signin').hidden = true;
+    return;
+  }
+
+  const pca = new msal.PublicClientApplication({
+    auth: { clientId: CONFIG.clientId, authority: `https://login.microsoftonline.com/${CONFIG.tenantId}`, redirectUri: location.origin + location.pathname },
+    cache: { cacheLocation: 'localStorage' },
+  });
+
+  async function token(scopes) {
+    const account = pca.getActiveAccount() || pca.getAllAccounts()[0];
+    try { return (await pca.acquireTokenSilent({ scopes, account })).accessToken; }
+    catch (e) {
+      if (e instanceof msal.InteractionRequiredAuthError) { await pca.acquireTokenRedirect({ scopes, account }); }
+      throw e;
+    }
+  }
+  async function call(url, scopes, headers = {}) {
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${await token(scopes)}`, Accept: 'application/json', ...headers } });
+    if (!res.ok) { const err = new Error(`${res.status} ${await res.text()}`); err.status = res.status; throw err; }
+    return res.headers.get('content-type')?.includes('json') ? res.json() : res.text();
+  }
+  const graph = (path, headers) => call(GRAPH + path, GRAPH_SCOPES, headers);
+  const crm = (path) => call(API + path, CRM_SCOPES, {
+    'OData-MaxVersion': '4.0', 'OData-Version': '4.0',
+    Prefer: `odata.include-annotations="${FV.slice(1)}"`,
+  });
+
+  // ---------- loaders ----------
+  let me = null; let crmUserId = null;
+
+  async function loadCalendar() {
+    skeleton('tb-cal', 4);
+    try {
+      const start = day(0).toISOString(); const end = day(6).toISOString();
+      const r = await graph(`/me/calendarView?startDateTime=${start}&endDateTime=${end}&$top=60&$orderby=start/dateTime&$select=subject,start,end,isCancelled,attendees,webLink,location`, { Prefer: 'outlook.timezone="America/New_York"' });
+      const evs = r.value.filter((e) => !e.isCancelled).map((e) => {
+        const ppl = (e.attendees || []).map((a) => a.emailAddress?.address || '');
+        return { ...e, s: e.start.dateTime, people: ppl.length, external: ppl.filter((a) => a && !/@solarlandscape\.com$/i.test(a)).length };
+      });
+      rowsInto('tb-cal', evs.map((e) => el('tr', {},
+        el('td', { className: 'muted', textContent: fmtDay(e.s) }),
+        el('td', { textContent: fmtTime(e.s) }),
+        el('td', {}, link(e.subject, e.webLink)),
+        el('td', { className: 'r' }, e.external ? el('span', { className: 'tag ext', textContent: e.external }) : '0'),
+      )), 4, 'Nothing on the calendar');
+      set('k-meet', int(evs.filter((e) => e.people > 1 || e.external).length));
+      set('k-client', int(evs.filter((e) => e.external).length));
+      const now = new Date();
+      const next = evs.find((e) => e.people > 1 && new Date(e.s) >= now) || evs.find((e) => new Date(e.s) >= now);
+      set('nextmtg', next ? `${next.subject.trim()} — ${fmtDay(next.s)}, ${fmtTime(next.s)}` : 'nothing else on the calendar this week');
+    } catch (e) { fail('tb-cal', 4, e); set('nextmtg', '—'); }
+  }
+
+  async function loadMail() {
+    skeleton('tb-mail', 3);
+    try {
+      const since = day(-3).toISOString();
+      const r = await graph(`/me/mailFolders/inbox/messages?$filter=receivedDateTime ge ${since}&$orderby=receivedDateTime desc&$top=60&$select=subject,from,receivedDateTime,isRead,webLink`);
+      const people = r.value.filter((m) => !ROBOT.test(m.from?.emailAddress?.address || '') && !/^(Accepted|Declined|Tentative):/i.test(m.subject || ''));
+      rowsInto('tb-mail', people.map((m) => el('tr', { className: m.isRead ? '' : 'unread' },
+        el('td', { textContent: m.from?.emailAddress?.name || m.from?.emailAddress?.address || '' }),
+        el('td', {}, link(m.subject || '(no subject)', m.webLink)),
+        el('td', { className: 'muted', textContent: fmtWhen(m.receivedDateTime) }),
+      )), 3, 'No emails from people in the last 3 days');
+      set('k-mail', int(people.length)); set('k-unread', int(people.filter((m) => !m.isRead).length));
+    } catch (e) { fail('tb-mail', 3, e); }
+  }
+
+  async function loadTeams() {
+    skeleton('tb-teams', 3);
+    try {
+      const r = await graph('/me/chats?$expand=lastMessagePreview&$orderby=lastMessagePreview/createdDateTime desc&$top=25');
+      const items = r.value.filter((c) => c.lastMessagePreview && c.lastMessagePreview.from?.user?.id !== me.id && text(c.lastMessagePreview.body?.content));
+      rowsInto('tb-teams', items.map((c) => el('tr', {},
+        el('td', { textContent: c.lastMessagePreview.from?.user?.displayName || c.topic || '' }),
+        el('td', {}, el('div', { className: 'clip' }, link(text(c.lastMessagePreview.body?.content), c.webUrl))),
+        el('td', { className: 'muted', textContent: fmtWhen(c.lastMessagePreview.createdDateTime) }),
+      )), 3, 'No recent chats waiting on you');
+    } catch (e) { fail('tb-teams', 3, e); }
+  }
+
+  async function loadBrief() {
+    skeleton('tb-brief', 5);
+    try {
+      const meta = await graph(`/me/drive/root:${CONFIG.briefPath}?$select=lastModifiedDateTime`);
+      const rows = await graph(`/me/drive/root:${CONFIG.briefPath}:/content`);
+      const list = (typeof rows === 'string' ? JSON.parse(rows) : rows).sort((a, b) => a.rank - b.rank);
+      set('brief-at', `Updated ${fmtWhen(meta.lastModifiedDateTime)}`);
+      rowsInto('tb-brief', list.map((r) => el('tr', {},
+        el('td', { textContent: r.rank }),
+        el('td', {}, /dynamics|·/i.test(r.account || '') ? document.createTextNode(r.account) : find(r.account)),
+        el('td', { textContent: r.action }),
+        el('td', { className: 'muted', textContent: r.context }),
+        el('td', { textContent: r.when }),
+      )), 5, 'No priorities yet today');
+    } catch (e) {
+      if (e.status === 404) rowsInto('tb-brief', [], 5, `No priorities file yet at OneDrive${CONFIG.briefPath}`);
+      else fail('tb-brief', 5, e);
+    }
+  }
+
+  async function loadPipeline() {
+    try {
+      const own = `_ownerid_value eq ${crmUserId}`;
+      const codes = STAGES.map(([c]) => `cr057_substatus eq ${c}`).join(' or ');
+      const r = await crm(`/opportunities?$apply=filter(${own} and statecode eq 0 and (${codes}))/groupby((cr057_substatus),aggregate($count as deals,cr057_proposeddcsize with sum as dc_kw))`);
+      const by = new Map(r.value.map((x) => [Number(x.cr057_substatus), x]));
+      const rows = STAGES.map(([c, name]) => ({ code: c, name, deals: Number(by.get(c)?.deals || 0), kw: Number(by.get(c)?.dc_kw || 0) }));
+      const max = Math.max(1, ...rows.map((x) => x.kw));
+      $('funnel').replaceChildren(...rows.map((x) => el('div', { className: 'step' },
+        el('div', {}, link(x.name, `${CRM}&pagetype=entitylist&etn=opportunity`, ' ')),
+        el('div', { className: 'barwrap' },
+          el('div', { className: 'barfill' + (LATE.includes(x.code) ? ' hot' : ''), style: `width:${Math.max(0.5, (x.kw / max) * 70)}%` }),
+          el('span', { textContent: `${(x.kw / 1000).toLocaleString('en-US', { maximumFractionDigits: 1 })} MW · ${int(x.deals)} sites` })),
+      )));
+      const late = rows.filter((x) => LATE.includes(x.code));
+      set('k-late', (late.reduce((a, x) => a + x.kw, 0) / 1000).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }));
+      set('k-late-n', int(late.reduce((a, x) => a + x.deals, 0)));
+      set('k-prop', int(rows.find((x) => x.code === 268470003).deals));
+    } catch (e) { fail('funnel', 1, e); }
+  }
+
+  async function loadLate() {
+    skeleton('tb-late', 6);
+    try {
+      const r = await crm(`/opportunities?$select=name,cr057_proposeddcsize,cr057_substatus,cr057_substatusmodifiedon,sl_address_state,_customerid_value&$filter=_ownerid_value eq ${crmUserId} and statecode eq 0 and (cr057_substatus eq 126490002 or cr057_substatus eq 268470006)&$orderby=cr057_proposeddcsize desc&$top=20`);
+      rowsInto('tb-late', r.value.map((o) => el('tr', {},
+        el('td', {}, rec('opportunity', o.opportunityid, o.name)),
+        el('td', {}, rec('account', o._customerid_value, o[`_customerid_value${FV}`])),
+        el('td', { textContent: o[`cr057_substatus${FV}`] || '' }),
+        el('td', { textContent: o[`sl_address_state${FV}`] || '' }),
+        el('td', { className: 'r', textContent: int(o.cr057_proposeddcsize) }),
+        el('td', { className: 'muted hide-sm', textContent: o.cr057_substatusmodifiedon ? fmtDate(o.cr057_substatusmodifiedon) : '' }),
+      )), 6, 'No deals in Commercial or Legal Review');
+    } catch (e) { fail('tb-late', 6, e); }
+  }
+
+  async function loadNewCore() {
+    skeleton('tb-new', 6);
+    try {
+      const states = Object.keys(CONFIG.coreStates).map((c) => `'${c}'`).join(',');
+      const since = day(-14).toISOString();
+      const filter = `(_ownerid_value eq ${crmUserId} or customerid_account/_ownerid_value eq ${crmUserId}) and Microsoft.Dynamics.CRM.In(PropertyName='sl_address_state',PropertyValues=[${states}]) and createdon ge ${since}`;
+      const r = await crm(`/opportunities?$select=name,createdon,cr057_estimateddcsizekw,sl_address_state,_customerid_value,_createdby_value&$filter=${filter}&$orderby=createdon desc&$top=50&$count=true`);
+      const y = day(-1);
+      const fresh = r.value.filter((o) => new Date(o.createdon) >= y);
+      set('new-n', int(r['@odata.count'] ?? r.value.length));
+      set('new-day', int(fresh.length));
+      $('alert').classList.toggle('hot', fresh.length > 0);
+      rowsInto('tb-new', r.value.map((o) => el('tr', {},
+        el('td', { className: 'muted' }, fmtDate(o.createdon).replace(/, \d{4}$/, ''), new Date(o.createdon) >= y ? el('span', { className: 'tag new', textContent: 'New' }) : null),
+        el('td', {}, rec('opportunity', o.opportunityid, o.name)),
+        el('td', {}, rec('account', o._customerid_value, o[`_customerid_value${FV}`])),
+        el('td', { textContent: o[`sl_address_state${FV}`] || '' }),
+        el('td', { className: 'r', textContent: o.cr057_estimateddcsizekw == null ? '' : int(o.cr057_estimateddcsizekw) }),
+        el('td', { className: 'muted hide-sm', textContent: o[`_createdby_value${FV}`] || '' }),
+      )), 6, 'Nothing new in your core markets in the last 14 days');
+    } catch (e) { fail('tb-new', 6, e); }
+  }
+
+  async function loadTasks() {
+    try {
+      const base = `/tasks?$select=activityid&$filter=_ownerid_value eq ${crmUserId} and statecode eq 0`;
+      const [open, over] = await Promise.all([
+        crm(`${base}&$count=true&$top=1`),
+        crm(`${base} and scheduledend lt ${day(0).toISOString()}&$count=true&$top=1`),
+      ]);
+      set('k-open', int(open['@odata.count'])); set('k-over', int(over['@odata.count']));
+    } catch (e) { console.error('tasks', e); }
+  }
+
+  async function loadAll() {
+    $('status').textContent = 'Refreshing…';
+    set('today', new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }));
+    if (!me) me = await graph('/me?$select=id,displayName,mail');
+    const m365 = Promise.all([loadCalendar(), loadMail(), loadTeams(), loadBrief()]);
+    let dyn = Promise.resolve();
+    try {
+      if (!crmUserId) crmUserId = (await crm('/WhoAmI')).UserId;
+      dyn = Promise.all([loadNewCore(), loadPipeline(), loadLate(), loadTasks()]);
+    } catch (e) { ['tb-new', 'tb-late'].forEach((id) => fail(id, 6, e)); fail('funnel', 1, e); }
+    await Promise.all([m365, dyn]);
+    $('status').textContent = `Updated ${new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })} · ${me.displayName}`;
+  }
+
+  // ---------- start ----------
+  pca.initialize().then(() => pca.handleRedirectPromise()).then((res) => {
+    if (res?.account) pca.setActiveAccount(res.account);
+    const account = pca.getActiveAccount() || pca.getAllAccounts()[0];
+    if (!account) {
+      $('gate').hidden = false;
+      $('signin').addEventListener('click', () => pca.loginRedirect({ scopes: GRAPH_SCOPES, extraScopesToConsent: CRM_SCOPES }));
+      return;
+    }
+    pca.setActiveAccount(account);
+    $('app').hidden = false;
+    $('refresh').addEventListener('click', loadAll);
+    loadAll();
+    setInterval(loadAll, CONFIG.refreshMinutes * 60 * 1000);
+  }).catch((e) => {
+    console.error(e);
+    $('gate').hidden = false;
+    $('gate-msg').textContent = 'Sign-in failed: ' + (e.errorMessage || e.message);
+  });
+})();
+</script>
+</body>
+</html>
