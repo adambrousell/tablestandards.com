@@ -1,1872 +1,434 @@
-// ═══════════════════════════════════════════════════════════
-// RPI Shift Report — Cloudflare Worker  (rewrite 2026-09-22)
-// KV binding name: RPI_SHIFTS
-// Secrets: ANTHROPIC_API_KEY
-//   Toast (standard platform APIs — orders, stock):
-//     TOAST_CLIENT_ID, TOAST_CLIENT_SECRET
-//   Toast (Analytics API — PMix; SEPARATE credentials):
-//     TOAST_ANALYTICS_CLIENT_ID, TOAST_ANALYTICS_CLIENT_SECRET
-//   Optional non-secret overrides (else defaults below are used):
-//     TOAST_HOST, TOAST_GUID, TOAST_MGMT_RESTAURANT_ID
-//   Set a secret with:  wrangler secret put TOAST_CLIENT_SECRET   (etc.)
-//   Owner notes (owner-notes.html):
-//     WALKTHROUGH_PIN  (required to edit recipients / read history)
-//     RESEND_API_KEY   (optional auto-email; without it the phone sends
-//                       the notes from Vic's mail app)
-//     MAIL_FROM        (var, e.g. "Rallo Walk-Through <notes@yourdomain.com>",
-//                       domain verified in Resend)
-//     MAIL_REPLY_TO    (optional var, e.g. Vic's address; listed first in Reply-To)
-//     REPLY_TO_ALL     (optional var; set to "false" so Reply goes only to
-//                       MAIL_REPLY_TO. Default: Reply goes to the whole team)
-//
-// 2026-10-22: Station checklists + guest ratings (TableStandards suite)
-//   - /checklist/* : bar.html + busser.html submit shift side work here.
-//       POST /checklist                        → log one submission
-//       GET  /checklist?restaurantId=rpi&date= → day's submissions, open
-//                                                items, and expected-but-
-//                                                missing checklists (per tool)
-//       POST /checklist/open/:itemId?restaurantId=rpi
-//            { action:'close'|'reopen', by, note, date }
-//     An INCOMPLETE submit becomes an open item (rollup, like walk-through
-//     follow-ups). A MISSING expected checklist shows as notSubmitted.
-//     KV: chk:day:<rid>:<date>, chk:open:<rid>
-//   - /rating/* : ratings.html (in-house Resy-style guest rating).
-//       POST /rating                           → log one rating (5★ → Google
-//                                                client-side; <5 keeps private
-//                                                feedback for the operator)
-//       GET  /rating?restaurantId=rpi&date=    → that day's ratings
-//       GET  /rating/summary?restaurantId=rpi&days=30 → rollup numbers
-//     KV: rate:day:<rid>:<date>
-//   - Both reuse the RPI_SHIFTS KV, the outer date helpers, and the
-//     follow-up rollup pattern. No existing route changed.
-// 2026-10-06: Walk-through follow-ups (closure tracking)
-//   - Each note section of a walk-through is a follow-up item for that
-//     restaurant (plus "all restaurants" reports). KV audit:followups:<id>.
-//   - GET  /audit/followups?restaurantId=rpi&date=YYYY-MM-DD
-//       → open items + items closed in the last 30 days
-//   - POST /audit/followups/:itemId?restaurantId=rpi
-//       { action:'close', by, fix, date } or { action:'reopen' }
-//   - rpi.html shows them on the Shift Report tab and in the nightly email.
-// 2026-10-05: Owner notes replace the checklist walk-through
-//   - /audit/* now serves owner-notes.html: free-text notes per category,
-//     emailed to the restaurant team + owners; "all" goes to everyone.
-//   - Recipients live in KV (audit:recipients), editable in the app behind
-//     WALKTHROUGH_PIN, so management changes need no code edit.
-//   - Reports stored at audit:report:<clientId>; index at audit:reports:index.
-//   - Global CORS now allows the X-Admin-Pin header.
-//   - Photos: PUT/GET /audit/photo/:id (KV audit:photo:<id>); shown inline in the
-//     email and attached when Resend is on. History: GET /audit/reports[/:id].
-// 2026-10-04: Owner walk-through (walkthrough.html), checklist version.
-//   Superseded 2026-10-05; its audit:a:* / audit:open:* keys stay in KV.
-// 2026-09-22: Report history support
-//   - Shifts kept 120 days (was 14). Notes kept 30 days.
-//   - GET  /shift/list?days=N    → dates that have a saved report, newest first
-//   - POST /shift keeps sentAt across devices.
-//   - /notes GET/POST/DELETE honor ?date= so past reports keep their own log.
-//   - /summary accepts max_tokens (default 1024, capped at 4000).
-//   - CORS now allows PATCH (wine-86.html item updates were blocked).
-//   - /wine86/distributors routes moved above /wine86/:id so
-//     DELETE /wine86/distributors/X no longer hits the item delete.
-// 2026-09-14: Added /wine86 endpoints — wine 86 report reorder
-//   queue for ownership. rpi.html POSTs items here; the standalone
-//   wine-86.html reads from here. Same KV namespace, key: wine_86_list.
-// 2026-07-02: POST /notes accepts text-only notes
-//   (Apple Watch / Siri) and fills ts/who/date server-side.
-// ═══════════════════════════════════════════════════════════
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RPI Server Weekly</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231f4536'/><text x='50' y='68' font-family='serif' font-size='40' font-weight='bold' fill='%23d8b24a' text-anchor='middle'>RPI</text></svg>">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Mulish:ital,wght@0,400;0,700;0,800;1,400&display=swap">
+<style>
+:root{
+  --bg:#f3efe6;--surface:#fbf9f4;--ink:#1c2a24;--muted:#5e6b63;--line:#d9d2c3;
+  --green:#1f4536;--green-soft:#2c5a46;--brass:#b08419;--brass-deep:#8a6612;
+  --cream:#efe7d4;--good:#1f6d4b;--good-bg:#e4efe6;--bad:#9a2f2a;--bad-bg:#f4e3df;
+  --shadow:0 1px 2px rgba(28,42,36,.06),0 8px 30px rgba(28,42,36,.09);
+  --f-display:"Fraunces","Hoefler Text",Georgia,serif;--f-body:"Mulish","Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#13201a;--surface:#182a22;--ink:#ede8db;--muted:#9aa89f;--line:#2c4034;
+  --green:#3f7d61;--green-soft:#4c9074;--brass:#d2a53f;--brass-deep:#b98c28;
+  --cream:#1e3328;--good:#5bbf8e;--good-bg:#17382a;--bad:#e08a82;--bad-bg:#3a201e;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.45);color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#13201a;--surface:#182a22;--ink:#ede8db;--muted:#9aa89f;--line:#2c4034;
+  --green:#3f7d61;--green-soft:#4c9074;--brass:#d2a53f;--brass-deep:#b98c28;
+  --cream:#1e3328;--good:#5bbf8e;--good-bg:#17382a;--bad:#e08a82;--bad-bg:#3a201e;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.45);color-scheme:dark;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh}
+.wrap{max-width:720px;margin:0 auto;padding-block:26px 64px;
+  padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px))}
+.eyebrow{text-transform:uppercase;letter-spacing:.22em;font-size:.7rem;font-weight:800;color:var(--brass-deep)}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;text-wrap:balance;margin:0}
+.rule{height:1px;background:var(--line);border:0;margin:0}
+.cover{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);overflow:hidden}
+.crest{background:var(--green);color:var(--cream);padding:32px 26px 28px;text-align:center;border-bottom:3px solid var(--brass)}
+.crest .mark{font-family:var(--f-display);font-size:.76rem;letter-spacing:.4em;text-transform:uppercase;color:var(--brass);font-weight:600}
+.crest h1{color:#fff;font-size:2.2rem;line-height:1.02;margin:.35rem 0 .15rem;font-style:italic}
+.crest .sub{font-size:.88rem;color:#cdd8d0;letter-spacing:.04em}
+.coverbody{padding:24px 26px 28px}
+.coverbody p.lead{color:var(--muted);margin:.2rem 0 1.3rem;font-size:.96rem}
+.field{display:block;margin-bottom:15px}
+.field label{display:block;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin-bottom:6px}
+.field input{width:100%;padding:12px 14px;font:inherit;font-size:1rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:3px}
+.field input:focus{outline:2px solid var(--brass);outline-offset:1px;border-color:var(--brass)}
+.meta{display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:space-between;background:var(--cream);border:1px solid var(--line);border-radius:3px;padding:12px 16px;margin-bottom:20px}
+.meta .wk{font-family:var(--f-display);font-weight:600;font-size:1.02rem}
+.meta .wk span{color:var(--brass-deep);font-style:italic}
+.meta .cnt{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-weight:700}
+.motto{text-align:center;font-family:var(--f-display);font-style:italic;color:var(--muted);font-size:.9rem;margin-top:20px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:inherit;font-weight:800;letter-spacing:.04em;padding:13px 22px;border-radius:3px;border:1px solid transparent;cursor:pointer;font-size:.92rem;transition:transform .05s ease,background .15s ease}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--green);color:#fff;border-color:var(--green)}
+.btn-primary:hover{background:var(--green-soft)}
+.btn-primary:disabled{opacity:.45;cursor:not-allowed}
+.btn-ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn-ghost:hover{border-color:var(--brass);color:var(--brass-deep)}
+.btn-brass{background:var(--brass);color:#2a2008;border-color:var(--brass)}
+.btn-brass:hover{background:var(--brass-deep);color:#fff}
+.btn-row{display:flex;gap:12px;flex-wrap:wrap}
+.btn.full{width:100%}
+.authtabs{display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:20px}
+.authtab{flex:1;background:none;border:none;border-bottom:2px solid transparent;padding:10px;font:inherit;font-weight:800;letter-spacing:.04em;color:var(--muted);cursor:pointer;margin-bottom:-1px}
+.authtab.active{color:var(--ink);border-bottom-color:var(--brass)}
+.err{background:var(--bad-bg);color:var(--bad);border:1px solid var(--bad);border-radius:3px;padding:10px 14px;font-size:.88rem;font-weight:700;margin-bottom:14px}
+.err:empty{display:none}
+.hint{font-size:.78rem;color:var(--muted);margin-top:-8px;margin-bottom:14px}
+.strength{height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin:-6px 0 14px}
+.strength>i{display:block;height:100%;width:0;background:var(--bad);transition:width .2s,background .2s}
+.focus{background:var(--cream);border:1px solid var(--line);border-left:3px solid var(--brass);border-radius:0 4px 4px 0;padding:16px 18px;margin-bottom:20px}
+.focus h3{font-size:1.05rem;margin-bottom:8px}
+.focus .row{font-size:.9rem;margin:5px 0}
+.focus .row b{font-family:var(--f-display);color:var(--brass-deep)}
+.focus .tag86{display:inline-block;background:var(--bad-bg);color:var(--bad);border:1px solid var(--bad);border-radius:3px;padding:1px 7px;font-size:.78rem;font-weight:700;margin:2px 4px 2px 0}
+.progress{display:flex;align-items:center;gap:12px;margin:6px 0 18px}
+.bar{flex:1;height:7px;background:var(--line);border-radius:99px;overflow:hidden;min-width:0}
+.bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--brass));border-radius:99px;transition:width .3s ease}
+.step{font-size:.76rem;font-weight:800;color:var(--muted);letter-spacing:.08em;white-space:nowrap}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);padding:24px 22px 22px}
+.cat{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.16em;color:var(--brass-deep);margin-bottom:10px}
+.qtext{font-family:var(--f-display);font-size:1.28rem;line-height:1.28;margin-bottom:18px}
+.choices{display:flex;flex-direction:column;gap:10px}
+.choice{display:flex;gap:12px;align-items:flex-start;padding:13px 15px;border:1px solid var(--line);border-radius:3px;background:var(--bg);cursor:pointer;transition:border-color .12s,background .12s;position:relative}
+.choice:hover{border-color:var(--brass)}
+.choice .tick{flex:0 0 auto;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--muted);display:grid;place-items:center;font-size:.72rem;font-weight:800;color:var(--muted);margin-top:1px}
+.choice.sel{border-color:var(--green);background:var(--good-bg)}
+.choice.sel .tick{background:var(--green);border-color:var(--green);color:#fff}
+.choice .txt{min-width:0;font-size:.98rem}
+.choice.locked{cursor:default}
+.choice.correct{border-color:var(--good);background:var(--good-bg)}
+.choice.correct .tick{background:var(--good);border-color:var(--good);color:#fff}
+.choice.wrong{border-color:var(--bad);background:var(--bad-bg)}
+.choice.wrong .tick{background:var(--bad);border-color:var(--bad);color:#fff}
+.explain{margin-top:16px;padding:14px 16px;border-left:3px solid var(--brass);background:var(--cream);border-radius:0 3px 3px 0;font-size:.9rem}
+.verdict{font-weight:800;letter-spacing:.04em;display:block;margin-bottom:3px}
+.verdict.ok{color:var(--good)}.verdict.no{color:var(--bad)}
+.qnav{display:flex;justify-content:space-between;gap:12px;margin-top:20px}
+.scoreplate{text-align:center;padding:28px 24px 24px}
+.scorenum{font-family:var(--f-display);font-size:3.4rem;line-height:1;font-weight:600}
+.scorenum.pass{color:var(--good)}.scorenum.fail{color:var(--bad)}
+.scorestat{font-size:.8rem;text-transform:uppercase;letter-spacing:.14em;font-weight:800;color:var(--muted);margin-top:8px}
+.stamp{display:inline-block;margin-top:14px;padding:7px 18px;border:2px solid;border-radius:3px;font-family:var(--f-display);font-weight:600;font-size:1rem;letter-spacing:.14em;text-transform:uppercase;transform:rotate(-3deg)}
+.stamp.pass{color:var(--good);border-color:var(--good)}.stamp.fail{color:var(--bad);border-color:var(--bad)}
+.savemsg{font-size:.82rem;text-align:center;margin-top:12px;color:var(--muted)}
+.savemsg.ok{color:var(--good)}.savemsg.no{color:var(--bad)}
+.missed{margin-top:24px}
+.missed h3{font-size:1.2rem;margin-bottom:4px}
+.missed .sub{color:var(--muted);font-size:.86rem;margin-bottom:14px}
+.mitem{border:1px solid var(--line);border-left:3px solid var(--bad);border-radius:0 3px 3px 0;background:var(--surface);padding:14px 16px;margin-bottom:12px}
+.mitem .mq{font-family:var(--f-display);font-size:1rem;margin-bottom:7px}
+.mitem .ma{font-size:.88rem}
+.mitem .ma .lab{font-weight:800;color:var(--good)}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:10px;flex-wrap:wrap}
+.topbar .who{font-size:.82rem;color:var(--muted)}
+.topbar .who b{color:var(--ink);font-family:var(--f-display);font-style:italic;font-weight:600}
+.topbar .tools{display:flex;gap:8px;align-items:center}
+.iconbtn{background:none;border:1px solid var(--line);border-radius:99px;height:34px;padding:0 12px;cursor:pointer;color:var(--muted);font:inherit;font-size:.8rem;font-weight:700;display:grid;place-items:center}
+.iconbtn:hover{border-color:var(--brass);color:var(--brass-deep)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:11px 20px;border-radius:99px;font-size:.86rem;font-weight:700;box-shadow:var(--shadow);opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:20;max-width:calc(100vw - 32px)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.foot-motto{text-align:center;margin-top:36px;font-family:var(--f-display);font-style:italic;color:var(--muted);font-size:.88rem}
+/* manager */
+.mgr table{width:100%;border-collapse:collapse;font-size:.9rem}
+.mgr th{text-align:left;font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line)}
+.mgr td{padding:9px 10px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.74rem;font-weight:800}
+.pill.done{background:var(--good-bg);color:var(--good)}
+.pill.out{background:var(--bad-bg);color:var(--bad)}
+.mgr .big{font-family:var(--f-display);font-size:2rem;font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast"></div>
+<script>
+const CF='https://rpi-shift-api.amusementstandards.workers.dev';
+const PASS=80, PER_WEEK=15;
+const BANK=[{"id":"s01","cat":"Service Philosophy","q":"Finish the RPI service philosophy: “Service is the foundation, but hospitality is the ___.”","a":["splash of color that makes it pop","icing on the cake","reason we're here","bare minimum"],"correct":0,"e":"Service is the foundation; hospitality is the splash of color that makes it pop. Top-tier service delivered with a warm, welcoming vibe."},{"id":"s02","cat":"Service 101","q":"A guest asks how a dish is prepared and you don't know. What do you say?","a":["“I don't know, sorry.”","“Let me find out for you” — then follow through","Guess based on the name","Ask them to check with another server"],"correct":1,"e":"Never say “I don't know.” Say “Let me find out for you” and actually follow through. Not knowing basics during a rush causes delays."},{"id":"s03","cat":"Service 101","q":"What is the 10/5 rule?","a":["Greet within 10 seconds, seat within 5 minutes","Make eye contact & smile within 10 feet; greet within 5 feet","10 tables max, 5 guests each","Clear within 10 min, re-set within 5"],"correct":1,"e":"At 10 feet: make eye contact and smile. At 5 feet: greet them. It builds a welcoming atmosphere the moment a guest approaches."},{"id":"s04","cat":"Service 101","q":"“Full hands in, full hands out” means:","a":["Carry as many plates as possible","Always wear gloves in the kitchen","Enter the kitchen with dirty dishes, leave with a ready dish","Keep both hands free for guests"],"correct":2,"e":"Never walk empty-handed. Clear dishes on the way into the kitchen and carry a ready dish out — efficient, collaborative service."},{"id":"s05","cat":"Service 101","q":"Under Open Hand Service, your arm should:","a":["Never cross in front of a guest","Always reach from the guest's right","Rest on the back of the chair","Stay behind your back at all times"],"correct":0,"e":"In open hand service your arm never crosses in front of a guest. Maneuver around the table so you're never intrusive."},{"id":"s06","cat":"Flow of Traffic","q":"Who always has the right of way in the dining room?","a":["Food runners with hot food","Our guests","The sommelier","Whoever is closest to the kitchen"],"correct":1,"e":"Guests are the top priority, always. When you have nothing in your hands, the person coming toward you goes before you."},{"id":"s07","cat":"Flow of Traffic","q":"Rank these by priority (highest first): drinks runner, guest, hot-food runner, cold-food runner.","a":["Guest → hot food → cold food → drinks","Hot food → guest → drinks → cold food","Guest → drinks → hot food → cold food","Drinks → guest → cold food → hot food"],"correct":0,"e":"Order of priority: guests, then anyone with hot food, then cold food, then drinks, then dirty flatware/glassware, then empty-handed team members."},{"id":"s08","cat":"Flow of Traffic","q":"The kitchen entrance from the back dining room is used:","a":["During busy rushes only","For food runners only","Never — unless the building must be evacuated","Whenever your section is in the back"],"correct":2,"e":"The back-dining-room kitchen entrance is not to be used unless the building needs to be evacuated."},{"id":"s09","cat":"Setting the Table","q":"Where does the folded linen with polished fork and knife go, and which way does the fold face?","a":["Right of the plate, fold facing right","Left of the plate, fold facing left","Above the plate, fold facing up","Center of the plate"],"correct":1,"e":"Fork and knife sit on folded linen to the LEFT of the plate, with the fold facing left. Consistency starts with the table setting."},{"id":"s10","cat":"Setting the Table","q":"The four nubs on the rim of the plate should sit at:","a":["12, 3, 6 and 9 o'clock","1, 4, 7 and 10 o'clock","2, 5, 8 and 11 o'clock","Wherever they land"],"correct":0,"e":"Plates are set with the 4 nubs at 12:00, 3:00, 6:00 and 9:00. The water glass goes top-right with an AP wine glass to its left."},{"id":"s11","cat":"Setting the Table","q":"Salt and pepper mills are:","a":["Set at every seat","Set at the center of the table","Not set on tables — available upon request","Only set for dinner service"],"correct":2,"e":"Salt and pepper mills are not set on tables; they're brought out upon request."},{"id":"s12","cat":"Setting the Table","q":"What do we use to clean tables?","a":["A damp bar rag","Sani-wipes","Glass cleaner and paper towel","A dry crumber only"],"correct":1,"e":"We use Sani-wipes to clean tables. Two pieces of white paper are then set — replace them if there are major wrinkles."},{"id":"s13","cat":"Be Prepared","q":"Which of these is NOT on the required daily uniform/kit list?","a":["A wine key","A lighter","A personal cell phone","A pressed white oxford shirt"],"correct":2,"e":"Required daily: clean blue jeans, black non-slip shoes & black socks, pressed white oxford, a lighter, a wine key, pens, and a great attitude. Phones are for managers/supervisors only."},{"id":"s14","cat":"Steps of Service","q":"How soon must every table be greeted after being seated?","a":["Within 15 minutes","Within moments — even if it's brief","After you finish your current table","Once water is poured"],"correct":1,"e":"Every table must be greeted within moments of being seated, even a simple “I'll be right with you.” If you can't, notify a manager or another FOH teammate."},{"id":"s15","cat":"Steps of Service","q":"Bread service and bottled water tickets are:","a":["Rung in with the food order","Always solo tickets, sent immediately","Held until cocktails are ready","Optional to ring in"],"correct":1,"e":"Bread and bottled water are always solo tickets and are fired immediately."},{"id":"s16","cat":"Steps of Service","q":"Our bread service is:","a":["A basket of assorted rolls","Two warm demi-baguettes from Balthazar Bakery with whipped butter, cornichons, and radishes","Garlic bread from the kitchen","Focaccia with olive oil"],"correct":1,"e":"Bread service is two warm demi-baguettes from Balthazar Bakery, served with whipped butter, cornichons, and radishes."},{"id":"s17","cat":"Water Service","q":"How is bottled water placed and water served?","a":["Poured tableside, bottle left anywhere","Served on the right side; bottle on a metal coaster at the end of the table","Served from the left; bottle in an ice bucket","Guests pour their own"],"correct":1,"e":"Serve water on the right side without dripping. Bottled water goes on a metal coaster at the end of the table; tap comes from wide-mouth iced pitchers."},{"id":"s18","cat":"Cocktails","q":"A guest orders a martini. What's the key question nine out of ten guests answer the same way?","a":["Shaken or stirred?","Would you like it with vermouth? (usually no)","Up or on the rocks?","One olive or two?"],"correct":1,"e":"Ask if they want vermouth — 9 times out of 10 guests just want the booze, shaken, up, with no vermouth. Also confirm vodka/gin, brand, dry/dirty, and garnish."},{"id":"s19","cat":"Cocktails","q":"Our POS (Toast) is programmed by:","a":["Cocktail name","Spirit, not cocktail","Guest seat only","Price tier"],"correct":1,"e":"The POS is programmed by spirit, not by cocktail. That's why you confirm the spirit and brand before ringing a classic in."},{"id":"s20","cat":"Cocktails","q":"For spirits priced over $20 per glass, you should:","a":["Pour first, mention price later","Highlight the price by pointing to it on the list","Refuse to serve them","Ask a manager to approve every pour"],"correct":1,"e":"For spirits over $20/glass, point to the price on the list so guests know the cost. Scotch can be $14 vs $80 — better to double-check than comp later."},{"id":"s21","cat":"Cocktails","q":"All beverages must be carried:","a":["Two at a time, by hand","On a tray — even when the glass is empty","Only if there are three or more","However is fastest"],"correct":1,"e":"Don't let us catch you without a tray. All beverages are carried on a tray, even an empty glass."},{"id":"s22","cat":"Wine Service","q":"When a guest orders a wine by the glass, the bartender pours it into a:","a":["Full wine glass","Quartino","Carafe for the table","Decanter"],"correct":1,"e":"Wine by the glass is picked up from the service bar poured into a quartino. Input the seat number, mark the guest with glassware, and pour on the right side."},{"id":"s23","cat":"Wine Service","q":"How many house wines does RPI offer?","a":["One red, one white","A full house selection","None — every wine is a unique entity","Only sparkling"],"correct":2,"e":"We have no house wines. Every wine, by the glass or bottle, is a unique and special entity."},{"id":"s24","cat":"Wine Service","q":"How do you announce a bottle before opening it?","a":["Just the grape and price","Producer, region, and vintage — then open after they confirm","Only the vintage","Hand them the book and let them read it"],"correct":1,"e":"Confirm the bin number, then announce producer, region, and vintage — e.g. “Joseph Drouhin Chablis, 2021 vintage.” Open only once the guest confirms."},{"id":"s25","cat":"Taking the Order","q":"A food order should be taken within how long of a guest being seated?","a":["5 minutes","15–20 minutes","30 minutes","Whenever they're ready, no limit"],"correct":1,"e":"Take the food order within 15–20 minutes of seating to stay on track with kitchen timing."},{"id":"s26","cat":"Taking the Order","q":"Are partial orders allowed (take apps now, entrees later)?","a":["Yes, whenever guests prefer","No — take the full order, all courses, for kitchen timing","Only on slow nights","Only if the chef is notified first"],"correct":1,"e":"Orders are taken in full — apps and all courses — for proper timing. If questioned: “The chef requests the full order so we can time your experience perfectly.”"},{"id":"s27","cat":"Taking the Order","q":"Writing down the order is:","a":["Optional if you have a good memory","Required — memorizing orders is not acceptable","Only required for tables of 4+","Done by the food runner"],"correct":1,"e":"All servers must write down every order with seat numbers, then repeat it back. Memorizing orders is not acceptable — it's about reducing errors."},{"id":"s28","cat":"Allergies","q":"A guest mentions an allergy. What is the FIRST step?","a":["Ring it into the POS with a note","Tell a manager","Go to the kitchen and let chef know — before anything is entered in the POS","Ask the guest to choose a different dish"],"correct":2,"e":"Allergy procedure: go to the kitchen and tell chef FIRST, before anything is inputted. Then name the ticket via TAB (seat #, allergen) and mark the allergen on every item."},{"id":"s29","cat":"Allergies","q":"When ringing in allergy items, you name the ticket using:","a":["The guest's last name","The TAB button — e.g. “Seat 1, Gluten Allergy”","A red sticker on the plate","The table number only"],"correct":1,"e":"Use the TAB button to name the ticket (seat number + allergen), then mark the allergen again on each item and note what must be left off."},{"id":"s30","cat":"Modifications","q":"What's the only kind of modification we generally allow?","a":["Removals","Swaps between dishes","Adding components from another dish","Anything the guest asks"],"correct":0,"e":"Generally the only modifications allowed are removals. Guests can't mix and match or add components across dishes. Approved mods are already programmed in Toast."},{"id":"s31","cat":"Modifications","q":"A guest requests a modification that isn't listed in Toast. Who do you check with?","a":["The chef","Management","The sommelier","No one — just say no"],"correct":1,"e":"For an unlisted modification, check with management to see if it's possible — not chef. (Allergies and firing issues, by contrast, go to chef first.)"},{"id":"s32","cat":"Toast / POS","q":"Which dishes fall under Course 1 in Toast's auto-coursing?","a":["Entrees and sides","Appetizers and raw bar","Desserts","Cocktails"],"correct":1,"e":"Course 1 = Appetizers and Raw Bar. Course 2 = Entrees and Sides. Toast auto-courses but you can adjust coursing if needed."},{"id":"s33","cat":"Toast / POS","q":"Toast won't let you select “done” on an item until you've added a:","a":["Modifier","Seat number","Course","Price"],"correct":1,"e":"Every item must be tied to a seat number — Toast won't let you finish without one. Always ring by seat and double-check dish, temp, sides, and mods."},{"id":"s34","cat":"Pacing & Fire Times","q":"Course 1 should arrive roughly how long after firing?","a":["5–8 minutes","14–18 minutes","25–30 minutes","As soon as it's rung"],"correct":1,"e":"Approximate fire times: drinks/wine always before Course 1; Course 1 is 14–18 min after firing; Course 2 is 14–18 min — gauge the guests' pace, don't wait for plates to empty."},{"id":"s35","cat":"Table Maintenance","q":"When should you offer the next round of drinks?","a":["Only when a glass is completely empty","When glasses are about ¾ empty","At the start of every course","When the guest asks"],"correct":1,"e":"Never wait for an empty glass. When glasses are ¾ empty, offer another round so the next lands as they finish the first."},{"id":"s36","cat":"Table Maintenance","q":"At RPI, everything that goes to or from a table must be:","a":["Carried in both hands","On a tray","Announced to a manager","Cleared with a partner"],"correct":1,"e":"Everything — drinks, food, silverware, condiments — travels on a tray. “Everything at River Pointe Inn is served on a silver platter, literally.”"},{"id":"s37","cat":"Serving Food","q":"Which is correct when serving food?","a":["Auction it: “Who had the oysters?”","Reach across guests to save time","Never auction; serve ladies first; add “pardon my reach” if needed","Set everything in the center to share"],"correct":2,"e":"Never auction off food. Make every effort to serve ladies first, never reach across a guest, and say “pardon my reach” if you must. Finish with “enjoy your first course!”"},{"id":"s38","cat":"Serving Food","q":"The “two bite rule” / circle back means checking in:","a":["Within 2 minutes of serving the course","After two full courses","Twice per visit","Two tables later"],"correct":0,"e":"Circle back within 2 minutes of service and ask about specific dishes by name: “How are the oysters? Is the burger to your liking?”"},{"id":"s39","cat":"Serving Food","q":"Any time an item goes back to the kitchen:","a":["Just re-ring it","A manager must know immediately","Comp it yourself","Wait until the end of the shift to report it"],"correct":1,"e":"Any time an item goes back, a manager must know immediately. Ask questions to find the root cause and offer a solution."},{"id":"s40","cat":"Clearing","q":"When do we begin clearing a table?","a":["As soon as the first guest finishes","When everyone at the table is finished eating","Halfway through the course","When the kitchen tells us to"],"correct":1,"e":"Clear only when everyone is finished — never while anyone is still enjoying food. Also clear if asked, if a plate is stacked/pushed away, or a shared app plate is empty."},{"id":"s41","cat":"Clearing","q":"Steak knives:","a":["Go through the dish machine","Must be hand washed in the designated container","Are left on the table","Are tossed into the silverware bucket"],"correct":1,"e":"Steak knives cannot be machine-washed — place them in the designated hand-wash container. Don't slide silverware off plates or stack plates on the table; the plates are very expensive."},{"id":"s42","cat":"Clearing","q":"When clearing, you should:","a":["Stack plates on the table first","Hover nearby until they finish","Clear with a partner so the whole table is cleared in one visit","Clear one plate at a time over several trips"],"correct":2,"e":"Clear with a partner/group so the entire table clears in one visit. Don't hover, don't stack on the table, and mind deep conversation — wait for a break."},{"id":"s43","cat":"Dessert","q":"How do we handle dessert menus?","a":["Ask if they'd like to see one","Always present them — we don't ask","Only offer if they finished their entrees","Leave them on the table at seating"],"correct":1,"e":"We do not ask if guests want a dessert menu — it's always presented, but only after the table is completely cleared (except unfinished drinks and the center lamp)."},{"id":"s44","cat":"Dessert","q":"Coffee and tea for the table must land:","a":["After dessert","At the same time as dessert","Before dessert arrives","Only if requested twice"],"correct":2,"e":"Coffee and tea must be at the table before dessert arrives. Replace silverware for anyone ordering dessert and bring extra forks/napkins — people share dessert."},{"id":"s45","cat":"Dessert","q":"Who makes the coffee and tea for your table?","a":["The barista","The bartender","You, the server","A food runner"],"correct":2,"e":"As the server, you're responsible for making coffee and tea for your table. Offerings include espresso/double, macchiato, cappuccino, cáfe americano, and hot tea."},{"id":"s46","cat":"Payment & Closing","q":"The check is presented:","a":["As soon as entrees are cleared","Automatically with dessert","At the guest's request, unless management says otherwise","Only when they stand up"],"correct":2,"e":"Present the check at the guest's request unless told otherwise. The table should be fully cleared except a beverage glass before it's presented."},{"id":"s47","cat":"Payment & Closing","q":"When presenting the check you should:","a":["Write a thank-you note on it","Clip it on a postcard, centered, and write nothing on it","Add your name and number","Hand it directly to the host"],"correct":1,"e":"Clip the check on a postcard at the center of the table and write nothing on it — no notes, names, or drawings. Tell guests it's a postcard we'll mail for them."},{"id":"s48","cat":"Payment & Closing","q":"“Your table is still your table until…”","a":["they pay the check","they get up — even if they already paid","the next reservation arrives","you clock out"],"correct":1,"e":"Your table is still your table until they get up, even if they've already paid. Keep taking care of them through the farewell."},{"id":"s49","cat":"Standards of Conduct","q":"Who is permitted to carry a personal cell phone on the floor?","a":["Anyone, on vibrate","Only managers and supervisors","Servers with kids","Anyone during a slow shift"],"correct":1,"e":"Only managers and supervisors may have phones on them. If a personal emergency requires it, tell your manager before the shift; keep it on vibrate and handle calls off the floor."},{"id":"s50","cat":"Standards of Conduct","q":"How much notice is required to change your Sling availability?","a":["No notice","24 hours","Two weeks","One month"],"correct":2,"e":"Any changes to availability require two weeks' notice. Requests for more than 2 consecutive days off also require at least 2 weeks' notice."},{"id":"s51","cat":"Standards of Conduct","q":"A no call/no show may result in:","a":["A verbal warning only","Termination","Loss of one shift","Nothing if you explain later"],"correct":1,"e":"Failing to notify management before your shift start (a no call/no show) may result in termination. More than 3 consecutive call-outs requires a doctor's note to return."},{"id":"s52","cat":"Standards of Conduct","q":"Switching or giving up a shift is only valid when it's:","a":["Agreed verbally with a coworker","Done in Sling with manager approval","Posted in the group chat","Covered by anyone you can find"],"correct":1,"e":"Shift switches must go through Sling and have manager approval in advance. Verbal switches are not accepted."},{"id":"s53","cat":"Sanitation","q":"Hands should be washed with soap and water for at least:","a":["5 seconds","10 seconds","20 seconds","60 seconds"],"correct":2,"e":"Wash hands with soap and water for at least 20 seconds. Sanitation begins before you arrive — come manicured and practicing good hygiene."},{"id":"s54","cat":"Safe Alcohol Service","q":"Whose ID should you check?","a":["Only guests who look under 21","Guests who appear under 30","Everyone, every time","Only on large tables"],"correct":1,"e":"Check IDs of anyone who appears under 30. Accept driver's licenses, passports, military IDs, or state cards; reject suspicious/fake IDs and consult a manager if unsure."},{"id":"s55","cat":"Safe Alcohol Service","q":"If a guest becomes too intoxicated, you should:","a":["Keep serving but add water","Stop serving, notify a manager, and complete an incident report","Cut them off quietly and say nothing","Ask another server to serve them"],"correct":1,"e":"Stop serving, notify a manager, and complete an incident report detailing the cut-off and safe departure. Under dram shop laws, we can be held liable for intoxicated guests."},{"id":"s56","cat":"Safe Alcohol Service","q":"A good practice to promote safe drinking is:","a":["Serve two drinks at a time to save trips","Serve water with alcohol and limit guests to one drink at a time","Only serve beer and wine","Stop all service after one round"],"correct":1,"e":"Serve water alongside alcohol and limit guests to one drink at a time. Watch for slurred speech, unsteady balance, confusion, or aggression."},{"id":"s57","cat":"Suggestive Selling","q":"The manual says: “Do not be an order taker, be a ___.”","a":["fast typist","suggestive seller","mind reader","rule follower"],"correct":1,"e":"Be a suggestive seller, not an order taker. Guide guests through the menu — e.g. pairing the NY strip with the house-made twice-cooked fries."}];
 
-// ── TOAST CONFIG (non-secret identifiers — safe in code) ────
-const TOAST_HOST = 'ws-api.toasttab.com';
-const TOAST_GUID = '549cd8ea-d9c1-4170-ab73-4b89ba6ba923';
+/* ---------- storage (per-viewer convenience) ---------- */
+const TOKEN_KEY='rpi_sw_token';
+function getToken(){try{return localStorage.getItem(TOKEN_KEY)||'';}catch(e){return '';}}
+function setToken(t){try{localStorage.setItem(TOKEN_KEY,t);}catch(e){}}
+function clearToken(){try{localStorage.removeItem(TOKEN_KEY);}catch(e){}}
+try{const th=localStorage.getItem('rpi_theme');if(th)document.documentElement.setAttribute('data-theme',th);}catch(e){}
 
-const TOAST_SPECIALS = {
-  'Lobster Frites':             'b46be09f-f738-4382-bb69-69cf35ca7c6f',
-  'Poulet en Croute':           '7fec06c7-7e98-4e1e-a9b0-6602ec5788ed',
-  'Steak Tartare':              'ee2b13eb-4b07-415c-a9a1-6a1879f372b6',
-  'Oysters Rockefeller':        'd6ce3a3b-9a36-4d87-94ae-f79d16ed236d',
-  'French Dip':                 '7fbde4b7-cd4a-4479-9a12-a47a8a152a4b',
-  'Prime Short Rib Bourgignon': '4518c696-7e6f-46de-9103-4c62fde91aa7',
-  'Bouillabaise Provençal':     '4d5d3d52-5547-4213-a043-4a8ab539ce51',
-  'Fried Quail':                '9d440e13-3387-4353-8876-72ea51258b47',
-  'Crispy Fish Frites':         '2c995d22-fcaa-46bc-ba54-35bd08cdab4a'
-};
-
-const TOAST_ITEM_NAMES = {
-  'b46be09f-f738-4382-bb69-69cf35ca7c6f': 'Lobster Frites',
-  '7fec06c7-7e98-4e1e-a9b0-6602ec5788ed': 'Poulet en Croute',
-  'ee2b13eb-4b07-415c-a9a1-6a1879f372b6': 'Steak Tartare',
-  'd6ce3a3b-9a36-4d87-94ae-f79d16ed236d': 'Oysters Rockefeller',
-  '7fbde4b7-cd4a-4479-9a12-a47a8a152a4b': 'French Dip',
-  '46b97c38-da65-4e03-816f-594bda618c0b': 'French Dip',
-  'cd342b3c-85bc-46b2-beed-f8da68449076': 'French Dip',
-  '4518c696-7e6f-46de-9103-4c62fde91aa7': 'Prime Short Rib Bourgignon',
-  '4d5d3d52-5547-4213-a043-4a8ab539ce51': 'Bouillabaise Provençal',
-  '9d440e13-3387-4353-8876-72ea51258b47': 'Fried Quail',
-  'd187e043-dac9-41e7-a21e-8ef9517804ec': 'WD Quail',
-  '2c995d22-fcaa-46bc-ba54-35bd08cdab4a': 'Crispy Fish Frites'
-};
-
-// ── WINE 86 REPORT CONFIG ──────────────────────────────────
-const WINE86_KEY = 'wine_86_list';
-const WINE86_DIST_KEY = 'wine_86_distributors';
-
-// ── RETENTION ──────────────────────────────────────────────
-const SHIFT_TTL = 60 * 60 * 24 * 120;   // 120 days of report history
-const NOTES_TTL = 60 * 60 * 24 * 30;
-
-// ── TIME HELPERS ───────────────────────────────────────────
-
-function toastBusinessDate() { return easternServiceDate().replace(/-/g, ''); }
-
-async function toastToken(env, idKey, secretKey) {
-  const clientId = env[idKey], clientSecret = env[secretKey];
-  if (!clientId || !clientSecret) return { error: idKey + '/' + secretKey + ' not configured' };
-  const host = env.TOAST_HOST || TOAST_HOST;
-  try {
-    const r = await fetch('https://' + host + '/authentication/v1/authentication/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clientId, clientSecret, userAccessType: 'TOAST_MACHINE_CLIENT' })
-    });
-    if (!r.ok) return { error: 'Toast auth failed (' + r.status + ')' };
-    const d = await r.json();
-    const token = (d && d.token && d.token.accessToken) || d.access_token || null;
-    return token ? { token } : { error: 'no token in Toast auth response' };
-  } catch (e) { return { error: 'Toast auth error: ' + e.message }; }
+/* ---------- API ---------- */
+async function api(path,opts){
+  opts=opts||{};
+  const headers=Object.assign({},opts.body?{'Content-Type':'application/json'}:{});
+  const tk=getToken(); if(tk)headers['Authorization']='Bearer '+tk;
+  const res=await fetch(CF+path,{method:opts.method||'GET',headers,credentials:'include',
+    body:opts.body?JSON.stringify(opts.body):undefined});
+  let data={}; try{data=await res.json();}catch(e){}
+  if(!res.ok){const err=new Error((data&&data.error)||('Request failed ('+res.status+')'));err.status=res.status;throw err;}
+  return data;
 }
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Pin',
-};
-
-function easternOffsetMinutes() {
-  const now = new Date();
-  const jan = new Date(now.getFullYear(), 0, 1);
-  const jul = new Date(now.getFullYear(), 6, 1);
-  const dstOffset = Math.min(jan.getTimezoneOffset(), jul.getTimezoneOffset());
-  return now.getTimezoneOffset() === dstOffset ? -240 : -300;
-}
-
-function easternServiceDate() {
-  const offsetMin = easternOffsetMinutes();
-  const nowMs = Date.now() + offsetMin * 60 * 1000;
-  const et = new Date(nowMs);
-  if (et.getUTCHours() < 4) et.setUTCDate(et.getUTCDate() - 1);
-  const y = et.getUTCFullYear();
-  const m = String(et.getUTCMonth() + 1).padStart(2, '0');
-  const d = String(et.getUTCDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
-
-function shiftDateBy(dateStr, days) {
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const dt = new Date(Date.UTC(y, m - 1, d));
-  dt.setUTCDate(dt.getUTCDate() + days);
-  return dt.toISOString().slice(0, 10);
-}
-
-function easternYesterday() { return shiftDateBy(easternServiceDate(), -1); }
-
-// Accept only real YYYY-MM-DD dates; otherwise fall back
-function validDate(s, fallback) {
-  return (typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s)) ? s : fallback;
-}
-
-const shiftKey = (date) => `shift_${date}`;
-const notesKey = (date) => `notes_${date}`;
-
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data, null, 2), {
-    status,
-    headers: { ...CORS, 'Content-Type': 'application/json' },
+/* ---------- week logic ---------- */
+function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const day=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-day);const ys=new Date(Date.UTC(t.getUTCFullYear(),0,1));const wk=Math.ceil(((t-ys)/86400000+1)/7);return {week:wk,year:t.getUTCFullYear()};}
+function mondayOf(d){const t=new Date(d);const day=(t.getDay()+6)%7;t.setDate(t.getDate()-day);t.setHours(0,0,0,0);return t;}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function weekInfo(){const now=new Date();const {week,year}=isoWeek(now);return {week,year,key:year+'-W'+String(week).padStart(2,'0'),seed:year*100+week,label:'Week of '+mondayOf(now).toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'})};}
+function seededStandards(seed){
+  const rnd=mulberry32(seed);
+  const idx=BANK.map((_,i)=>i);
+  for(let i=idx.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}
+  return idx.slice(0,Math.min(PER_WEEK,BANK.length)).map(i=>{
+    const b=BANK[i];
+    const order=b.a.map((_,k)=>k);
+    for(let m=order.length-1;m>0;m--){const j=Math.floor(rnd()*(m+1));[order[m],order[j]]=[order[j],order[m]];}
+    return {id:b.id,cat:b.cat,q:b.q,e:b.e,order,choices:order.map(o=>b.a[o]),correctDisplay:order.indexOf(b.correct),live:false};
   });
 }
-
-function formatEasternTime(isoStr) {
-  try {
-    const offsetMin = easternOffsetMinutes();
-    const ms = new Date(isoStr).getTime() + offsetMin * 60 * 1000;
-    const et = new Date(ms);
-    let h = et.getUTCHours();
-    const m = String(et.getUTCMinutes()).padStart(2, '0');
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    h = h % 12 || 12;
-    return `${h}:${m} ${ampm}`;
-  } catch {
-    return isoStr;
-  }
+function adaptLive(c){
+  const order=(c.choices||[]).map((_,k)=>k);
+  return {id:c.id,cat:c.cat||'Tonight',q:c.q,e:'Pulled from tonight’s pre-shift.',order,choices:c.choices||[],correctDisplay:typeof c.correct==='number'?c.correct:0,live:true};
 }
 
-// ── WINE 86 HELPERS ────────────────────────────────────────
+/* ---------- state ---------- */
+let state={phase:'loading',user:null,focus:null,questions:[],answers:[],idx:0,_pending:null,
+  week:'',weekLabel:'',saved:false,saveError:'',authTab:'login',authErr:'',resetToken:'',mgr:null};
+const app=document.getElementById('app'),toastEl=document.getElementById('toast');
+let toastTimer;
+function toast(m){toastEl.textContent=m;toastEl.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toastEl.classList.remove('show'),2200);}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function currentTheme(){const a=document.documentElement.getAttribute('data-theme');return a||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');}
+function toggleTheme(){const n=currentTheme()==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);try{localStorage.setItem('rpi_theme',n);}catch(e){}render();}
 
-async function getWine86List(env) {
-  const raw = await env.RPI_SHIFTS.get(WINE86_KEY);
-  return raw ? JSON.parse(raw) : [];
+/* ---------- boot ---------- */
+async function boot(){
+  const rt=(location.hash||'').match(/reset=([a-f0-9]+)/i);
+  if(rt){state.resetToken=rt[1];state.phase='reset';render();return;}
+  if(getToken()){
+    try{const d=await api('/auth/me');state.user=d.user;await startQuiz();return;}
+    catch(e){clearToken();}
+  }
+  state.phase='auth';render();
+}
+async function startQuiz(){
+  const wi=weekInfo();state.week=wi.key;state.weekLabel=wi.label;
+  const std=seededStandards(wi.seed);
+  let live=[];
+  try{const c=await api('/quiz/content');state.focus=c;live=(c.questions||[]).map(adaptLive);}
+  catch(e){state.focus=null;}
+  state.questions=[...live,...std];
+  state.answers=Array(state.questions.length).fill(null);
+  state.idx=0;state._pending=null;state.saved=false;state.saveError='';
+  state.phase='cover';render();
 }
 
-async function putWine86List(env, list) {
-  await env.RPI_SHIFTS.put(WINE86_KEY, JSON.stringify(list));
+/* ---------- render ---------- */
+function render(){({loading:renderLoading,auth:renderAuth,reset:renderReset,cover:renderCover,quiz:renderQuiz,result:renderResult,manager:renderManager}[state.phase]||renderLoading)();}
+function themeWord(){return currentTheme()==='dark'?'Light':'Dark';}
+function topbar(){
+  return `<div class="topbar">
+    <div class="who">RPI Server Weekly${state.user?' &middot; <b>'+esc(state.user.name)+'</b>':''}</div>
+    <div class="tools">
+      ${state.user&&state.user.role==='manager'?'<button class="iconbtn" onclick="goManager()">Manager</button>':''}
+      <button class="iconbtn" onclick="toggleTheme()">${themeWord()}</button>
+      ${state.user?'<button class="iconbtn" onclick="logout()">Sign out</button>':''}
+    </div></div>`;
+}
+function renderLoading(){app.innerHTML=`<div class="cover"><div class="crest"><div class="mark">River Pointe Inn</div><h1>Server Weekly</h1></div><div class="coverbody"><p class="lead">Loading…</p></div></div>`;}
+
+/* ----- auth ----- */
+function renderAuth(){
+  const t=state.authTab;
+  app.innerHTML=`
+  <div class="cover">
+    <div class="crest"><div class="mark">River Pointe Inn &middot; Rumson, NJ</div><h1>Server Weekly</h1><div class="sub">Sign in to take this week’s quiz</div></div>
+    <div class="coverbody">
+      <div class="authtabs">
+        <button class="authtab ${t==='login'?'active':''}" onclick="setTab('login')">Sign in</button>
+        <button class="authtab ${t==='signup'?'active':''}" onclick="setTab('signup')">Create account</button>
+      </div>
+      <div class="err" id="authErr">${esc(state.authErr)}</div>
+      ${t==='login'?`
+        <div class="field"><label>Email</label><input id="li-email" type="email" autocomplete="username"></div>
+        <div class="field"><label>Password</label><input id="li-pw" type="password" autocomplete="current-password"></div>
+        <button class="btn btn-primary full" onclick="doLogin()">Sign in</button>
+        <div class="hint" style="margin-top:12px">Forgot your password? Ask a manager to reset it for you.</div>
+      `:`
+        <div class="field"><label>Full name</label><input id="su-name" type="text" autocomplete="name"></div>
+        <div class="field"><label>Email</label><input id="su-email" type="email" autocomplete="username"></div>
+        <div class="field"><label>Staff code</label><input id="su-code" type="text" autocomplete="off"></div>
+        <div class="hint">Ask a manager for the current staff code.</div>
+        <div class="field"><label>Choose a password</label><input id="su-pw" type="password" autocomplete="new-password" oninput="meter(this.value)"></div>
+        <div class="strength"><i id="su-str"></i></div>
+        <div class="hint">At least 12 characters. A short phrase you’ll remember works well.</div>
+        <button class="btn btn-primary full" onclick="doSignup()">Create account &amp; continue</button>
+      `}
+      <div class="motto">&ldquo;Melius semper&rdquo; &mdash; always better</div>
+    </div>
+  </div>`;
+}
+function setTab(t){state.authTab=t;state.authErr='';render();}
+function authFail(m){state.authErr=m;const e=document.getElementById('authErr');if(e){e.textContent=m;}toast(m);}
+function meter(v){
+  const el=document.getElementById('su-str');if(!el)return;
+  let s=Math.min(v.length/18,1);
+  if(/[A-Z]/.test(v)&&/[a-z]/.test(v))s+=.05; if(/\d/.test(v))s+=.05; if(/\s/.test(v))s+=.05;
+  s=Math.min(s,1);el.style.width=Math.round(s*100)+'%';
+  el.style.background=s<.5?'var(--bad)':s<.8?'var(--brass)':'var(--good)';
+}
+async function doLogin(){
+  const email=val('li-email'),pw=val('li-pw');
+  if(!email||!pw){authFail('Enter your email and password');return;}
+  try{const d=await api('/auth/login',{method:'POST',body:{email,password:pw}});setToken(d.token);state.user=d.user;state.authErr='';await startQuiz();}
+  catch(e){authFail(e.message);}
+}
+async function doSignup(){
+  const name=val('su-name'),email=val('su-email'),code=val('su-code'),pw=val('su-pw');
+  if(!name||!email||!code||!pw){authFail('Fill in every field');return;}
+  if(pw.length<12){authFail('Password must be at least 12 characters');return;}
+  try{const d=await api('/auth/signup',{method:'POST',body:{name,email,code,password:pw}});setToken(d.token);state.user=d.user;state.authErr='';await startQuiz();}
+  catch(e){authFail(e.message);}
+}
+function logout(){api('/auth/logout',{method:'POST'}).catch(()=>{});clearToken();state.user=null;state.phase='auth';state.authTab='login';render();}
+function val(id){const e=document.getElementById(id);return e?e.value.trim():'';}
+
+/* ----- reset ----- */
+function renderReset(){
+  app.innerHTML=`
+  <div class="cover">
+    <div class="crest"><div class="mark">River Pointe Inn</div><h1>New password</h1></div>
+    <div class="coverbody">
+      <div class="err" id="authErr">${esc(state.authErr)}</div>
+      <div class="field"><label>Choose a new password</label><input id="rs-pw" type="password" autocomplete="new-password" oninput="meter2(this.value)"></div>
+      <div class="strength"><i id="rs-str"></i></div>
+      <div class="hint">At least 12 characters.</div>
+      <button class="btn btn-primary full" onclick="doReset()">Set password &amp; sign in</button>
+    </div>
+  </div>`;
+}
+function meter2(v){const el=document.getElementById('rs-str');if(!el)return;let s=Math.min(v.length/18,1);el.style.width=Math.round(s*100)+'%';el.style.background=s<.5?'var(--bad)':s<.8?'var(--brass)':'var(--good)';}
+async function doReset(){
+  const pw=val('rs-pw');if(pw.length<12){authFail('Password must be at least 12 characters');return;}
+  try{await api('/auth/reset/confirm',{method:'POST',body:{token:state.resetToken,password:pw}});
+    history.replaceState(null,'',location.pathname);
+    toast('Password set — sign in');state.phase='auth';state.authTab='login';state.authErr='';render();}
+  catch(e){authFail(e.message);}
 }
 
-// Seed distributors — written to KV on first GET if none exist.
-const DEFAULT_DISTRIBUTORS = [
-  'Allied','Artisinal','Banville','Bonhomie Wine Imports','Bowler','Coeur',
-  'De Maison','Dreyfus Ashby','Dueled','Fedway','Frederick Wildman',
-  'Grand Cru','Independence','Jenny & Francois','Kermit Lynch','M.S. Walker',
-  'Polaner','Rosenthal','Skurnik','Soilair','T Edward','Touton',
-  'Vintage Imports','Wilson Daniels','Winebow'
-];
-
-async function getDistributors(env) {
-  const raw = await env.RPI_SHIFTS.get(WINE86_DIST_KEY);
-  if (raw) return JSON.parse(raw);
-  await env.RPI_SHIFTS.put(WINE86_DIST_KEY, JSON.stringify(DEFAULT_DISTRIBUTORS));
-  return [...DEFAULT_DISTRIBUTORS];
+/* ----- cover (focus + begin) ----- */
+function renderCover(){
+  const f=state.focus;
+  let focusHtml='';
+  if(f){
+    const specials=(f.specials||[]).filter(Boolean);
+    const vips=(f.vips||[]).filter(Boolean);
+    const e86=(f.eightySix||[]).filter(Boolean);
+    focusHtml=`<div class="focus">
+      <h3>Tonight’s Focus</h3>
+      ${f.platDuJour?`<div class="row"><b>Plat du jour:</b> ${esc(f.platDuJour)}</div>`:''}
+      ${specials.length?`<div class="row"><b>Specials:</b> ${specials.map(esc).join(', ')}</div>`:''}
+      ${e86.length?`<div class="row"><b>On the 86:</b><br>${e86.map(x=>'<span class="tag86">'+esc(x)+'</span>').join('')}</div>`:''}
+      ${vips.length?`<div class="row"><b>VIPs:</b> ${vips.map(esc).join(', ')}</div>`:''}
+      ${(!f.platDuJour&&!specials.length&&!e86.length&&!vips.length)?'<div class="row" style="color:var(--muted)">No pre-shift posted yet — standards questions only tonight.</div>':''}
+    </div>`;
+  }
+  app.innerHTML=topbar()+`
+  <div class="cover">
+    <div class="crest"><div class="mark">River Pointe Inn &middot; Rumson, NJ</div><h1>Server Weekly</h1><div class="sub">Standards refresher &mdash; your weekly homework</div></div>
+    <div class="coverbody">
+      <p class="lead">A short quiz pulled fresh from the Server Training Manual, plus a couple of questions from tonight’s pre-shift. Pass mark is ${PASS}%.</p>
+      <div class="meta"><div class="wk">${esc(state.weekLabel)} &middot; <span>Week ${esc(state.week.split('-W')[1]||'')}</span></div><div class="cnt">${state.questions.length} questions</div></div>
+      ${focusHtml}
+      <button class="btn btn-primary full" onclick="state.phase='quiz';render();window.scrollTo(0,0)">Begin this week’s quiz</button>
+      <div class="motto">&ldquo;Melius semper&rdquo;</div>
+    </div>
+  </div>`;
 }
 
-async function putDistributors(env, list) {
-  await env.RPI_SHIFTS.put(WINE86_DIST_KEY, JSON.stringify(list));
+/* ----- quiz ----- */
+function renderQuiz(){
+  const i=state.idx,q=state.questions[i],ans=state.answers[i],graded=ans!==null;
+  const pct=Math.round(i/state.questions.length*100);
+  app.innerHTML=topbar()+`
+  <div class="progress"><div class="step">Q ${i+1} / ${state.questions.length}</div><div class="bar"><i style="width:${pct}%"></i></div><div class="step">${state.answers.filter(a=>a!==null).length} done</div></div>
+  <div class="card">
+    <div class="cat">${esc(q.cat)}${q.live?' &middot; live':''}</div>
+    <div class="qtext">${esc(q.q)}</div>
+    <div class="choices">
+      ${q.choices.map((c,ci)=>{
+        let cls='choice';
+        if(graded){cls+=' locked';if(ci===q.correctDisplay)cls+=' correct';else if(ci===ans)cls+=' wrong';}
+        else if(ci===state._pending)cls+=' sel';
+        const letter=String.fromCharCode(65+ci);
+        const mark=graded?(ci===q.correctDisplay?'✓':(ci===ans?'✗':letter)):letter;
+        return `<label class="${cls}" ${graded?'':'onclick="pick('+ci+')"'}><span class="tick">${mark}</span><span class="txt">${esc(c)}</span></label>`;
+      }).join('')}
+    </div>
+    ${graded?`<div class="explain"><span class="verdict ${ans===q.correctDisplay?'ok':'no'}">${ans===q.correctDisplay?'✓ Correct':'✗ Not quite'}</span>${esc(q.e)}</div>`:''}
+    <div class="qnav">
+      <button class="btn btn-ghost" ${i===0?'disabled style="opacity:.4;cursor:not-allowed"':'onclick="prevQ()"'}>&larr; Back</button>
+      ${graded?`<button class="btn btn-primary" onclick="nextQ()">${i===state.questions.length-1?'See results':'Next question &rarr;'}</button>`:`<button class="btn btn-brass" onclick="lockIn()">Lock in answer</button>`}
+    </div>
+  </div>`;
+}
+function pick(ci){state._pending=ci;render();}
+function lockIn(){if(state._pending==null){toast('Pick an answer first');return;}state.answers[state.idx]=state._pending;state._pending=null;render();}
+function prevQ(){state.idx--;state._pending=null;render();window.scrollTo(0,0);}
+function nextQ(){if(state.idx===state.questions.length-1){finish();}else{state.idx++;render();window.scrollTo(0,0);}}
+function tally(){let correct=0;state.questions.forEach((q,i)=>{if(state.answers[i]===q.correctDisplay)correct++;});return {correct,total:state.questions.length};}
+async function finish(){
+  state.phase='result';render();window.scrollTo(0,0);
+  const {correct,total}=tally();const score=Math.round(correct/total*100);
+  const answers=state.questions.map((q,i)=>({id:q.id,choice:q.live?state.answers[i]:q.order[state.answers[i]]}));
+  try{await api('/quiz/submit',{method:'POST',body:{week:state.week,answers,score,correct,total}});state.saved=true;}
+  catch(e){state.saved=false;state.saveError=e.message;}
+  render();
 }
 
-// ════════════════════════════════════════════════════════════
-// ROUTER
-// ════════════════════════════════════════════════════════════
+/* ----- result ----- */
+function renderResult(){
+  const {correct,total}=tally();const score=Math.round(correct/total*100);const passed=score>=PASS;
+  const missed=state.questions.map((q,i)=>({q,i})).filter(({i})=>state.answers[i]!==state.questions[i].correctDisplay);
+  const saveLine=state.saved?'<div class="savemsg ok">Saved — your manager can see it in the pre-shift rollup.</div>'
+    :(state.saveError?'<div class="savemsg no">Couldn’t save to the server ('+esc(state.saveError)+'). Your score still shows here.</div>':'<div class="savemsg">Saving…</div>');
+  app.innerHTML=topbar()+`
+  <div class="cover"><div class="scoreplate">
+    <div class="eyebrow">${esc(state.weekLabel)}</div>
+    <div class="scorenum ${passed?'pass':'fail'}">${score}%</div>
+    <div class="scorestat">${correct} of ${total} correct</div>
+    <div class="stamp ${passed?'pass':'fail'}">${passed?'Passed':'Review needed'}</div>
+  </div></div>
+  ${saveLine}
+  <div class="btn-row" style="margin-top:16px;justify-content:center">
+    <button class="btn btn-ghost" onclick="retake()">Retake</button>
+    ${state.user&&state.user.role==='manager'?'<button class="btn btn-brass" onclick="goManager()">Manager view</button>':''}
+  </div>
+  ${missed.length?`<div class="missed"><h3>Worth another look</h3><div class="sub">${missed.length} to review before your shift.</div>
+    ${missed.map(({q})=>`<div class="mitem"><div class="mq">${esc(q.q)}</div><div class="ma"><span class="lab">Standard:</span> ${esc(q.choices[q.correctDisplay])}. <span style="color:var(--muted)">${esc(q.e)}</span></div></div>`).join('')}</div>`
+    :`<div class="missed"><h3>Perfect sweep</h3><div class="sub">Every answer correct. That’s the standard.</div></div>`}
+  <div class="foot-motto">Treat each table as if it is your first of the day.</div>`;
+}
+function retake(){state.answers=Array(state.questions.length).fill(null);state.idx=0;state._pending=null;state.saved=false;state.saveError='';state.phase='quiz';render();window.scrollTo(0,0);}
 
-export default {
-  async fetch(request, env) {
-    // ── ACCOUNTS + SERVER WEEKLY QUIZ (/auth/*, /quiz/*) ───
-    // Must run BEFORE the generic OPTIONS handler: these routes use
-    // credentialed CORS (echoed Origin + Allow-Credentials), and answer
-    // their own preflight. The wildcard CORS below would fail it.
-    const account = await handleAccount(request, env);
-    if (account) return account;
-
-    if (request.method === 'OPTIONS') {
-      return new Response(null, { headers: CORS });
-    }
-
-    // ── OWNER WALK-THROUGH (/audit/*) ──────────────────────
-    const audit = await handleAudit(request, env);
-    if (audit) return audit;
-
-    // ── BAR / STATION CHECKLISTS (/checklist/*) ────────────
-    const checklist = await handleChecklist(request, env);
-    if (checklist) return checklist;
-
-    // ── GUEST RATINGS (/rating/*) ──────────────────────────
-    const rating = await handleRating(request, env);
-    if (rating) return rating;
-
-    const url   = new URL(request.url);
-    const path  = url.pathname;
-    const today = easternServiceDate();
-
-    // ── SHIFT DRAFT (stored per service date) ──────────────
-    if (path === '/shift') {
-      if (request.method === 'POST') {
-        let parsed;
-        try { parsed = JSON.parse(await request.text()); }
-        catch(e) { return json({ error: 'Invalid JSON' }, 400); }
-        const saveDate = validDate(parsed.serviceDate, today);
-
-        const existingRaw = await env.RPI_SHIFTS.get(shiftKey(saveDate));
-        const existing = existingRaw ? JSON.parse(existingRaw) : null;
-
-        // Once a report has been copied to email on any device, keep that mark
-        if (existing && existing.sentAt && !parsed.sentAt) parsed.sentAt = existing.sentAt;
-
-        parsed.savedAt = new Date().toISOString();
-        parsed.serviceDate = saveDate;
-        await env.RPI_SHIFTS.put(shiftKey(saveDate), JSON.stringify(parsed), { expirationTtl: SHIFT_TTL });
-        return json({ ok: true, date: saveDate, savedAt: parsed.savedAt });
-      }
-      if (request.method === 'GET') {
-        const reqDate = validDate(url.searchParams.get('date'), today);
-        const val = await env.RPI_SHIFTS.get(shiftKey(reqDate));
-        return json(val ? JSON.parse(val) : { serviceDate: reqDate });
-      }
-    }
-
-    // ── LIST SAVED REPORTS ─────────────────────────────────
-    //   GET /shift/list?days=30 → { today, dates: ['2026-09-21', '2026-09-20', ...] }
-    if (path === '/shift/list' && request.method === 'GET') {
-      const days = Math.min(Math.max(parseInt(url.searchParams.get('days') || '30', 10) || 30, 1), 120);
-      const oldest = shiftDateBy(today, -days);
-      const dates = [];
-      let cursor;
-      do {
-        const page = await env.RPI_SHIFTS.list({ prefix: 'shift_', cursor });
-        page.keys.forEach(function (k) {
-          const d = k.name.slice('shift_'.length);
-          if (/^\d{4}-\d{2}-\d{2}$/.test(d) && d >= oldest) dates.push(d);
-        });
-        cursor = page.list_complete ? null : page.cursor;
-      } while (cursor);
-      dates.sort().reverse();
-      return json({ today, dates });
-    }
-
-    // ── YESTERDAY'S SHIFT ──────────────────────────────────
-    if (path === '/shift/yesterday' && request.method === 'GET') {
-      const yday = easternYesterday();
-      const val  = await env.RPI_SHIFTS.get(shiftKey(yday));
-      return json(val ? JSON.parse(val) : { serviceDate: yday, empty: true });
-    }
-
-    // ── SHIFT NOTES (per service date; ?date= optional) ────
-    if (path === '/notes') {
-      const noteDate = validDate(url.searchParams.get('date'), today);
-
-      if (request.method === 'GET') {
-        const val = await env.RPI_SHIFTS.get(notesKey(noteDate));
-        return json(val ? JSON.parse(val) : []);
-      }
-      if (request.method === 'POST') {
-        let note;
-        try { note = await request.json(); }
-        catch (e) { return json({ error: 'Invalid JSON' }, 400); }
-
-        note.text = (note.text || '').toString().trim();
-        if (!note.text) return json({ error: 'empty note' }, 400);
-
-        // Watch/Siri posts carry no date → tonight. The app sends ?date= for past reports.
-        const targetDate = url.searchParams.get('date') ? noteDate : today;
-        const nowIso  = new Date().toISOString();
-        note.ts       = note.ts  || formatEasternTime(nowIso);
-        note.who      = note.who || 'Watch';
-        note.date     = targetDate;
-        note.postedAt = nowIso;
-
-        const existing = await env.RPI_SHIFTS.get(notesKey(targetDate));
-        const notes    = existing ? JSON.parse(existing) : [];
-        notes.push(note);
-        await env.RPI_SHIFTS.put(notesKey(targetDate), JSON.stringify(notes), { expirationTtl: NOTES_TTL });
-        return json({ ok: true, total: notes.length, date: targetDate });
-      }
-      if (request.method === 'DELETE') {
-        await env.RPI_SHIFTS.put(notesKey(noteDate), JSON.stringify([]), { expirationTtl: NOTES_TTL });
-        return json({ ok: true, date: noteDate });
-      }
-    }
-
-    // ── AI SUMMARY ─────────────────────────────────────────
-    if (path === '/summary' && request.method === 'POST') {
-      let body;
-      try { body = await request.json(); }
-      catch (e) { return json({ error: 'Invalid JSON' }, 400); }
-      const prompt = (body.prompt || '').toString();
-      if (!prompt) return json({ error: 'prompt required' }, 400);
-      const maxTokens = Math.min(Math.max(parseInt(body.max_tokens, 10) || 1024, 100), 4000);
-      const resp = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': env.ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: maxTokens,
-          messages: [{ role: 'user', content: prompt }],
-        }),
-      });
-      const data = await resp.json();
-      return json(data, resp.ok ? 200 : resp.status);
-    }
-
-    // ── TOAST: TODAY'S NUMBERS ──────────────────────────────
-    if (path === '/toast/today' && request.method === 'GET') {
-      const host = env.TOAST_HOST || TOAST_HOST;
-      const guid = env.TOAST_GUID || TOAST_GUID;
-      const auth = await toastToken(env, 'TOAST_CLIENT_ID', 'TOAST_CLIENT_SECRET');
-      if (auth.error) return json({ error: auth.error }, 500);
-      const bDate = toastBusinessDate();
-      const headers = {
-        'Authorization': 'Bearer ' + auth.token,
-        'Toast-Restaurant-External-ID': guid,
-        'Accept': 'application/json'
-      };
-      let orders = [], page = 1, pages = 0;
-      try {
-        while (page <= 20) {
-          const u = 'https://' + host + '/orders/v2/ordersBulk?businessDate=' + bDate + '&page=' + page + '&pageSize=100';
-          const rr = await fetch(u, { headers });
-          if (!rr.ok) {
-            if (page === 1) return json({ error: 'orders fetch ' + rr.status, body: (await rr.text()).slice(0, 200) }, 502);
-            break;
-          }
-          const batch = await rr.json();
-          if (!Array.isArray(batch) || !batch.length) break;
-          orders = orders.concat(batch); pages++;
-          if (batch.length < 100) break;
-          page++;
-        }
-      } catch (e) { return json({ error: 'orders error: ' + e.message }, 502); }
-
-      let net = 0, guests = 0, checkCount = 0;
-      orders.forEach(function (o) {
-        if (o.voided || o.deleted) return;
-        (o.checks || []).forEach(function (c) {
-          if (c.voided || c.deleted) return;
-          const amt = parseFloat(c.amount); if (!isNaN(amt)) net += amt;
-          const g = parseInt(c.numberOfGuests != null ? c.numberOfGuests : c.guestCount, 10);
-          if (!isNaN(g)) guests += g;
-          checkCount++;
-        });
-      });
-      return json({
-        businessDate: bDate,
-        netSales: Math.round(net * 100) / 100,
-        checkAvg: guests ? Math.round(net / guests * 100) / 100 : 0,
-        checkAvgPerCheck: checkCount ? Math.round(net / checkCount * 100) / 100 : 0,
-        covers: guests,
-        checkCount: checkCount,
-        orders: orders.length,
-        pages: pages
-      });
-    }
-
-    // ── TOAST: FOOD 86 (stock) ─────────────────────────────
-    if (path === '/toast/86' && request.method === 'GET') {
-      const host = env.TOAST_HOST || TOAST_HOST;
-      const guid = env.TOAST_GUID || TOAST_GUID;
-      const auth = await toastToken(env, 'TOAST_CLIENT_ID', 'TOAST_CLIENT_SECRET');
-      if (auth.error) return json({ error: auth.error }, 500);
-      const headers = {
-        'Authorization': 'Bearer ' + auth.token,
-        'Toast-Restaurant-External-ID': guid,
-        'Accept': 'application/json'
-      };
-      let items = [];
-      try {
-        const rr = await fetch('https://' + host + '/stock/v1/inventory?status=OUT_OF_STOCK', { headers });
-        if (!rr.ok) return json({ error: 'stock fetch ' + rr.status, body: (await rr.text()).slice(0, 200) }, 502);
-        items = await rr.json();
-      } catch (e) { return json({ error: 'stock error: ' + e.message }, 502); }
-
-      const norm = (Array.isArray(items) ? items : []).map(function (it) {
-        const g = it.guid || it.itemGuid || null;
-        return {
-          guid: g,
-          name: it.name || it.itemName || (g && TOAST_ITEM_NAMES[g]) || null,
-          quantity: (it.quantity != null ? it.quantity : null)
-        };
-      });
-      const curGuids = norm.map(function (x) { return x.guid; }).filter(Boolean);
-
-      const bDate   = toastBusinessDate();
-      const baseKey = 'toast86base_' + bDate;
-      const showAll = url.searchParams.get('all') === '1';
-      const reset   = url.searchParams.get('reset') === '1';
-
-      let baseline = null;
-      const existing = await env.RPI_SHIFTS.get(baseKey);
-      if (existing && !reset) baseline = JSON.parse(existing);
-
-      if (!baseline) {
-        await env.RPI_SHIFTS.put(baseKey, JSON.stringify(curGuids), { expirationTtl: 60 * 60 * 24 * 2 });
-        return json({
-          businessDate: bDate, baseline: true, wentToday: [], wentTodayCount: 0,
-          currentTotal: norm.length,
-          note: 'Baseline set from items already 86 now. New 86s during service will show on later pulls.',
-          items: showAll ? norm : undefined
-        });
-      }
-
-      const baseSet = {}; baseline.forEach(function (g) { baseSet[g] = 1; });
-      const wentToday = norm.filter(function (x) { return x.guid && !baseSet[x.guid]; });
-      return json({
-        businessDate: bDate,
-        wentToday: wentToday,
-        wentTodayCount: wentToday.length,
-        currentTotal: norm.length,
-        items: showAll ? norm : undefined
-      });
-    }
-
-    // ── TOAST: PMIX (Analytics API) ────────────────────────
-    if (path === '/toast/pmix' && request.method === 'GET') {
-      const host = env.TOAST_HOST || TOAST_HOST;
-      const guid = env.TOAST_GUID || TOAST_GUID;
-      const auth = await toastToken(env, 'TOAST_ANALYTICS_CLIENT_ID', 'TOAST_ANALYTICS_CLIENT_SECRET');
-      if (auth.error) return json({ error: auth.error }, 500);
-      const headers = { 'Authorization': 'Bearer ' + auth.token, 'Content-Type': 'application/json', 'Accept': 'application/json' };
-      const bDate = toastBusinessDate();
-      const restaurantIds = [ env.TOAST_MGMT_RESTAURANT_ID || guid ];
-      try {
-        const create = await fetch('https://' + host + '/era/v1/menu/day', {
-          method: 'POST', headers,
-          body: JSON.stringify({ startBusinessDate: bDate, endBusinessDate: bDate, restaurantIds: restaurantIds, excludedRestaurantIds: [], groupBy: ['MENU_ITEM'] })
-        });
-        if (!create.ok) return json({ error: 'pmix create ' + create.status, body: (await create.text()).slice(0, 200) }, 502);
-        const cj = await create.json();
-        const reqGuid = cj.reportRequestGuid || cj.requestGuid || cj.guid;
-        if (!reqGuid) return json({ error: 'no reportRequestGuid', raw: cj }, 502);
-        let data = null;
-        for (let i = 0; i < 8; i++) {
-          await new Promise(function (r) { setTimeout(r, 1500); });
-          const g = await fetch('https://' + host + '/era/v1/menu/' + reqGuid, { headers });
-          if (g.status === 200) { data = await g.json(); break; }
-          if (g.status !== 202 && !g.ok) return json({ error: 'pmix poll ' + g.status }, 502);
-        }
-        if (!data) return json({ error: 'pmix not ready (timed out)', reqGuid: reqGuid }, 504);
-        return json({ businessDate: bDate, report: data });
-      } catch (e) { return json({ error: 'pmix error: ' + e.message }, 502); }
-    }
-
-    // ════════════════════════════════════════════════════════
-    // WINE 86 DISTRIBUTORS  (matched before /wine86/:id so
-    // DELETE /wine86/distributors/X isn't read as an item id)
-    //   GET    /wine86/distributors       → sorted list
-    //   POST   /wine86/distributors       → add one { name }
-    //   DELETE /wine86/distributors/:name → remove one
-    // ════════════════════════════════════════════════════════
-
-    if (path === '/wine86/distributors' && request.method === 'GET') {
-      const dists = await getDistributors(env);
-      return json(dists.sort((a, b) => a.localeCompare(b)));
-    }
-
-    if (path === '/wine86/distributors' && request.method === 'POST') {
-      let body;
-      try { body = await request.json(); }
-      catch (e) { return json({ error: 'Invalid JSON' }, 400); }
-
-      const name = (body.name || '').trim();
-      if (!name) return json({ error: 'name required' }, 400);
-
-      const dists = await getDistributors(env);
-      if (dists.some(d => d.toLowerCase() === name.toLowerCase())) {
-        return json({ error: 'already exists', name }, 409);
-      }
-      dists.push(name);
-      dists.sort((a, b) => a.localeCompare(b));
-      await putDistributors(env, dists);
-      return json({ ok: true, distributors: dists });
-    }
-
-    if (path.startsWith('/wine86/distributors/') && request.method === 'DELETE') {
-      const name = decodeURIComponent(path.slice('/wine86/distributors/'.length));
-      if (!name) return json({ error: 'name required' }, 400);
-
-      const dists = await getDistributors(env);
-      const filtered = dists.filter(d => d !== name);
-      if (filtered.length === dists.length) return json({ error: 'not found', name }, 404);
-      await putDistributors(env, filtered);
-      return json({ ok: true, removed: name, distributors: filtered });
-    }
-
-    // ════════════════════════════════════════════════════════
-    // WINE 86 REPORT — ownership reorder queue
-    //   GET    /wine86      → full list
-    //   POST   /wine86      → add one item (from rpi.html)
-    //   PUT    /wine86      → replace full list (from wine-86.html)
-    //   DELETE /wine86/:id  → remove one item
-    //   PATCH  /wine86/:id  → update one item (ordered toggle, assign distributor)
-    // ════════════════════════════════════════════════════════
-
-    if (path === '/wine86' && request.method === 'GET') {
-      const list = await getWine86List(env);
-      return json(list);
-    }
-
-    if (path === '/wine86' && request.method === 'POST') {
-      let item;
-      try { item = await request.json(); }
-      catch (e) { return json({ error: 'Invalid JSON' }, 400); }
-
-      if (!item.name || !item.name.trim()) return json({ error: 'name required' }, 400);
-      item.name = item.name.trim();
-
-      if (!item.id) {
-        item.id = 'w86_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
-      }
-      if (!item.addedAt) item.addedAt = new Date().toISOString();
-      if (item.ordered === undefined) item.ordered = false;
-
-      const list = await getWine86List(env);
-      list.push(item);
-      await putWine86List(env, list);
-      return json({ ok: true, item, total: list.length });
-    }
-
-    if (path === '/wine86' && request.method === 'PUT') {
-      let body;
-      try { body = await request.json(); }
-      catch (e) { return json({ error: 'Invalid JSON' }, 400); }
-
-      if (!Array.isArray(body)) return json({ error: 'expected array' }, 400);
-      await putWine86List(env, body);
-      return json({ ok: true, count: body.length });
-    }
-
-    if (path.startsWith('/wine86/') && request.method === 'DELETE') {
-      const id = path.slice('/wine86/'.length);
-      if (!id) return json({ error: 'id required' }, 400);
-
-      const list = await getWine86List(env);
-      const filtered = list.filter(w => w.id !== id);
-      await putWine86List(env, filtered);
-      return json({ ok: true, removed: id, remaining: filtered.length });
-    }
-
-    if (path.startsWith('/wine86/') && request.method === 'PATCH') {
-      const id = path.slice('/wine86/'.length);
-      if (!id) return json({ error: 'id required' }, 400);
-
-      let updates;
-      try { updates = await request.json(); }
-      catch (e) { return json({ error: 'Invalid JSON' }, 400); }
-
-      const list = await getWine86List(env);
-      const item = list.find(w => w.id === id);
-      if (!item) return json({ error: 'not found', id }, 404);
-
-      const allowed = ['name', 'bin', 'vintage', 'price', 'distributor', 'note', 'ordered', 'orderedAt', 'addedBy'];
-      for (const k of allowed) {
-        if (updates[k] !== undefined) item[k] = updates[k];
-      }
-      if (updates.ordered === true && !item.orderedAt) item.orderedAt = new Date().toISOString();
-      if (updates.ordered === false) item.orderedAt = null;
-
-      await putWine86List(env, list);
-      return json({ ok: true, item });
-    }
-
-    // ── DEBUG: List KV keys ────────────────────────────────
-    if (path === '/debug/keys' && request.method === 'GET') {
-      const list = await env.RPI_SHIFTS.list();
-      return json({ keys: list.keys.map(k => k.name), today: easternServiceDate() });
-    }
-
-    return json({ error: 'Not found', path }, 404);
-  },
-
-  // ── SCHEDULED: Server Weekly quiz email reminders ──────────
-  // Wire the cadence in wrangler.toml [triggers] crons. Each firing emails
-  // servers who have not completed the current ISO-week quiz (per-week send
-  // cap enforced inside), plus a manager digest.
-  async scheduled(event, env, ctx) {
-    ctx.waitUntil(runQuizReminders(env));
+/* ----- manager ----- */
+async function goManager(){
+  state.phase='manager';state.mgr=null;render();
+  try{state.mgr=await api('/quiz/compliance?week='+encodeURIComponent(state.week));}
+  catch(e){state.mgr={error:e.message};}
+  render();
+}
+function renderManager(){
+  const m=state.mgr;
+  let body;
+  if(!m)body='<p class="lead" style="padding:4px 2px">Loading roster…</p>';
+  else if(m.error)body='<div class="err">'+esc(m.error)+'</div>';
+  else{
+    body=`<div class="meta"><div class="wk">${esc(state.weekLabel)}</div><div class="cnt">${m.done}/${m.total} done</div></div>
+    <div class="btn-row" style="margin-bottom:16px">
+      <button class="btn btn-brass" onclick="sendReminders(false)">Send reminders now</button>
+      <button class="btn btn-ghost" onclick="sendReminders(true)">Preview (no email)</button>
+    </div>
+    <div class="mgr" style="overflow-x:auto"><table><thead><tr><th>Server</th><th>Status</th><th>Best</th></tr></thead><tbody>
+    ${(m.roster||[]).map(r=>`<tr><td>${esc(r.name)}</td><td>${r.completed?'<span class="pill done">Done</span>':'<span class="pill out">Outstanding</span>'}</td><td>${r.completed&&r.score!=null?r.score+'%':'—'}</td></tr>`).join('')}
+    </tbody></table></div>`;
   }
-};
-
-// ════════════════════════════════════════════════════════════
-// OWNER NOTES  (owner-notes.html — Vic's walk-through notes)
-//   GET  /audit/recipients         → { recipients }
-//   POST /audit/recipients/check   → 200 if X-Admin-Pin is right, else 401
-//   PUT  /audit/recipients         → save the list (X-Admin-Pin) → { recipients }
-//   POST /audit/walkthrough        → store + email one report (idempotent by clientId)
-//   PUT  /audit/photo/:id          → upload one photo (raw image body; idempotent)
-//   GET  /audit/photo/:id          → serve a photo (used in emails + history)
-//   GET  /audit/reports            → history index, newest first (X-Admin-Pin)
-//   GET  /audit/reports/:clientId  → one stored report (X-Admin-Pin)
-//   GET  /audit/followups          → follow-up items for ?restaurantId= (default rpi)
-//   POST /audit/followups/:itemId  → close / reopen one item
-// KV keys: audit:recipients, audit:report:<clientId>, audit:reports:index,
-//          audit:photo:<id>, audit:followups:<restaurantId>
-// ════════════════════════════════════════════════════════════
-
-async function handleAudit(request, env) {
-  return AuditRoutes.handle(request, env);
+  app.innerHTML=topbar()+`<div class="cover"><div class="crest"><div class="mark">River Pointe Inn</div><h1>Weekly Training</h1><div class="sub">Completion rollup</div></div><div class="coverbody">${body}
+    <div class="btn-row" style="margin-top:18px"><button class="btn btn-ghost" onclick="startQuiz()">&larr; Back to quiz</button></div>
+  </div></div>`;
+}
+async function sendReminders(dry){
+  try{const r=await api('/quiz/remind/'+(dry?'preview':'run'));
+    toast((dry?'Would remind ':'Reminded ')+(r.sent?r.sent.length:0)+' — '+(r.outstanding?r.outstanding.length:0)+' outstanding');}
+  catch(e){toast(e.message);}
 }
 
-const AuditRoutes = (() => {
-  /* ─────────────── EDIT THESE ─────────────── */
-  const KV_BINDING = 'RPI_SHIFTS';
-  const PREFIX = '/audit';
-  const DEFAULT_FROM = 'Rallo Walk-Through <walkthrough@yourdomain.com>'; // overridden by env.MAIL_FROM
-  const ALL_ID = 'all';
-
-  // First-run seed only. Once anyone saves from the Recipients screen,
-  // the list in KV (audit:recipients) is the source of truth.
-  const SEED = {
-    everyone: [
-      { name: 'Victor Rallo', email: '' },
-      { name: 'Jake Rallo', email: '' },
-      { name: 'John', email: '' },
-    ],
-    restaurants: [
-      { id: 'birravino', name: 'Birravino', team: [
-        { name: 'Frankie Urena', email: 'efrainurena60@gmail.com' },
-        { name: 'Sarah Howard', email: 'hwrdsarah@gmail.com' },
-        { name: 'Ari Lopez', email: 'chiriki1989@gmail.com' },
-        { name: 'Bobby Rallo', email: 'bobbyrallo@gmail.com' },
-        { name: 'Sergio Rojas', email: 'sergi1017@hotmail.com' },
-        { name: 'Berta Marin', email: 'marinbeti85@hotmail.com' },
-      ] },
-      { id: 'undici', name: 'Undici', team: [
-        { name: 'Adria Alfaro', email: 'Adria.alfaro@aol.com' },
-        { name: 'Laura Ballatori', email: 'locchipinti@gmail.com' },
-        { name: 'Andres Ramirez', email: 'ajramirez735@gmail.com' },
-        { name: 'Rob Zwirz', email: 'rjzwirz@gmail.com' },
-      ] },
-      { id: 'rpi', name: 'River Pointe Inn', team: [
-        { name: 'Adam Brousell', email: 'adam.brousell@gmail.com' },
-        { name: 'Kelly Carrillo', email: 'kellymcarrillo@gmail.com' },
-        { name: 'Carlos Féria Cuellar', email: 'carlosurf732@gmail.com' },
-        { name: 'Alejandro Rodriguez', email: 'alexroud1722@icloud.com' },
-      ] },
-      { id: 'pastavino', name: 'Pastavino', team: [
-        { name: 'Conner Foresberg', email: 'Conner@pastavinosi.com' },
-        { name: 'Jonathan Loncle', email: 'Jonathan@pastavinosi.com' },
-        { name: 'Alfredo Medel', email: 'medel20alfredo@gmail.com' },
-      ] },
-    ],
-  };
-  /* ─────────────────────────────────────────── */
-
-  const RECIPIENTS_KEY = 'audit:recipients';
-  const INDEX_KEY = 'audit:reports:index';
-  const reportKey = (clientId) => `audit:report:${clientId}`;
-  const photoKey = (id) => `audit:photo:${id}`;
-  const PHOTO_ID_RE = /^[\w-]{8,80}$/;
-  const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
-  const MAX_ATTACH_BYTES = 30 * 1024 * 1024; // stay under Resend's 40MB message cap
-  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  const CORS = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Pin',
-    'Access-Control-Max-Age': '86400',
-  };
-
-  class HttpError extends Error { constructor(msg, status) { super(msg); this.status = status; } }
-  const json = (data, status = 200) =>
-    new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json', ...CORS } });
-  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const readJSON = (request) => request.json().catch(() => { throw new HttpError('Invalid JSON', 400); });
-
-  async function handle(request, env) {
-    const url = new URL(request.url);
-    if (url.pathname !== PREFIX && !url.pathname.startsWith(PREFIX + '/')) return null;
-    if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
-
-    try {
-      const kv = env[KV_BINDING];
-      if (!kv) throw new HttpError(`KV binding "${KV_BINDING}" not found on this worker`, 500);
-      const path = url.pathname.slice(PREFIX.length) || '/';
-      const m = request.method;
-      let r;
-
-      if (m === 'GET' && path === '/recipients') return json({ recipients: await getRecipients(kv) });
-
-      if (m === 'POST' && path === '/recipients/check') { requirePin(request, env); return json({ ok: true }); }
-
-      if (m === 'PUT' && path === '/recipients') {
-        requirePin(request, env);
-        const { errs, cfg } = cleanConfig(await readJSON(request));
-        if (errs.length) throw new HttpError(errs[0], 400);
-        await kv.put(RECIPIENTS_KEY, JSON.stringify(cfg));
-        return json({ recipients: cfg });
-      }
-
-      if ((m === 'PUT' || m === 'POST') && (r = path.match(/^\/photo\/([\w-]{8,80})$/))) return json(await putPhoto(kv, r[1], request));
-
-      if (m === 'GET' && (r = path.match(/^\/photo\/([\w-]{8,80})$/))) {
-        const { value, metadata } = await kv.getWithMetadata(photoKey(r[1]), 'arrayBuffer');
-        if (!value) return new Response('Not found', { status: 404, headers: CORS });
-        return new Response(value, {
-          headers: { 'Content-Type': (metadata && metadata.contentType) || 'image/jpeg', 'Cache-Control': 'public, max-age=31536000, immutable', ...CORS },
-        });
-      }
-
-      if (m === 'POST' && path === '/walkthrough') return json(await sendReport(kv, env, await readJSON(request), url.origin));
-
-      if (m === 'GET' && path === '/reports') {
-        requirePin(request, env);
-        const rid = url.searchParams.get('restaurantId');
-        const all = (await kv.get(INDEX_KEY, 'json')) || [];
-        return json({ reports: rid ? all.filter((x) => x.restaurantId === rid) : all });
-      }
-
-      if (m === 'GET' && (r = path.match(/^\/reports\/([\w-]+)$/))) {
-        requirePin(request, env);
-        const rec = await kv.get(reportKey(r[1]), 'json');
-        if (!rec) throw new HttpError('Report not found', 404);
-        return json(rec);
-      }
-
-      // Follow-ups: each note section from a walk-through is one item a manager closes
-      // from the shift report (rpi.html). No PIN, same as the shift endpoints.
-      if (m === 'GET' && path === '/followups') {
-        const rid = cleanRid(url.searchParams.get('restaurantId'));
-        return json(await listFollowups(kv, rid, url.searchParams.get('date'), url.origin));
-      }
-
-      if (m === 'POST' && (r = path.match(/^\/followups\/([\w-]{1,100})$/))) {
-        const rid = cleanRid(url.searchParams.get('restaurantId'));
-        return json(await updateFollowup(kv, rid, r[1], await readJSON(request), url.origin));
-      }
-
-      throw new HttpError('Not found', 404);
-    } catch (e) {
-      if (!(e instanceof HttpError)) console.error('audit route error', e);
-      return json({ error: e.message || 'Server error' }, e.status || 500);
-    }
-  }
-
-  function requirePin(request, env) {
-    if (!env.WALKTHROUGH_PIN) throw new HttpError('Set the WALKTHROUGH_PIN secret on the worker', 503);
-    if (request.headers.get('X-Admin-Pin') !== String(env.WALKTHROUGH_PIN)) throw new HttpError('Wrong PIN', 401);
-  }
-
-  async function getRecipients(kv) {
-    const saved = await kv.get(RECIPIENTS_KEY, 'json');
-    return saved && Array.isArray(saved.everyone) && Array.isArray(saved.restaurants) ? saved : SEED;
-  }
-
-  // A name with a blank email is allowed (that person is paused); a typed email must be valid.
-  function cleanConfig(input) {
-    const errs = [];
-    if (!input || !Array.isArray(input.everyone) || !Array.isArray(input.restaurants)) return { errs: ['Bad recipient list'], cfg: null };
-    const cleanList = (list, where) => (Array.isArray(list) ? list : [])
-      .map((p) => ({ name: String((p && p.name) || '').trim().slice(0, 80), email: String((p && p.email) || '').trim().slice(0, 200) }))
-      .filter((p) => p.name || p.email)
-      .map((p) => { if (p.email && !EMAIL_RE.test(p.email)) errs.push(`${where}: check the email for ${p.name || 'someone'}`); return p; });
-    const used = new Set();
-    const restaurants = input.restaurants.slice(0, 50).map((rest) => {
-      const name = String((rest && rest.name) || '').trim().slice(0, 80);
-      if (!name) errs.push('Every restaurant needs a name');
-      let id = String((rest && rest.id) || '').trim().replace(/[^\w-]/g, '')
-        || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'restaurant';
-      const base = id; let n = 2;
-      while (used.has(id) || id === ALL_ID) id = `${base}-${n++}`;
-      used.add(id);
-      return { id, name, team: cleanList(rest.team, name || 'Restaurant') };
-    });
-    return { errs, cfg: { everyone: cleanList(input.everyone, 'Every report'), restaurants } };
-  }
-
-  function resolveRecipients(cfg, restaurantId) {
-    const teams = restaurantId === ALL_ID
-      ? cfg.restaurants.flatMap((x) => x.team)
-      : ((cfg.restaurants.find((x) => x.id === restaurantId) || {}).team || []);
-    const seen = new Set(), out = [];
-    for (const p of [...cfg.everyone, ...teams]) {
-      const email = (p.email || '').trim();
-      if (!EMAIL_RE.test(email) || seen.has(email.toLowerCase())) continue;
-      seen.add(email.toLowerCase());
-      out.push({ name: p.name || email, email });
-    }
-    return out;
-  }
-
-  async function putPhoto(kv, id, request) {
-    if (await kv.get(photoKey(id), 'arrayBuffer')) return { ok: true, id, existed: true }; // retry of a photo that already landed
-    const contentType = (request.headers.get('Content-Type') || 'image/jpeg').split(';')[0].trim();
-    if (!/^image\//.test(contentType)) throw new HttpError('Photos only', 415);
-    const buf = await request.arrayBuffer();
-    if (!buf.byteLength) throw new HttpError('Empty photo', 400);
-    if (buf.byteLength > MAX_PHOTO_BYTES) throw new HttpError('Photo too large', 413);
-    await kv.put(photoKey(id), buf, { metadata: { contentType, size: buf.byteLength, uploadedAt: new Date().toISOString() } });
-    return { ok: true, id };
-  }
-
-  // Reply-To: Vic (MAIL_REPLY_TO) first, then every recipient, so a plain Reply
-  // reaches the whole team. REPLY_TO_ALL="false" limits it to MAIL_REPLY_TO.
-  function replyTo(env, people) {
-    const owner = String(env.MAIL_REPLY_TO || '').split(',').map((e) => e.trim()).filter((e) => EMAIL_RE.test(e));
-    const all = String(env.REPLY_TO_ALL || 'true').toLowerCase() !== 'false';
-    const seen = new Set(), out = [];
-    for (const e of [...owner, ...(all ? people.map((p) => p.email) : [])]) {
-      if (seen.has(e.toLowerCase())) continue;
-      seen.add(e.toLowerCase()); out.push(e);
-    }
-    return out.length ? out.slice(0, 50) : undefined;
-  }
-
-  function toBase64(buf) {
-    const bytes = new Uint8Array(buf);
-    let bin = '';
-    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
-    return btoa(bin);
-  }
-
-  async function sendReport(kv, env, body, origin) {
-    if (!body || !body.clientId || !body.restaurantId || !Array.isArray(body.sections) || !body.sections.length) {
-      throw new HttpError('Report is missing a restaurant or notes', 400);
-    }
-    const clientId = String(body.clientId).replace(/[^\w-]/g, '').slice(0, 64);
-    if (!clientId) throw new HttpError('Bad report id', 400);
-
-    // A retry after a successful send returns the same result and never emails twice.
-    const prior = await kv.get(reportKey(clientId), 'json');
-    if (prior && prior.result && prior.result.emailed) return prior.result;
-
-    const cfg = await getRecipients(kv);
-    const people = resolveRecipients(cfg, body.restaurantId);
-    if (!people.length) throw new HttpError('No recipients on file for that restaurant', 400);
-
-    const restaurantName = body.restaurantId === ALL_ID
-      ? 'All restaurants'
-      : ((cfg.restaurants.find((x) => x.id === body.restaurantId) || {}).name || String(body.restaurantName || body.restaurantId));
-    const report = {
-      clientId, restaurantId: String(body.restaurantId), restaurantName,
-      date: validDate(body.date, easternServiceDate()),
-      dateLabel: String(body.dateLabel || '').slice(0, 60),
-      timeLabel: String(body.timeLabel || '').slice(0, 20),
-      submittedAt: body.submittedAt || new Date().toISOString(),
-      author: String(body.author || 'Victor Rallo').slice(0, 80),
-      sections: body.sections.slice(0, 20).map((s) => ({
-        key: String(s.key || '').slice(0, 40),
-        label: String(s.label || s.key || '').slice(0, 80),
-        text: String(s.text || '').trim().slice(0, 8000),
-        photos: (Array.isArray(s.photos) ? s.photos : []).map(String).filter((id) => PHOTO_ID_RE.test(id)).slice(0, 10),
-      })),
-    };
-
-    // Keep only photos that actually reached KV; hold their bytes for attachments.
-    const photoData = {};
-    for (const s of report.sections) {
-      const keep = [];
-      for (const id of s.photos) {
-        const { value, metadata } = await kv.getWithMetadata(photoKey(id), 'arrayBuffer');
-        if (value) { keep.push(id); photoData[id] = { value, contentType: (metadata && metadata.contentType) || 'image/jpeg' }; }
-      }
-      s.photos = keep;
-    }
-    report.sections = report.sections.filter((s) => s.text || s.photos.length);
-    if (!report.sections.length) throw new HttpError('Report has no notes or photos', 400);
-
-    const photoUrl = (id) => `${origin}${PREFIX}/photo/${id}`;
-    const photoCount = report.sections.reduce((n, s) => n + s.photos.length, 0);
-    const subject = `Walk-Through Notes · ${restaurantName} · ${report.dateLabel || report.date}`;
-    const text = renderText(report, photoUrl);
-
-    let emailed = false, emailSkipped = false, error = null;
-    if (env.RESEND_API_KEY) {
-      const attachments = [];
-      let total = 0;
-      for (const s of report.sections) {
-        const base = s.label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'photo';
-        s.photos.forEach((id, i) => {
-          const d = photoData[id];
-          if (!d || total + d.value.byteLength > MAX_ATTACH_BYTES) return; // over the cap: the inline link still works
-          total += d.value.byteLength;
-          attachments.push({ filename: `${base}-${i + 1}.jpg`, content: toBase64(d.value) });
-        });
-      }
-      try {
-        const res = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            from: env.MAIL_FROM || DEFAULT_FROM,
-            to: people.map((p) => p.email),
-            reply_to: replyTo(env, people),
-            subject, text, html: renderHtml(report, photoUrl),
-            attachments: attachments.length ? attachments : undefined,
-          }),
-        });
-        if (res.ok) emailed = true;
-        else error = (await res.text()).slice(0, 200) || `Email service error ${res.status}`;
-      } catch (e) { error = `Email service unreachable: ${e.message}`; }
-    } else {
-      emailSkipped = true; // no provider configured: the phone sends it from Vic's mail app
-    }
-
-    const result = {
-      ok: true, emailed, emailSkipped, error,
-      recipients: people.map((p) => p.name), to: people.map((p) => p.email),
-      subject, summaryText: text,
-    };
-    await kv.put(reportKey(clientId), JSON.stringify({ report, result, savedAt: new Date().toISOString() }));
-
-    const index = (await kv.get(INDEX_KEY, 'json')) || [];
-    const entry = {
-      clientId, restaurantId: report.restaurantId, restaurantName,
-      date: report.date, dateLabel: report.dateLabel, timeLabel: report.timeLabel,
-      sections: report.sections.map((s) => s.key), photoCount, recipients: people.length, emailed,
-    };
-    const at = index.findIndex((x) => x.clientId === clientId);
-    if (at >= 0) index[at] = entry; else index.unshift(entry);
-    await kv.put(INDEX_KEY, JSON.stringify(index.slice(0, 1000)));
-    return result;
-  }
-
-  // ── FOLLOW-UPS ─────────────────────────────────────────
-  // KV audit:followups:<restaurantId> = { items: [...], seeded: [clientId, ...] }
-  // Items are built from stored reports the first time they're seen (so reports
-  // sent before this existed are picked up too). A restaurant's list also takes
-  // in "all restaurants" reports; closing one there doesn't close it elsewhere.
-  const followupKey = (rid) => `audit:followups:${rid}`;
-  const FOLLOWUP_LOOKBACK_DAYS = 90;   // older reports are not pulled in
-  const CLOSED_SHOWN_DAYS = 30;        // closed items stay in the list this long
-
-  function cleanRid(s) {
-    const rid = String(s || 'rpi').replace(/[^\w-]/g, '').slice(0, 40);
-    if (!rid) throw new HttpError('restaurantId required', 400);
-    return rid;
-  }
-
-  async function seedFollowups(kv, rid) {
-    const store = (await kv.get(followupKey(rid), 'json')) || { items: [], seeded: [] };
-    if (!Array.isArray(store.items)) store.items = [];
-    if (!Array.isArray(store.seeded)) store.seeded = [];
-    const seen = new Set(store.seeded);
-    const oldest = shiftDateBy(easternServiceDate(), -FOLLOWUP_LOOKBACK_DAYS);
-    const index = (await kv.get(INDEX_KEY, 'json')) || [];
-    const fresh = index.filter((e) => (e.restaurantId === rid || e.restaurantId === ALL_ID)
-      && !seen.has(e.clientId) && (e.date || '') >= oldest);
-    if (!fresh.length) return store;
-
-    for (const e of fresh.reverse()) {               // oldest first
-      const rec = await kv.get(reportKey(e.clientId), 'json');
-      store.seeded.push(e.clientId);
-      if (!rec || !rec.report) continue;
-      const rep = rec.report;
-      rep.sections.forEach((s, i) => {
-        if (!s.text && !(s.photos || []).length) return;
-        store.items.push({
-          id: `${rep.clientId}-${i}`, clientId: rep.clientId,
-          fromAll: rep.restaurantId === ALL_ID,
-          reportDate: rep.date, dateLabel: rep.dateLabel, author: rep.author,
-          label: s.label, text: s.text, photos: s.photos || [],
-          status: 'open', createdAt: rep.submittedAt || rec.savedAt,
-        });
-      });
-    }
-    store.seeded = store.seeded.slice(-2000);
-    await kv.put(followupKey(rid), JSON.stringify(store));
-    return store;
-  }
-
-  function withPhotoUrls(item, origin) {
-    return { ...item, photoUrls: (item.photos || []).map((id) => `${origin}${PREFIX}/photo/${id}`) };
-  }
-
-  async function listFollowups(kv, rid, dateParam, origin) {
-    const today = easternServiceDate();
-    const asOf = validDate(dateParam, today);
-    const cutoff = shiftDateBy(asOf, -CLOSED_SHOWN_DAYS);
-    const store = await seedFollowups(kv, rid);
-    const items = store.items
-      .filter((it) => it.status === 'open' || (it.closedDate || '') >= cutoff)
-      .sort((a, b) => (a.status === b.status
-        ? (a.status === 'open'
-          ? (a.reportDate || '').localeCompare(b.reportDate || '')        // open: oldest first
-          : (b.closedAt || '').localeCompare(a.closedAt || ''))           // closed: newest first
-        : (a.status === 'open' ? -1 : 1)))
-      .map((it) => withPhotoUrls(it, origin));
-    return { restaurantId: rid, today, asOf, items };
-  }
-
-  // body: { action: 'close' | 'reopen', by, fix, date }
-  async function updateFollowup(kv, rid, id, body, origin) {
-    const store = await seedFollowups(kv, rid);
-    const item = store.items.find((x) => x.id === id);
-    if (!item) throw new HttpError('Follow-up not found', 404);
-    const action = String((body && body.action) || '');
-    if (action === 'close') {
-      item.status = 'closed';
-      item.closedAt = new Date().toISOString();
-      item.closedDate = validDate(body.date, easternServiceDate());
-      item.closedBy = String(body.by || 'Manager').trim().slice(0, 80);
-      item.fix = String(body.fix || '').trim().slice(0, 500);
-    } else if (action === 'reopen') {
-      item.status = 'open';
-      delete item.closedAt; delete item.closedDate; delete item.closedBy; delete item.fix;
-      item.reopenedAt = new Date().toISOString();
-    } else {
-      throw new HttpError('action must be close or reopen', 400);
-    }
-    await kv.put(followupKey(rid), JSON.stringify(store));
-    return { ok: true, item: withPhotoUrls(item, origin) };
-  }
-
-  function renderText(r, photoUrl) {
-    const lines = [
-      `WALK-THROUGH NOTES: ${r.restaurantName.toUpperCase()}`,
-      `${r.dateLabel || r.date}${r.timeLabel ? ` · ${r.timeLabel}` : ''}`,
-      `From ${r.author}`, '',
-    ];
-    for (const s of r.sections) {
-      lines.push(s.label.toUpperCase());
-      if (s.text) lines.push(s.text);
-      (s.photos || []).forEach((id) => lines.push(`Photo: ${photoUrl(id)}`));
-      lines.push('');
-    }
-    return lines.join('\n').trim();
-  }
-
-  // Same template as emailHtml() in owner-notes.html (the in-app preview). Keep them in sync.
-  function renderHtml(r, photoUrl) {
-    const sections = r.sections.map((s) => {
-      const ph = (s.photos || []).map(photoUrl);
-      return `
-        <tr><td style="padding:18px 0 6px;font:600 11px/1 Arial,sans-serif;letter-spacing:.2em;text-transform:uppercase;color:#9b7a36">${esc(s.label)}</td></tr>
-        <tr><td style="padding:0 0 14px;border-bottom:1px solid #e5dccb">
-          ${s.text ? `<div style="font:16px/1.55 Georgia,serif;color:#1e1b16;white-space:pre-wrap">${esc(s.text)}</div>` : ''}
-          ${ph.length ? `<div style="margin-top:${s.text ? 10 : 0}px">${ph.map((u) => `<a href="${esc(u)}" target="_blank" style="display:inline-block;margin:0 8px 8px 0"><img src="${esc(u)}" width="160" height="120" alt="Photo" style="display:block;width:160px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #e5dccb"></a>`).join('')}</div>` : ''}
-        </td></tr>`;
-    }).join('');
-    return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#f7f2e8">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f2e8"><tr><td align="center" style="padding:28px 14px">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fffcf6;border:1px solid #e5dccb;border-radius:12px">
-        <tr><td style="padding:28px 26px 8px">
-          <div style="font:600 11px/1 Arial,sans-serif;letter-spacing:.28em;color:#9b7a36">RALLO HOSPITALITY · OWNER NOTES</div>
-          <div style="font:400 26px/1.25 'Playfair Display',Georgia,serif;color:#1e1b16;margin-top:12px">${esc(r.restaurantName)}</div>
-          <div style="font:14px/1.5 Arial,sans-serif;color:#7a705f;margin-top:4px">${esc(r.dateLabel || r.date)}${r.timeLabel ? ` · ${esc(r.timeLabel)}` : ''} · from ${esc(r.author)}</div>
-        </td></tr>
-        <tr><td style="padding:0 26px 26px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${sections}</table></td></tr>
-      </table>
-    </td></tr></table></body></html>`;
-  }
-
-  return { handle };
-})();
-
-// ════════════════════════════════════════════════════════════
-// CHECKLISTS  (bar.html, busser.html, and future station checklists)
-//   POST /checklist                         → log one submission
-//   GET  /checklist?restaurantId=rpi&date=  → day's submissions, open
-//                                             items, and any expected
-//                                             checklist not yet submitted
-//                                             that day (per tool)
-//   POST /checklist/open/:itemId?restaurantId=rpi
-//        { action:'close'|'reopen', by, note, date }
-// Feeds the rollup like walk-through follow-ups: an INCOMPLETE submit
-// (completed < total) becomes an open item; a MISSING expected checklist
-// shows as "notSubmitted" for the date. Same KV namespace (RPI_SHIFTS).
-// KV: chk:day:<rid>:<date> (submissions), chk:open:<rid> ({items})
-// ════════════════════════════════════════════════════════════
-
-async function handleChecklist(request, env) { return ChecklistRoutes.handle(request, env); }
-
-const ChecklistRoutes = (() => {
-  const KV = 'RPI_SHIFTS';
-  const PREFIX = '/checklist';
-  const DAY_TTL = 60 * 60 * 24 * 120;          // keep 120 days, matches shifts
-  const CLOSED_SHOWN_DAYS = 30;
-
-  // Which checklists each tool is expected to complete each service day, per
-  // restaurant. A tool+checklist listed here with no COMPLETE submission for
-  // the date surfaces as notSubmitted. The three bar "cuts" roll up under the
-  // closing checklist, so only opening/closing are expected.
-  // TODO: tune per day of week / per restaurant as the suite grows.
-  const EXPECTED = {
-    rpi: {
-      'bar-checklist':    ['opening', 'closing'],
-      'busser-checklist': ['opening', 'closing'],
-    },
-  };
-
-  const CORS = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Pin',
-  };
-  class HttpError extends Error { constructor(m, s) { super(m); this.status = s; } }
-  const json = (d, s = 200) => new Response(JSON.stringify(d), { status: s, headers: { 'Content-Type': 'application/json', ...CORS } });
-  const readJSON = (req) => req.json().catch(() => { throw new HttpError('Invalid JSON', 400); });
-  const cleanRid = (s) => { const r = String(s || 'rpi').replace(/[^\w-]/g, '').slice(0, 40); if (!r) throw new HttpError('restaurantId required', 400); return r; };
-  const dayKey = (rid, d) => `chk:day:${rid}:${d}`;
-  const openKey = (rid) => `chk:open:${rid}`;
-
-  async function handle(request, env) {
-    const url = new URL(request.url);
-    if (url.pathname !== PREFIX && !url.pathname.startsWith(PREFIX + '/')) return null;
-    if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
-    try {
-      const kv = env[KV];
-      if (!kv) throw new HttpError(`KV binding "${KV}" not found`, 500);
-      const path = url.pathname.slice(PREFIX.length) || '/';
-      const m = request.method;
-      let r;
-
-      if (m === 'POST' && path === '/') return json(await logSubmission(kv, await readJSON(request)));
-
-      if (m === 'GET' && path === '/') {
-        const rid = cleanRid(url.searchParams.get('restaurantId'));
-        return json(await listDay(kv, rid, url.searchParams.get('date')));
-      }
-
-      if (m === 'POST' && (r = path.match(/^\/open\/([\w.:-]{1,120})$/))) {
-        const rid = cleanRid(url.searchParams.get('restaurantId'));
-        return json(await updateOpen(kv, rid, r[1], await readJSON(request)));
-      }
-
-      throw new HttpError('Not found', 404);
-    } catch (e) {
-      if (!(e instanceof HttpError)) console.error('checklist route error', e);
-      return json({ error: e.message || 'Server error' }, e.status || 500);
-    }
-  }
-
-  async function logSubmission(kv, body) {
-    if (!body || !body.checklist) throw new HttpError('checklist required', 400);
-    const rid = cleanRid(body.restaurant || body.restaurantId || 'rpi');
-    const date = validDate(body.date, easternServiceDate());
-    const total = Math.max(parseInt(body.total, 10) || 0, 0);
-    const completed = Math.min(Math.max(parseInt(body.completed, 10) || 0, 0), total || 999);
-    const sub = {
-      id: 'chk_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-      tool: String(body.tool || 'checklist').slice(0, 40),
-      checklist: String(body.checklist).slice(0, 40),
-      initials: String(body.initials || '').toUpperCase().slice(0, 6),
-      completed, total,
-      complete: total > 0 && completed >= total,
-      ts: body.ts || new Date().toISOString(),
-    };
-
-    const key = dayKey(rid, date);
-    const day = (await kv.get(key, 'json')) || [];
-    day.push(sub);
-    await kv.put(key, JSON.stringify(day), { expirationTtl: DAY_TTL });
-
-    // Incomplete submit → surfaced open item for management.
-    if (!sub.complete) {
-      const store = (await kv.get(openKey(rid), 'json')) || { items: [] };
-      if (!Array.isArray(store.items)) store.items = [];
-      store.items.push({
-        id: sub.id, tool: sub.tool, checklist: sub.checklist, initials: sub.initials,
-        completed, total, date, createdAt: sub.ts, status: 'open',
-        reason: 'incomplete',
-      });
-      await kv.put(openKey(rid), JSON.stringify(store));
-    }
-    return { ok: true, submission: sub };
-  }
-
-  async function listDay(kv, rid, dateParam) {
-    const today = easternServiceDate();
-    const date = validDate(dateParam, today);
-    const submissions = (await kv.get(dayKey(rid, date), 'json')) || [];
-
-    // Expected-but-missing for the date, per tool.
-    const expected = EXPECTED[rid] || {};
-    const notSubmitted = [];
-    for (const tool of Object.keys(expected)) {
-      const done = new Set(submissions.filter((s) => s.tool === tool && s.complete).map((s) => s.checklist));
-      for (const c of expected[tool]) if (!done.has(c)) notSubmitted.push({ tool, checklist: c });
-    }
-
-    const store = (await kv.get(openKey(rid), 'json')) || { items: [] };
-    const cutoff = shiftDateBy(date, -CLOSED_SHOWN_DAYS);
-    const open = (store.items || [])
-      .filter((it) => it.status === 'open' || (it.closedDate || '') >= cutoff)
-      .sort((a, b) => (a.status === b.status
-        ? (a.date || '').localeCompare(b.date || '')
-        : (a.status === 'open' ? -1 : 1)));
-
-    return { restaurantId: rid, today, date, submissions, notSubmitted, open };
-  }
-
-  async function updateOpen(kv, rid, id, body) {
-    const store = (await kv.get(openKey(rid), 'json')) || { items: [] };
-    const item = (store.items || []).find((x) => x.id === id);
-    if (!item) throw new HttpError('Open item not found', 404);
-    const action = String((body && body.action) || '');
-    if (action === 'close') {
-      item.status = 'closed';
-      item.closedAt = new Date().toISOString();
-      item.closedDate = validDate(body.date, easternServiceDate());
-      item.closedBy = String(body.by || 'Manager').trim().slice(0, 80);
-      item.note = String(body.note || '').trim().slice(0, 500);
-    } else if (action === 'reopen') {
-      item.status = 'open';
-      delete item.closedAt; delete item.closedDate; delete item.closedBy; delete item.note;
-    } else throw new HttpError('action must be close or reopen', 400);
-    await kv.put(openKey(rid), JSON.stringify(store));
-    return { ok: true, item };
-  }
-
-  return { handle };
-})();
-
-// ════════════════════════════════════════════════════════════
-// GUEST RATINGS  (ratings.html — in-house Resy-style rating)
-//   POST /rating          → log one rating. 5★ is logged (guest is sent
-//                           to Google client-side); under 5 keeps the
-//                           private feedback for the operator.
-//   GET  /rating?restaurantId=rpi&date=   → that day's ratings
-//   GET  /rating/summary?restaurantId=rpi&days=30
-//                           → count, average, star breakdown, recent
-//                             private feedback (an input to the rollup)
-// KV: rate:day:<rid>:<date>
-// ════════════════════════════════════════════════════════════
-
-async function handleRating(request, env) { return RatingRoutes.handle(request, env); }
-
-const RatingRoutes = (() => {
-  const KV = 'RPI_SHIFTS';
-  const PREFIX = '/rating';
-  const DAY_TTL = 60 * 60 * 24 * 400;          // keep ratings ~13 months
-  const CORS = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  };
-  class HttpError extends Error { constructor(m, s) { super(m); this.status = s; } }
-  const json = (d, s = 200) => new Response(JSON.stringify(d), { status: s, headers: { 'Content-Type': 'application/json', ...CORS } });
-  const readJSON = (req) => req.json().catch(() => { throw new HttpError('Invalid JSON', 400); });
-  const cleanRid = (s) => { const r = String(s || 'rpi').replace(/[^\w-]/g, '').slice(0, 40); if (!r) throw new HttpError('restaurantId required', 400); return r; };
-  const dayKey = (rid, d) => `rate:day:${rid}:${d}`;
-
-  async function handle(request, env) {
-    const url = new URL(request.url);
-    if (url.pathname !== PREFIX && !url.pathname.startsWith(PREFIX + '/')) return null;
-    if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
-    try {
-      const kv = env[KV];
-      if (!kv) throw new HttpError(`KV binding "${KV}" not found`, 500);
-      const path = url.pathname.slice(PREFIX.length) || '/';
-      const m = request.method;
-
-      if (m === 'POST' && path === '/') return json(await logRating(kv, await readJSON(request)));
-
-      if (m === 'GET' && path === '/') {
-        const rid = cleanRid(url.searchParams.get('restaurantId'));
-        const date = validDate(url.searchParams.get('date'), easternServiceDate());
-        return json({ restaurantId: rid, date, ratings: (await kv.get(dayKey(rid, date), 'json')) || [] });
-      }
-
-      if (m === 'GET' && path === '/summary') {
-        const rid = cleanRid(url.searchParams.get('restaurantId'));
-        const days = Math.min(Math.max(parseInt(url.searchParams.get('days') || '30', 10) || 30, 1), 120);
-        return json(await summary(kv, rid, days));
-      }
-
-      throw new HttpError('Not found', 404);
-    } catch (e) {
-      if (!(e instanceof HttpError)) console.error('rating route error', e);
-      return json({ error: e.message || 'Server error' }, e.status || 500);
-    }
-  }
-
-  async function logRating(kv, body) {
-    const rid = cleanRid(body && (body.restaurant || body.restaurantId) || 'rpi');
-    const stars = parseInt(body && body.stars, 10);
-    if (!(stars >= 1 && stars <= 5)) throw new HttpError('stars must be 1–5', 400);
-    const date = validDate(body.date, easternServiceDate());
-    const rating = {
-      id: 'rate_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-      stars,
-      sentToGoogle: stars === 5,                 // guest is offered Google at 5★ (client-side)
-      feedback: stars < 5 ? String(body.feedback || '').trim().slice(0, 2000) : '',
-      contact: String(body.contact || '').trim().slice(0, 200),  // optional, only if guest leaves it
-      ts: body.ts || new Date().toISOString(),
-    };
-    const key = dayKey(rid, date);
-    const day = (await kv.get(key, 'json')) || [];
-    day.push(rating);
-    await kv.put(key, JSON.stringify(day), { expirationTtl: DAY_TTL });
-    return { ok: true, id: rating.id, stars };
-  }
-
-  async function summary(kv, rid, days) {
-    const today = easternServiceDate();
-    let count = 0, sum = 0;
-    const breakdown = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-    const recentFeedback = [];
-    for (let i = 0; i < days; i++) {
-      const d = shiftDateBy(today, -i);
-      const day = (await kv.get(dayKey(rid, d), 'json')) || [];
-      for (const r of day) {
-        count++; sum += r.stars; breakdown[r.stars] = (breakdown[r.stars] || 0) + 1;
-        if (r.stars < 5 && r.feedback && recentFeedback.length < 50) {
-          recentFeedback.push({ date: d, stars: r.stars, feedback: r.feedback, contact: r.contact || '' });
-        }
-      }
-    }
-    return {
-      restaurantId: rid, windowDays: days, today,
-      count, average: count ? Math.round(sum / count * 100) / 100 : 0,
-      breakdown, recentFeedback,
-    };
-  }
-
-  return { handle };
-})();
-// ════════════════════════════════════════════════════════════
-// ACCOUNTS + SERVER WEEKLY QUIZ  (server-weekly.html)       [2026-11]
-//
-// Shared staff accounts for the suite + the weekly training quiz, on the
-// same RPI_SHIFTS KV. Servers set their own password; managers see a
-// completion rollup; automated emails nudge anyone who has not taken the
-// current ISO-week quiz.
-//
-//   AUTH
-//     POST /auth/signup   { name, email, password, code }  -> { token, user }
-//     POST /auth/login    { email, password }              -> { token, user } (+cookie)
-//     POST /auth/logout                                    -> ends the session
-//     GET  /auth/me                                        -> { user }
-//     POST /auth/password { current, new }                 -> change own password
-//     POST /auth/signup-code { code }        (manager)     -> set the staff signup code
-//     POST /auth/reset    { email }          (manager)     -> issue a reset link/email
-//     POST /auth/reset/confirm { token, password }         -> set a new password
-//     GET  /auth/roster                      (manager)     -> all accounts
-//
-//   QUIZ
-//     POST /quiz/submit   { week?, answers?, score, correct, total } -> record
-//     GET  /quiz/mine                                      -> own history
-//     GET  /quiz/content?date=                             -> tonight's focus + live Qs
-//     GET  /quiz/compliance?week=            (manager)     -> who's done / outstanding
-//     GET  /quiz/remind/run                  (manager)     -> fire reminders now
-//     GET  /quiz/remind/preview              (manager)     -> dry run (no email)
-//
-// Auth model: login returns an opaque token. The quiz page stores it and
-// sends `Authorization: Bearer <token>` on every call (reliable cross-origin).
-// A same-origin HttpOnly cookie is also set as a convenience. WRITES require
-// the Bearer header, so an ambient cookie alone can never trigger one (CSRF).
-//
-// KV keys (all in RPI_SHIFTS):
-//   qz:user:<emailLower>        account record
-//   qz:sess:<sha256(token)>     session          (TTL 30d)
-//   qz:reset:<sha256(token)>    reset token      (TTL 1h)
-//   qz:result:<emailLower>:<YYYY-Www>   one week's quiz result
-//   qz:signupcode               sha256 of the staff signup code
-//   qz:remindlog:<YYYY-Www>     { emailLower: sentCount } reminder cap ledger
-//   qz:rl:<ip>:<yyyymmddhh>     per-IP login attempt counter (TTL 1h)
-//
-// Env (vars unless noted):
-//   RESEND_API_KEY (secret, already set) · QUIZ_MAIL_FROM (else MAIL_FROM)
-//   QUIZ_URL           e.g. https://tablestandards.com/server-weekly.html
-//   MANAGER_EMAILS     comma list; these addresses get the manager role + digest
-//   QUIZ_SIGNUP_CODE   fallback staff code until a manager sets one in-app
-// ════════════════════════════════════════════════════════════
-
-async function handleAccount(request, env) { return AccountRoutes.handle(request, env); }
-async function runQuizReminders(env) { return AccountRoutes.runReminders(env, { dry: false }); }
-
-const AccountRoutes = (() => {
-  const SESS_TTL  = 60 * 60 * 24 * 30;   // 30 days
-  const RESET_TTL = 60 * 60;             // 1 hour
-  const RESULT_TTL = 60 * 60 * 24 * 400; // ~13 months
-  const HASH_ITERS = 600000;             // PBKDF2-HMAC-SHA256 (OWASP 2023); lower if CPU-limited
-  const MIN_PW = 12;
-  const MAX_LOGIN_FAILS = 5;
-  const LOCK_MINUTES = 15;
-  const IP_HOURLY_LIMIT = 30;
-  const REMIND_CAP = 3;                  // emails per server per week
-
-  // Plats du jour by JS getDay() (0 = Sunday) — mirrors rpi.html.
-  const DAY_SPECIALS = { 0:'Lobster Frites',1:'Poulet en Croûte',2:'Crispy Fish Frites',3:'USDA Prime French Dip',4:'Dover Sole',5:'Bouillabaisse Provençale',6:'Prime Short Rib Bourguignon' };
-  const COMMON_SPECIALS = ['Poulet en Croûte','Crispy Fish Frites','USDA Prime French Dip','Dover Sole','Bouillabaisse Provençale','Prime Short Rib Bourguignon','Lobster Frites','Steak Tartare'];
-
-  // Fixed standards bank for server-side scoring. Leave empty to record the
-  // score the client reports (flagged clientScored:true). Paste the bottle-green
-  // quiz bank here as { id, correct } to grade on the server and ignore the
-  // client's number. `correct` is the correct choice's stable id/index.
-  const QUESTION_BANK = [];
-
-  class HttpError extends Error { constructor(m, s) { super(m); this.status = s; } }
-
-  function cors(request) {
-    const origin = request.headers.get('Origin') || '*';
-    return {
-      'Access-Control-Allow-Origin': origin,
-      'Vary': 'Origin',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'Access-Control-Allow-Credentials': 'true',
-    };
-  }
-  const jc = (c, data, status = 200, extra = {}) =>
-    new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json', ...c, ...extra } });
-  const readJSON = (request) => request.json().catch(() => { throw new HttpError('Invalid JSON', 400); });
-
-  // ── crypto helpers ──────────────────────────────────────
-  const enc = new TextEncoder();
-  function b64(buf) { const u = new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i++) s += String.fromCharCode(u[i]); return btoa(s); }
-  function unb64(str) { const bin = atob(str); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
-  async function digestHex(algo, str) { const d = await crypto.subtle.digest(algo, enc.encode(str)); return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join(''); }
-  const sha256hex = (s) => digestHex('SHA-256', s);
-  function randToken(n = 32) { const u = new Uint8Array(n); crypto.getRandomValues(u); return [...u].map(b => b.toString(16).padStart(2, '0')).join(''); }
-  function ctEq(a, b) { if (a.length !== b.length) return false; let r = 0; for (let i = 0; i < a.length; i++) r |= a[i] ^ b[i]; return r === 0; }
-  function strEq(a, b) { return ctEq(enc.encode(String(a)), enc.encode(String(b))); }
-
-  async function pbkdf2(password, saltBytes, iters) {
-    const key = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
-    const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: saltBytes, iterations: iters, hash: 'SHA-256' }, key, 256);
-    return new Uint8Array(bits);
-  }
-  async function hashPassword(password) {
-    const salt = new Uint8Array(16); crypto.getRandomValues(salt);
-    const hash = await pbkdf2(password, salt, HASH_ITERS);
-    return { algo: 'pbkdf2-sha256', iterations: HASH_ITERS, salt: b64(salt), hash: b64(hash) };
-  }
-  async function verifyPassword(password, rec) {
-    if (!rec || !rec.hash || !rec.salt) return false;
-    const got = await pbkdf2(password, unb64(rec.salt), rec.iterations || HASH_ITERS);
-    return ctEq(got, unb64(rec.hash));
-  }
-
-  async function pwned(password) {
-    try {
-      const h = (await digestHex('SHA-1', password)).toUpperCase();
-      const r = await fetch('https://api.pwnedpasswords.com/range/' + h.slice(0, 5), { headers: { 'Add-Padding': 'true' } });
-      if (!r.ok) return false;                              // fail open on availability
-      const suffix = h.slice(5);
-      return (await r.text()).split('\n').some(line => line.split(':')[0].trim() === suffix);
-    } catch (e) { return false; }
-  }
-
-  // ── small utilities ─────────────────────────────────────
-  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const normEmail = (e) => String(e || '').trim().toLowerCase();
-  const userKey = (email) => 'qz:user:' + normEmail(email);
-  const resultKey = (email, week) => 'qz:result:' + normEmail(email) + ':' + week;
-  const managerEmails = (env) => String(env.MANAGER_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
-
-  function isoWeekKey(dateStr) {
-    const [y, m, d] = dateStr.split('-').map(Number);
-    const dt = new Date(Date.UTC(y, m - 1, d));
-    const day = dt.getUTCDay() || 7;
-    dt.setUTCDate(dt.getUTCDate() + 4 - day);
-    const ys = new Date(Date.UTC(dt.getUTCFullYear(), 0, 1));
-    const wk = Math.ceil(((dt - ys) / 86400000 + 1) / 7);
-    return dt.getUTCFullYear() + '-W' + String(wk).padStart(2, '0');
-  }
-  function getDayOf(dateStr) { const [y, m, d] = dateStr.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d)).getUTCDay(); }
-  const publicUser = (u) => ({ name: u.name, email: u.email, role: u.role, lastLoginAt: u.lastLoginAt || null, createdAt: u.createdAt });
-
-  // ── sessions ────────────────────────────────────────────
-  async function createSession(env, emailLower) {
-    const token = randToken();
-    const now = Date.now();
-    await env.RPI_SHIFTS.put('qz:sess:' + await sha256hex(token),
-      JSON.stringify({ email: emailLower, createdAt: new Date(now).toISOString(), expiresAt: new Date(now + SESS_TTL * 1000).toISOString() }),
-      { expirationTtl: SESS_TTL });
-    return token;
-  }
-  function bearer(request) { const h = request.headers.get('Authorization') || ''; const m = h.match(/^Bearer\s+(.+)$/i); return m ? m[1].trim() : null; }
-  function cookieToken(request) { const c = request.headers.get('Cookie') || ''; const m = c.match(/(?:^|;\s*)rpi_sess=([^;]+)/); return m ? decodeURIComponent(m[1]) : null; }
-
-  // write=true: only the Bearer header is accepted (CSRF-safe).
-  async function requireUser(request, env, { write = false } = {}) {
-    const token = bearer(request) || (write ? null : cookieToken(request));
-    if (!token) throw new HttpError('Sign in required', 401);
-    const sess = await env.RPI_SHIFTS.get('qz:sess:' + await sha256hex(token), 'json');
-    if (!sess || (sess.expiresAt && sess.expiresAt < new Date().toISOString())) throw new HttpError('Session expired', 401);
-    const u = await env.RPI_SHIFTS.get(userKey(sess.email), 'json');
-    if (!u) throw new HttpError('Account not found', 401);
-    return { user: u, token };
-  }
-  function requireManager(ctx) { if (ctx.user.role !== 'manager') throw new HttpError('Managers only', 403); return ctx; }
-
-  function sessionCookie(token) {
-    return `rpi_sess=${encodeURIComponent(token)}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${SESS_TTL}`;
-  }
-
-  async function codeOk(env, kv, code) {
-    if (!code) return false;
-    const stored = await kv.get('qz:signupcode');
-    if (stored) return (await sha256hex(code)) === stored;
-    if (env.QUIZ_SIGNUP_CODE) return strEq(code, env.QUIZ_SIGNUP_CODE);
-    return strEq(code, '9306'); // TESTING DEFAULT — remove before the floor uses this, or set QUIZ_SIGNUP_CODE / a manager code
-  }
-
-  async function listUsers(env, role) {
-    const out = []; let cursor;
-    do {
-      const page = await env.RPI_SHIFTS.list({ prefix: 'qz:user:', cursor });
-      for (const k of page.keys) { const u = await env.RPI_SHIFTS.get(k.name, 'json'); if (u && (!role || u.role === role)) out.push(u); }
-      cursor = page.list_complete ? null : page.cursor;
-    } while (cursor);
-    return out;
-  }
-
-  // ── router ──────────────────────────────────────────────
-  async function handle(request, env) {
-    const url = new URL(request.url), path = url.pathname;
-    const isAuth = path === '/auth' || path.startsWith('/auth/');
-    const isQuiz = path === '/quiz' || path.startsWith('/quiz/');
-    if (!isAuth && !isQuiz) return null;
-    const c = cors(request);
-    if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: c });
-
-    try {
-      const kv = env.RPI_SHIFTS;
-      if (!kv) throw new HttpError('KV binding RPI_SHIFTS missing', 500);
-      const m = request.method;
-
-      // ---------- AUTH ----------
-      if (m === 'POST' && path === '/auth/signup') {
-        const b = await readJSON(request);
-        const name = String(b.name || '').trim().slice(0, 80);
-        const email = normEmail(b.email);
-        const password = String(b.password || '');
-        if (!name) throw new HttpError('Name required', 400);
-        if (!EMAIL_RE.test(email)) throw new HttpError('A valid email is required', 400);
-        if (!await codeOk(env, kv, b.code)) throw new HttpError('That staff code is not right', 403);
-        if (password.length < MIN_PW) throw new HttpError('Use at least ' + MIN_PW + ' characters', 400);
-        if (await pwned(password)) throw new HttpError('That password has appeared in a breach — pick another', 400);
-        if (await kv.get(userKey(email))) throw new HttpError('An account with that email already exists', 409);
-        const role = managerEmails(env).includes(email) ? 'manager' : 'server';
-        const user = { name, email, role, ...await hashPassword(password), createdAt: new Date().toISOString(), lastLoginAt: null, failedAttempts: 0, lockedUntil: null };
-        await kv.put(userKey(email), JSON.stringify(user));
-        const token = await createSession(env, email);
-        return jc(c, { token, user: publicUser(user) }, 200, { 'Set-Cookie': sessionCookie(token) });
-      }
-
-      if (m === 'POST' && path === '/auth/login') {
-        const b = await readJSON(request);
-        const email = normEmail(b.email), password = String(b.password || '');
-        const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-        const ipKey = 'qz:rl:' + ip + ':' + new Date().toISOString().slice(0, 13).replace(/[-T:]/g, '');
-        const ipCount = parseInt(await kv.get(ipKey) || '0', 10);
-        if (ipCount >= IP_HOURLY_LIMIT) throw new HttpError('Too many attempts — try again later', 429);
-        await kv.put(ipKey, String(ipCount + 1), { expirationTtl: 3600 });
-
-        const u = await kv.get(userKey(email), 'json');
-        const fail = async () => { throw new HttpError('Email or password is incorrect', 401); }; // never reveal which
-        if (!u) { await fail(); }
-        if (u.lockedUntil && u.lockedUntil > new Date().toISOString()) throw new HttpError('Account temporarily locked — try again shortly', 423);
-        if (!await verifyPassword(password, u)) {
-          u.failedAttempts = (u.failedAttempts || 0) + 1;
-          if (u.failedAttempts >= MAX_LOGIN_FAILS) { u.lockedUntil = new Date(Date.now() + LOCK_MINUTES * 60000).toISOString(); u.failedAttempts = 0; }
-          await kv.put(userKey(email), JSON.stringify(u));
-          await fail();
-        }
-        u.failedAttempts = 0; u.lockedUntil = null; u.lastLoginAt = new Date().toISOString();
-        await kv.put(userKey(email), JSON.stringify(u));
-        const token = await createSession(env, email);
-        return jc(c, { token, user: publicUser(u) }, 200, { 'Set-Cookie': sessionCookie(token) });
-      }
-
-      if (m === 'POST' && path === '/auth/logout') {
-        const token = bearer(request) || cookieToken(request);
-        if (token) await kv.delete('qz:sess:' + await sha256hex(token));
-        return jc(c, { ok: true }, 200, { 'Set-Cookie': 'rpi_sess=; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=0' });
-      }
-
-      if (m === 'GET' && path === '/auth/me') {
-        const { user } = await requireUser(request, env);
-        return jc(c, { user: publicUser(user) });
-      }
-
-      if (m === 'POST' && path === '/auth/password') {
-        const { user } = await requireUser(request, env, { write: true });
-        const b = await readJSON(request);
-        if (!await verifyPassword(String(b.current || ''), user)) throw new HttpError('Current password is incorrect', 401);
-        const np = String(b.new || '');
-        if (np.length < MIN_PW) throw new HttpError('Use at least ' + MIN_PW + ' characters', 400);
-        if (await pwned(np)) throw new HttpError('That password has appeared in a breach — pick another', 400);
-        Object.assign(user, await hashPassword(np));
-        await kv.put(userKey(user.email), JSON.stringify(user));
-        return jc(c, { ok: true });
-      }
-
-      if (m === 'POST' && path === '/auth/signup-code') {
-        requireManager(await requireUser(request, env, { write: true }));
-        const b = await readJSON(request);
-        const code = String(b.code || '');
-        if (code.length < 4) throw new HttpError('Use a longer code', 400);
-        await kv.put('qz:signupcode', await sha256hex(code));
-        return jc(c, { ok: true });
-      }
-
-      if (m === 'POST' && path === '/auth/reset') {
-        requireManager(await requireUser(request, env, { write: true }));
-        const b = await readJSON(request);
-        const email = normEmail(b.email);
-        const u = await kv.get(userKey(email), 'json');
-        if (!u) return jc(c, { ok: true }); // don't reveal existence
-        const token = randToken();
-        await kv.put('qz:reset:' + await sha256hex(token), JSON.stringify({ email }), { expirationTtl: RESET_TTL });
-        const link = (env.QUIZ_URL || '') + '#reset=' + token;
-        if (env.RESEND_API_KEY && EMAIL_RE.test(email)) {
-          await sendEmail(env, email, 'Reset your RPI Server Weekly password',
-            `<p>A manager started a password reset for your River Pointe Inn account.</p>
-             <p><a href="${link}">Set a new password</a> (link expires in 1 hour).</p>
-             <p style="font:italic 15px Georgia,serif;color:#8a6d3b">Melius semper</p>`,
-            `Set a new password (expires in 1 hour): ${link}\n\nMelius semper`);
-        }
-        return jc(c, { ok: true, resetUrl: link }); // returned so a manager can hand it over directly too
-      }
-
-      if (m === 'POST' && path === '/auth/reset/confirm') {
-        const b = await readJSON(request);
-        const token = String(b.token || '');
-        const np = String(b.password || '');
-        const rk = 'qz:reset:' + await sha256hex(token);
-        const rec = await kv.get(rk, 'json');
-        if (!rec) throw new HttpError('That reset link is invalid or has expired', 400);
-        if (np.length < MIN_PW) throw new HttpError('Use at least ' + MIN_PW + ' characters', 400);
-        if (await pwned(np)) throw new HttpError('That password has appeared in a breach — pick another', 400);
-        const u = await kv.get(userKey(rec.email), 'json');
-        if (!u) throw new HttpError('Account not found', 404);
-        Object.assign(u, await hashPassword(np), { failedAttempts: 0, lockedUntil: null });
-        await kv.put(userKey(u.email), JSON.stringify(u));
-        await kv.delete(rk);
-        return jc(c, { ok: true });
-      }
-
-      if (m === 'GET' && path === '/auth/roster') {
-        requireManager(await requireUser(request, env));
-        const users = await listUsers(env);
-        return jc(c, { users: users.map(u => ({ ...publicUser(u), hasEmail: EMAIL_RE.test(u.email) })).sort((a, b) => a.name.localeCompare(b.name)) });
-      }
-
-      // ---------- QUIZ ----------
-      if (m === 'POST' && path === '/quiz/submit') {
-        const { user } = await requireUser(request, env, { write: true });
-        const b = await readJSON(request);
-        const week = /^\d{4}-W\d{2}$/.test(b.week || '') ? b.week : isoWeekKey(easternServiceDate());
-        const graded = grade(b.answers);
-        const score = graded ? graded.score : Math.min(Math.max(parseInt(b.score, 10) || 0, 0), 100);
-        const correct = graded ? graded.correct : Math.max(parseInt(b.correct, 10) || 0, 0);
-        const total = graded ? graded.total : Math.max(parseInt(b.total, 10) || 0, 0);
-        const key = resultKey(user.email, week);
-        const prev = await kv.get(key, 'json');
-        const now = new Date().toISOString();
-        const rec = {
-          email: user.email, name: user.name, week, score, correct, total,
-          clientScored: !graded,
-          best: Math.max(prev && prev.best || 0, score),
-          attempts: (prev && prev.attempts || 0) + 1,
-          firstAt: (prev && prev.firstAt) || now,
-          completedAt: now,
-          answers: Array.isArray(b.answers) ? b.answers.slice(0, 100) : undefined,
-        };
-        await kv.put(key, JSON.stringify(rec), { expirationTtl: RESULT_TTL });
-        return jc(c, { ok: true, result: { week, score, correct, total, best: rec.best, attempts: rec.attempts } });
-      }
-
-      if (m === 'GET' && path === '/quiz/mine') {
-        const { user } = await requireUser(request, env);
-        const out = []; let cursor;
-        const prefix = 'qz:result:' + user.email + ':';
-        do {
-          const page = await kv.list({ prefix, cursor });
-          for (const k of page.keys) { const r = await kv.get(k.name, 'json'); if (r) out.push({ week: r.week, score: r.score, best: r.best, attempts: r.attempts, completedAt: r.completedAt }); }
-          cursor = page.list_complete ? null : page.cursor;
-        } while (cursor);
-        out.sort((a, b) => (b.week || '').localeCompare(a.week || ''));
-        return jc(c, { history: out });
-      }
-
-      if (m === 'GET' && path === '/quiz/content') {
-        await requireUser(request, env);
-        const date = /^\d{4}-\d{2}-\d{2}$/.test(url.searchParams.get('date') || '') ? url.searchParams.get('date') : easternServiceDate();
-        return jc(c, await tonightsFocus(env, date));
-      }
-
-      if (m === 'GET' && path === '/quiz/compliance') {
-        requireManager(await requireUser(request, env));
-        const week = /^\d{4}-W\d{2}$/.test(url.searchParams.get('week') || '') ? url.searchParams.get('week') : isoWeekKey(easternServiceDate());
-        return jc(c, await compliance(env, week));
-      }
-
-      if (m === 'GET' && (path === '/quiz/remind/run' || path === '/quiz/remind/preview')) {
-        requireManager(await requireUser(request, env));
-        return jc(c, await runReminders(env, { dry: path.endsWith('/preview') }));
-      }
-
-      throw new HttpError('Not found', 404);
-    } catch (e) {
-      if (!(e instanceof HttpError)) console.error('account route error', e);
-      return jc(c, { error: e.message || 'Server error' }, e.status || 500);
-    }
-  }
-
-  function grade(answers) {
-    if (!QUESTION_BANK.length || !Array.isArray(answers)) return null;
-    const key = Object.fromEntries(QUESTION_BANK.map(q => [q.id, q.correct]));
-    let correct = 0, total = 0;
-    for (const a of answers) { if (a && a.id in key) { total++; if (a.choice === key[a.id]) correct++; } }
-    return total ? { correct, total, score: Math.round(correct / total * 100) } : null;
-  }
-
-  // Reads the saved shift snapshot and returns tonight's focus + one
-  // auto-gradable live question (the plat du jour).
-  async function tonightsFocus(env, date) {
-    const shift = await env.RPI_SHIFTS.get('shift_' + date, 'json');
-    const plat = DAY_SPECIALS[getDayOf(date)] || null;
-    const names = (arr) => (Array.isArray(arr) ? arr : []).map(x => (x && (x.name || x.text)) || x).filter(Boolean).map(String);
-    const specials = shift ? names(shift.openingSpecials).filter(Boolean) : [];
-    const eightySix = shift ? names(shift.eighties) : [];
-    const vips = shift ? names(shift.vips) : [];
-    const questions = [];
-    if (plat) {
-      const distractors = COMMON_SPECIALS.filter(s => s !== plat).slice(0, 3);
-      const choices = [plat, ...distractors].sort();
-      questions.push({ id: 'live-plat-' + date, cat: 'Tonight', q: "What is tonight's plat du jour?", choices, correct: choices.indexOf(plat) });
-    }
-    return { date, platDuJour: plat, specials, eightySix, vips, questions };
-  }
-
-  async function compliance(env, week) {
-    const servers = await listUsers(env, 'server');
-    const roster = [];
-    for (const u of servers) {
-      const r = await env.RPI_SHIFTS.get(resultKey(u.email, week), 'json');
-      roster.push({ name: u.name, email: u.email, completed: !!r, score: r ? r.best : null, completedAt: r ? r.completedAt : null });
-    }
-    roster.sort((a, b) => a.name.localeCompare(b.name));
-    const outstanding = roster.filter(r => !r.completed).map(r => r.name);
-    return { week, total: roster.length, done: roster.length - outstanding.length, outstanding, roster };
-  }
-
-  async function sendEmail(env, to, subject, html, text) {
-    if (!env.RESEND_API_KEY) return { skipped: true };
-    const from = env.QUIZ_MAIL_FROM || env.MAIL_FROM || 'RPI Server Weekly <noreply@yourdomain.com>';
-    try {
-      const res = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from, to: Array.isArray(to) ? to : [to], subject, html, text }),
-      });
-      return { ok: res.ok, status: res.status };
-    } catch (e) { return { ok: false, error: e.message }; }
-  }
-
-  function reminderEmail(env, name, week) {
-    const link = env.QUIZ_URL || '';
-    const subject = 'Your RPI Server Weekly is due';
-    const html = `<div style="font:16px/1.6 Georgia,serif;color:#1c2a24">
-      <p>Hi ${esc(name)},</p>
-      <p>This week's Server Weekly quiz (${esc(week)}) is still open. It takes about 3 minutes and keeps our standards sharp.</p>
-      <p><a href="${esc(link)}" style="display:inline-block;background:#1f4536;color:#fff;padding:11px 22px;border-radius:4px;text-decoration:none">Take this week's quiz</a></p>
-      <p style="font-style:italic;color:#8a6d3b">Melius semper</p></div>`;
-    const text = `Hi ${name},\n\nThis week's Server Weekly quiz (${week}) is still open — about 3 minutes.\n${link}\n\nMelius semper`;
-    return { subject, html, text };
-  }
-  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-
-  // Emails every server who hasn't completed the current week's quiz, up to
-  // REMIND_CAP times that week. dry:true computes the list without sending.
-  async function runReminders(env, { dry = false } = {}) {
-    const today = easternServiceDate();
-    const week = isoWeekKey(today);
-    const servers = await listUsers(env, 'server');
-    const logKey = 'qz:remindlog:' + week;
-    const log = (await env.RPI_SHIFTS.get(logKey, 'json')) || {};
-    const sent = [], skipped = [], outstanding = [];
-
-    for (const u of servers) {
-      const done = await env.RPI_SHIFTS.get(resultKey(u.email, week));
-      if (done) continue;
-      outstanding.push(u.name);
-      if (!EMAIL_RE.test(u.email)) { skipped.push({ name: u.name, reason: 'no email' }); continue; }
-      if ((log[u.email] || 0) >= REMIND_CAP) { skipped.push({ name: u.name, reason: 'cap reached' }); continue; }
-      if (dry) { sent.push({ name: u.name, email: u.email, dry: true }); continue; }
-      const { subject, html, text } = reminderEmail(env, u.name, week);
-      const r = await sendEmail(env, u.email, subject, html, text);
-      if (r.ok) { log[u.email] = (log[u.email] || 0) + 1; sent.push({ name: u.name, email: u.email }); }
-      else skipped.push({ name: u.name, reason: 'send failed', detail: r.status || r.error });
-    }
-    if (!dry) await env.RPI_SHIFTS.put(logKey, JSON.stringify(log), { expirationTtl: 60 * 60 * 24 * 14 });
-
-    // Manager digest
-    const mgrs = managerEmails(env);
-    if (mgrs.length && (dry ? true : env.RESEND_API_KEY)) {
-      const list = outstanding.length ? outstanding.map(n => '• ' + n).join('<br>') : 'Everyone is done — nice.';
-      const digest = {
-        subject: `Server Weekly ${week}: ${outstanding.length} outstanding`,
-        html: `<div style="font:15px/1.6 Georgia,serif;color:#1c2a24"><p><b>Server Weekly — ${esc(week)}</b></p>
-               <p>${servers.length - outstanding.length} of ${servers.length} done. Outstanding:</p><p>${list}</p>
-               <p style="font-style:italic;color:#8a6d3b">Melius semper</p></div>`,
-        text: `Server Weekly ${week}: ${servers.length - outstanding.length}/${servers.length} done.\nOutstanding:\n${outstanding.map(n => '- ' + n).join('\n') || 'none'}`,
-      };
-      if (!dry) await sendEmail(env, mgrs, digest.subject, digest.html, digest.text);
-    }
-    return { week, servers: servers.length, outstanding, sent, skipped, dry };
-  }
-
-  return { handle, runReminders };
-})();
+boot();
+</script>
+</body>
+</html>
