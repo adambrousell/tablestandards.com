@@ -1189,7 +1189,7 @@ function renderSommDashboard() {
     { label:'Bar (spirits + cocktails)', val:fmt(barRev), sub:'poured drinks',
       delta: hasPrev ? deltaTag(barRev, prevBarRev, 'kpi-delta') : '' },
     { label:'Wine glass / bottle', val:`${glassPct}% / ${bottlePct}%`,
-      sub:`${fmt(glassRev)} BTG \u00b7 ${fmt(bottleRev)} BTL`, delta:'' },
+      sub:`${fmt(glassRev)} by the glass \u00b7 ${fmt(bottleRev)} by the bottle`, delta:'' },
   ];
   document.getElementById('kpi-grid').innerHTML = kpis.map(k =>
     `<div class="kpi"><div class="kpi-label">${k.label}</div><div class="kpi-val">${k.val}</div><div class="kpi-sub">${k.sub}</div>${k.delta||''}</div>`).join('');
@@ -1243,7 +1243,7 @@ function renderSommDashboard() {
 
   const nonBevRev = totalRev - bevRev;
   const btgCtx = btgBottles.length
-    ? ` \u00b7 By-the-glass-list wines sold by the bottle: ${fmt(btgRev)} (${Math.round(btgBottles.reduce((s,i)=>s+i.qty,0)).toLocaleString()} btl) \u2014 shown separately, not in the cellar total`
+    ? ` \u00b7 BTG bottles (glass-list wines by the bottle): ${fmt(btgRev)} (${Math.round(btgBottles.reduce((s,i)=>s+i.qty,0)).toLocaleString()} btl) \u2014 separate from both the by-the-glass pours and the cellar`
     : '';
   const ctxLine = `<div class="somm-muted">Food &amp; other (not shown in this view): ${fmt(nonBevRev)} \u00b7 beverage is ${bevShare}% of the week by revenue${btgCtx}</div>`;
 
@@ -1253,9 +1253,9 @@ function renderSommDashboard() {
   hmHtml += renderWineSection('Wine \u2014 by the bottle', 'wine-bottle', bottle, prevLookup, hasPrev, byRev,
     { showUnit:true, cellar:true, badge:'<span class="hm-pinned-badge">Cellar</span>', emptyHint:'No bottles rung this week.' });
   if (btgBottles.length) {
-    hmHtml += renderWineSection('Wine \u2014 by-the-glass list, sold by the bottle', 'wine-btg', btgBottles, prevLookup, hasPrev, byRev,
-      { showUnit:true, badge:'<span class="hm-pinned-badge">BTG list</span>',
-        emptyHint:'No by-the-glass-list bottles rung this week.' });
+    hmHtml += renderWineSection('Wine \u2014 BTG bottles (glass-list wines, by the bottle)', 'wine-btg', btgBottles, prevLookup, hasPrev, byRev,
+      { showUnit:true, badge:'<span class="hm-pinned-badge">BTG bottles</span>',
+        emptyHint:'No BTG bottles rung this week.' });
   }
   if (unknown.length) {
     hmHtml += renderWineSection('Wine \u2014 service unspecified', 'wine-unknown', unknown, prevLookup, hasPrev, byRev,
