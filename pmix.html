@@ -562,17 +562,48 @@ const WINE_SERVICE_OVERRIDES = {
   'maison drouhin petit secondes chardonnay 2020': 'glass', // list BTG is $18 — $45 ring is a Coravin/premium pour or a mis-key, worth checking in Toast
   'wine': 'glass',        // generic button, $45 — premium glass pour
   'white wine': 'glass',  // twin of 'wine', $45
-  // Generic "BTG Bottles" button — bottles opened to pour by the glass, NOT
-  // guest cellar-bottle purchases. Its own 'btg' bucket so it breaks out of the
-  // cellar grid and doesn't inflate the by-the-bottle total.
+  // Generic "BTG Bottles" button — full bottles of the by-the-glass-list wines
+  // (the house/BTG program wines, which are also offered by the bottle), rung on
+  // one catch-all button instead of the named SKU. Real guest bottle sales, but
+  // kept in their own 'btg' bucket so they stay separate from the deep cellar.
   'btg bottle': 'btg',
   'btg bottles': 'btg',
 };
 
+// The by-the-glass program, from riverpointeinn.com/menus (Nov 2026). These are
+// the wines the generic "BTG Bottles" button sells by the bottle. Reference only:
+// the catch-all button can't tell us WHICH of these each ring was, so the BTG
+// section can't be itemized until each wine gets its own BTL: button in Toast.
+const BTG_LIST = [
+  // Sparkling
+  'Pierre Sparr Crémant d\'Alsace',
+  'Clotilde Davenne Crémant de Bourgogne Rosé NV',
+  'Champagne Drappier Carte d\'Or',
+  'Moët & Chandon Impérial Brut NV',
+  'Moët & Chandon Impérial Brut Rosé NV',
+  // White
+  'Moulin de Gassac Picpoul de Pinet 2025',
+  'Foucher Lebrun Le Mont Sancerre 2025',
+  'Domaine Drouhin Petit Secondes Chardonnay 2020',
+  'Jean-Marc Brocard Sainte-Claire Chablis 2025',
+  // Rosé
+  'Peyrassol La Croix Rosé 2025',
+  // Red
+  'Domaine du Mortier Brain de Folie 2025',
+  'Domaine Font Sarade Les Hauts de la Ponche Vacqueyras 2024',
+  'Domaine Antonin Guyon Les Dames de Vergey Hautes-Côtes de Nuits 2022',
+  'Maison Drouhin Petit Secondes 2023',
+  'Château Haut l\'Artigue Pessac Léognan 2022',
+  'RouteStock Cabernet Sauvignon 2024',
+  'Chappellet Mountain Cuvée 2023',
+  'Ridge Vineyards Lytton Springs Petite Sirah 2021',
+];
+
 // Somm view: split a wine line into by-the-glass vs by-the-bottle service.
-// Returns 'glass', 'bottle', 'btg' (bottles opened for BTG pours — broken out
-// from the cellar), or 'unknown' (lines with no GL:/BTL: prefix and no bin
-// number — surfaced in their own section so they can be fixed in Toast).
+// Returns 'glass', 'bottle', 'btg' (full bottles of the by-the-glass-list wines,
+// rung on the generic "BTG Bottles" button — broken out from the deep cellar),
+// or 'unknown' (lines with no GL:/BTL: prefix and no bin number — surfaced in
+// their own section so they can be fixed in Toast).
 function wineService(name) {
   const n = normName(name);
   if (WINE_SERVICE_OVERRIDES[n]) return WINE_SERVICE_OVERRIDES[n];
@@ -1212,7 +1243,7 @@ function renderSommDashboard() {
 
   const nonBevRev = totalRev - bevRev;
   const btgCtx = btgBottles.length
-    ? ` \u00b7 BTG bottles opened for pours: ${fmt(btgRev)} (${Math.round(btgBottles.reduce((s,i)=>s+i.qty,0)).toLocaleString()} btl) \u2014 broken out below, not in the cellar total`
+    ? ` \u00b7 By-the-glass-list wines sold by the bottle: ${fmt(btgRev)} (${Math.round(btgBottles.reduce((s,i)=>s+i.qty,0)).toLocaleString()} btl) \u2014 shown separately, not in the cellar total`
     : '';
   const ctxLine = `<div class="somm-muted">Food &amp; other (not shown in this view): ${fmt(nonBevRev)} \u00b7 beverage is ${bevShare}% of the week by revenue${btgCtx}</div>`;
 
@@ -1222,8 +1253,9 @@ function renderSommDashboard() {
   hmHtml += renderWineSection('Wine \u2014 by the bottle', 'wine-bottle', bottle, prevLookup, hasPrev, byRev,
     { showUnit:true, cellar:true, badge:'<span class="hm-pinned-badge">Cellar</span>', emptyHint:'No bottles rung this week.' });
   if (btgBottles.length) {
-    hmHtml += renderWineSection('Wine \u2014 BTG bottles (opened for pours)', 'wine-btg', btgBottles, prevLookup, hasPrev, byRev,
-      { showUnit:true, badge:'<span class="hm-pinned-badge">BTG</span>', emptyHint:'No BTG bottles rung this week.' });
+    hmHtml += renderWineSection('Wine \u2014 by-the-glass list, sold by the bottle', 'wine-btg', btgBottles, prevLookup, hasPrev, byRev,
+      { showUnit:true, badge:'<span class="hm-pinned-badge">BTG list</span>',
+        emptyHint:'No by-the-glass-list bottles rung this week.' });
   }
   if (unknown.length) {
     hmHtml += renderWineSection('Wine \u2014 service unspecified', 'wine-unknown', unknown, prevLookup, hasPrev, byRev,
