@@ -332,7 +332,7 @@ const ITEM_OVERRIDES = {
   'manuel atcha axta rojo': 'wine',            // $19 red BTG — confirm it's a wine pour, else move to ITEM_EXCLUDES
   // Week of Oct 19 uncategorized items — now fixed
   // Les Fruits de Mer caviar service ($195/service). Also now caught by the
-  // broadened \bcaviar\b rawbar rule below — the old rule only matched "caviar donut".
+  // broadened \bcaviar\b rule below — the old rule only matched "caviar donut".
   'caviar service': 'rawbar',
   // Week of Oct 26 uncategorized items — now fixed
   'highland & honey': 'cocktail',              // Scotch + honey cocktail — no spirit keyword in the name
@@ -383,7 +383,7 @@ const CAT_COLORS = {
   starter:'#2a5f3c', rawbar:'#155e75', dessert:'#b8942a', spirit:'#4a7a8a',
   beer:'#7a5c2a', coffee:'#6b4e3d', na:'#888780',
   events:'#7a3060', pdj:'#0f766e', tartare:'#8f2d44', lunch:'#556677', sides:'#9c6644',
-  kids:'#a0522d', fees:'#6b6b67', uncat:'#8a6d1a',
+  kids:'#a0522d', fees:'#6b6b67', uncat:'#8a6d1a', dessertwine:'#9a6a24',
 };
 const CAT_LABELS = {
   cocktail:'Cocktails & martinis', wine:'Wine (glass & bottle)', food:'Entrées',
@@ -391,6 +391,7 @@ const CAT_LABELS = {
   beer:'Beer', coffee:'Coffee & tea', na:'NA beverages',
   events:'Private Events & Wine Dinner', pdj:'Weekly specials (Plats du Jour)', tartare:'Steak Tartare (nightly)', lunch:'Lunch only items', sides:'Sides',
   kids:'Kids menu', fees:'Fees & service charges', uncat:'Uncategorized — needs mapping',
+  dessertwine:'Dessert & fortified wine',
 };
 
 // View state: lens (kitchen|somm) is orthogonal to metric (revenue|quantity).
@@ -495,6 +496,16 @@ function categorize(name) {
   //     before the ^btl wine rule below — otherwise Still/Sparkling Water lands in Wine.
   if (/still water|sparkling water|bottled water/.test(n)) return 'na';
 
+  // 5c) Dessert & fortified wine — its own category for the dessert-wine card
+  //     (Sauternes, Banyuls, Madeira, Port). MUST run before the wine and spirit
+  //     rules so Madeira doesn't fall into 'wine' and Port/Tawny into 'spirit'.
+  if (/sauternes|suduiraut|d[']?yquem|\bbanyuls\b|\bmaury\b/.test(n)) return 'dessertwine';
+  if (/\bmadeira\b|\bmalmsey\b|\bsercial\b|\bboal\b|\bbual\b|\bverdelho\b|d'oliveiras|rare wine co|historic series/.test(n)) return 'dessertwine';
+  if (/\bport\b|\bporto\b|\btawny\b|taylor fladgate|dow'?s|graham'?s|ruby port|\blbv\b/.test(n)) return 'dessertwine';
+  // Sherry sits in the cellar's "Fortified & Dessert Wine" section but is NOT on
+  // the dessert card. Uncomment to fold it in here instead of leaving it in 'wine':
+  // if (/\bsherry\b|oloroso|amontillado|\bfino\b|manzanilla|pedro ximenez|\bpx\b|palo cortado|el maestro sierra/.test(n)) return 'dessertwine';
+
   // 6) Wine.
   // FIX: Added ^btl:|^btl\s to catch all "BTL:" bottle entries from Toast
   if (/d[']?yquem|latour pauillac|somm selection/.test(n)) return 'wine';
@@ -535,11 +546,33 @@ function categorize(name) {
   return 'uncat';
 }
 
+// Wine service overrides — glass vs. bottle for wine lines that carry no
+// GL:/BTL: prefix and no bin number, so wineService() can't otherwise place
+// them and they fall into "service unspecified". Keyed by normName(), mirrors
+// ITEM_OVERRIDES. Verified against the 2026 cellar list + dessert-by-the-glass
+// menu (Nov 3). NB: D'Oliveiras Madeira now routes to 'dessertwine' in
+// categorize(), so it never reaches wineService() — no entry needed here.
+const WINE_SERVICE_OVERRIDES = {
+  // Sancerre: $110 ea = the list's bottle price (BTG is $23).
+  'gerad fiou silex sancerre 2025': 'bottle',
+  'gerard fiou silex sancerre 2025': 'bottle',
+  'gerard fiou terroir silex sancerre 2025': 'bottle',
+  // $45 rings sit below EVERY bottle price on the list ($48+) and inside the
+  // by-the-glass range — so they read as pours, not bottles.
+  'maison drouhin petit secondes chardonnay 2020': 'glass', // list BTG is $18 — $45 ring is a Coravin/premium pour or a mis-key, worth checking in Toast
+  'wine': 'glass',        // generic button, $45 — premium glass pour
+  'white wine': 'glass',  // twin of 'wine', $45
+  // $108 ea, 18 sold — bottle-level price (top BTG pour is $75), despite the
+  // "BTG" in the button name. Placed as bottle; confirm it isn't a glass tracker.
+  'btg bottles': 'bottle',
+};
+
 // Somm view: split a wine line into by-the-glass vs by-the-bottle service.
 // Returns 'glass', 'bottle', or 'unknown' (lines with no GL:/BTL: prefix and
 // no bin number — surfaced in their own section so they can be fixed in Toast).
 function wineService(name) {
   const n = normName(name);
+  if (WINE_SERVICE_OVERRIDES[n]) return WINE_SERVICE_OVERRIDES[n];
   if (/^gl:|^gl\s/.test(n)) return 'glass';
   if (/^btl:|^btl\s/.test(n)) return 'bottle';
   if (/\bmag\b|magnum|1\.5\s*l|\b3l\b|jeroboam|double magnum/.test(n)) return 'bottle';
@@ -1084,7 +1117,7 @@ function renderSommDashboard() {
     prevLookup[k].rev += i.qty * i.price;
   });
 
-  const BEV = ['wine','spirit','cocktail','beer','na','coffee'];
+  const BEV = ['wine','dessertwine','spirit','cocktail','beer','na','coffee'];
   const cRev = k => sumRev(cats[k] || []);
   const cQty = k => sumQty(cats[k] || []);
   const pRev = k => sumRev(prevCats[k] || []);
@@ -1169,7 +1202,7 @@ function renderSommDashboard() {
 
   // Heatmap card titles for the Somm framing.
   document.getElementById('heatmap-title').textContent = 'Wine program & bar';
-  document.getElementById('heatmap-hint').textContent = 'wine split by the glass vs the bottle, then spirits & cocktails \u00b7 click a header to collapse';
+  document.getElementById('heatmap-hint').textContent = 'wine split by the glass vs the bottle, then dessert wine, spirits & cocktails \u00b7 click a header to collapse';
 
   const nonBevRev = totalRev - bevRev;
   const ctxLine = `<div class="somm-muted">Food &amp; other (not shown in this view): ${fmt(nonBevRev)} \u00b7 beverage is ${bevShare}% of the week by revenue</div>`;
@@ -1183,7 +1216,7 @@ function renderSommDashboard() {
     hmHtml += renderWineSection('Wine \u2014 service unspecified', 'wine-unknown', unknown, prevLookup, hasPrev, byRev,
       { showUnit:true, badge:'<span class="hm-warn-badge">Add GL:/BTL:</span>' });
   }
-  ['spirit','cocktail','beer','na','coffee'].forEach(key => {
+  ['dessertwine','spirit','cocktail','beer','na','coffee'].forEach(key => {
     if (!(cats[key] && cats[key].length)) return;
     const cat = { key, label: CAT_LABELS[key] || key, color: CAT_COLORS[key] || '#8a8577', rev: cRev(key), qty: cQty(key) };
     hmHtml += renderItemGrid(cat, cats[key], prevLookup, hasPrev, byRev, '');
