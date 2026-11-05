@@ -562,14 +562,17 @@ const WINE_SERVICE_OVERRIDES = {
   'maison drouhin petit secondes chardonnay 2020': 'glass', // list BTG is $18 — $45 ring is a Coravin/premium pour or a mis-key, worth checking in Toast
   'wine': 'glass',        // generic button, $45 — premium glass pour
   'white wine': 'glass',  // twin of 'wine', $45
-  // $108 ea, 18 sold — bottle-level price (top BTG pour is $75), despite the
-  // "BTG" in the button name. Placed as bottle; confirm it isn't a glass tracker.
-  'btg bottles': 'bottle',
+  // Generic "BTG Bottles" button — bottles opened to pour by the glass, NOT
+  // guest cellar-bottle purchases. Its own 'btg' bucket so it breaks out of the
+  // cellar grid and doesn't inflate the by-the-bottle total.
+  'btg bottle': 'btg',
+  'btg bottles': 'btg',
 };
 
 // Somm view: split a wine line into by-the-glass vs by-the-bottle service.
-// Returns 'glass', 'bottle', or 'unknown' (lines with no GL:/BTL: prefix and
-// no bin number — surfaced in their own section so they can be fixed in Toast).
+// Returns 'glass', 'bottle', 'btg' (bottles opened for BTG pours — broken out
+// from the cellar), or 'unknown' (lines with no GL:/BTL: prefix and no bin
+// number — surfaced in their own section so they can be fixed in Toast).
 function wineService(name) {
   const n = normName(name);
   if (WINE_SERVICE_OVERRIDES[n]) return WINE_SERVICE_OVERRIDES[n];
@@ -1130,13 +1133,16 @@ function renderSommDashboard() {
   const barRev = cRev('spirit') + cRev('cocktail');
   const prevBarRev = pRev('spirit') + pRev('cocktail');
 
-  // Wine service split.
+  // Wine service split. BTG bottles (opened to pour by the glass) get their own
+  // bucket so they don't sit inside the cellar / by-the-bottle numbers.
   const wineItems = (cats['wine'] || []).map(i => ({ ...i, rev: i.qty * i.price, svc: wineService(i.name) }));
   const glass  = wineItems.filter(i => i.svc === 'glass');
   const bottle = wineItems.filter(i => i.svc === 'bottle');
+  const btgBottles = wineItems.filter(i => i.svc === 'btg');
   const unknown = wineItems.filter(i => i.svc === 'unknown');
   const glassRev  = glass.reduce((s,i)=>s+i.rev, 0);
   const bottleRev = bottle.reduce((s,i)=>s+i.rev, 0);
+  const btgRev    = btgBottles.reduce((s,i)=>s+i.rev, 0);
   const splitBase = glassRev + bottleRev;
   const glassPct  = splitBase > 0 ? Math.round(glassRev / splitBase * 100) : 0;
   const bottlePct = splitBase > 0 ? 100 - glassPct : 0;
@@ -1180,7 +1186,7 @@ function renderSommDashboard() {
     <span class="cat-sub">${byRev ? 'Qty sold' : 'Revenue'}</span>
     ${hasPrev ? '<span class="cat-delta" style="color:var(--text-3);">vs last wk</span>' : ''}
   </div>`;
-  const wineJump = glass.length ? 'wine-glass' : (bottle.length ? 'wine-bottle' : 'wine-unknown');
+  const wineJump = glass.length ? 'wine-glass' : (bottle.length ? 'wine-bottle' : (btgBottles.length ? 'wine-btg' : 'wine-unknown'));
   document.getElementById('ranking-list').innerHTML = headerHtml + bevRanking.map((r, idx) => {
     const val = byRev ? r.rev : r.qty;
     const prevVal = byRev ? r.prevRev : r.prevQty;
@@ -1205,13 +1211,20 @@ function renderSommDashboard() {
   document.getElementById('heatmap-hint').textContent = 'wine split by the glass vs the bottle, then dessert wine, spirits & cocktails \u00b7 click a header to collapse';
 
   const nonBevRev = totalRev - bevRev;
-  const ctxLine = `<div class="somm-muted">Food &amp; other (not shown in this view): ${fmt(nonBevRev)} \u00b7 beverage is ${bevShare}% of the week by revenue</div>`;
+  const btgCtx = btgBottles.length
+    ? ` \u00b7 BTG bottles opened for pours: ${fmt(btgRev)} (${Math.round(btgBottles.reduce((s,i)=>s+i.qty,0)).toLocaleString()} btl) \u2014 broken out below, not in the cellar total`
+    : '';
+  const ctxLine = `<div class="somm-muted">Food &amp; other (not shown in this view): ${fmt(nonBevRev)} \u00b7 beverage is ${bevShare}% of the week by revenue${btgCtx}</div>`;
 
   let hmHtml = '';
   hmHtml += renderWineSection('Wine \u2014 by the glass', 'wine-glass', glass, prevLookup, hasPrev, byRev,
     { showUnit:false, emptyHint:'No by-the-glass pours rung this week.' });
   hmHtml += renderWineSection('Wine \u2014 by the bottle', 'wine-bottle', bottle, prevLookup, hasPrev, byRev,
     { showUnit:true, cellar:true, badge:'<span class="hm-pinned-badge">Cellar</span>', emptyHint:'No bottles rung this week.' });
+  if (btgBottles.length) {
+    hmHtml += renderWineSection('Wine \u2014 BTG bottles (opened for pours)', 'wine-btg', btgBottles, prevLookup, hasPrev, byRev,
+      { showUnit:true, badge:'<span class="hm-pinned-badge">BTG</span>', emptyHint:'No BTG bottles rung this week.' });
+  }
   if (unknown.length) {
     hmHtml += renderWineSection('Wine \u2014 service unspecified', 'wine-unknown', unknown, prevLookup, hasPrev, byRev,
       { showUnit:true, badge:'<span class="hm-warn-badge">Add GL:/BTL:</span>' });
