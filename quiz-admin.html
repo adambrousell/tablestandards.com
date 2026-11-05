@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Server Check Rollup</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231f4536'/><text x='50' y='68' font-family='serif' font-size='40' font-weight='bold' fill='%23d8b24a' text-anchor='middle'>RPI</text></svg>">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Mulish:ital,wght@0,400;0,700;0,800;1,400&display=swap">
+<style>
+/* Layout: PIN gate → stat tiles → sortable roster table with expandable per-server answers. */
+:root{
+  --bg:#f3efe6;--surface:#fbf9f4;--ink:#1c2a24;--muted:#5e6b63;--line:#d9d2c3;
+  --green:#1f4536;--green-soft:#2c5a46;--brass:#b08419;--brass-deep:#8a6612;
+  --cream:#efe7d4;--good:#1f6d4b;--good-bg:#e4efe6;--bad:#9a2f2a;--bad-bg:#f4e3df;
+  --shadow:0 1px 2px rgba(28,42,36,.06),0 8px 30px rgba(28,42,36,.09);
+  --f-display:"Fraunces","Hoefler Text",Georgia,serif;--f-body:"Mulish","Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#13201a;--surface:#182a22;--ink:#ede8db;--muted:#9aa89f;--line:#2c4034;
+  --green:#3f7d61;--green-soft:#4c9074;--brass:#d2a53f;--brass-deep:#b98c28;
+  --cream:#1e3328;--good:#5bbf8e;--good-bg:#17382a;--bad:#e08a82;--bad-bg:#3a201e;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.45);color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#13201a;--surface:#182a22;--ink:#ede8db;--muted:#9aa89f;--line:#2c4034;
+  --green:#3f7d61;--green-soft:#4c9074;--brass:#d2a53f;--brass-deep:#b98c28;
+  --cream:#1e3328;--good:#5bbf8e;--good-bg:#17382a;--bad:#e08a82;--bad-bg:#3a201e;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.45);color-scheme:dark;}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh}
+img{max-width:100%}
+[hidden]{display:none!important}
+.wrap{max-width:860px;margin:0 auto;padding-block:26px 64px;
+  padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;text-wrap:balance;margin:0}
+.eyebrow{text-transform:uppercase;letter-spacing:.22em;font-size:.7rem;font-weight:800;color:var(--brass-deep)}
+.cover{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);overflow:hidden}
+.crest{background:var(--green);color:var(--cream);padding:28px 26px 24px;text-align:center;border-bottom:3px solid var(--brass)}
+.crest .mark{font-family:var(--f-display);font-size:.76rem;letter-spacing:.4em;text-transform:uppercase;color:var(--brass);font-weight:600}
+.crest h1{color:#fff;font-size:1.9rem;line-height:1.02;margin:.35rem 0 .15rem;font-style:italic}
+.crest .sub{font-size:.88rem;color:#cdd8d0;letter-spacing:.04em}
+.coverbody{padding:24px 26px 28px}
+.coverbody p.lead{color:var(--muted);margin:.2rem 0 1.3rem;font-size:.96rem}
+.field{display:block;margin-bottom:15px}
+.field label{display:block;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin-bottom:6px}
+.field input{width:100%;padding:12px 14px;font:inherit;font-size:1rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:3px}
+.field input:focus{outline:2px solid var(--brass);outline-offset:1px;border-color:var(--brass)}
+.checkline{display:flex;gap:9px;align-items:center;font-size:.85rem;color:var(--muted);margin:-4px 0 16px;cursor:pointer}
+.checkline input{width:16px;height:16px;accent-color:var(--green)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:inherit;font-weight:800;letter-spacing:.04em;padding:13px 22px;border-radius:3px;border:1px solid transparent;cursor:pointer;font-size:.92rem;transition:transform .05s ease,background .15s ease}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--green);color:#fff;border-color:var(--green)}
+.btn-primary:hover{background:var(--green-soft)}
+.btn-ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn-ghost:hover{border-color:var(--brass);color:var(--brass-deep)}
+.btn-brass{background:var(--brass);color:#2a2008;border-color:var(--brass)}
+.btn-brass:hover{background:var(--brass-deep);color:#fff}
+.btn-row{display:flex;gap:12px;flex-wrap:wrap}
+.btn.full{width:100%}
+.btn.sm{padding:9px 14px;font-size:.82rem}
+.err{background:var(--bad-bg);color:var(--bad);border:1px solid var(--bad);border-radius:3px;padding:10px 14px;font-size:.88rem;font-weight:700;margin-bottom:14px}
+.err:empty{display:none}
+.motto{text-align:center;font-family:var(--f-display);font-style:italic;color:var(--muted);font-size:.9rem;margin-top:20px}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:10px;flex-wrap:wrap}
+.topbar .who{font-size:.82rem;color:var(--muted)}
+.topbar .who b{color:var(--ink);font-family:var(--f-display);font-style:italic;font-weight:600}
+.topbar .tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.iconbtn{background:none;border:1px solid var(--line);border-radius:99px;height:34px;padding:0 12px;cursor:pointer;color:var(--muted);font:inherit;font-size:.8rem;font-weight:700;display:grid;place-items:center}
+.iconbtn:hover{border-color:var(--brass);color:var(--brass-deep)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:99px;overflow:hidden}
+.seg button{background:none;border:none;padding:7px 13px;font:inherit;font-size:.78rem;font-weight:800;color:var(--muted);cursor:pointer}
+.seg button.on{background:var(--green);color:#fff}
+.statrow{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.stat{flex:1;min-width:120px;background:var(--cream);border:1px solid var(--line);border-radius:3px;padding:14px 16px}
+.stat .lab{font-size:.68rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:800}
+.stat .big{font-family:var(--f-display);font-size:1.9rem;font-weight:600;margin-top:4px;font-variant-numeric:tabular-nums}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);padding:6px 4px}
+.mgr{overflow-x:auto}
+.mgr table{width:100%;border-collapse:collapse;font-size:.9rem}
+.mgr th{text-align:left;font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+.mgr td{padding:11px 12px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;vertical-align:top}
+.mgr tbody tr:last-child td{border-bottom:none}
+.mgr .nm{font-weight:700}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.74rem;font-weight:800}
+.pill.pass{background:var(--good-bg);color:var(--good)}
+.pill.fail{background:var(--bad-bg);color:var(--bad)}
+.when{color:var(--muted);font-size:.8rem;white-space:nowrap}
+.empty{color:var(--muted);text-align:center;padding:34px 10px;font-size:.92rem}
+details.amgr{margin-top:7px}
+details.amgr summary{cursor:pointer;color:var(--brass-deep);font-size:.8rem;font-weight:700;list-style:none}
+details.amgr summary::-webkit-details-marker{display:none}
+details.amgr summary::before{content:"\25B8 ";color:var(--muted)}
+details.amgr[open] summary::before{content:"\25BE "}
+details.amgr .qa{font-size:.84rem;margin:7px 0;padding-left:14px;border-left:2px solid var(--line)}
+details.amgr .qa b{color:var(--good)}
+details.amgr .qa.x b{color:var(--bad)}
+.foot-motto{text-align:center;margin-top:36px;font-family:var(--f-display);font-style:italic;color:var(--muted);font-size:.88rem}
+.updated{font-size:.76rem;color:var(--muted);text-align:right;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+/* ════════════════════════════════════════════════════════════
+   RPI Server Check — manager rollup.
+   Reads from the RPI Shift Worker; PIN-gated (X-Admin-Pin).
+   PIN = the worker's SERVER_CHECK_PIN (or WALKTHROUGH_PIN).
+   ════════════════════════════════════════════════════════════ */
+const CF='https://rpi-shift-api.amusementstandards.workers.dev';
+const PIN_KEY='rpi_sc_admin_pin';
+const QMETA={q1:'Service Philosophy',q2:'Service 101',q3:'Allergies',q4:'Wine Service',q5:'Safe Alcohol Service'};
+const REFRESH_MS=30000;
+
+/* ---------- helpers ---------- */
+const app=document.getElementById('app');
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function currentTheme(){const a=document.documentElement.getAttribute('data-theme');return a||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');}
+function toggleTheme(){const n=currentTheme()==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);try{localStorage.setItem('rpi_theme',n);}catch(e){}render();}
+try{const th=localStorage.getItem('rpi_theme');if(th)document.documentElement.setAttribute('data-theme',th);}catch(e){}
+function fmtWhen(iso){if(!iso)return '—';const d=new Date(iso);if(isNaN(d))return '—';return d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+' '+d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});}
+
+/* ---------- state ---------- */
+let state={phase:'pin',pin:'',pinErr:'',remember:true,days:30,data:null,loadErr:'',loadedAt:null};
+let pollTimer=null;
+
+/* try a saved PIN on load */
+try{const sv=localStorage.getItem(PIN_KEY);if(sv){state.pin=sv;state.phase='loading';}}catch(e){}
+
+/* ---------- api ---------- */
+async function fetchRollup(){
+  const res=await fetch(CF+'/servercheck/submissions?days='+state.days,{headers:{'X-Admin-Pin':state.pin}});
+  let data={};try{data=await res.json();}catch(_){}
+  if(!res.ok){const err=new Error((data&&data.error)||('Error '+res.status));err.status=res.status;throw err;}
+  return data;
+}
+async function load(initial){
+  try{
+    const d=await fetchRollup();
+    state.data=d;state.loadErr='';state.loadedAt=new Date();state.phase='table';
+    if(initial&&state.remember){try{localStorage.setItem(PIN_KEY,state.pin);}catch(e){}}
+    render();startPoll();
+  }catch(e){
+    stopPoll();
+    if(e.status===401){
+      try{localStorage.removeItem(PIN_KEY);}catch(_){}
+      state.phase='pin';state.pinErr='That PIN didn’t work. Try again.';state.pin='';
+    }else{
+      state.phase='table';state.loadErr=e.message||'Couldn’t load results.';
+    }
+    render();
+  }
+}
+function startPoll(){stopPoll();pollTimer=setInterval(()=>{if(state.phase==='table')quietRefresh();},REFRESH_MS);}
+function stopPoll(){if(pollTimer){clearInterval(pollTimer);pollTimer=null;}}
+async function quietRefresh(){
+  try{const d=await fetchRollup();state.data=d;state.loadErr='';state.loadedAt=new Date();render();}
+  catch(e){if(e.status===401){stopPoll();try{localStorage.removeItem(PIN_KEY);}catch(_){}state.phase='pin';state.pinErr='Session expired — re-enter the PIN.';state.pin='';render();}}
+}
+
+/* ---------- render ---------- */
+function render(){({pin:renderPin,loading:renderLoading,table:renderTable}[state.phase]||renderPin)();}
+function themeWord(){return currentTheme()==='dark'?'Light':'Dark';}
+
+function renderPin(){
+  app.innerHTML=`
+  <div class="topbar"><div class="who">River Pointe Inn</div><div class="tools"><button class="iconbtn" onclick="toggleTheme()">${themeWord()}</button></div></div>
+  <div class="cover">
+    <div class="crest"><div class="mark">River Pointe Inn &middot; Rumson, NJ</div><h1>Server Check</h1><div class="sub">Manager rollup</div></div>
+    <div class="coverbody">
+      <p class="lead">Enter the manager PIN to see this week’s server results.</p>
+      <div class="err" id="pinErr">${esc(state.pinErr)}</div>
+      <div class="field"><label>Manager PIN</label><input id="pin" type="password" autocomplete="current-password" placeholder="PIN"></div>
+      <label class="checkline"><input type="checkbox" id="rem" ${state.remember?'checked':''}> Keep me signed in on this device</label>
+      <button class="btn btn-primary full" onclick="submitPin()">View rollup</button>
+      <div class="motto">&ldquo;Melius semper&rdquo;</div>
+    </div>
+  </div>`;
+  const p=document.getElementById('pin');if(p){p.focus();p.addEventListener('keydown',e=>{if(e.key==='Enter')submitPin();});}
+}
+function submitPin(){
+  const p=document.getElementById('pin'),r=document.getElementById('rem');
+  const v=p?p.value.trim():'';
+  state.remember=r?r.checked:true;
+  if(!v){state.pinErr='Enter the PIN.';const e=document.getElementById('pinErr');if(e)e.textContent=state.pinErr;return;}
+  state.pin=v;state.pinErr='';state.phase='loading';render();load(true);
+}
+
+function renderLoading(){
+  app.innerHTML=`<div class="cover"><div class="crest"><div class="mark">River Pointe Inn</div><h1>Server Check</h1><div class="sub">Manager rollup</div></div><div class="coverbody"><p class="lead">Loading results…</p></div></div>`;
+  load(true);
+}
+
+function daySeg(){
+  const opts=[['7','7d'],['30','30d'],['90','90d'],['120','All']];
+  return `<div class="seg">${opts.map(([v,l])=>`<button class="${String(state.days)===v?'on':''}" onclick="setDays(${v})">${l}</button>`).join('')}</div>`;
+}
+function setDays(d){state.days=d;state.phase='loading';render();}
+
+function renderTable(){
+  const d=state.data||{};const rows=(d.submissions||[]);
+  const n=d.count!=null?d.count:rows.length;
+  const passed=d.passed!=null?d.passed:rows.filter(r=>r.passed).length;
+  const avg=d.avg!=null?d.avg:(rows.length?Math.round(rows.reduce((s,r)=>s+(r.score||0),0)/rows.length):0);
+  let body;
+  if(state.loadErr){body='<div class="err">'+esc(state.loadErr)+'</div>';}
+  else if(!rows.length){body='<div class="empty">No results in this window yet. Share the Server Check link with your team and scores will land here.</div>';}
+  else{
+    body=`<div class="statrow">
+      <div class="stat"><div class="lab">Submissions</div><div class="big">${n}</div></div>
+      <div class="stat"><div class="lab">Passed</div><div class="big">${passed}/${n}</div></div>
+      <div class="stat"><div class="lab">Avg score</div><div class="big">${avg}%</div></div>
+    </div>
+    <div class="panel"><div class="mgr"><table>
+      <thead><tr><th>Server</th><th>Score</th><th>Result</th><th>When</th></tr></thead>
+      <tbody>${rows.map(r=>`<tr>
+        <td><span class="nm">${esc(r.name)}</span>${answerDetail(r)}</td>
+        <td>${r.score!=null?r.score+'%':'—'}</td>
+        <td>${r.passed?'<span class="pill pass">Pass</span>':'<span class="pill fail">Review</span>'}</td>
+        <td class="when">${fmtWhen(r.at)}</td>
+      </tr>`).join('')}</tbody>
+    </table></div></div>
+    <div class="updated">Updated ${fmtWhen(state.loadedAt?state.loadedAt.toISOString():'')} &middot; auto-refreshes</div>`;
+  }
+  app.innerHTML=`
+  <div class="topbar">
+    <div class="who">Server Check &middot; <b>Rollup</b></div>
+    <div class="tools">
+      ${daySeg()}
+      <button class="iconbtn" onclick="manualRefresh()">Refresh</button>
+      <button class="iconbtn" onclick="toggleTheme()">${themeWord()}</button>
+      <button class="iconbtn" onclick="signOut()">Sign out</button>
+    </div>
+  </div>
+  <div class="cover"><div class="crest"><div class="mark">River Pointe Inn</div><h1>Server Check &mdash; Rollup</h1><div class="sub">Last ${esc(String(d.days||state.days))} days</div></div>
+  <div class="coverbody">${body}</div></div>
+  <div class="foot-motto">Treat each table as your first of the day.</div>`;
+}
+function answerDetail(r){
+  if(!r.detail||!r.detail.length)return '';
+  return `<details class="amgr"><summary>answers</summary>${r.detail.map(x=>{
+    const label=QMETA[x.id]||x.id;
+    return `<div class="qa ${x.ok?'':'x'}">${esc(label)}: <b>${x.ok?'✓':'✗'}</b> ${esc(x.answer||'(blank)')}</div>`;
+  }).join('')}</details>`;
+}
+function manualRefresh(){state.phase='loading';render();}
+function signOut(){stopPoll();try{localStorage.removeItem(PIN_KEY);}catch(e){}state.pin='';state.data=null;state.phase='pin';state.pinErr='';render();}
+
+/* ---------- boot ---------- */
+render();
+</script>
+</body>
+</html>
