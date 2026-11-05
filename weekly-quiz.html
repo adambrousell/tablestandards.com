@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>RPI Server Weekly</title>
+<title>RPI Server Check</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231f4536'/><text x='50' y='68' font-family='serif' font-size='40' font-weight='bold' fill='%23d8b24a' text-anchor='middle'>RPI</text></svg>">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Mulish:ital,wght@0,400;0,700;0,800;1,400&display=swap">
 <style>
+/* Layout: single centered column; cover → one-question-at-a-time card → scoreplate. Admin is a gated table view. */
 :root{
   --bg:#f3efe6;--surface:#fbf9f4;--ink:#1c2a24;--muted:#5e6b63;--line:#d9d2c3;
   --green:#1f4536;--green-soft:#2c5a46;--brass:#b08419;--brass-deep:#8a6612;
@@ -26,15 +27,16 @@
   --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.45);color-scheme:dark;}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh}
-.wrap{max-width:720px;margin:0 auto;padding-block:26px 64px;
+img{max-width:100%}
+[hidden]{display:none!important}
+.wrap{max-width:680px;margin:0 auto;padding-block:26px 64px;
   padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:max(18px,env(safe-area-inset-right,0px))}
-.eyebrow{text-transform:uppercase;letter-spacing:.22em;font-size:.7rem;font-weight:800;color:var(--brass-deep)}
 h1,h2,h3{font-family:var(--f-display);font-weight:600;text-wrap:balance;margin:0}
-.rule{height:1px;background:var(--line);border:0;margin:0}
+.eyebrow{text-transform:uppercase;letter-spacing:.22em;font-size:.7rem;font-weight:800;color:var(--brass-deep)}
 .cover{background:var(--surface);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);overflow:hidden}
-.crest{background:var(--green);color:var(--cream);padding:32px 26px 28px;text-align:center;border-bottom:3px solid var(--brass)}
+.crest{background:var(--green);color:var(--cream);padding:30px 26px 26px;text-align:center;border-bottom:3px solid var(--brass)}
 .crest .mark{font-family:var(--f-display);font-size:.76rem;letter-spacing:.4em;text-transform:uppercase;color:var(--brass);font-weight:600}
-.crest h1{color:#fff;font-size:2.2rem;line-height:1.02;margin:.35rem 0 .15rem;font-style:italic}
+.crest h1{color:#fff;font-size:2rem;line-height:1.02;margin:.35rem 0 .15rem;font-style:italic}
 .crest .sub{font-size:.88rem;color:#cdd8d0;letter-spacing:.04em}
 .coverbody{padding:24px 26px 28px}
 .coverbody p.lead{color:var(--muted);margin:.2rem 0 1.3rem;font-size:.96rem}
@@ -42,10 +44,6 @@ h1,h2,h3{font-family:var(--f-display);font-weight:600;text-wrap:balance;margin:0
 .field label{display:block;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin-bottom:6px}
 .field input{width:100%;padding:12px 14px;font:inherit;font-size:1rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:3px}
 .field input:focus{outline:2px solid var(--brass);outline-offset:1px;border-color:var(--brass)}
-.meta{display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:space-between;background:var(--cream);border:1px solid var(--line);border-radius:3px;padding:12px 16px;margin-bottom:20px}
-.meta .wk{font-family:var(--f-display);font-weight:600;font-size:1.02rem}
-.meta .wk span{color:var(--brass-deep);font-style:italic}
-.meta .cnt{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-weight:700}
 .motto{text-align:center;font-family:var(--f-display);font-style:italic;color:var(--muted);font-size:.9rem;margin-top:20px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:inherit;font-weight:800;letter-spacing:.04em;padding:13px 22px;border-radius:3px;border:1px solid transparent;cursor:pointer;font-size:.92rem;transition:transform .05s ease,background .15s ease}
 .btn:active{transform:translateY(1px)}
@@ -58,19 +56,14 @@ h1,h2,h3{font-family:var(--f-display);font-weight:600;text-wrap:balance;margin:0
 .btn-brass:hover{background:var(--brass-deep);color:#fff}
 .btn-row{display:flex;gap:12px;flex-wrap:wrap}
 .btn.full{width:100%}
-.authtabs{display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:20px}
-.authtab{flex:1;background:none;border:none;border-bottom:2px solid transparent;padding:10px;font:inherit;font-weight:800;letter-spacing:.04em;color:var(--muted);cursor:pointer;margin-bottom:-1px}
-.authtab.active{color:var(--ink);border-bottom-color:var(--brass)}
 .err{background:var(--bad-bg);color:var(--bad);border:1px solid var(--bad);border-radius:3px;padding:10px 14px;font-size:.88rem;font-weight:700;margin-bottom:14px}
 .err:empty{display:none}
-.hint{font-size:.78rem;color:var(--muted);margin-top:-8px;margin-bottom:14px}
-.strength{height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin:-6px 0 14px}
-.strength>i{display:block;height:100%;width:0;background:var(--bad);transition:width .2s,background .2s}
-.focus{background:var(--cream);border:1px solid var(--line);border-left:3px solid var(--brass);border-radius:0 4px 4px 0;padding:16px 18px;margin-bottom:20px}
-.focus h3{font-size:1.05rem;margin-bottom:8px}
-.focus .row{font-size:.9rem;margin:5px 0}
-.focus .row b{font-family:var(--f-display);color:var(--brass-deep)}
-.focus .tag86{display:inline-block;background:var(--bad-bg);color:var(--bad);border:1px solid var(--bad);border-radius:3px;padding:1px 7px;font-size:.78rem;font-weight:700;margin:2px 4px 2px 0}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:10px;flex-wrap:wrap}
+.topbar .who{font-size:.82rem;color:var(--muted)}
+.topbar .who b{color:var(--ink);font-family:var(--f-display);font-style:italic;font-weight:600}
+.topbar .tools{display:flex;gap:8px;align-items:center}
+.iconbtn{background:none;border:1px solid var(--line);border-radius:99px;height:34px;padding:0 12px;cursor:pointer;color:var(--muted);font:inherit;font-size:.8rem;font-weight:700;display:grid;place-items:center}
+.iconbtn:hover{border-color:var(--brass);color:var(--brass-deep)}
 .progress{display:flex;align-items:center;gap:12px;margin:6px 0 18px}
 .bar{flex:1;height:7px;background:var(--line);border-radius:99px;overflow:hidden;min-width:0}
 .bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--brass));border-radius:99px;transition:width .3s ease}
@@ -79,17 +72,22 @@ h1,h2,h3{font-family:var(--f-display);font-weight:600;text-wrap:balance;margin:0
 .cat{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.16em;color:var(--brass-deep);margin-bottom:10px}
 .qtext{font-family:var(--f-display);font-size:1.28rem;line-height:1.28;margin-bottom:18px}
 .choices{display:flex;flex-direction:column;gap:10px}
-.choice{display:flex;gap:12px;align-items:flex-start;padding:13px 15px;border:1px solid var(--line);border-radius:3px;background:var(--bg);cursor:pointer;transition:border-color .12s,background .12s;position:relative}
+.choice{display:flex;gap:12px;align-items:flex-start;padding:13px 15px;border:1px solid var(--line);border-radius:3px;background:var(--bg);cursor:pointer;transition:border-color .12s,background .12s}
 .choice:hover{border-color:var(--brass)}
 .choice .tick{flex:0 0 auto;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--muted);display:grid;place-items:center;font-size:.72rem;font-weight:800;color:var(--muted);margin-top:1px}
+.choice .txt{min-width:0;font-size:.98rem}
 .choice.sel{border-color:var(--green);background:var(--good-bg)}
 .choice.sel .tick{background:var(--green);border-color:var(--green);color:#fff}
-.choice .txt{min-width:0;font-size:.98rem}
 .choice.locked{cursor:default}
 .choice.correct{border-color:var(--good);background:var(--good-bg)}
 .choice.correct .tick{background:var(--good);border-color:var(--good);color:#fff}
 .choice.wrong{border-color:var(--bad);background:var(--bad-bg)}
 .choice.wrong .tick{background:var(--bad);border-color:var(--bad);color:#fff}
+.blank{width:100%;padding:13px 15px;font:inherit;font-size:1rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:3px}
+.blank:focus{outline:2px solid var(--brass);outline-offset:1px;border-color:var(--brass)}
+.blank.locked{background:var(--surface)}
+.blank.correct{border-color:var(--good);background:var(--good-bg)}
+.blank.wrong{border-color:var(--bad);background:var(--bad-bg)}
 .explain{margin-top:16px;padding:14px 16px;border-left:3px solid var(--brass);background:var(--cream);border-radius:0 3px 3px 0;font-size:.9rem}
 .verdict{font-weight:800;letter-spacing:.04em;display:block;margin-bottom:3px}
 .verdict.ok{color:var(--good)}.verdict.no{color:var(--bad)}
@@ -109,326 +107,290 @@ h1,h2,h3{font-family:var(--f-display);font-weight:600;text-wrap:balance;margin:0
 .mitem .mq{font-family:var(--f-display);font-size:1rem;margin-bottom:7px}
 .mitem .ma{font-size:.88rem}
 .mitem .ma .lab{font-weight:800;color:var(--good)}
-.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:10px;flex-wrap:wrap}
-.topbar .who{font-size:.82rem;color:var(--muted)}
-.topbar .who b{color:var(--ink);font-family:var(--f-display);font-style:italic;font-weight:600}
-.topbar .tools{display:flex;gap:8px;align-items:center}
-.iconbtn{background:none;border:1px solid var(--line);border-radius:99px;height:34px;padding:0 12px;cursor:pointer;color:var(--muted);font:inherit;font-size:.8rem;font-weight:700;display:grid;place-items:center}
-.iconbtn:hover{border-color:var(--brass);color:var(--brass-deep)}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:11px 20px;border-radius:99px;font-size:.86rem;font-weight:700;box-shadow:var(--shadow);opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:20;max-width:calc(100vw - 32px)}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .foot-motto{text-align:center;margin-top:36px;font-family:var(--f-display);font-style:italic;color:var(--muted);font-size:.88rem}
-/* manager */
+/* admin */
 .mgr table{width:100%;border-collapse:collapse;font-size:.9rem}
 .mgr th{text-align:left;font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line)}
-.mgr td{padding:9px 10px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.mgr td{padding:10px 10px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;vertical-align:top}
+.mgr tr:last-child td{border-bottom:none}
 .pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.74rem;font-weight:800}
-.pill.done{background:var(--good-bg);color:var(--good)}
-.pill.out{background:var(--bad-bg);color:var(--bad)}
-.mgr .big{font-family:var(--f-display);font-size:2rem;font-weight:600}
+.pill.pass{background:var(--good-bg);color:var(--good)}
+.pill.fail{background:var(--bad-bg);color:var(--bad)}
+.statrow{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.stat{flex:1;min-width:120px;background:var(--cream);border:1px solid var(--line);border-radius:3px;padding:14px 16px}
+.stat .lab{font-size:.68rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:800}
+.stat .big{font-family:var(--f-display);font-size:1.9rem;font-weight:600;margin-top:4px}
+.empty{color:var(--muted);text-align:center;padding:30px 10px;font-size:.92rem}
+.when{color:var(--muted);font-size:.78rem}
+details.amgr{margin-top:6px}
+details.amgr summary{cursor:pointer;color:var(--brass-deep);font-size:.82rem;font-weight:700}
+details.amgr .qa{font-size:.84rem;margin:7px 0;padding-left:14px;border-left:2px solid var(--line)}
+details.amgr .qa b{color:var(--good)}
+details.amgr .qa.x b{color:var(--bad)}
 </style>
 </head>
 <body>
 <div class="wrap" id="app"></div>
-<div class="toast" id="toast"></div>
 <script>
-const CF='https://rpi-shift-api.amusementstandards.workers.dev';
-const PASS=80, PER_WEEK=15;
-const BANK=[{"id":"s01","cat":"Service Philosophy","q":"Finish the RPI service philosophy: “Service is the foundation, but hospitality is the ___.”","a":["splash of color that makes it pop","icing on the cake","reason we're here","bare minimum"],"correct":0,"e":"Service is the foundation; hospitality is the splash of color that makes it pop. Top-tier service delivered with a warm, welcoming vibe."},{"id":"s02","cat":"Service 101","q":"A guest asks how a dish is prepared and you don't know. What do you say?","a":["“I don't know, sorry.”","“Let me find out for you” — then follow through","Guess based on the name","Ask them to check with another server"],"correct":1,"e":"Never say “I don't know.” Say “Let me find out for you” and actually follow through. Not knowing basics during a rush causes delays."},{"id":"s03","cat":"Service 101","q":"What is the 10/5 rule?","a":["Greet within 10 seconds, seat within 5 minutes","Make eye contact & smile within 10 feet; greet within 5 feet","10 tables max, 5 guests each","Clear within 10 min, re-set within 5"],"correct":1,"e":"At 10 feet: make eye contact and smile. At 5 feet: greet them. It builds a welcoming atmosphere the moment a guest approaches."},{"id":"s04","cat":"Service 101","q":"“Full hands in, full hands out” means:","a":["Carry as many plates as possible","Always wear gloves in the kitchen","Enter the kitchen with dirty dishes, leave with a ready dish","Keep both hands free for guests"],"correct":2,"e":"Never walk empty-handed. Clear dishes on the way into the kitchen and carry a ready dish out — efficient, collaborative service."},{"id":"s05","cat":"Service 101","q":"Under Open Hand Service, your arm should:","a":["Never cross in front of a guest","Always reach from the guest's right","Rest on the back of the chair","Stay behind your back at all times"],"correct":0,"e":"In open hand service your arm never crosses in front of a guest. Maneuver around the table so you're never intrusive."},{"id":"s06","cat":"Flow of Traffic","q":"Who always has the right of way in the dining room?","a":["Food runners with hot food","Our guests","The sommelier","Whoever is closest to the kitchen"],"correct":1,"e":"Guests are the top priority, always. When you have nothing in your hands, the person coming toward you goes before you."},{"id":"s07","cat":"Flow of Traffic","q":"Rank these by priority (highest first): drinks runner, guest, hot-food runner, cold-food runner.","a":["Guest → hot food → cold food → drinks","Hot food → guest → drinks → cold food","Guest → drinks → hot food → cold food","Drinks → guest → cold food → hot food"],"correct":0,"e":"Order of priority: guests, then anyone with hot food, then cold food, then drinks, then dirty flatware/glassware, then empty-handed team members."},{"id":"s08","cat":"Flow of Traffic","q":"The kitchen entrance from the back dining room is used:","a":["During busy rushes only","For food runners only","Never — unless the building must be evacuated","Whenever your section is in the back"],"correct":2,"e":"The back-dining-room kitchen entrance is not to be used unless the building needs to be evacuated."},{"id":"s09","cat":"Setting the Table","q":"Where does the folded linen with polished fork and knife go, and which way does the fold face?","a":["Right of the plate, fold facing right","Left of the plate, fold facing left","Above the plate, fold facing up","Center of the plate"],"correct":1,"e":"Fork and knife sit on folded linen to the LEFT of the plate, with the fold facing left. Consistency starts with the table setting."},{"id":"s10","cat":"Setting the Table","q":"The four nubs on the rim of the plate should sit at:","a":["12, 3, 6 and 9 o'clock","1, 4, 7 and 10 o'clock","2, 5, 8 and 11 o'clock","Wherever they land"],"correct":0,"e":"Plates are set with the 4 nubs at 12:00, 3:00, 6:00 and 9:00. The water glass goes top-right with an AP wine glass to its left."},{"id":"s11","cat":"Setting the Table","q":"Salt and pepper mills are:","a":["Set at every seat","Set at the center of the table","Not set on tables — available upon request","Only set for dinner service"],"correct":2,"e":"Salt and pepper mills are not set on tables; they're brought out upon request."},{"id":"s12","cat":"Setting the Table","q":"What do we use to clean tables?","a":["A damp bar rag","Sani-wipes","Glass cleaner and paper towel","A dry crumber only"],"correct":1,"e":"We use Sani-wipes to clean tables. Two pieces of white paper are then set — replace them if there are major wrinkles."},{"id":"s13","cat":"Be Prepared","q":"Which of these is NOT on the required daily uniform/kit list?","a":["A wine key","A lighter","A personal cell phone","A pressed white oxford shirt"],"correct":2,"e":"Required daily: clean blue jeans, black non-slip shoes & black socks, pressed white oxford, a lighter, a wine key, pens, and a great attitude. Phones are for managers/supervisors only."},{"id":"s14","cat":"Steps of Service","q":"How soon must every table be greeted after being seated?","a":["Within 15 minutes","Within moments — even if it's brief","After you finish your current table","Once water is poured"],"correct":1,"e":"Every table must be greeted within moments of being seated, even a simple “I'll be right with you.” If you can't, notify a manager or another FOH teammate."},{"id":"s15","cat":"Steps of Service","q":"Bread service and bottled water tickets are:","a":["Rung in with the food order","Always solo tickets, sent immediately","Held until cocktails are ready","Optional to ring in"],"correct":1,"e":"Bread and bottled water are always solo tickets and are fired immediately."},{"id":"s16","cat":"Steps of Service","q":"Our bread service is:","a":["A basket of assorted rolls","Two warm demi-baguettes from Balthazar Bakery with whipped butter, cornichons, and radishes","Garlic bread from the kitchen","Focaccia with olive oil"],"correct":1,"e":"Bread service is two warm demi-baguettes from Balthazar Bakery, served with whipped butter, cornichons, and radishes."},{"id":"s17","cat":"Water Service","q":"How is bottled water placed and water served?","a":["Poured tableside, bottle left anywhere","Served on the right side; bottle on a metal coaster at the end of the table","Served from the left; bottle in an ice bucket","Guests pour their own"],"correct":1,"e":"Serve water on the right side without dripping. Bottled water goes on a metal coaster at the end of the table; tap comes from wide-mouth iced pitchers."},{"id":"s18","cat":"Cocktails","q":"A guest orders a martini. What's the key question nine out of ten guests answer the same way?","a":["Shaken or stirred?","Would you like it with vermouth? (usually no)","Up or on the rocks?","One olive or two?"],"correct":1,"e":"Ask if they want vermouth — 9 times out of 10 guests just want the booze, shaken, up, with no vermouth. Also confirm vodka/gin, brand, dry/dirty, and garnish."},{"id":"s19","cat":"Cocktails","q":"Our POS (Toast) is programmed by:","a":["Cocktail name","Spirit, not cocktail","Guest seat only","Price tier"],"correct":1,"e":"The POS is programmed by spirit, not by cocktail. That's why you confirm the spirit and brand before ringing a classic in."},{"id":"s20","cat":"Cocktails","q":"For spirits priced over $20 per glass, you should:","a":["Pour first, mention price later","Highlight the price by pointing to it on the list","Refuse to serve them","Ask a manager to approve every pour"],"correct":1,"e":"For spirits over $20/glass, point to the price on the list so guests know the cost. Scotch can be $14 vs $80 — better to double-check than comp later."},{"id":"s21","cat":"Cocktails","q":"All beverages must be carried:","a":["Two at a time, by hand","On a tray — even when the glass is empty","Only if there are three or more","However is fastest"],"correct":1,"e":"Don't let us catch you without a tray. All beverages are carried on a tray, even an empty glass."},{"id":"s22","cat":"Wine Service","q":"When a guest orders a wine by the glass, the bartender pours it into a:","a":["Full wine glass","Quartino","Carafe for the table","Decanter"],"correct":1,"e":"Wine by the glass is picked up from the service bar poured into a quartino. Input the seat number, mark the guest with glassware, and pour on the right side."},{"id":"s23","cat":"Wine Service","q":"How many house wines does RPI offer?","a":["One red, one white","A full house selection","None — every wine is a unique entity","Only sparkling"],"correct":2,"e":"We have no house wines. Every wine, by the glass or bottle, is a unique and special entity."},{"id":"s24","cat":"Wine Service","q":"How do you announce a bottle before opening it?","a":["Just the grape and price","Producer, region, and vintage — then open after they confirm","Only the vintage","Hand them the book and let them read it"],"correct":1,"e":"Confirm the bin number, then announce producer, region, and vintage — e.g. “Joseph Drouhin Chablis, 2021 vintage.” Open only once the guest confirms."},{"id":"s25","cat":"Taking the Order","q":"A food order should be taken within how long of a guest being seated?","a":["5 minutes","15–20 minutes","30 minutes","Whenever they're ready, no limit"],"correct":1,"e":"Take the food order within 15–20 minutes of seating to stay on track with kitchen timing."},{"id":"s26","cat":"Taking the Order","q":"Are partial orders allowed (take apps now, entrees later)?","a":["Yes, whenever guests prefer","No — take the full order, all courses, for kitchen timing","Only on slow nights","Only if the chef is notified first"],"correct":1,"e":"Orders are taken in full — apps and all courses — for proper timing. If questioned: “The chef requests the full order so we can time your experience perfectly.”"},{"id":"s27","cat":"Taking the Order","q":"Writing down the order is:","a":["Optional if you have a good memory","Required — memorizing orders is not acceptable","Only required for tables of 4+","Done by the food runner"],"correct":1,"e":"All servers must write down every order with seat numbers, then repeat it back. Memorizing orders is not acceptable — it's about reducing errors."},{"id":"s28","cat":"Allergies","q":"A guest mentions an allergy. What is the FIRST step?","a":["Ring it into the POS with a note","Tell a manager","Go to the kitchen and let chef know — before anything is entered in the POS","Ask the guest to choose a different dish"],"correct":2,"e":"Allergy procedure: go to the kitchen and tell chef FIRST, before anything is inputted. Then name the ticket via TAB (seat #, allergen) and mark the allergen on every item."},{"id":"s29","cat":"Allergies","q":"When ringing in allergy items, you name the ticket using:","a":["The guest's last name","The TAB button — e.g. “Seat 1, Gluten Allergy”","A red sticker on the plate","The table number only"],"correct":1,"e":"Use the TAB button to name the ticket (seat number + allergen), then mark the allergen again on each item and note what must be left off."},{"id":"s30","cat":"Modifications","q":"What's the only kind of modification we generally allow?","a":["Removals","Swaps between dishes","Adding components from another dish","Anything the guest asks"],"correct":0,"e":"Generally the only modifications allowed are removals. Guests can't mix and match or add components across dishes. Approved mods are already programmed in Toast."},{"id":"s31","cat":"Modifications","q":"A guest requests a modification that isn't listed in Toast. Who do you check with?","a":["The chef","Management","The sommelier","No one — just say no"],"correct":1,"e":"For an unlisted modification, check with management to see if it's possible — not chef. (Allergies and firing issues, by contrast, go to chef first.)"},{"id":"s32","cat":"Toast / POS","q":"Which dishes fall under Course 1 in Toast's auto-coursing?","a":["Entrees and sides","Appetizers and raw bar","Desserts","Cocktails"],"correct":1,"e":"Course 1 = Appetizers and Raw Bar. Course 2 = Entrees and Sides. Toast auto-courses but you can adjust coursing if needed."},{"id":"s33","cat":"Toast / POS","q":"Toast won't let you select “done” on an item until you've added a:","a":["Modifier","Seat number","Course","Price"],"correct":1,"e":"Every item must be tied to a seat number — Toast won't let you finish without one. Always ring by seat and double-check dish, temp, sides, and mods."},{"id":"s34","cat":"Pacing & Fire Times","q":"Course 1 should arrive roughly how long after firing?","a":["5–8 minutes","14–18 minutes","25–30 minutes","As soon as it's rung"],"correct":1,"e":"Approximate fire times: drinks/wine always before Course 1; Course 1 is 14–18 min after firing; Course 2 is 14–18 min — gauge the guests' pace, don't wait for plates to empty."},{"id":"s35","cat":"Table Maintenance","q":"When should you offer the next round of drinks?","a":["Only when a glass is completely empty","When glasses are about ¾ empty","At the start of every course","When the guest asks"],"correct":1,"e":"Never wait for an empty glass. When glasses are ¾ empty, offer another round so the next lands as they finish the first."},{"id":"s36","cat":"Table Maintenance","q":"At RPI, everything that goes to or from a table must be:","a":["Carried in both hands","On a tray","Announced to a manager","Cleared with a partner"],"correct":1,"e":"Everything — drinks, food, silverware, condiments — travels on a tray. “Everything at River Pointe Inn is served on a silver platter, literally.”"},{"id":"s37","cat":"Serving Food","q":"Which is correct when serving food?","a":["Auction it: “Who had the oysters?”","Reach across guests to save time","Never auction; serve ladies first; add “pardon my reach” if needed","Set everything in the center to share"],"correct":2,"e":"Never auction off food. Make every effort to serve ladies first, never reach across a guest, and say “pardon my reach” if you must. Finish with “enjoy your first course!”"},{"id":"s38","cat":"Serving Food","q":"The “two bite rule” / circle back means checking in:","a":["Within 2 minutes of serving the course","After two full courses","Twice per visit","Two tables later"],"correct":0,"e":"Circle back within 2 minutes of service and ask about specific dishes by name: “How are the oysters? Is the burger to your liking?”"},{"id":"s39","cat":"Serving Food","q":"Any time an item goes back to the kitchen:","a":["Just re-ring it","A manager must know immediately","Comp it yourself","Wait until the end of the shift to report it"],"correct":1,"e":"Any time an item goes back, a manager must know immediately. Ask questions to find the root cause and offer a solution."},{"id":"s40","cat":"Clearing","q":"When do we begin clearing a table?","a":["As soon as the first guest finishes","When everyone at the table is finished eating","Halfway through the course","When the kitchen tells us to"],"correct":1,"e":"Clear only when everyone is finished — never while anyone is still enjoying food. Also clear if asked, if a plate is stacked/pushed away, or a shared app plate is empty."},{"id":"s41","cat":"Clearing","q":"Steak knives:","a":["Go through the dish machine","Must be hand washed in the designated container","Are left on the table","Are tossed into the silverware bucket"],"correct":1,"e":"Steak knives cannot be machine-washed — place them in the designated hand-wash container. Don't slide silverware off plates or stack plates on the table; the plates are very expensive."},{"id":"s42","cat":"Clearing","q":"When clearing, you should:","a":["Stack plates on the table first","Hover nearby until they finish","Clear with a partner so the whole table is cleared in one visit","Clear one plate at a time over several trips"],"correct":2,"e":"Clear with a partner/group so the entire table clears in one visit. Don't hover, don't stack on the table, and mind deep conversation — wait for a break."},{"id":"s43","cat":"Dessert","q":"How do we handle dessert menus?","a":["Ask if they'd like to see one","Always present them — we don't ask","Only offer if they finished their entrees","Leave them on the table at seating"],"correct":1,"e":"We do not ask if guests want a dessert menu — it's always presented, but only after the table is completely cleared (except unfinished drinks and the center lamp)."},{"id":"s44","cat":"Dessert","q":"Coffee and tea for the table must land:","a":["After dessert","At the same time as dessert","Before dessert arrives","Only if requested twice"],"correct":2,"e":"Coffee and tea must be at the table before dessert arrives. Replace silverware for anyone ordering dessert and bring extra forks/napkins — people share dessert."},{"id":"s45","cat":"Dessert","q":"Who makes the coffee and tea for your table?","a":["The barista","The bartender","You, the server","A food runner"],"correct":2,"e":"As the server, you're responsible for making coffee and tea for your table. Offerings include espresso/double, macchiato, cappuccino, cáfe americano, and hot tea."},{"id":"s46","cat":"Payment & Closing","q":"The check is presented:","a":["As soon as entrees are cleared","Automatically with dessert","At the guest's request, unless management says otherwise","Only when they stand up"],"correct":2,"e":"Present the check at the guest's request unless told otherwise. The table should be fully cleared except a beverage glass before it's presented."},{"id":"s47","cat":"Payment & Closing","q":"When presenting the check you should:","a":["Write a thank-you note on it","Clip it on a postcard, centered, and write nothing on it","Add your name and number","Hand it directly to the host"],"correct":1,"e":"Clip the check on a postcard at the center of the table and write nothing on it — no notes, names, or drawings. Tell guests it's a postcard we'll mail for them."},{"id":"s48","cat":"Payment & Closing","q":"“Your table is still your table until…”","a":["they pay the check","they get up — even if they already paid","the next reservation arrives","you clock out"],"correct":1,"e":"Your table is still your table until they get up, even if they've already paid. Keep taking care of them through the farewell."},{"id":"s49","cat":"Standards of Conduct","q":"Who is permitted to carry a personal cell phone on the floor?","a":["Anyone, on vibrate","Only managers and supervisors","Servers with kids","Anyone during a slow shift"],"correct":1,"e":"Only managers and supervisors may have phones on them. If a personal emergency requires it, tell your manager before the shift; keep it on vibrate and handle calls off the floor."},{"id":"s50","cat":"Standards of Conduct","q":"How much notice is required to change your Sling availability?","a":["No notice","24 hours","Two weeks","One month"],"correct":2,"e":"Any changes to availability require two weeks' notice. Requests for more than 2 consecutive days off also require at least 2 weeks' notice."},{"id":"s51","cat":"Standards of Conduct","q":"A no call/no show may result in:","a":["A verbal warning only","Termination","Loss of one shift","Nothing if you explain later"],"correct":1,"e":"Failing to notify management before your shift start (a no call/no show) may result in termination. More than 3 consecutive call-outs requires a doctor's note to return."},{"id":"s52","cat":"Standards of Conduct","q":"Switching or giving up a shift is only valid when it's:","a":["Agreed verbally with a coworker","Done in Sling with manager approval","Posted in the group chat","Covered by anyone you can find"],"correct":1,"e":"Shift switches must go through Sling and have manager approval in advance. Verbal switches are not accepted."},{"id":"s53","cat":"Sanitation","q":"Hands should be washed with soap and water for at least:","a":["5 seconds","10 seconds","20 seconds","60 seconds"],"correct":2,"e":"Wash hands with soap and water for at least 20 seconds. Sanitation begins before you arrive — come manicured and practicing good hygiene."},{"id":"s54","cat":"Safe Alcohol Service","q":"Whose ID should you check?","a":["Only guests who look under 21","Guests who appear under 30","Everyone, every time","Only on large tables"],"correct":1,"e":"Check IDs of anyone who appears under 30. Accept driver's licenses, passports, military IDs, or state cards; reject suspicious/fake IDs and consult a manager if unsure."},{"id":"s55","cat":"Safe Alcohol Service","q":"If a guest becomes too intoxicated, you should:","a":["Keep serving but add water","Stop serving, notify a manager, and complete an incident report","Cut them off quietly and say nothing","Ask another server to serve them"],"correct":1,"e":"Stop serving, notify a manager, and complete an incident report detailing the cut-off and safe departure. Under dram shop laws, we can be held liable for intoxicated guests."},{"id":"s56","cat":"Safe Alcohol Service","q":"A good practice to promote safe drinking is:","a":["Serve two drinks at a time to save trips","Serve water with alcohol and limit guests to one drink at a time","Only serve beer and wine","Stop all service after one round"],"correct":1,"e":"Serve water alongside alcohol and limit guests to one drink at a time. Watch for slurred speech, unsteady balance, confusion, or aggression."},{"id":"s57","cat":"Suggestive Selling","q":"The manual says: “Do not be an order taker, be a ___.”","a":["fast typist","suggestive seller","mind reader","rule follower"],"correct":1,"e":"Be a suggestive seller, not an order taker. Guide guests through the menu — e.g. pairing the NY strip with the house-made twice-cooked fries."}];
+/* ---------- the 5 questions ---------- */
+/* type:"mc" multiple choice (correct = index) | type:"fill" fill-in-the-blank (accept = array of OK answers, lowercased) */
+const QUESTIONS=[
+  {id:"q1",type:"mc",cat:"Service Philosophy",
+   q:"Service is the foundation, but hospitality is the ___.",
+   choices:["bare minimum","splash of color that makes it pop","icing on the cake","reason we're here"],
+   correct:1,
+   e:"Service is the foundation; hospitality is the splash of color that makes it pop."},
+  {id:"q2",type:"fill",cat:"Service 101",
+   q:"The 10/5 rule: at 10 feet you make eye contact and smile, and at 5 feet you ___ the guest.",
+   accept:["greet"],
+   display:"greet",
+   e:"At 10 feet: eye contact and a smile. At 5 feet: greet them."},
+  {id:"q3",type:"mc",cat:"Allergies",
+   q:"A guest mentions an allergy. What is the FIRST step?",
+   choices:["Ring it into Toast with a note","Tell a manager","Go to the kitchen and tell chef — before anything is entered in the POS","Ask the guest to pick a different dish"],
+   correct:2,
+   e:"Tell chef in the kitchen FIRST, before anything is inputted. Then name the ticket via TAB and mark the allergen on every item."},
+  {id:"q4",type:"fill",cat:"Wine Service",
+   q:"We have no house wines — every wine, by the glass or bottle, is a unique and special ___.",
+   accept:["entity"],
+   display:"entity",
+   e:"We have no house wines. Every wine is a unique and special entity."},
+  {id:"q5",type:"mc",cat:"Safe Alcohol Service",
+   q:"You should check the ID of any guest who appears under:",
+   choices:["21","25","30","40"],
+   correct:2,
+   e:"Check IDs of anyone who appears under 30. Accept licenses, passports, military or state IDs; consult a manager if unsure."}
+];
+const PASS=80; // percent
 
-/* ---------- storage (per-viewer convenience) ---------- */
-const TOKEN_KEY='rpi_sw_token';
-function getToken(){try{return localStorage.getItem(TOKEN_KEY)||'';}catch(e){return '';}}
-function setToken(t){try{localStorage.setItem(TOKEN_KEY,t);}catch(e){}}
-function clearToken(){try{localStorage.removeItem(TOKEN_KEY);}catch(e){}}
+/* ---------- helpers ---------- */
+const app=document.getElementById('app');
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function norm(s){return String(s==null?'':s).toLowerCase().replace(/[^a-z0-9]/g,'');}
+function currentTheme(){const a=document.documentElement.getAttribute('data-theme');return a||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');}
+function toggleTheme(){const n=currentTheme()==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);try{localStorage.setItem('rpi_theme',n);}catch(e){}render();}
 try{const th=localStorage.getItem('rpi_theme');if(th)document.documentElement.setAttribute('data-theme',th);}catch(e){}
 
-/* ---------- API ---------- */
-async function api(path,opts){
-  opts=opts||{};
-  const headers=Object.assign({},opts.body?{'Content-Type':'application/json'}:{});
-  const tk=getToken(); if(tk)headers['Authorization']='Bearer '+tk;
-  const res=await fetch(CF+path,{method:opts.method||'GET',headers,credentials:'include',
-    body:opts.body?JSON.stringify(opts.body):undefined});
-  let data={}; try{data=await res.json();}catch(e){}
-  if(!res.ok){const err=new Error((data&&data.error)||('Request failed ('+res.status+')'));err.status=res.status;throw err;}
-  return data;
-}
-
-/* ---------- week logic ---------- */
-function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const day=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-day);const ys=new Date(Date.UTC(t.getUTCFullYear(),0,1));const wk=Math.ceil(((t-ys)/86400000+1)/7);return {week:wk,year:t.getUTCFullYear()};}
-function mondayOf(d){const t=new Date(d);const day=(t.getDay()+6)%7;t.setDate(t.getDate()-day);t.setHours(0,0,0,0);return t;}
-function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
-function weekInfo(){const now=new Date();const {week,year}=isoWeek(now);return {week,year,key:year+'-W'+String(week).padStart(2,'0'),seed:year*100+week,label:'Week of '+mondayOf(now).toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'})};}
-function seededStandards(seed){
-  const rnd=mulberry32(seed);
-  const idx=BANK.map((_,i)=>i);
-  for(let i=idx.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}
-  return idx.slice(0,Math.min(PER_WEEK,BANK.length)).map(i=>{
-    const b=BANK[i];
-    const order=b.a.map((_,k)=>k);
-    for(let m=order.length-1;m>0;m--){const j=Math.floor(rnd()*(m+1));[order[m],order[j]]=[order[j],order[m]];}
-    return {id:b.id,cat:b.cat,q:b.q,e:b.e,order,choices:order.map(o=>b.a[o]),correctDisplay:order.indexOf(b.correct),live:false};
-  });
-}
-function adaptLive(c){
-  const order=(c.choices||[]).map((_,k)=>k);
-  return {id:c.id,cat:c.cat||'Tonight',q:c.q,e:'Pulled from tonight’s pre-shift.',order,choices:c.choices||[],correctDisplay:typeof c.correct==='number'?c.correct:0,live:true};
+/* ---------- db capability (present only inside the claude.ai artifact) ---------- */
+let DB=null, USER=null, canAdmin=false;
+async function initCaps(){
+  if(typeof window.claude==='undefined'||!window.claude||!window.claude.use)return;
+  try{DB=await claude.use('db');}catch(e){DB=null;}
+  try{USER=await claude.use('user');}catch(e){USER=null;}
+  try{canAdmin = USER ? (USER.isOwner()||USER.canEdit()) : false;}catch(e){canAdmin=false;}
 }
 
 /* ---------- state ---------- */
-let state={phase:'loading',user:null,focus:null,questions:[],answers:[],idx:0,_pending:null,
-  week:'',weekLabel:'',saved:false,saveError:'',authTab:'login',authErr:'',resetToken:'',mgr:null};
-const app=document.getElementById('app'),toastEl=document.getElementById('toast');
-let toastTimer;
-function toast(m){toastEl.textContent=m;toastEl.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toastEl.classList.remove('show'),2200);}
-function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
-function currentTheme(){const a=document.documentElement.getAttribute('data-theme');return a||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');}
-function toggleTheme(){const n=currentTheme()==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);try{localStorage.setItem('rpi_theme',n);}catch(e){}render();}
+let state={phase:'cover',name:'',responses:{},idx:0,graded:false,coverErr:'',
+  saved:false,saveError:'',admin:null};
 
-/* ---------- boot ---------- */
-async function boot(){
-  const rt=(location.hash||'').match(/reset=([a-f0-9]+)/i);
-  if(rt){state.resetToken=rt[1];state.phase='reset';render();return;}
-  if(getToken()){
-    try{const d=await api('/auth/me');state.user=d.user;await startQuiz();return;}
-    catch(e){clearToken();}
-  }
-  state.phase='auth';render();
+/* ---------- grading ---------- */
+function isCorrect(q){
+  const r=state.responses[q.id];
+  if(q.type==='mc') return r===q.correct;
+  return q.accept.includes(norm(r));
 }
-async function startQuiz(){
-  const wi=weekInfo();state.week=wi.key;state.weekLabel=wi.label;
-  const std=seededStandards(wi.seed);
-  let live=[];
-  try{const c=await api('/quiz/content');state.focus=c;live=(c.questions||[]).map(adaptLive);}
-  catch(e){state.focus=null;}
-  state.questions=[...live,...std];
-  state.answers=Array(state.questions.length).fill(null);
-  state.idx=0;state._pending=null;state.saved=false;state.saveError='';
-  state.phase='cover';render();
-}
+function tally(){let c=0;QUESTIONS.forEach(q=>{if(isCorrect(q))c++;});return {correct:c,total:QUESTIONS.length,score:Math.round(c/QUESTIONS.length*100)};}
 
 /* ---------- render ---------- */
-function render(){({loading:renderLoading,auth:renderAuth,reset:renderReset,cover:renderCover,quiz:renderQuiz,result:renderResult,manager:renderManager}[state.phase]||renderLoading)();}
+function render(){({cover:renderCover,quiz:renderQuiz,result:renderResult,admin:renderAdmin}[state.phase]||renderCover)();}
 function themeWord(){return currentTheme()==='dark'?'Light':'Dark';}
 function topbar(){
   return `<div class="topbar">
-    <div class="who">RPI Server Weekly${state.user?' &middot; <b>'+esc(state.user.name)+'</b>':''}</div>
+    <div class="who">RPI Server Check${state.name?' &middot; <b>'+esc(state.name)+'</b>':''}</div>
     <div class="tools">
-      ${state.user&&state.user.role==='manager'?'<button class="iconbtn" onclick="goManager()">Manager</button>':''}
+      ${canAdmin&&state.phase!=='admin'?'<button class="iconbtn" onclick="goAdmin()">Admin</button>':''}
       <button class="iconbtn" onclick="toggleTheme()">${themeWord()}</button>
-      ${state.user?'<button class="iconbtn" onclick="logout()">Sign out</button>':''}
     </div></div>`;
 }
-function renderLoading(){app.innerHTML=`<div class="cover"><div class="crest"><div class="mark">River Pointe Inn</div><h1>Server Weekly</h1></div><div class="coverbody"><p class="lead">Loading…</p></div></div>`;}
 
-/* ----- auth ----- */
-function renderAuth(){
-  const t=state.authTab;
-  app.innerHTML=`
+/* ----- cover ----- */
+function renderCover(){
+  app.innerHTML=(canAdmin?topbar():'')+`
   <div class="cover">
-    <div class="crest"><div class="mark">River Pointe Inn &middot; Rumson, NJ</div><h1>Server Weekly</h1><div class="sub">Sign in to take this week’s quiz</div></div>
+    <div class="crest"><div class="mark">River Pointe Inn &middot; Rumson, NJ</div><h1>Server Check</h1><div class="sub">Five standards. Takes about two minutes.</div></div>
     <div class="coverbody">
-      <div class="authtabs">
-        <button class="authtab ${t==='login'?'active':''}" onclick="setTab('login')">Sign in</button>
-        <button class="authtab ${t==='signup'?'active':''}" onclick="setTab('signup')">Create account</button>
-      </div>
-      <div class="err" id="authErr">${esc(state.authErr)}</div>
-      ${t==='login'?`
-        <div class="field"><label>Email</label><input id="li-email" type="email" autocomplete="username"></div>
-        <div class="field"><label>Password</label><input id="li-pw" type="password" autocomplete="current-password"></div>
-        <button class="btn btn-primary full" onclick="doLogin()">Sign in</button>
-        <div class="hint" style="margin-top:12px">Forgot your password? Ask a manager to reset it for you.</div>
-      `:`
-        <div class="field"><label>Full name</label><input id="su-name" type="text" autocomplete="name"></div>
-        <div class="field"><label>Email</label><input id="su-email" type="email" autocomplete="username"></div>
-        <div class="field"><label>Staff code</label><input id="su-code" type="text" autocomplete="off"></div>
-        <div class="hint">Ask a manager for the current staff code.</div>
-        <div class="field"><label>Choose a password</label><input id="su-pw" type="password" autocomplete="new-password" oninput="meter(this.value)"></div>
-        <div class="strength"><i id="su-str"></i></div>
-        <div class="hint">At least 12 characters. A short phrase you’ll remember works well.</div>
-        <button class="btn btn-primary full" onclick="doSignup()">Create account &amp; continue</button>
-      `}
+      <p class="lead">Put your name in and run through five quick questions from the floor standards. Your manager sees the results.</p>
+      <div class="err" id="coverErr">${esc(state.coverErr)}</div>
+      <div class="field"><label>Your name</label><input id="nm" type="text" autocomplete="name" value="${esc(state.name)}" placeholder="First and last"></div>
+      <button class="btn btn-primary full" onclick="beginQuiz()">Start the check</button>
       <div class="motto">&ldquo;Melius semper&rdquo; &mdash; always better</div>
     </div>
   </div>`;
+  const nm=document.getElementById('nm');
+  if(nm)nm.addEventListener('keydown',e=>{if(e.key==='Enter')beginQuiz();});
 }
-function setTab(t){state.authTab=t;state.authErr='';render();}
-function authFail(m){state.authErr=m;const e=document.getElementById('authErr');if(e){e.textContent=m;}toast(m);}
-function meter(v){
-  const el=document.getElementById('su-str');if(!el)return;
-  let s=Math.min(v.length/18,1);
-  if(/[A-Z]/.test(v)&&/[a-z]/.test(v))s+=.05; if(/\d/.test(v))s+=.05; if(/\s/.test(v))s+=.05;
-  s=Math.min(s,1);el.style.width=Math.round(s*100)+'%';
-  el.style.background=s<.5?'var(--bad)':s<.8?'var(--brass)':'var(--good)';
-}
-async function doLogin(){
-  const email=val('li-email'),pw=val('li-pw');
-  if(!email||!pw){authFail('Enter your email and password');return;}
-  try{const d=await api('/auth/login',{method:'POST',body:{email,password:pw}});setToken(d.token);state.user=d.user;state.authErr='';await startQuiz();}
-  catch(e){authFail(e.message);}
-}
-async function doSignup(){
-  const name=val('su-name'),email=val('su-email'),code=val('su-code'),pw=val('su-pw');
-  if(!name||!email||!code||!pw){authFail('Fill in every field');return;}
-  if(pw.length<12){authFail('Password must be at least 12 characters');return;}
-  try{const d=await api('/auth/signup',{method:'POST',body:{name,email,code,password:pw}});setToken(d.token);state.user=d.user;state.authErr='';await startQuiz();}
-  catch(e){authFail(e.message);}
-}
-function logout(){api('/auth/logout',{method:'POST'}).catch(()=>{});clearToken();state.user=null;state.phase='auth';state.authTab='login';render();}
-function val(id){const e=document.getElementById(id);return e?e.value.trim():'';}
-
-/* ----- reset ----- */
-function renderReset(){
-  app.innerHTML=`
-  <div class="cover">
-    <div class="crest"><div class="mark">River Pointe Inn</div><h1>New password</h1></div>
-    <div class="coverbody">
-      <div class="err" id="authErr">${esc(state.authErr)}</div>
-      <div class="field"><label>Choose a new password</label><input id="rs-pw" type="password" autocomplete="new-password" oninput="meter2(this.value)"></div>
-      <div class="strength"><i id="rs-str"></i></div>
-      <div class="hint">At least 12 characters.</div>
-      <button class="btn btn-primary full" onclick="doReset()">Set password &amp; sign in</button>
-    </div>
-  </div>`;
-}
-function meter2(v){const el=document.getElementById('rs-str');if(!el)return;let s=Math.min(v.length/18,1);el.style.width=Math.round(s*100)+'%';el.style.background=s<.5?'var(--bad)':s<.8?'var(--brass)':'var(--good)';}
-async function doReset(){
-  const pw=val('rs-pw');if(pw.length<12){authFail('Password must be at least 12 characters');return;}
-  try{await api('/auth/reset/confirm',{method:'POST',body:{token:state.resetToken,password:pw}});
-    history.replaceState(null,'',location.pathname);
-    toast('Password set — sign in');state.phase='auth';state.authTab='login';state.authErr='';render();}
-  catch(e){authFail(e.message);}
-}
-
-/* ----- cover (focus + begin) ----- */
-function renderCover(){
-  const f=state.focus;
-  let focusHtml='';
-  if(f){
-    const specials=(f.specials||[]).filter(Boolean);
-    const vips=(f.vips||[]).filter(Boolean);
-    const e86=(f.eightySix||[]).filter(Boolean);
-    focusHtml=`<div class="focus">
-      <h3>Tonight’s Focus</h3>
-      ${f.platDuJour?`<div class="row"><b>Plat du jour:</b> ${esc(f.platDuJour)}</div>`:''}
-      ${specials.length?`<div class="row"><b>Specials:</b> ${specials.map(esc).join(', ')}</div>`:''}
-      ${e86.length?`<div class="row"><b>On the 86:</b><br>${e86.map(x=>'<span class="tag86">'+esc(x)+'</span>').join('')}</div>`:''}
-      ${vips.length?`<div class="row"><b>VIPs:</b> ${vips.map(esc).join(', ')}</div>`:''}
-      ${(!f.platDuJour&&!specials.length&&!e86.length&&!vips.length)?'<div class="row" style="color:var(--muted)">No pre-shift posted yet — standards questions only tonight.</div>':''}
-    </div>`;
-  }
-  app.innerHTML=topbar()+`
-  <div class="cover">
-    <div class="crest"><div class="mark">River Pointe Inn &middot; Rumson, NJ</div><h1>Server Weekly</h1><div class="sub">Standards refresher &mdash; your weekly homework</div></div>
-    <div class="coverbody">
-      <p class="lead">A short quiz pulled fresh from the Server Training Manual, plus a couple of questions from tonight’s pre-shift. Pass mark is ${PASS}%.</p>
-      <div class="meta"><div class="wk">${esc(state.weekLabel)} &middot; <span>Week ${esc(state.week.split('-W')[1]||'')}</span></div><div class="cnt">${state.questions.length} questions</div></div>
-      ${focusHtml}
-      <button class="btn btn-primary full" onclick="state.phase='quiz';render();window.scrollTo(0,0)">Begin this week’s quiz</button>
-      <div class="motto">&ldquo;Melius semper&rdquo;</div>
-    </div>
-  </div>`;
+function beginQuiz(){
+  const nm=document.getElementById('nm');const v=nm?nm.value.trim():'';
+  if(!v){state.coverErr='Enter your name to start.';const e=document.getElementById('coverErr');if(e)e.textContent=state.coverErr;return;}
+  state.name=v;state.coverErr='';state.idx=0;state.graded=false;state.responses={};state.phase='quiz';render();window.scrollTo(0,0);
 }
 
 /* ----- quiz ----- */
 function renderQuiz(){
-  const i=state.idx,q=state.questions[i],ans=state.answers[i],graded=ans!==null;
-  const pct=Math.round(i/state.questions.length*100);
+  const q=QUESTIONS[state.idx],i=state.idx,graded=state.graded,r=state.responses[q.id];
+  const pct=Math.round(i/QUESTIONS.length*100);
+  let answerHtml='';
+  if(q.type==='mc'){
+    answerHtml=`<div class="choices">${q.choices.map((c,ci)=>{
+      let cls='choice';
+      if(graded){cls+=' locked';if(ci===q.correct)cls+=' correct';else if(ci===r)cls+=' wrong';}
+      else if(ci===r)cls+=' sel';
+      const letter=String.fromCharCode(65+ci);
+      const mark=graded?(ci===q.correct?'✓':(ci===r?'✗':letter)):letter;
+      return `<label class="${cls}" ${graded?'':'onclick="pickMc('+ci+')"'}><span class="tick">${mark}</span><span class="txt">${esc(c)}</span></label>`;
+    }).join('')}</div>`;
+  }else{
+    let cls='blank';
+    if(graded)cls+=' locked '+(isCorrect(q)?'correct':'wrong');
+    answerHtml=`<input class="${cls}" id="blank" type="text" autocomplete="off" placeholder="Type your answer" value="${esc(r||'')}" ${graded?'disabled':'oninput="typeBlank(this.value)"'}>`;
+  }
+  const verdictOk=isCorrect(q);
   app.innerHTML=topbar()+`
-  <div class="progress"><div class="step">Q ${i+1} / ${state.questions.length}</div><div class="bar"><i style="width:${pct}%"></i></div><div class="step">${state.answers.filter(a=>a!==null).length} done</div></div>
+  <div class="progress"><div class="step">Q ${i+1} / ${QUESTIONS.length}</div><div class="bar"><i style="width:${pct}%"></i></div><div class="step">${Object.keys(state.responses).length} answered</div></div>
   <div class="card">
-    <div class="cat">${esc(q.cat)}${q.live?' &middot; live':''}</div>
+    <div class="cat">${esc(q.cat)}${q.type==='fill'?' &middot; fill in the blank':''}</div>
     <div class="qtext">${esc(q.q)}</div>
-    <div class="choices">
-      ${q.choices.map((c,ci)=>{
-        let cls='choice';
-        if(graded){cls+=' locked';if(ci===q.correctDisplay)cls+=' correct';else if(ci===ans)cls+=' wrong';}
-        else if(ci===state._pending)cls+=' sel';
-        const letter=String.fromCharCode(65+ci);
-        const mark=graded?(ci===q.correctDisplay?'✓':(ci===ans?'✗':letter)):letter;
-        return `<label class="${cls}" ${graded?'':'onclick="pick('+ci+')"'}><span class="tick">${mark}</span><span class="txt">${esc(c)}</span></label>`;
-      }).join('')}
-    </div>
-    ${graded?`<div class="explain"><span class="verdict ${ans===q.correctDisplay?'ok':'no'}">${ans===q.correctDisplay?'✓ Correct':'✗ Not quite'}</span>${esc(q.e)}</div>`:''}
+    ${answerHtml}
+    ${graded?`<div class="explain"><span class="verdict ${verdictOk?'ok':'no'}">${verdictOk?'✓ Correct':'✗ Not quite'}</span>${q.type==='fill'?'Answer: <b>'+esc(q.display)+'</b>. ':''}${esc(q.e)}</div>`:''}
     <div class="qnav">
       <button class="btn btn-ghost" ${i===0?'disabled style="opacity:.4;cursor:not-allowed"':'onclick="prevQ()"'}>&larr; Back</button>
-      ${graded?`<button class="btn btn-primary" onclick="nextQ()">${i===state.questions.length-1?'See results':'Next question &rarr;'}</button>`:`<button class="btn btn-brass" onclick="lockIn()">Lock in answer</button>`}
+      ${graded?`<button class="btn btn-primary" onclick="nextQ()">${i===QUESTIONS.length-1?'See results':'Next &rarr;'}</button>`:`<button class="btn btn-brass" onclick="lockIn()">Lock in answer</button>`}
     </div>
   </div>`;
+  if(!graded&&q.type==='fill'){const b=document.getElementById('blank');if(b){b.focus();b.addEventListener('keydown',e=>{if(e.key==='Enter')lockIn();});}}
 }
-function pick(ci){state._pending=ci;render();}
-function lockIn(){if(state._pending==null){toast('Pick an answer first');return;}state.answers[state.idx]=state._pending;state._pending=null;render();}
-function prevQ(){state.idx--;state._pending=null;render();window.scrollTo(0,0);}
-function nextQ(){if(state.idx===state.questions.length-1){finish();}else{state.idx++;render();window.scrollTo(0,0);}}
-function tally(){let correct=0;state.questions.forEach((q,i)=>{if(state.answers[i]===q.correctDisplay)correct++;});return {correct,total:state.questions.length};}
+function pickMc(ci){state.responses[QUESTIONS[state.idx].id]=ci;render();}
+function typeBlank(v){state.responses[QUESTIONS[state.idx].id]=v;}
+function lockIn(){
+  const q=QUESTIONS[state.idx];
+  if(q.type==='fill'){const b=document.getElementById('blank');if(b)state.responses[q.id]=b.value;}
+  const r=state.responses[q.id];
+  if(r===undefined||r===null||(q.type==='fill'&&!String(r).trim())){flashNeedAnswer();return;}
+  state.graded=true;render();
+}
+function flashNeedAnswer(){
+  const nav=document.querySelector('.qnav');
+  if(!nav)return;
+  let m=document.getElementById('needans');
+  if(!m){m=document.createElement('div');m.id='needans';m.className='err';m.style.marginTop='14px';m.textContent='Pick or type an answer first.';nav.parentNode.insertBefore(m,nav);}
+}
+function prevQ(){state.idx--;state.graded=false;render();window.scrollTo(0,0);}
+function nextQ(){
+  if(state.idx===QUESTIONS.length-1){finish();}
+  else{state.idx++;state.graded=false;render();window.scrollTo(0,0);}
+}
+
+/* ----- submit ----- */
 async function finish(){
-  state.phase='result';render();window.scrollTo(0,0);
-  const {correct,total}=tally();const score=Math.round(correct/total*100);
-  const answers=state.questions.map((q,i)=>({id:q.id,choice:q.live?state.answers[i]:q.order[state.answers[i]]}));
-  try{await api('/quiz/submit',{method:'POST',body:{week:state.week,answers,score,correct,total}});state.saved=true;}
-  catch(e){state.saved=false;state.saveError=e.message;}
+  state.phase='result';state.saved=false;state.saveError='';render();window.scrollTo(0,0);
+  const {correct,total,score}=tally();
+  const detail=QUESTIONS.map(q=>({id:q.id,ok:isCorrect(q),answer:q.type==='mc'?(state.responses[q.id]!=null?q.choices[state.responses[q.id]]:''):String(state.responses[q.id]||'')}));
+  if(!DB){state.saveError='no-db';render();return;}
+  try{
+    const docId=Date.now()+'-'+Math.random().toString(36).slice(2,8);
+    await DB.collection('submissions').doc(docId).set({
+      name:state.name, score, correct, total, passed:score>=PASS,
+      detail, at:new Date().toISOString()
+    });
+    state.saved=true;
+  }catch(e){state.saved=false;state.saveError=(e&&e.code)||'error';}
   render();
 }
 
 /* ----- result ----- */
 function renderResult(){
-  const {correct,total}=tally();const score=Math.round(correct/total*100);const passed=score>=PASS;
-  const missed=state.questions.map((q,i)=>({q,i})).filter(({i})=>state.answers[i]!==state.questions[i].correctDisplay);
-  const saveLine=state.saved?'<div class="savemsg ok">Saved — your manager can see it in the pre-shift rollup.</div>'
-    :(state.saveError?'<div class="savemsg no">Couldn’t save to the server ('+esc(state.saveError)+'). Your score still shows here.</div>':'<div class="savemsg">Saving…</div>');
+  const {correct,total,score}=tally();const passed=score>=PASS;
+  const missed=QUESTIONS.filter(q=>!isCorrect(q));
+  let saveLine;
+  if(state.saveError==='no-db') saveLine='<div class="savemsg no">Not saved — the shared results store isn’t available in this view. Your score shows below.</div>';
+  else if(state.saveError) saveLine='<div class="savemsg no">Couldn’t save to the manager rollup ('+esc(state.saveError)+'). Your score still shows below.</div>';
+  else if(state.saved) saveLine='<div class="savemsg ok">Sent to your manager’s rollup.</div>';
+  else saveLine='<div class="savemsg">Saving…</div>';
   app.innerHTML=topbar()+`
   <div class="cover"><div class="scoreplate">
-    <div class="eyebrow">${esc(state.weekLabel)}</div>
+    <div class="eyebrow">${esc(state.name)}</div>
     <div class="scorenum ${passed?'pass':'fail'}">${score}%</div>
     <div class="scorestat">${correct} of ${total} correct</div>
     <div class="stamp ${passed?'pass':'fail'}">${passed?'Passed':'Review needed'}</div>
   </div></div>
   ${saveLine}
   <div class="btn-row" style="margin-top:16px;justify-content:center">
-    <button class="btn btn-ghost" onclick="retake()">Retake</button>
-    ${state.user&&state.user.role==='manager'?'<button class="btn btn-brass" onclick="goManager()">Manager view</button>':''}
+    <button class="btn btn-ghost" onclick="retake()">Take again</button>
+    ${canAdmin?'<button class="btn btn-brass" onclick="goAdmin()">Admin rollup</button>':''}
   </div>
-  ${missed.length?`<div class="missed"><h3>Worth another look</h3><div class="sub">${missed.length} to review before your shift.</div>
-    ${missed.map(({q})=>`<div class="mitem"><div class="mq">${esc(q.q)}</div><div class="ma"><span class="lab">Standard:</span> ${esc(q.choices[q.correctDisplay])}. <span style="color:var(--muted)">${esc(q.e)}</span></div></div>`).join('')}</div>`
-    :`<div class="missed"><h3>Perfect sweep</h3><div class="sub">Every answer correct. That’s the standard.</div></div>`}
-  <div class="foot-motto">Treat each table as if it is your first of the day.</div>`;
+  ${missed.length?`<div class="missed"><h3>Worth another look</h3><div class="sub">${missed.length} to review before service.</div>
+    ${missed.map(q=>`<div class="mitem"><div class="mq">${esc(q.q)}</div><div class="ma"><span class="lab">Standard:</span> ${esc(q.type==='mc'?q.choices[q.correct]:q.display)}. <span style="color:var(--muted)">${esc(q.e)}</span></div></div>`).join('')}</div>`
+    :`<div class="missed"><h3>Clean sweep</h3><div class="sub">All five correct. That’s the standard.</div></div>`}
+  <div class="foot-motto">Treat each table as your first of the day.</div>`;
 }
-function retake(){state.answers=Array(state.questions.length).fill(null);state.idx=0;state._pending=null;state.saved=false;state.saveError='';state.phase='quiz';render();window.scrollTo(0,0);}
+function retake(){state.phase='cover';state.responses={};state.idx=0;state.graded=false;render();window.scrollTo(0,0);}
 
-/* ----- manager ----- */
-async function goManager(){
-  state.phase='manager';state.mgr=null;render();
-  try{state.mgr=await api('/quiz/compliance?week='+encodeURIComponent(state.week));}
-  catch(e){state.mgr={error:e.message};}
-  render();
+/* ----- admin ----- */
+let adminUnsub=null;
+async function goAdmin(){
+  if(!canAdmin)return;
+  state.phase='admin';state.admin=null;render();window.scrollTo(0,0);
+  if(!DB){state.admin={error:'The shared results store isn’t available in this view.'};render();return;}
+  if(adminUnsub){try{adminUnsub();}catch(e){}adminUnsub=null;}
+  let settled=false;
+  const timer=setTimeout(()=>{if(!settled&&!state.admin){state.admin={loadingSlow:true};render();}},10000);
+  try{
+    adminUnsub=DB.collection('submissions').onSnapshot(
+      snap=>{settled=true;clearTimeout(timer);
+        const rows=snap.docs.map(d=>Object.assign({_id:d.id},d.data())).filter(r=>r&&r.name);
+        rows.sort((a,b)=>String(b.at||'').localeCompare(String(a.at||'')));
+        state.admin={rows};if(state.phase==='admin')render();},
+      err=>{settled=true;clearTimeout(timer);state.admin={error:(err&&err.message)||'Couldn’t load results.'};if(state.phase==='admin')render();}
+    );
+  }catch(e){clearTimeout(timer);state.admin={error:(e&&e.message)||'Couldn’t load results.'};render();}
 }
-function renderManager(){
-  const m=state.mgr;
-  let body;
-  if(!m)body='<p class="lead" style="padding:4px 2px">Loading roster…</p>';
-  else if(m.error)body='<div class="err">'+esc(m.error)+'</div>';
+function leaveAdmin(){if(adminUnsub){try{adminUnsub();}catch(e){}adminUnsub=null;}state.phase='cover';render();window.scrollTo(0,0);}
+function renderAdmin(){
+  const a=state.admin;let body;
+  if(!a||(!a.rows&&!a.error&&!a.loadingSlow))body='<div class="empty">Loading results…</div>';
+  else if(a.error)body='<div class="err">'+esc(a.error)+'</div>';
   else{
-    body=`<div class="meta"><div class="wk">${esc(state.weekLabel)}</div><div class="cnt">${m.done}/${m.total} done</div></div>
-    <div class="btn-row" style="margin-bottom:16px">
-      <button class="btn btn-brass" onclick="sendReminders(false)">Send reminders now</button>
-      <button class="btn btn-ghost" onclick="sendReminders(true)">Preview (no email)</button>
-    </div>
-    <div class="mgr" style="overflow-x:auto"><table><thead><tr><th>Server</th><th>Status</th><th>Best</th></tr></thead><tbody>
-    ${(m.roster||[]).map(r=>`<tr><td>${esc(r.name)}</td><td>${r.completed?'<span class="pill done">Done</span>':'<span class="pill out">Outstanding</span>'}</td><td>${r.completed&&r.score!=null?r.score+'%':'—'}</td></tr>`).join('')}
-    </tbody></table></div>`;
+    const rows=a.rows||[];
+    if(!rows.length){
+      body=(a.loadingSlow?'<div class="savemsg no" style="text-align:left">Taking a while to reach the results store—this may be out of date.</div>':'')
+        +'<div class="empty">No results in yet. Share the link with your servers and their scores will land here.</div>';
+    }else{
+      const n=rows.length, passed=rows.filter(r=>r.passed).length;
+      const avg=Math.round(rows.reduce((s,r)=>s+(r.score||0),0)/n);
+      body=`<div class="statrow">
+        <div class="stat"><div class="lab">Submissions</div><div class="big">${n}</div></div>
+        <div class="stat"><div class="lab">Passed</div><div class="big">${passed}/${n}</div></div>
+        <div class="stat"><div class="lab">Avg score</div><div class="big">${avg}%</div></div>
+      </div>
+      <div class="mgr" style="overflow-x:auto"><table><thead><tr><th>Server</th><th>Score</th><th>Result</th><th>When</th></tr></thead><tbody>
+      ${rows.map(r=>`<tr><td>${esc(r.name)}${adminDetail(r)}</td><td>${r.score!=null?r.score+'%':'—'}</td><td>${r.passed?'<span class="pill pass">Pass</span>':'<span class="pill fail">Review</span>'}</td><td class="when">${fmtWhen(r.at)}</td></tr>`).join('')}
+      </tbody></table></div>`;
+    }
   }
-  app.innerHTML=topbar()+`<div class="cover"><div class="crest"><div class="mark">River Pointe Inn</div><h1>Weekly Training</h1><div class="sub">Completion rollup</div></div><div class="coverbody">${body}
-    <div class="btn-row" style="margin-top:18px"><button class="btn btn-ghost" onclick="startQuiz()">&larr; Back to quiz</button></div>
+  app.innerHTML=topbar()+`<div class="cover"><div class="crest"><div class="mark">River Pointe Inn</div><h1>Server Check &mdash; Rollup</h1><div class="sub">Every submission, live</div></div><div class="coverbody">${body}
+    <div class="btn-row" style="margin-top:18px"><button class="btn btn-ghost" onclick="leaveAdmin()">&larr; Back</button></div>
   </div></div>`;
 }
-async function sendReminders(dry){
-  try{const r=await api('/quiz/remind/'+(dry?'preview':'run'));
-    toast((dry?'Would remind ':'Reminded ')+(r.sent?r.sent.length:0)+' — '+(r.outstanding?r.outstanding.length:0)+' outstanding');}
-  catch(e){toast(e.message);}
+function adminDetail(r){
+  if(!r.detail||!r.detail.length)return '';
+  return `<details class="amgr"><summary>answers</summary>${r.detail.map(d=>{
+    const q=QUESTIONS.find(x=>x.id===d.id);const label=q?q.cat:d.id;
+    return `<div class="qa ${d.ok?'':'x'}">${esc(label)}: <b>${d.ok?'✓':'✗'}</b> ${esc(d.answer||'(blank)')}</div>`;
+  }).join('')}</details>`;
+}
+function fmtWhen(iso){
+  if(!iso)return '—';
+  const d=new Date(iso);if(isNaN(d))return '—';
+  return d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+' '+d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
 }
 
-boot();
+/* ---------- boot ---------- */
+(async function(){
+  render(); // paint cover immediately
+  await initCaps();
+  render(); // re-paint so admin button appears for managers
+})();
 </script>
 </body>
 </html>
