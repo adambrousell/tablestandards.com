@@ -377,12 +377,30 @@ function parseBudget(q){ let m;
   if(m=q.match(/\$\s*([\d,]+)/))return{kind:"near",v:+m[1].replace(/,/g,"")};
   if(m=q.match(/([\d,]+)\s*(?:dollars|bucks)/i))return{kind:"near",v:+m[1].replace(/,/g,"")};
   return null; }
-function toks(q){ return q.toLowerCase().replace(/[^a-z0-9àâäéèêëîïôöùûüç\s]/g," ").split(/\s+/).filter(t=>t.length>=3&&!STOP[t]&&!/^\d+$/.test(t)).map(t=>SYN[t]||t); }
+/* Large-format detector. Sizes only live inside the name as "(1.5L)" / "(3.0L)",
+   so we map a spoken/typed size to that exact substring and filter on it. */
+function parseFormat(q){
+  const s=q.toLowerCase();
+  if(/(?:^|[^\d.])3(?:\.0)?\s*l(?:iter|itre)?s?\b|\bjeroboam\b|\bdouble\s*magnum\b/.test(s)) return "3.0L";
+  if(/(?:^|[^\d.])1(?:\.5)?\s*l(?:iter|itre)?s?\b|\bmagnums?\b|\bmags?\b/.test(s)) return "1.5L";
+  if(/(?:^|[^\d.])3\.0(?=\D|$)/.test(s)) return "3.0L";   // bare "3.0" with no L
+  if(/(?:^|[^\d.])1\.5(?=\D|$)/.test(s)) return "1.5L";   // bare "1.5" with no L
+  if(/\b(?:large\s*format|big\s*bottle|big\s*format|oversized?)\b/.test(s)) return "ANY";
+  return null; }
+const isLargeFormat=w=>/\(\s*\d+(?:\.\d+)?\s*L\s*\)/i.test(w.name||"");
+/* Strip size/format words so they don't become search tokens that would wrongly
+   reject a bottle before the format filter applies (handled separately via parseFormat). */
+function stripFormatWords(q){ return q.replace(/\b\d+(?:\.\d+)?\s*l(?:iter|itre)?s?\b/gi," ").replace(/\b\d+\.\d+\b/g," ").replace(/\b(?:magnums?|mags?|jeroboam|double\s*magnum|large\s*format|big\s*bottle|big\s*format|oversized?|large\s*formats?)\b/gi," "); }
+function toks(q){ return stripFormatWords(q).toLowerCase().replace(/[^a-z0-9àâäéèêëîïôöùûüç\s]/g," ").split(/\s+/).filter(t=>t.length>=3&&!STOP[t]&&!/^\d+$/.test(t)).map(t=>SYN[t]||t); }
 const hay=w=>(w.name+" "+w.cat+" "+w.sub+" "+w.vintage).toLowerCase();
 function search(q){
-  const budget=parseBudget(q), tk=toks(q), vint=(q.match(/\b(19|20)\d{2}\b/)||[])[0]||"";
+  const budget=parseBudget(q), fmt=parseFormat(q), tk=toks(q), vint=(q.match(/\b(19|20)\d{2}\b/)||[])[0]||"";
+  // A size-only query ("1.5", "magnum", "large format") has no real tokens but IS a
+  // constraint — treat it as a filter so it doesn't fall through to "match everything".
+  const hasCriteria=tk.length||vint||fmt;
   const scored=[];
   CATALOG.filter(w=>w.bin).forEach(w=>{ const h=hay(w); let s=0; tk.forEach(t=>{if(h.indexOf(t)!==-1)s++;}); if(tk.length&&s===0)return;
+    if(fmt){ if(fmt==="ANY"){ if(!isLargeFormat(w))return; } else if((w.name||"").indexOf(fmt)===-1){ return; } s+=2; }
     if(vint&&w.vintage===vint)s+=1.5; const pn=priceNum(w.price);
     if(budget){ if(budget.kind==="max"&&pn!=null&&pn>budget.v)return; if(budget.kind==="range"&&pn!=null&&(pn<budget.lo||pn>budget.hi))return; }
     scored.push({w,s,pn}); });
