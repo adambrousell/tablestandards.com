@@ -247,6 +247,9 @@ const KIDS_OWN_CATEGORY = true;
 // Unit price at/above which a by-the-bottle wine line gets the cellar marker in Somm view.
 const CELLAR_MIN = 150;
 
+/* UPDATED Nov 9: mapped week-of-Nov-2 uncategorized item — "Hanger add on", a paid
+   add-on from a private party (an extra hanger-steak course on a party's bill), so
+   it belongs with Private Events & Wine Dinner, not loose in Entrées. */
 /* UPDATED Nov 2: mapped week-of-Oct-26 uncategorized items — Highland & Honey cocktail, White Wine catch-all button, Felix Bigallet China-China amer, Bubbly Toast add-on */
 const ITEM_OVERRIDES = {
   // Spirits / aperitifs that Toast filed under Entrées
@@ -339,6 +342,8 @@ const ITEM_OVERRIDES = {
   'white wine': 'wine',                        // "White Wine" catch-all button — exact-match twin of 'red wine' above, so the generic 'wine' rules miss it
   'felix bigallet china-china amer': 'spirit', // Bigallet China-China, a bitter-orange amer/aperitif — "amer" isn't in the spirit regex
   'bubbly toast': 'events',                    // $10 flat Champagne toast add-on — confirm: event line vs. a sparkling BTG pour (move to 'wine' if it's a pour)
+  // Week of Nov 2 uncategorized item — now fixed
+  'hanger add on': 'events',                   // paid add-on from a private party (extra hanger-steak course on a party's bill) — not a loose entrée
 };
 
 /* UPDATED Oct 5: Fondue Add-ons ($0 modifier ring) excluded */
