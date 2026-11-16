@@ -251,6 +251,7 @@ const CELLAR_MIN = 150;
    add-on from a private party (an extra hanger-steak course on a party's bill), so
    it belongs with Private Events & Wine Dinner, not loose in Entrées. */
 /* UPDATED Nov 2: mapped week-of-Oct-26 uncategorized items — Highland & Honey cocktail, White Wine catch-all button, Felix Bigallet China-China amer, Bubbly Toast add-on */
+/* UPDATED Nov 16: mapped week-of-Nov-9 uncategorized items — Jose Cuervo Reserva de la Famiglia + Forthave Marseille (spirits), Halibut, Fondue, Minimum Not Met, Add Fudge, GF Bun. Leo ($3,500) & Dente ($2,638) provisionally to events — CONFIRM each is a private-event bill, not a cellar bottle rung without a BTL:/bin prefix (if a bottle, use 'wine'). */
 const ITEM_OVERRIDES = {
   // Spirits / aperitifs that Toast filed under Entrées
   'cocchi americano bianco': 'spirit',
@@ -344,6 +345,17 @@ const ITEM_OVERRIDES = {
   'bubbly toast': 'events',                    // $10 flat Champagne toast add-on — confirm: event line vs. a sparkling BTG pour (move to 'wine' if it's a pour)
   // Week of Nov 2 uncategorized item — now fixed
   'hanger add on': 'events',                   // paid add-on from a private party (extra hanger-steak course on a party's bill) — not a loose entrée
+  // Week of Nov 9 uncategorized items — now fixed
+  'jose cuervo reserva de la famiglia': 'spirit', // tequila — brand name only, so the \btequila\b rule misses it
+  'forthave marseille': 'spirit',              // Forthave "Marseille" bitter aperitif/amer — no spirit keyword in the name
+  'halibut': 'food',                           // ~$44 avg entrée — halibut isn't in the food regex
+  'fondue': 'starter',                         // shared cheese fondue — switch to 'food' if it's rung as a main
+  'minimum not met': 'events',                 // private-party minimum shortfall — mirrors 'minimum met'
+  'add fudge': 'dessert',                      // $2 paid dessert add-on (a real sale, not a $0 modifier)
+  'gf bun': 'sides',                           // gluten-free bun — new abbrev of the existing 'gluten free bun'
+  'spicy cashew': 'sides',                     // $3 bar snack
+  'leo': 'events',                             // $3,500 single ring — CONFIRM: private event vs a cellar bottle (use 'wine' if a bottle)
+  'dente': 'events',                           // $2,638 single ring — CONFIRM: private event vs a cellar bottle (use 'wine' if a bottle)
 };
 
 /* UPDATED Oct 5: Fondue Add-ons ($0 modifier ring) excluded */
