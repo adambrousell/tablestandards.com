@@ -247,11 +247,18 @@ const KIDS_OWN_CATEGORY = true;
 // Unit price at/above which a by-the-bottle wine line gets the cellar marker in Somm view.
 const CELLAR_MIN = 150;
 
+/* UPDATED Nov 23: new 'retail' category for off-premise bottle sales. The generic
+   "Wine" button (rung at ~$360 ea — that's a retail bottle, not a $45 by-the-glass
+   pour) and RETAIL Pommard both move OUT of Wine and into 'retail', so off-premise
+   sales stop inflating the wine program's by-the-glass pours and the cellar/
+   by-the-bottle numbers. Supersedes the Nov 22 note that folded RETAIL Pommard into
+   Wine. Any future "RETAIL …" line is caught by the new /^retail\b/ rule in
+   categorize(). If the plain "Wine" button is ever used for an actual glass pour,
+   split that ring onto its own button in Toast — this maps the whole button to retail. */
 /* UPDATED Nov 22: mapped week-of-Nov-15 uncategorized items — RETAIL Pommard
-   (retail/off-premise red Burgundy bottle, ~$360 ea — folded into Wine; also
-   added to WINE_SERVICE_OVERRIDES as 'bottle' so it reads as by-the-bottle) and
-   Cranberry Mule (seasonal vodka/ginger-beer mule — a bare "mule" isn't in the
-   cocktail regex, only "moscow mule" is). */
+   (retail/off-premise red Burgundy bottle, ~$360 ea — now its own 'retail'
+   category, see Nov 23 note above) and Cranberry Mule (seasonal vodka/ginger-beer
+   mule — a bare "mule" isn't in the cocktail regex, only "moscow mule" is). */
 /* UPDATED Nov 9: mapped week-of-Nov-2 uncategorized item — "Hanger add on", a paid
    add-on from a private party (an extra hanger-steak course on a party's bill), so
    it belongs with Private Events & Wine Dinner, not loose in Entrées. */
@@ -308,8 +315,10 @@ const ITEM_OVERRIDES = {
   'emerlad city': 'cocktail',      // Toast button is misspelled — keep both spellings
   'emerald city': 'cocktail',
   'malibu bay breeze': 'cocktail',
-  // Catch-all "Wine" button in Toast — bottles rung with no SKU attached.
-  'wine': 'wine',
+  // Catch-all "Wine" button in Toast — rung at ~$360 ea, so this is a RETAIL
+  // (off-premise) bottle sale, not a $45 by-the-glass pour. Its own 'retail'
+  // category keeps it out of the wine program's glass/bottle numbers. (Nov 23)
+  'wine': 'retail',
   // Lunch-only item
   'omelet': 'lunch',
   // Paid add-ons, not entrées
@@ -345,7 +354,7 @@ const ITEM_OVERRIDES = {
   'caviar service': 'rawbar',
   // Week of Oct 26 uncategorized items — now fixed
   'highland & honey': 'cocktail',              // Scotch + honey cocktail — no spirit keyword in the name
-  'white wine': 'wine',                        // "White Wine" catch-all button — exact-match twin of 'red wine' above, so the generic 'wine' rules miss it
+  'white wine': 'wine',                        // "White Wine" catch-all button — exact-match, so the generic 'wine' rules miss it
   'felix bigallet china-china amer': 'spirit', // Bigallet China-China, a bitter-orange amer/aperitif — "amer" isn't in the spirit regex
   'bubbly toast': 'events',                    // $10 flat Champagne toast add-on — confirm: event line vs. a sparkling BTG pour (move to 'wine' if it's a pour)
   // Week of Nov 2 uncategorized item — now fixed
@@ -362,7 +371,7 @@ const ITEM_OVERRIDES = {
   'leo': 'events',                             // $3,500 single ring — CONFIRM: private event vs a cellar bottle (use 'wine' if a bottle)
   'dente': 'events',                           // $2,638 single ring — CONFIRM: private event vs a cellar bottle (use 'wine' if a bottle)
   // Week of Nov 15 uncategorized items — now fixed
-  'retail pommard': 'wine',                    // retail/off-premise Pommard bottle (~$360 ea) — red Burgundy with no bin/BTL: prefix, so the wine rules miss it; folded into Wine. Also in WINE_SERVICE_OVERRIDES as 'bottle'.
+  'retail pommard': 'retail',                  // retail/off-premise Pommard bottle (~$360 ea) — red Burgundy sold to-go. Its own 'retail' category, not Wine, so it stays out of the cellar/by-the-bottle numbers. Also caught by the /^retail\b/ rule below. (Nov 23)
   'cranberry mule': 'cocktail',                // seasonal cranberry mule (~$20) — a bare "mule" isn't in the cocktail regex; only "moscow mule" is
 };
 
@@ -409,6 +418,7 @@ const CAT_COLORS = {
   beer:'#7a5c2a', coffee:'#6b4e3d', na:'#888780',
   events:'#7a3060', pdj:'#0f766e', tartare:'#8f2d44', lunch:'#556677', sides:'#9c6644',
   kids:'#a0522d', fees:'#6b6b67', uncat:'#8a6d1a', dessertwine:'#9a6a24',
+  retail:'#9c5a8c',
 };
 const CAT_LABELS = {
   cocktail:'Cocktails & martinis', wine:'Wine (glass & bottle)', food:'Entrées',
@@ -417,6 +427,7 @@ const CAT_LABELS = {
   events:'Private Events & Wine Dinner', pdj:'Weekly specials (Plats du Jour)', tartare:'Steak Tartare (nightly)', lunch:'Lunch only items', sides:'Sides',
   kids:'Kids menu', fees:'Fees & service charges', uncat:'Uncategorized — needs mapping',
   dessertwine:'Dessert & fortified wine',
+  retail:'Retail (off-premise bottles)',
 };
 
 // View state: lens (kitchen|somm) is orthogonal to metric (revenue|quantity).
@@ -498,6 +509,13 @@ function categorize(name) {
   // 1) Fees and non-product charges — never food revenue.
   if (/\b(plating fee|corkage|cake fee|cakeage|split (plate|charge)|service charge|delivery fee|setup fee|room fee)\b/.test(n)) return 'fees';
 
+  // 1b) Retail / off-premise bottle sales — their own line, kept out of the
+  //     on-premise wine program. Catches "RETAIL Pommard" and any future
+  //     "RETAIL …" line. Runs before the wine rules so a retail bottle never
+  //     lands in Wine. (The generic "Wine" button and "retail pommard" are also
+  //     pinned to 'retail' by exact override above.)
+  if (/^retail\b/.test(n)) return 'retail';
+
   // 2) Nightly / weekly specials.
   if (/plat[e]?\s*d[eu]\s*jour|\bd[eu]\s*jour\b|^pdj\b/.test(n)) return 'pdj';
   if (/poulet en croute|poulet en cro|oysters? rockefeller|french dip|crispy fish\s*(&\s*)?frites|bouillabais|prime short rib|short rib bourg|lobster frites|dover sole/.test(n)) return 'pdj';
@@ -577,19 +595,18 @@ function categorize(name) {
 // ITEM_OVERRIDES. Verified against the 2026 cellar list + dessert-by-the-glass
 // menu (Nov 3). NB: D'Oliveiras Madeira now routes to 'dessertwine' in
 // categorize(), so it never reaches wineService() — no entry needed here.
+// NB (Nov 23): the generic "Wine" button and "retail pommard" now route to the
+// 'retail' category, not 'wine', so they never reach wineService() either —
+// their old entries here were removed.
 const WINE_SERVICE_OVERRIDES = {
   // Sancerre: $110 ea = the list's bottle price (BTG is $23).
   'gerad fiou silex sancerre 2025': 'bottle',
   'gerard fiou silex sancerre 2025': 'bottle',
   'gerard fiou terroir silex sancerre 2025': 'bottle',
-  // Retail/off-premise Pommard bottle, ~$360 — a cellar-priced red Burgundy rung
-  // with no BTL:/bin prefix, so wineService() can't place it. Reads as by-the-bottle.
-  'retail pommard': 'bottle',
   // $45 rings sit below EVERY bottle price on the list ($48+) and inside the
   // by-the-glass range — so they read as pours, not bottles.
   'maison drouhin petit secondes chardonnay 2020': 'glass', // list BTG is $18 — $45 ring is a Coravin/premium pour or a mis-key, worth checking in Toast
-  'wine': 'glass',        // generic button, $45 — premium glass pour
-  'white wine': 'glass',  // twin of 'wine', $45
+  'white wine': 'glass',  // "White Wine" catch-all button — reads as a premium glass pour ($45)
   // Generic "BTG Bottles" button — full bottles of the by-the-glass-list wines
   // (the house/BTG program wines, which are also offered by the bottle), rung on
   // one catch-all button instead of the named SKU. Real guest bottle sales, but
@@ -1065,7 +1082,8 @@ function renderKitchenDashboard() {
       hmHtml += renderPdjSection(cat, cats[cat.key], prevLookup, hasPrev, byRev);
       return;
     }
-    const pinBadge = (cat.key === 'uncat') ? '<span class="hm-warn-badge">Fix in Toast</span>' : '';
+    const pinBadge = (cat.key === 'uncat') ? '<span class="hm-warn-badge">Fix in Toast</span>'
+                   : (cat.key === 'retail') ? '<span class="hm-pinned-badge">Off-premise</span>' : '';
     hmHtml += renderItemGrid(cat, cats[cat.key], prevLookup, hasPrev, byRev, pinBadge);
   });
   document.getElementById('heatmap').innerHTML = hmHtml;
@@ -1191,6 +1209,10 @@ function renderSommDashboard() {
   const prevWineRev = pRev('wine');
   const barRev = cRev('spirit') + cRev('cocktail');
   const prevBarRev = pRev('spirit') + pRev('cocktail');
+  // Retail / off-premise bottle sales — wine-program revenue, but NOT on-premise
+  // beverage service, so it's kept out of the beverage KPIs and the glass/bottle
+  // split below, then shown in its own section at the end of the card.
+  const retailRev = cRev('retail');
 
   // Wine service split. BTG bottles (opened to pour by the glass) get their own
   // bucket so they don't sit inside the cellar / by-the-bottle numbers.
@@ -1269,11 +1291,14 @@ function renderSommDashboard() {
   document.getElementById('heatmap-title').textContent = 'Wine program & bar';
   document.getElementById('heatmap-hint').textContent = 'wine split by the glass vs the bottle, then dessert wine, spirits & cocktails · click a header to collapse';
 
-  const nonBevRev = totalRev - bevRev;
+  const foodOtherRev = totalRev - bevRev - retailRev;
   const btgCtx = btgBottles.length
     ? ` · BTG bottles (glass-list wines by the bottle): ${fmt(btgRev)} (${Math.round(btgBottles.reduce((s,i)=>s+i.qty,0)).toLocaleString()} btl) — separate from both the by-the-glass pours and the cellar`
     : '';
-  const ctxLine = `<div class="somm-muted">Food &amp; other (not shown in this view): ${fmt(nonBevRev)} · beverage is ${bevShare}% of the week by revenue${btgCtx}</div>`;
+  const retailCtx = retailRev > 0
+    ? ` · Retail / off-premise (shown below, kept out of the beverage numbers): ${fmt(retailRev)}`
+    : '';
+  const ctxLine = `<div class="somm-muted">Food &amp; other (not shown in this view): ${fmt(foodOtherRev)} · beverage is ${bevShare}% of the week by revenue${retailCtx}${btgCtx}</div>`;
 
   let hmHtml = '';
   hmHtml += renderWineSection('Wine — by the glass', 'wine-glass', glass, prevLookup, hasPrev, byRev,
@@ -1294,6 +1319,14 @@ function renderSommDashboard() {
     const cat = { key, label: CAT_LABELS[key] || key, color: CAT_COLORS[key] || '#8a8577', rev: cRev(key), qty: cQty(key) };
     hmHtml += renderItemGrid(cat, cats[key], prevLookup, hasPrev, byRev, '');
   });
+  // Retail / off-premise bottle sales — wine-program relevant, so the somm sees
+  // it, but it sits below the service categories and stays out of the beverage
+  // KPIs and the glass/bottle split above.
+  if (cats['retail'] && cats['retail'].length) {
+    const cat = { key:'retail', label: CAT_LABELS.retail, color: CAT_COLORS.retail, rev: retailRev, qty: cQty('retail') };
+    hmHtml += renderItemGrid(cat, cats['retail'], prevLookup, hasPrev, byRev,
+      '<span class="hm-pinned-badge">Off-premise</span>');
+  }
 
   document.getElementById('heatmap').innerHTML = ctxLine + hmHtml;
   document.getElementById('dashboard').classList.add('active');
