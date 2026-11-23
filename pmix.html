@@ -385,6 +385,13 @@ const ITEM_EXCLUDES = new Set([
 const EXCLUDE_PATTERNS = [
   /\bseat\s*\d+\b/,                 // "Tartar Sauce Seat 4" — seat note, not a sale
   /^no make\b|^don'?t make\b/,
+  // Toast menu-hierarchy subtotal rows — the bin-range roll-ups like "200's",
+  // "1000's", "90-100's" and "B000's - Blacksmith" (the B-series / "Blacksmith"
+  // cellar group). They just repeat their child bottles' totals, so counting one
+  // double-counts the real bottle, which sits on the next line (here,
+  // "B490: … Confuron … 2019" at $500). Normally stripped upstream by the worker;
+  // this catches any that leak through because of an annotated name. (Nov 23)
+  /^(\d{1,4}(-\d{1,4})?|b\d{1,4})'s\b/i,
 ];
 function isExcludedRow(name) {
   const n = normName(name);
