@@ -247,6 +247,11 @@ const KIDS_OWN_CATEGORY = true;
 // Unit price at/above which a by-the-bottle wine line gets the cellar marker in Somm view.
 const CELLAR_MIN = 150;
 
+/* UPDATED Nov 22: mapped week-of-Nov-15 uncategorized items — RETAIL Pommard
+   (retail/off-premise red Burgundy bottle, ~$360 ea — folded into Wine; also
+   added to WINE_SERVICE_OVERRIDES as 'bottle' so it reads as by-the-bottle) and
+   Cranberry Mule (seasonal vodka/ginger-beer mule — a bare "mule" isn't in the
+   cocktail regex, only "moscow mule" is). */
 /* UPDATED Nov 9: mapped week-of-Nov-2 uncategorized item — "Hanger add on", a paid
    add-on from a private party (an extra hanger-steak course on a party's bill), so
    it belongs with Private Events & Wine Dinner, not loose in Entrées. */
@@ -356,6 +361,9 @@ const ITEM_OVERRIDES = {
   'spicy cashew': 'sides',                     // $3 bar snack
   'leo': 'events',                             // $3,500 single ring — CONFIRM: private event vs a cellar bottle (use 'wine' if a bottle)
   'dente': 'events',                           // $2,638 single ring — CONFIRM: private event vs a cellar bottle (use 'wine' if a bottle)
+  // Week of Nov 15 uncategorized items — now fixed
+  'retail pommard': 'wine',                    // retail/off-premise Pommard bottle (~$360 ea) — red Burgundy with no bin/BTL: prefix, so the wine rules miss it; folded into Wine. Also in WINE_SERVICE_OVERRIDES as 'bottle'.
+  'cranberry mule': 'cocktail',                // seasonal cranberry mule (~$20) — a bare "mule" isn't in the cocktail regex; only "moscow mule" is
 };
 
 /* UPDATED Oct 5: Fondue Add-ons ($0 modifier ring) excluded */
@@ -475,8 +483,8 @@ window.addEventListener('load', () => {
 function normName(name) {
   return String(name || '')
     .toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[\u2018\u2019\u02bc]/g, "'")
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[‘’ʼ]/g, "'")
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -574,6 +582,9 @@ const WINE_SERVICE_OVERRIDES = {
   'gerad fiou silex sancerre 2025': 'bottle',
   'gerard fiou silex sancerre 2025': 'bottle',
   'gerard fiou terroir silex sancerre 2025': 'bottle',
+  // Retail/off-premise Pommard bottle, ~$360 — a cellar-priced red Burgundy rung
+  // with no BTL:/bin prefix, so wineService() can't place it. Reads as by-the-bottle.
+  'retail pommard': 'bottle',
   // $45 rings sit below EVERY bottle price on the list ($48+) and inside the
   // by-the-glass range — so they read as pours, not bottles.
   'maison drouhin petit secondes chardonnay 2020': 'glass', // list BTG is $18 — $45 ring is a Coravin/premium pour or a mis-key, worth checking in Toast
@@ -700,7 +711,7 @@ async function loadData() {
 
 function canonSpecial(name) {
   return String(name||'').toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/\busda prime\b/g, '')
     .replace(/provencale?/g, 'provencal')
     .replace(/bourguignon/g, 'bourgignon')
@@ -722,7 +733,7 @@ function parseRange(dateRange) {
     if (!year) return null;
     return year + '-' + String(mon).padStart(2,'0') + '-' + String(m[2]).padStart(2,'0');
   };
-  const parts = dateRange.split(/[-\u2013\u2014]/).map(p => p.trim()).filter(Boolean);
+  const parts = dateRange.split(/[-–—]/).map(p => p.trim()).filter(Boolean);
   if (parts.length >= 2) {
     const endYearM = parts[1].match(/(\d{4})/);
     const endYear = endYearM ? parseInt(endYearM[1]) : null;
@@ -829,7 +840,7 @@ function normalizeKey(name) {
   return name.toLowerCase().replace(/^hh:\s*/i, '').replace(/\s+/g, ' ').trim();
 }
 function deltaClass(v) { return v > 2 ? 'up' : v < -2 ? 'down' : 'flat'; }
-function deltaArrow(v) { return v > 2 ? '\u25b2' : v < -2 ? '\u25bc' : '\u2014'; }
+function deltaArrow(v) { return v > 2 ? '▲' : v < -2 ? '▼' : '—'; }
 // Cap runaway percentages. When last week's baseline is tiny (e.g. a category
 // that barely existed, then a one-off event lands in it), the raw % explodes
 // into noise like "10000%". Anything past 999% just reads ">999%".
@@ -894,8 +905,8 @@ function renderItemGrid(cat, itemsArr, prevLookup, hasPrev, byRev, badgeHtml) {
     <div class="hm-cat-header" onclick="toggleHmGroup('${id}')">
       <span class="leg-dot" style="background:${cat.color}"></span>
       <span class="hm-cat-label">${cat.label}</span>${badgeHtml || ''}
-      <span class="hm-cat-rev">${fmt(cat.rev)} \u00b7 ${Math.round(cat.qty).toLocaleString()} sold \u00b7 ${grp.length} items</span>
-      <span class="hm-cat-toggle" id="${id}-toggle">\u25bc</span>
+      <span class="hm-cat-rev">${fmt(cat.rev)} · ${Math.round(cat.qty).toLocaleString()} sold · ${grp.length} items</span>
+      <span class="hm-cat-toggle" id="${id}-toggle">▼</span>
     </div>
     <div class="hm-grid" id="${id}">`;
   grp.forEach(item => {
@@ -918,12 +929,12 @@ function renderItemGrid(cat, itemsArr, prevLookup, hasPrev, byRev, badgeHtml) {
         const dCol = dc === 'up' ? upCol : dc === 'down' ? dnCol : flatCol;
         dHtml = `<div class="hm-delta" style="color:${dCol};">${deltaArrow(d)} ${pctLabel(d)} wow</div>`;
       } else {
-        dHtml = `<div class="hm-delta" style="color:${flatCol};">\u2605 new</div>`;
+        dHtml = `<div class="hm-delta" style="color:${flatCol};">★ new</div>`;
       }
     }
     html += `<div class="hm-cell" style="background:${bg};border-left-color:${cat.color};">
       <div class="hm-name" style="color:${nameCol};">${name}</div>
-      <div class="hm-meta" style="color:${metaCol};">${Math.round(item.qty)} sold \u00b7 ${fmt(item.rev)}</div>
+      <div class="hm-meta" style="color:${metaCol};">${Math.round(item.qty)} sold · ${fmt(item.rev)}</div>
       ${dHtml}
     </div>`;
   });
@@ -950,8 +961,8 @@ function renderKitchenDashboard() {
   const prevItems = (currentData.prevItems || []).filter(keep);
   const hasPrev = prevItems.length > 0;
 
-  let weekText = 'Week of ' + (currentData.dateRange || '\u2014');
-  if (hasPrev && currentData.prevDateRange) weekText += '  \u00b7  vs ' + currentData.prevDateRange;
+  let weekText = 'Week of ' + (currentData.dateRange || '—');
+  if (hasPrev && currentData.prevDateRange) weekText += '  ·  vs ' + currentData.prevDateRange;
   document.getElementById('week-label').textContent = weekText;
   if (currentData.uploadedAt) {
     const d = new Date(currentData.uploadedAt);
@@ -962,7 +973,7 @@ function renderKitchenDashboard() {
 
   // Restore kitchen-specific titles & the shift-status line (Somm hides/retitles them).
   document.getElementById('heatmap-title').textContent = 'Items ranked within each category';
-  document.getElementById('heatmap-hint').textContent = 'weekly specials pinned first, remaining categories by rank \u00b7 click a header to collapse';
+  document.getElementById('heatmap-hint').textContent = 'weekly specials pinned first, remaining categories by rank · click a header to collapse';
   document.getElementById('shift-status').style.display = '';
 
   const cats = {}, prevCats = {};
@@ -999,7 +1010,7 @@ function renderKitchenDashboard() {
       delta: hasPrev ? deltaTag(totalRev, prevTotalRev, 'kpi-delta') : '' },
     { label:'Total sold', val:Math.round(totalQty).toLocaleString(), sub:`${ranking.length} categories`,
       delta: hasPrev ? deltaTag(totalQty, prevTotalQty, 'kpi-delta') : '' },
-    { label:'Top category', val:topCat ? topCat.label.split(' ')[0] : '\u2014',
+    { label:'Top category', val:topCat ? topCat.label.split(' ')[0] : '—',
       sub:topCat ? (byRev ? fmt(topCat.rev) : `${Math.round(topCat.qty).toLocaleString()} sold`) : '', delta:'' },
   ].map(k => `<div class="kpi"><div class="kpi-label">${k.label}</div><div class="kpi-val">${k.val}</div><div class="kpi-sub">${k.sub}</div>${k.delta||''}</div>`).join('');
 
@@ -1029,7 +1040,7 @@ function renderKitchenDashboard() {
     return `<div class="cat-row" onclick="jumpToCategory('${r.key}')" title="View ${r.label} items">
       <span class="cat-rank">${idx+1}</span>
       <span class="cat-name">${r.label}</span>
-      <span class="cat-bar" title="${main} \u00b7 ${share < 1 ? share.toFixed(1) : Math.round(share)}% of the week's total \u00b7 axis 0\u2013${byRev ? fmt(axisMax) : Math.round(axisMax).toLocaleString()}"><span class="cat-bar-fill" style="width:${width}%;background:${r.color};"></span></span>
+      <span class="cat-bar" title="${main} · ${share < 1 ? share.toFixed(1) : Math.round(share)}% of the week's total · axis 0–${byRev ? fmt(axisMax) : Math.round(axisMax).toLocaleString()}"><span class="cat-bar-fill" style="width:${width}%;background:${r.color};"></span></span>
       <span class="cat-share">${share < 1 ? share.toFixed(1) : Math.round(share)}%</span>
       <span class="cat-val">${main}</span>
       <span class="cat-sub">${sub}</span>
@@ -1082,8 +1093,8 @@ function renderWineSection(title, gid, list, prevLookup, hasPrev, byRev, opts) {
     <div class="hm-cat-header" onclick="toggleHmGroup('${id}')">
       <span class="leg-dot" style="background:${color}"></span>
       <span class="hm-cat-label">${title}</span>${opts.badge || ''}
-      <span class="hm-cat-rev">${fmt(catRev)} \u00b7 ${Math.round(catQty).toLocaleString()} sold \u00b7 ${grp.length} labels</span>
-      <span class="hm-cat-toggle" id="${id}-toggle">\u25bc</span>
+      <span class="hm-cat-rev">${fmt(catRev)} · ${Math.round(catQty).toLocaleString()} sold · ${grp.length} labels</span>
+      <span class="hm-cat-toggle" id="${id}-toggle">▼</span>
     </div>
     <div class="hm-grid" id="${id}">`;
   if (!grp.length) {
@@ -1104,7 +1115,7 @@ function renderWineSection(title, gid, list, prevLookup, hasPrev, byRev, opts) {
     const name = item.name.replace(/^(GL:|BTL:|HH:|\d{3,4}[:\s]|B\d{2,4}[:\s]?)\s*/i,'');
     const unit = item.price;
     const cellar = opts.cellar && unit >= CELLAR_MIN;
-    const metaBits = `${Math.round(item.qty)} sold \u00b7 ${fmt(item.rev)}` + (opts.showUnit ? ` \u00b7 ${fmt(unit)} ea` : '');
+    const metaBits = `${Math.round(item.qty)} sold · ${fmt(item.rev)}` + (opts.showUnit ? ` · ${fmt(unit)} ea` : '');
     const prev = hasPrev ? prevLookup[normalizeKey(item.name)] : null;
     let dHtml = '';
     if (hasPrev) {
@@ -1114,10 +1125,10 @@ function renderWineSection(title, gid, list, prevLookup, hasPrev, byRev, opts) {
         const dCol = dc === 'up' ? upCol : dc === 'down' ? dnCol : flatCol;
         dHtml = `<div class="hm-delta" style="color:${dCol};">${deltaArrow(d)} ${pctLabel(d)} wow</div>`;
       } else {
-        dHtml = `<div class="hm-delta" style="color:${flatCol};">\u2605 new</div>`;
+        dHtml = `<div class="hm-delta" style="color:${flatCol};">★ new</div>`;
       }
     }
-    const badge = cellar ? `<span class="hm-cellar-badge" title="High-ticket bottle (\u2265 ${fmt(CELLAR_MIN)} per unit)">\u2726</span>` : '';
+    const badge = cellar ? `<span class="hm-cellar-badge" title="High-ticket bottle (≥ ${fmt(CELLAR_MIN)} per unit)">✦</span>` : '';
     html += `<div class="hm-cell" style="background:${bg};border-left-color:${color};">
       <div class="hm-name" style="color:${nameCol};">${name}${badge}</div>
       <div class="hm-meta" style="color:${metaCol};">${metaBits}</div>
@@ -1140,8 +1151,8 @@ function renderSommDashboard() {
   const hasPrev = prevItems.length > 0;
   const byRev = currentView === 'revenue';
 
-  let weekText = 'Week of ' + (currentData.dateRange || '\u2014');
-  if (hasPrev && currentData.prevDateRange) weekText += '  \u00b7  vs ' + currentData.prevDateRange;
+  let weekText = 'Week of ' + (currentData.dateRange || '—');
+  if (hasPrev && currentData.prevDateRange) weekText += '  ·  vs ' + currentData.prevDateRange;
   document.getElementById('week-label').textContent = weekText;
   if (currentData.uploadedAt) {
     const d = new Date(currentData.uploadedAt);
@@ -1206,7 +1217,7 @@ function renderSommDashboard() {
     { label:'Bar (spirits + cocktails)', val:fmt(barRev), sub:'poured drinks',
       delta: hasPrev ? deltaTag(barRev, prevBarRev, 'kpi-delta') : '' },
     { label:'Wine glass / bottle', val:`${glassPct}% / ${bottlePct}%`,
-      sub:`${fmt(glassRev)} by the glass \u00b7 ${fmt(bottleRev)} by the bottle`, delta:'' },
+      sub:`${fmt(glassRev)} by the glass · ${fmt(bottleRev)} by the bottle`, delta:'' },
   ];
   document.getElementById('kpi-grid').innerHTML = kpis.map(k =>
     `<div class="kpi"><div class="kpi-label">${k.label}</div><div class="kpi-val">${k.val}</div><div class="kpi-sub">${k.sub}</div>${k.delta||''}</div>`).join('');
@@ -1246,7 +1257,7 @@ function renderSommDashboard() {
     return `<div class="cat-row" onclick="jumpToCategory('${jump}')" title="View ${r.label}">
       <span class="cat-rank">${idx+1}</span>
       <span class="cat-name">${r.label}</span>
-      <span class="cat-bar" title="${main} \u00b7 ${share < 1 ? share.toFixed(1) : Math.round(share)}% of beverage \u00b7 axis 0\u2013${byRev ? fmt(axisMax) : Math.round(axisMax).toLocaleString()}"><span class="cat-bar-fill" style="width:${width}%;background:${r.color};"></span></span>
+      <span class="cat-bar" title="${main} · ${share < 1 ? share.toFixed(1) : Math.round(share)}% of beverage · axis 0–${byRev ? fmt(axisMax) : Math.round(axisMax).toLocaleString()}"><span class="cat-bar-fill" style="width:${width}%;background:${r.color};"></span></span>
       <span class="cat-share">${share < 1 ? share.toFixed(1) : Math.round(share)}%</span>
       <span class="cat-val">${main}</span>
       <span class="cat-sub">${sub}</span>
@@ -1256,26 +1267,26 @@ function renderSommDashboard() {
 
   // Heatmap card titles for the Somm framing.
   document.getElementById('heatmap-title').textContent = 'Wine program & bar';
-  document.getElementById('heatmap-hint').textContent = 'wine split by the glass vs the bottle, then dessert wine, spirits & cocktails \u00b7 click a header to collapse';
+  document.getElementById('heatmap-hint').textContent = 'wine split by the glass vs the bottle, then dessert wine, spirits & cocktails · click a header to collapse';
 
   const nonBevRev = totalRev - bevRev;
   const btgCtx = btgBottles.length
-    ? ` \u00b7 BTG bottles (glass-list wines by the bottle): ${fmt(btgRev)} (${Math.round(btgBottles.reduce((s,i)=>s+i.qty,0)).toLocaleString()} btl) \u2014 separate from both the by-the-glass pours and the cellar`
+    ? ` · BTG bottles (glass-list wines by the bottle): ${fmt(btgRev)} (${Math.round(btgBottles.reduce((s,i)=>s+i.qty,0)).toLocaleString()} btl) — separate from both the by-the-glass pours and the cellar`
     : '';
-  const ctxLine = `<div class="somm-muted">Food &amp; other (not shown in this view): ${fmt(nonBevRev)} \u00b7 beverage is ${bevShare}% of the week by revenue${btgCtx}</div>`;
+  const ctxLine = `<div class="somm-muted">Food &amp; other (not shown in this view): ${fmt(nonBevRev)} · beverage is ${bevShare}% of the week by revenue${btgCtx}</div>`;
 
   let hmHtml = '';
-  hmHtml += renderWineSection('Wine \u2014 by the glass', 'wine-glass', glass, prevLookup, hasPrev, byRev,
+  hmHtml += renderWineSection('Wine — by the glass', 'wine-glass', glass, prevLookup, hasPrev, byRev,
     { showUnit:false, emptyHint:'No by-the-glass pours rung this week.' });
-  hmHtml += renderWineSection('Wine \u2014 by the bottle', 'wine-bottle', bottle, prevLookup, hasPrev, byRev,
+  hmHtml += renderWineSection('Wine — by the bottle', 'wine-bottle', bottle, prevLookup, hasPrev, byRev,
     { showUnit:true, cellar:true, badge:'<span class="hm-pinned-badge">Cellar</span>', emptyHint:'No bottles rung this week.' });
   if (btgBottles.length) {
-    hmHtml += renderWineSection('Wine \u2014 BTG bottles (glass-list wines, by the bottle)', 'wine-btg', btgBottles, prevLookup, hasPrev, byRev,
+    hmHtml += renderWineSection('Wine — BTG bottles (glass-list wines, by the bottle)', 'wine-btg', btgBottles, prevLookup, hasPrev, byRev,
       { showUnit:true, badge:'<span class="hm-pinned-badge">BTG bottles</span>',
         emptyHint:'No BTG bottles rung this week.' });
   }
   if (unknown.length) {
-    hmHtml += renderWineSection('Wine \u2014 service unspecified', 'wine-unknown', unknown, prevLookup, hasPrev, byRev,
+    hmHtml += renderWineSection('Wine — service unspecified', 'wine-unknown', unknown, prevLookup, hasPrev, byRev,
       { showUnit:true, badge:'<span class="hm-warn-badge">Add GL:/BTL:</span>' });
   }
   ['dessertwine','spirit','cocktail','beer','na','coffee'].forEach(key => {
@@ -1316,8 +1327,8 @@ function renderPdjSection(cat, items, prevLookup, hasPrev, byRev) {
     <div class="hm-cat-header" onclick="toggleHmGroup('${id}')">
       <span class="leg-dot" style="background:${cat.color}"></span>
       <span class="hm-cat-label">${cat.label}</span><span class="hm-pinned-badge">Pinned</span>
-      <span class="hm-cat-rev">${fmt(cat.rev)} \u00b7 ${Math.round(cat.qty).toLocaleString()} sold \u00b7 ${enriched.length} nights</span>
-      <span class="hm-cat-toggle" id="${id}-toggle">\u25bc</span>
+      <span class="hm-cat-rev">${fmt(cat.rev)} · ${Math.round(cat.qty).toLocaleString()} sold · ${enriched.length} nights</span>
+      <span class="hm-cat-toggle" id="${id}-toggle">▼</span>
     </div>
     <div class="hm-grid" id="${id}">`;
 
@@ -1362,12 +1373,12 @@ function renderPdjSection(cat, items, prevLookup, hasPrev, byRev) {
         const dCol = dc === 'up' ? upCol : dc === 'down' ? dnCol : flatCol;
         dHtml = `<div class="hm-delta" style="color:${dCol};">${deltaArrow(dv)} ${pctLabel(dv)} wow</div>`;
       } else {
-        dHtml = `<div class="hm-delta" style="color:${flatCol};">\u2605 new</div>`;
+        dHtml = `<div class="hm-delta" style="color:${flatCol};">★ new</div>`;
       }
     }
 
     const headerText = night
-      ? (WD_LONG[night].toUpperCase() + (dateLbl ? '  \u00b7  ' + dateLbl : ''))
+      ? (WD_LONG[night].toUpperCase() + (dateLbl ? '  ·  ' + dateLbl : ''))
       : 'NIGHT UNKNOWN';
 
     let heroVal, heroSub = '', heroSoldOut = false;
@@ -1381,7 +1392,7 @@ function renderPdjSection(cat, items, prevLookup, hasPrev, byRev) {
       heroSub = (soldN === null) ? 'count not entered' : '';
     }
     const reconLine = disagree
-      ? `Toast ${toastQty} \u00b7 Shift ${soldN} \u2014 check counts`
+      ? `Toast ${toastQty} · Shift ${soldN} — check counts`
       : '';
 
     html += `<div class="hm-cell" style="background:${bg};border-left-color:${cat.color};">
@@ -1428,18 +1439,18 @@ function renderNightlySection(cat, items, prevLookup, hasPrev, byRev, specialNam
       .reduce((s, k) => s + ((prevLookup[k] && prevLookup[k].qty) || 0), 0);
     if (prevQty > 0) {
       const dv = (item.qty - prevQty) / prevQty * 100;
-      wowText = ` \u00b7 ${deltaArrow(dv)} ${pctLabel(dv)} wow`;
+      wowText = ` · ${deltaArrow(dv)} ${pctLabel(dv)} wow`;
     }
   }
   const soldTotal = item ? Math.round(item.qty).toLocaleString() : Math.round(cat.qty).toLocaleString();
-  const headerStat = `${fmt(cat.rev)} \u00b7 ${soldTotal} sold this week${wowText}${reconLine ? ' \u00b7 ' + reconLine : ''}`;
+  const headerStat = `${fmt(cat.rev)} · ${soldTotal} sold this week${wowText}${reconLine ? ' · ' + reconLine : ''}`;
 
   let html = `<div class="hm-cat-section">
     <div class="hm-cat-header" onclick="toggleHmGroup('${id}')">
       <span class="leg-dot" style="background:${cat.color}"></span>
       <span class="hm-cat-label">${cat.label}</span><span class="hm-pinned-badge">Pinned</span>
       <span class="hm-cat-rev">${headerStat}</span>
-      <span class="hm-cat-toggle" id="${id}-toggle">\u25bc</span>
+      <span class="hm-cat-toggle" id="${id}-toggle">▼</span>
     </div>
     <div class="hm-grid" id="${id}">`;
 
@@ -1470,15 +1481,15 @@ function renderNightlySection(cat, items, prevLookup, hasPrev, byRev, specialNam
           weight = 0.4 + (soldN / maxSold) * 0.6;
           sortKey = soldN;
         }
-        else if (hasAvail) { valHtml = '\u2014/' + en.avail; subHtml = 'sold not entered'; weight = 0.35; sortKey = -2; }
-        else { valHtml = '\u2014'; subHtml = 'not entered'; weight = 0.25; sortKey = -3; }
+        else if (hasAvail) { valHtml = '—/' + en.avail; subHtml = 'sold not entered'; weight = 0.35; sortKey = -2; }
+        else { valHtml = '—'; subHtml = 'not entered'; weight = 0.25; sortKey = -3; }
       } else if (reported[wd]) {
-        valHtml = '\u2014'; subHtml = 'not listed'; weight = 0.2; sortKey = -4;
+        valHtml = '—'; subHtml = 'not listed'; weight = 0.2; sortKey = -4;
       } else {
-        valHtml = '\u2014'; subHtml = 'no data'; weight = 0.14; sortKey = -5;
+        valHtml = '—'; subHtml = 'no data'; weight = 0.14; sortKey = -5;
       }
       if (remainder > 0 && (!en || en.sold === null || en.sold === '' || isNaN(parseFloat(en.sold))) && !((en||{}).x)) {
-        subHtml = (subHtml ? subHtml + ' \u00b7 ' : '') + 'part of \u2248' + remainder + ' unlogged';
+        subHtml = (subHtml ? subHtml + ' · ' : '') + 'part of ≈' + remainder + ' unlogged';
       }
       const bg = hexBlend(cat.color, weight);
       const light = isLightBg(bg);
@@ -1508,7 +1519,7 @@ function jumpToCategory(key) {
   if (!grid) return;
   grid.classList.remove('collapsed');
   const tog = document.getElementById('hmg-' + key + '-toggle');
-  if (tog) tog.textContent = '\u25bc';
+  if (tog) tog.textContent = '▼';
   const section = grid.closest('.hm-cat-section');
   section.scrollIntoView({ behavior: 'smooth', block: 'start' });
   section.classList.remove('flash');
